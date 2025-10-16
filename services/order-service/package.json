@@ -1,0 +1,46 @@
+{
+  "name": "order-service",
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
+  "version": "1.0.0",
+  "private": true,
+  "description": "Account microservice",
+  "scripts": {
+    "build": "nest build --tsc && cp -r src/prisma/generated dist/prisma/",
+    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "proto:generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=env=node,useOptionals=messages,outputServices=grpc-js ./proto/*.proto",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.9.13",
+    "@grpc/proto-loader": "^0.7.10",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.2.2",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/mapped-types": "^2.1.0",
+    "@nestjs/microservices": "^10.3.0",
+    "@nestjs/platform-express": "^10.0.0",
+    "@one-recycle/shared": "file:../shared",
+    "@prisma/client": "^5.5.2",
+    "axios": "^1.12.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.0.0",
+    "@nestjs/schematics": "^10.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.19",
+    "jest": "^30.2.0",
+    "prisma": "^5.5.2",
+    "ts-jest": "^29.4.5",
+    "ts-loader": "^9.4.3",
+    "ts-proto": "^2.7.7",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.1.3"
+  }
+}

@@ -1,0 +1,127 @@
+@import '../../styles/variables.scss';
+
+// 回收页面样式
+.recycle-page {
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+  background: $bg-secondary;
+  min-height: 100vh;
+}
+
+.form-section {
+  background: white;
+  border-radius: $border-radius-lg;
+  padding-left: $spacing-lg; padding-right: $spacing-lg;
+  padding-top: $spacing-lg; padding-bottom: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $box-shadow-base;
+}
+
+.form-item {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.label {
+  display: block;
+  font-size: $font-size-base;
+  color: $text-color;
+  margin-bottom: $spacing-xs;
+  font-weight: $font-weight-medium;
+}
+
+.picker {
+  padding-left: $spacing-sm; padding-right: $spacing-sm;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+  border: 1rpx solid $border-color;
+  border-radius: $border-radius-base;
+  background: white;
+  font-size: $font-size-base;
+}
+
+.input {
+  padding-left: $spacing-sm; padding-right: $spacing-sm;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+  border: 1rpx solid $border-color;
+  border-radius: $border-radius-base;
+  background: white;
+  font-size: $font-size-base;
+}
+
+.jd-express-section {
+  background: white;
+  border-radius: $border-radius-lg;
+  padding-left: $spacing-lg; padding-right: $spacing-lg;
+  padding-top: $spacing-lg; padding-bottom: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $box-shadow-base;
+}
+
+.jd-express-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.jd-title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: $text-color;
+}
+
+.jd-express-details {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 1rpx solid $border-color;
+}
+
+.detail-text {
+  display: block;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.note-text {
+  display: block;
+  font-size: $font-size-xs;
+  color: $text-disabled;
+  margin-top: $spacing-xs;
+}
+
+.info-section {
+  background: white;
+  border-radius: $border-radius-lg;
+  padding-left: $spacing-lg; padding-right: $spacing-lg;
+  padding-top: $spacing-lg; padding-bottom: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $box-shadow-base;
+}
+
+.info-item {
+  margin-bottom: $spacing-sm;
+  display: flex;
+  justify-content: space-between;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.info-label {
+  font-weight: $font-weight-medium;
+  color: $text-color;
+}
+
+.submit-btn {
+  width: 100%;
+  background: $primary-color !important;
+  border-color: $primary-color !important;
+  border-radius: $border-radius-base !important;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+  font-size: $font-size-lg !important;
+  font-weight: $font-weight-semibold !important;
+}

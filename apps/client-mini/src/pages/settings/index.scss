@@ -1,0 +1,59 @@
+@import '../../styles/variables.scss';
+
+// 设置页面样式
+.settings-page {
+  background-color: $bg-secondary;
+  min-height: 100vh;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+}
+
+.settings-section {
+  background-color: white;
+  margin-bottom: $spacing-sm;
+  box-shadow: $box-shadow-sm;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+  border-bottom: 1rpx solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-title {
+  display: block;
+  font-size: $font-size-base;
+  color: $text-color;
+  margin-bottom: $spacing-xs;
+}
+
+.setting-description {
+  display: block;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
+
+.arrow {
+  color: $text-disabled;
+  font-size: $font-size-lg;
+}
+
+.version-section {
+  text-align: center;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+
+  .version-text {
+    font-size: $font-size-sm;
+    color: $text-secondary;
+  }
+}

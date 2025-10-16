@@ -1,0 +1,180 @@
+@import '../../styles/variables.scss';
+
+.category-page {
+  padding: $page-padding;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-xl;
+  padding-bottom: $spacing-xl;
+
+  .header {
+    text-align: center;
+    margin-bottom: $spacing-xxl;
+
+    .title {
+      font-size: $font-size-title;
+      font-weight: $font-weight-bold;
+      color: $text-color;
+      margin-bottom: $spacing-sm;
+      display: block;
+    }
+
+    .subtitle {
+      font-size: $font-size-lg;
+      color: $text-secondary;
+      display: block;
+    }
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-xl;
+    margin-bottom: $spacing-xxl;
+
+    .category-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-left: $spacing-md; padding-right: $spacing-md;
+      padding-top: $spacing-lg;
+      padding-bottom: $spacing-lg;
+      background: white;
+      border-radius: $border-radius-lg;
+      box-shadow: $box-shadow-base;
+      transition: all 0.3s ease;
+      cursor: pointer;
+
+      &:hover,
+      &:active {
+        transform: translateY(-8rpx);
+        box-shadow: $box-shadow-lg;
+      }
+
+      &.selected {
+        transform: translateY(-8rpx);
+        box-shadow: 0 16rpx 32rpx rgba(74, 144, 226, 0.3);
+        border: 2rpx solid $primary-color;
+      }
+
+      .category-icon {
+        width: 100rpx;
+        height: 100rpx;
+        border-radius: $border-radius-round;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: $spacing-sm;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), transparent);
+          border-radius: $border-radius-round;
+        }
+
+        .icon-text {
+          font-size: $font-size-title;
+          filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.1));
+        }
+      }
+
+      .category-name {
+        font-size: $font-size-base;
+        color: $text-color;
+        font-weight: $font-weight-medium;
+        text-align: center;
+        line-height: 1.2;
+      }
+    }
+  }
+
+  .tips {
+    position: fixed;
+    bottom: 120rpx;
+    left: $page-padding;
+    right: $page-padding;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10rpx);
+    border-radius: $border-radius-lg;
+    padding-left: $spacing-lg; padding-right: $spacing-lg;
+    padding-top: $spacing-lg;
+    padding-bottom: $spacing-lg;
+    text-align: center;
+    box-shadow: $box-shadow-base;
+
+    .tips-text {
+      font-size: $font-size-sm;
+      color: $text-secondary;
+      line-height: 1.4;
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 375px) {
+  .category-page {
+    padding-left: $spacing-md; padding-right: $spacing-md;
+    padding-top: $spacing-lg;
+    padding-bottom: $spacing-lg;
+
+    .category-grid {
+      gap: $spacing-lg;
+      
+      .category-item {
+        padding-left: $spacing-sm; padding-right: $spacing-sm;
+        padding-top: $spacing-md;
+        padding-bottom: $spacing-md;
+        
+        .category-icon {
+          width: 80rpx;
+          height: 80rpx;
+          
+          .icon-text {
+            font-size: $font-size-xl;
+          }
+        }
+        
+        .category-name {
+          font-size: $font-size-sm;
+        }
+      }
+    }
+  }
+}
+
+// 动画效果
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.category-item {
+  animation: fadeInUp 0.6s ease forwards;
+  
+  &:nth-child(1) { animation-delay: 0.1s; }
+  &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.3s; }
+  &:nth-child(4) { animation-delay: 0.4s; }
+  &:nth-child(5) { animation-delay: 0.5s; }
+  &:nth-child(6) { animation-delay: 0.6s; }
+  &:nth-child(7) { animation-delay: 0.7s; }
+  &:nth-child(8) { animation-delay: 0.8s; }
+  &:nth-child(9) { animation-delay: 0.9s; }
+  &:nth-child(10) { animation-delay: 1.0s; }
+  &:nth-child(11) { animation-delay: 1.1s; }
+  &:nth-child(12) { animation-delay: 1.2s; }
+}

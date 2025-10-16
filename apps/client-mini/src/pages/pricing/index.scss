@@ -1,0 +1,354 @@
+@import '../../styles/variables.scss';
+
+// 价格估算页面样式
+.pricing-page {
+  padding: $page-padding;
+  min-height: 100vh;
+  background: $bg-secondary;
+  position: relative;
+
+  // 旧衣回收主题
+  &.clothing-theme {
+    .header-background {
+      background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+      height: 300rpx;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .estimate-button {
+      background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+    }
+  }
+
+  // 数码回收主题
+  &.digital-theme {
+    .header-background {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      height: 300rpx;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .estimate-button {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+  }
+
+  // 加载状态
+  > text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-size: $font-size-lg;
+    color: $text-secondary;
+  }
+}
+
+// 头部导航
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-xxl;
+  padding-bottom: $spacing-sm;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs / 2;
+}
+
+.header-title {
+  color: white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+}
+
+.header-icons {
+  display: flex;
+  gap: $spacing-lg;
+}
+
+// 分类信息
+.category-info {
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  text-align: center;
+}
+
+.category-title {
+  color: white;
+  font-size: $font-size-title;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.category-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: $font-size-lg;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.category-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: $font-size-sm;
+  display: block;
+}
+
+// 内容容器
+.content-container {
+  position: relative;
+  margin-top: -50rpx;
+  padding-left: $page-padding; padding-right: $page-padding;
+  z-index: 2;
+}
+
+// 回收信息卡片
+.recycle-info-card {
+  background: white;
+  border-radius: $border-radius-lg;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-xl;
+  padding-bottom: $spacing-xl;
+  margin-bottom: $spacing-lg;
+  box-shadow: $box-shadow-base;
+  animation: slideUp 0.3s ease-out;
+}
+
+.info-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $text-color;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.info-subtitle {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  display: block;
+  margin-bottom: $spacing-lg;
+}
+
+// 重量选择区域
+.weight-section {
+  margin-top: $spacing-lg;
+}
+
+.section-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  color: $text-color;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.weight-picker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: $spacing-md; padding-right: $spacing-md;
+  padding-top: $spacing-md;
+  padding-bottom: $spacing-md;
+  background: $bg-secondary;
+  border-radius: $border-radius-base;
+  border: 2rpx solid $border-color;
+}
+
+.picker-text {
+  font-size: $font-size-lg;
+  color: $text-color;
+  flex: 1;
+}
+
+.picker-price {
+  font-size: $font-size-lg;
+  color: #00d4aa;
+  font-weight: $font-weight-medium;
+  margin-right: $spacing-sm;
+}
+
+// 服务选项
+.service-options {
+  background: white;
+  border-radius: $border-radius-lg;
+  margin-bottom: $spacing-lg;
+  overflow: hidden;
+  box-shadow: $box-shadow-base;
+  animation: slideUp 0.3s ease-out;
+}
+
+.service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  border-bottom: 1rpx solid $border-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.service-info {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.service-text {
+  font-size: $font-size-lg;
+  color: $text-color;
+}
+
+// 上门回收信息
+.pickup-info {
+  background: white;
+  border-radius: $border-radius-lg;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $box-shadow-base;
+  animation: slideUp 0.3s ease-out;
+}
+
+.pickup-title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $text-color;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.pickup-subtitle {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  display: block;
+  margin-bottom: $spacing-lg;
+}
+
+.pickup-details {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.pickup-time {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-sm;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1rpx solid $border-color;
+}
+
+.time-label {
+  font-size: $font-size-lg;
+  color: $text-color;
+}
+
+.time-value {
+  font-size: $font-size-lg;
+  color: $text-secondary;
+}
+
+.pickup-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $spacing-sm;
+  padding-bottom: $spacing-sm;
+}
+
+.switch-label {
+  font-size: $font-size-lg;
+  color: $text-color;
+}
+
+// 估价结果
+.estimate-result {
+  background: white;
+  border-radius: $border-radius-lg;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  text-align: center;
+  box-shadow: $box-shadow-base;
+  animation: slideUp 0.3s ease-out;
+}
+
+.result-label {
+  font-size: $font-size-lg;
+  color: $text-secondary;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.result-price {
+  font-size: $font-size-title;
+  font-weight: $font-weight-bold;
+  color: #ff6b35;
+  display: block;
+}
+
+// 底部操作区
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding-left: $page-padding; padding-right: $page-padding;
+  padding-top: $spacing-lg;
+  padding-bottom: $spacing-lg;
+  border-top: 1rpx solid $border-color;
+  z-index: 100;
+}
+
+.estimate-button {
+  width: 100%;
+  height: 88rpx;
+  border-radius: $border-radius-pill;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  border: none;
+  color: white;
+}
+
+// 响应式适配
+@media screen and (max-width: 375px) {
+  .header-background {
+    height: 280rpx;
+  }
+  
+  .category-title {
+    font-size: $font-size-xl;
+  }
+  
+  .content-container {
+    margin-top: -40rpx;
+  }
+}
+
+// 动画效果
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

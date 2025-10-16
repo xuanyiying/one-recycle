@@ -1,0 +1,54 @@
+import { registerAs } from '@nestjs/config';
+
+export default registerAs('app', () => ({
+  port: parseInt(process.env.PORT, 10) || 3003,
+  environment: process.env.NODE_ENV || 'development',
+  
+  // 数据库配置
+  database: {
+    url: process.env.DATABASE_URL,
+  },
+  
+  // gRPC配置
+  grpc: {
+    port: parseInt(process.env.GRPC_PORT, 10) || 50003,
+    package: 'order',
+    protoPath: 'proto/order.proto',
+  },
+  
+  // Redis配置
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    password: process.env.REDIS_PASSWORD,
+    db: parseInt(process.env.REDIS_DB, 10) || 0,
+  },
+  
+  // 外部服务配置
+  services: {
+    dispatch: {
+      host: process.env.DISPATCH_SERVICE_HOST || 'localhost',
+      port: parseInt(process.env.DISPATCH_SERVICE_PORT, 10) || 50006,
+    },
+    inventory: {
+      host: process.env.INVENTORY_SERVICE_HOST || 'localhost',
+      port: parseInt(process.env.INVENTORY_SERVICE_PORT, 10) || 50005,
+    },
+    payment: {
+      host: process.env.PAYMENT_SERVICE_HOST || 'localhost',
+      port: parseInt(process.env.PAYMENT_SERVICE_PORT, 10) || 50004,
+    },
+  },
+  
+  // 业务配置
+  business: {
+    orderNoLength: 20,
+    defaultPageSize: 20,
+    maxPageSize: 100,
+    orderTimeout: {
+      accept: 30 * 60 * 1000, // 30分钟
+      pickup: 2 * 60 * 60 * 1000, // 2小时
+      processing: 4 * 60 * 60 * 1000, // 4小时
+    },
+  },
+}));

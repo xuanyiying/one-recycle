@@ -1,0 +1,56 @@
+{
+    "project": {
+        "name": "one-recycle",
+        "type": "nestjs-microservices"
+    },
+    "codeGeneration": {
+        "rules": {
+            "nestjs": {
+                "controllers": {
+                    "methodSignature": {
+                        "async": true,
+                        "returnType": "Promise<any>",
+                        "style": "courier-controller"
+                    },
+                    "decorators": {
+                        "Post": {
+                            "requiresAsync": true,
+                            "returnType": "Promise<any>"
+                        },
+                        "Get": {
+                            "requiresAsync": true,
+                            "returnType": "Promise<any>"
+                        },
+                        "Patch": {
+                            "requiresAsync": true,
+                            "returnType": "Promise<any>"
+                        },
+                        "Put": {
+                            "requiresAsync": true,
+                            "returnType": "Promise<any>"
+                        },
+                        "Delete": {
+                            "requiresAsync": true,
+                            "returnType": "Promise<any>"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "typescript": {
+        "compilerOptions": {
+            "experimentalDecorators": true,
+            "emitDecoratorMetadata": true,
+            "strictPropertyInitialization": false
+        },
+        "rules": {
+            "decoratorSignature": {
+                "solution": "Ensure all controller methods use async/await and explicit return types"
+            }
+        }
+    },
+    "references": {
+        "controllerStyle": "/services/courier-service/src/courier/courier.controller.ts"
+    }
+}

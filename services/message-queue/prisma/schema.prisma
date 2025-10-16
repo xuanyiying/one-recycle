@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 任务状态表
+model JobStatus {
+  id            String   @id @default(uuid())
+  jobId         String   @unique @map("job_id")
+  jobType       String   @map("job_type")
+  queueName     String   @map("queue_name")
+  status        String   // pending, processing, completed, failed
+  payload       Json
+  result        Json?
+  errorMessage  String?  @map("error_message")
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3) @map("max_attempts")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  completedAt   DateTime? @map("completed_at")
+
+  @@index([jobId])
+  @@index([status])
+  @@index([queueName])
+  @@index([createdAt])
+  @@map("job_status")
+}
+
+// 死信队列表
+model DeadLetterQueue {
+  id              String   @id @default(uuid())
+  jobId           String   @map("job_id")
+  queueName       String   @map("queue_name")
+  jobType         String   @map("job_type")
+  payload         Json
+  errorMessage    String?  @map("error_message")
+  failedAttempts  Int      @map("failed_attempts")
+  lastError       String?  @map("last_error")
+  createdAt       DateTime @default(now()) @map("created_at")
+  resolved        Boolean  @default(false)
+  resolvedAt      DateTime? @map("resolved_at")
+  resolvedBy      String?  @map("resolved_by")
+  resolvedNote    String?  @map("resolved_note")
+
+  @@index([queueName])
+  @@index([resolved])
+  @@index([createdAt])
+  @@map("dead_letter_queue")
+}

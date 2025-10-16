@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/prisma/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Payment {
+  id            BigInt          @id @default(autoincrement())
+  orderId       BigInt          @map("order_id")
+  provider      PaymentProvider @map("provider")
+  outTradeNo    String          @unique @map("out_trade_no") @db.VarChar(128)
+  transactionId String?         @map("transaction_id") @db.VarChar(128)
+  total         Decimal         @db.Decimal(10, 2)
+  status        PaymentStatus   @default(PENDING)
+  notifyRaw     Json?           @map("notify_raw")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  refunds       Refund[]
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+model Refund {
+  id           BigInt       @id @default(autoincrement())
+  paymentId    BigInt       @map("payment_id")
+  outRefundNo  String       @unique @map("out_refund_no") @db.VarChar(128)
+  refundAmount Decimal      @map("refund_amount") @db.Decimal(10, 2)
+  status       RefundStatus @default(PROCESSING)
+  reason       String?      @db.VarChar(255)
+  notifyRaw    Json?        @map("notify_raw")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  payment      Payment      @relation(fields: [paymentId], references: [id])
+
+  @@map("refunds")
+}
+
+enum PaymentProvider {
+  WECHAT
+  ALIPAY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CLOSED
+}
+
+enum RefundStatus {
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+// 用户积分账户
+model Account {
+  id               BigInt        @id @default(autoincrement())
+  userId           BigInt        @unique @map("user_id")
+  availableBalance Decimal       @default(0) @map("available_balance") @db.Decimal(10, 2)
+  frozenBalance    Decimal       @default(0) @map("frozen_balance") @db.Decimal(10, 2)
+  totalIncome      Decimal       @default(0) @map("total_income") @db.Decimal(10, 2)
+  totalWithdrawal  Decimal       @default(0) @map("total_withdrawal") @db.Decimal(10, 2)
+  version          Int           @default(0) // 乐观锁版本号
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  transactions     Transaction[]
+  withdrawals      Withdrawal[]
+
+  @@index([userId])
+  @@map("accounts")
+}
+
+// 交易记录
+model Transaction {
+  id            BigInt          @id @default(autoincrement())
+  accountId     BigInt          @map("account_id")
+  type          TransactionType
+  amount        Decimal         @db.Decimal(10, 2)
+  balanceBefore Decimal         @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter  Decimal         @map("balance_after") @db.Decimal(10, 2)
+  orderId       String?         @map("order_id") @db.VarChar(64)
+  withdrawalId  BigInt?         @map("withdrawal_id")
+  description   String          @db.VarChar(255)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  account       Account         @relation(fields: [accountId], references: [id])
+  withdrawal    Withdrawal?     @relation(fields: [withdrawalId], references: [id])
+
+  @@index([accountId])
+  @@index([orderId])
+  @@index([withdrawalId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([accountId, type])
+  @@index([accountId, createdAt])
+  @@map("transactions")
+}
+
+// 提现记录
+model Withdrawal {
+  id             BigInt           @id @default(autoincrement())
+  accountId      BigInt           @map("account_id")
+  userId         BigInt           @map("user_id")
+  amount         Decimal          @db.Decimal(10, 2)
+  provider       PaymentProvider
+  outTradeNo     String           @unique @map("out_trade_no") @db.VarChar(128)
+  transactionId  String?          @map("transaction_id") @db.VarChar(128)
+  status         WithdrawalStatus @default(PENDING)
+  accountInfo    Json             @map("account_info") // 提现账户信息
+  adminId        BigInt?          @map("admin_id")
+  processedAt    DateTime?        @map("processed_at")
+  rejectedReason String?          @map("rejected_reason") @db.VarChar(255)
+  callbackData   Json?            @map("callback_data")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  account        Account          @relation(fields: [accountId], references: [id])
+  transactions   Transaction[]
+
+  @@index([accountId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("withdrawals")
+}
+
+enum TransactionType {
+  ORDER_INCOME // 订单收入
+  WITHDRAWAL_FREEZE // 提现冻结
+  WITHDRAWAL_SUCCESS // 提现成功
+  WITHDRAWAL_FAILED // 提现失败
+  WITHDRAWAL_REJECTED // 提现拒绝
+  REFUND // 退款
+  ADJUSTMENT // 人工调整
+}
+
+enum WithdrawalStatus {
+  PENDING // 待处理
+  PROCESSING // 处理中
+  SUCCESS // 成功
+  FAILED // 失败
+  REJECTED // 已拒绝
+  TIMEOUT // 超时
+}

@@ -1,0 +1,77 @@
+@import '../../styles/variables.scss';
+
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+}
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  animation: slideDown 0.3s ease-out;
+
+  &.offline {
+    background-color: #ff4d4f;
+    color: #ffffff;
+  }
+
+  &.online {
+    background-color: #52c41a;
+    color: #ffffff;
+  }
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 16px;
+}
+
+.status-icon {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.status-text {
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.pending-count {
+  margin-left: auto;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  font-size: 24px;
+}
+
+.retry-button {
+  padding: 12px 24px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #52c41a;
+  border-radius: 8px;
+  font-size: 24px;
+  font-weight: 500;
+  margin-left: 16px;
+
+  &:active {
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@nestjs/microservices": "^11.1.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@nestjs/testing": "^11.1.6"
+  }
+}

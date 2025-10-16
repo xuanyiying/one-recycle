@@ -1,0 +1,436 @@
+@import '../../../styles/variables.scss';
+
+.order-list-page {
+  min-height: 100vh;
+  background: $bg-secondary;
+
+  .login-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+
+    .prompt-text {
+      font-size: $font-size-title;
+      color: $text-secondary;
+      margin-bottom: $spacing-xl;
+    }
+
+    .login-btn {
+      background: $gradient-primary;
+      color: white;
+      font-size: $font-size-lg;
+      padding-left: $spacing-lg; padding-right: $spacing-lg;
+      padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+      border-radius: $border-radius-pill;
+      border: none;
+    }
+  }
+
+  .page-header {
+    background: white;
+    padding-left: $page-padding; padding-right: $page-padding;
+    padding-top: $spacing-xxl;
+    padding-bottom: $spacing-lg;
+    text-align: center;
+    box-shadow: $box-shadow-base;
+
+    .page-title {
+      font-size: $font-size-display;
+      font-weight: $font-weight-semibold;
+      color: $text-color;
+      display: block;
+    }
+  }
+
+  .tab-container {
+    background: white;
+    padding-left: $page-padding; padding-right: $page-padding;
+    padding-bottom: $spacing-sm;
+    box-shadow: $box-shadow-base;
+
+    .tab-list {
+      display: flex;
+      align-items: center;
+
+      .tab-item {
+        flex: 1;
+        text-align: center;
+        padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+        position: relative;
+        cursor: pointer;
+
+        .tab-text {
+          font-size: $font-size-lg;
+          color: $text-secondary;
+          transition: color 0.3s ease;
+        }
+
+        &.active {
+          .tab-text {
+            color: $primary-color;
+            font-weight: $font-weight-semibold;
+          }
+
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60rpx;
+            height: 4rpx;
+            background: $gradient-primary;
+            border-radius: $border-radius-xs;
+          }
+        }
+      }
+    }
+  }
+
+  .content-container {
+    height: calc(100vh - 200rpx);
+    padding-left: $page-padding; padding-right: $page-padding;
+
+    .loading-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 400rpx;
+
+      .loading-text {
+        font-size: $font-size-title;
+        color: $text-secondary;
+      }
+    }
+
+    .order-list {
+      .order-item {
+        background: white;
+        border-radius: $border-radius-lg;
+        padding-left: $spacing-lg; padding-right: $spacing-lg;
+        padding-top: $spacing-lg; padding-bottom: $spacing-lg;
+        margin-bottom: $spacing-lg;
+        box-shadow: $box-shadow-lg;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:active {
+          transform: translateY(2rpx);
+          box-shadow: $box-shadow-base;
+        }
+
+        .order-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: $spacing-lg;
+
+          .order-number {
+            font-size: $font-size-lg;
+            font-weight: $font-weight-semibold;
+            color: $text-color;
+          }
+
+          .status-badge {
+            padding-left: $spacing-sm; padding-right: $spacing-sm;
+            padding-top: $spacing-xs; padding-bottom: $spacing-xs;
+            border-radius: $border-radius-lg;
+            color: white;
+
+            .status-text {
+              font-size: $font-size-sm;
+              color: white;
+              font-weight: $font-weight-medium;
+            }
+          }
+        }
+
+        .order-content {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: $spacing-lg;
+
+          .order-info {
+            flex: 1;
+
+            .category {
+              font-size: $font-size-title;
+              font-weight: $font-weight-semibold;
+              color: $text-color;
+              display: block;
+              margin-bottom: $spacing-xs;
+            }
+
+            .description {
+              font-size: $font-size-base;
+              color: $text-secondary;
+              line-height: 1.4;
+              display: block;
+              margin-bottom: $spacing-xs;
+            }
+
+            .weight {
+              font-size: $font-size-sm;
+              color: $text-disabled;
+              display: block;
+            }
+          }
+
+          .price-info {
+            text-align: right;
+
+            .actual-price {
+              font-size: $font-size-display;
+              font-weight: $font-weight-semibold;
+              color: $primary-color;
+              display: block;
+            }
+
+            .estimated-price {
+              font-size: $font-size-lg;
+              color: $warning-color;
+              display: block;
+            }
+          }
+        }
+
+        .order-footer {
+          padding-top: 16px;
+          border-top: 2px solid #f0f0f0;
+
+          .create-time,
+          .pickup-time {
+            font-size: 24px;
+            color: #999;
+            display: block;
+            margin-bottom: 4px;
+          }
+        }
+      }
+    }
+
+    .empty-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 400px;
+
+      .empty-icon {
+        font-size: 120px;
+        margin-bottom: 24px;
+      }
+
+      .empty-text {
+        font-size: 32px;
+        color: #666;
+        margin-bottom: 32px;
+      }
+
+      .create-order-btn {
+        background: linear-gradient(135deg, #00c896 0%, #00b386 100%);
+        color: #fff;
+        font-size: 28px;
+        padding: 16px 32px;
+        border-radius: 24px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(0, 200, 150, 0.3);
+      }
+    }
+  }
+
+  .fab-container {
+    position: fixed;
+    bottom: 120px;
+    right: 32px;
+    z-index: 100;
+
+    .fab-btn {
+      width: 112px;
+      height: 112px;
+      border-radius: 56px;
+      background: linear-gradient(135deg, #00c896 0%, #00b386 100%);
+      color: #fff;
+      font-size: 48px;
+      font-weight: 300;
+      border: none;
+      box-shadow: 0 8px 24px rgba(0, 200, 150, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+
+      &:active {
+        transform: scale(0.95);
+        box-shadow: 0 4px 12px rgba(0, 200, 150, 0.4);
+      }
+    }
+  }
+}
+
+// 响应式适配
+@media (max-width: 375px) {
+  .order-list-page {
+    .content-container {
+      padding: 24px;
+
+      .order-list {
+        .order-item {
+          padding: 24px;
+
+          .order-header {
+            .order-number {
+              font-size: 26px;
+            }
+
+            .status-badge {
+              padding: 6px 12px;
+
+              .status-text {
+                font-size: 22px;
+              }
+            }
+          }
+
+          .order-content {
+            .order-info {
+              .category {
+                font-size: 28px;
+              }
+
+              .description {
+                font-size: 24px;
+              }
+
+              .weight {
+                font-size: 22px;
+              }
+            }
+
+            .price-info {
+              .actual-price {
+                font-size: 30px;
+              }
+
+              .estimated-price {
+                font-size: 26px;
+              }
+            }
+          }
+
+          .order-footer {
+            .create-time,
+            .pickup-time {
+              font-size: 22px;
+            }
+          }
+        }
+      }
+
+      .empty-container {
+        .empty-icon {
+          font-size: 100px;
+        }
+
+        .empty-text {
+          font-size: 30px;
+        }
+
+        .create-order-btn {
+          font-size: 26px;
+          padding: 14px 28px;
+        }
+      }
+    }
+
+    .fab-container {
+      bottom: 100px;
+      right: 24px;
+
+      .fab-btn {
+        width: 100px;
+        height: 100px;
+        border-radius: 50px;
+        font-size: 44px;
+      }
+    }
+
+    .tab-container {
+      padding: 0 24px 16px;
+
+      .tab-list {
+        .tab-item {
+          .tab-text {
+            font-size: 26px;
+          }
+
+          &.active::after {
+            width: 50px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 动画效果
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.order-item {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.order-item:nth-child(1) { animation-delay: 0.1s; }
+.order-item:nth-child(2) { animation-delay: 0.2s; }
+.order-item:nth-child(3) { animation-delay: 0.3s; }
+.order-item:nth-child(4) { animation-delay: 0.4s; }
+.order-item:nth-child(5) { animation-delay: 0.5s; }
+
+// FAB按钮动画
+@keyframes fabPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.fab-btn {
+  animation: fabPulse 3s ease-in-out infinite;
+}
+
+// 状态徽章动画
+@keyframes statusGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+  }
+}
+
+.status-badge {
+  animation: statusGlow 2s ease-in-out infinite;
+}
+
+// 标签切换动画
+.tab-item {
+  transition: all 0.3s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}

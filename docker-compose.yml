@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: one-recycle-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: account_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    container_name: one-recycle-adminer
+    ports:
+      - "8080:8080"
+
+  redis:
+    image: redis:latest
+    container_name: one-recycle-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: one-recycle-api-gateway
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+
+  account-service:
+    build:
+      context: ./services/account-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-account-service
+    ports:
+      - "3001:3001" # HTTP port
+      - "50051:50051" # gRPC port
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres:5432/account_db?schema=public"
+    depends_on:
+      - postgres
+
+  order-service:
+    build:
+      context: ./services/order-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-order-service
+    ports:
+      - "3003:3003"
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres:5432/order_db?schema=public"
+    depends_on:
+      - postgres
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-notification-service
+    ports:
+      - "3004:3004"
+    depends_on:
+      - postgres
+
+  courier-service:
+    build:
+      context: ./services/courier-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-courier-service
+    ports:
+      - "3005:3005"
+    depends_on:
+      - postgres
+
+  dispatch-service:
+    build:
+      context: ./services/dispatch-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-dispatch-service
+    ports:
+      - "3006:3006"
+    depends_on:
+      - postgres
+    environment:
+      JD_EXPRESS_API_KEY: "your-jd-express-api-key"
+      JD_EXPRESS_API_URL: "https://api.jd-express.com"
+
+  category-service:
+    build:
+      context: ./services/category-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-category-service
+    ports:
+      - "3008:3008"
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres:5432/category_db?schema=public"
+    depends_on:
+      - postgres
+
+  inventory-service:
+    build:
+      context: ./services/inventory-service
+      dockerfile: Dockerfile
+    container_name: one-recycle-inventory-service
+    ports:
+      - "3009:3009"
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres:5432/inventory_db?schema=public"
+    depends_on:
+      - postgres
+
+  message-queue:
+    build:
+      context: ./services/message-queue
+      dockerfile: Dockerfile
+    container_name: one-recycle-message-queue
+    ports:
+      - "3010:3010"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_DB=0
+      - PORT=3010
+      - NODE_ENV=development
+      - BULL_BOARD_ENABLED=true
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:

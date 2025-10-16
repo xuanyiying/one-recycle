@@ -1,0 +1,59 @@
+.auth-guard-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  
+  .loading-text {
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.auth-guard-prompt {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 20px;
+  
+  .prompt-container {
+    text-align: center;
+    
+    .prompt-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    
+    .prompt-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      display: block;
+    }
+    
+    .prompt-message {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+      display: block;
+    }
+    
+    .login-btn {
+      background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+      color: white;
+      border: none;
+      border-radius: 24px;
+      padding: 12px 32px;
+      font-size: 16px;
+      font-weight: 500;
+      min-width: 120px;
+      
+      &:active {
+        opacity: 0.8;
+      }
+    }
+  }
+}

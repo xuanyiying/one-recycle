@@ -1,0 +1,55 @@
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
+
+export interface WeChatUserInfo {
+  openid: string;
+  unionid?: string;
+  session_key: string;
+}
+
+@Injectable()
+export class WeChatPlatform {
+  private readonly appId: string;
+  private readonly appSecret: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.appId = this.configService.get<string>('WECHAT_APP_ID');
+    this.appSecret = this.configService.get<string>('WECHAT_APP_SECRET');
+  }
+
+  async code2Session(code: string): Promise<WeChatUserInfo> {
+    try {
+      const url = 'https://api.weixin.qq.com/sns/jscode2session';
+      const response = await axios.get(url, {
+        params: {
+          appid: this.appId,
+          secret: this.appSecret,
+          js_code: code,
+          grant_type: 'authorization_code',
+        },
+      });
+
+      const { openid, unionid, session_key, errcode, errmsg } = response.data;
+
+      if (errcode) {
+        throw new BadRequestException(`微信登录失败: ${errmsg}`);
+      }
+
+      if (!openid) {
+        throw new BadRequestException('获取微信用户信息失败');
+      }
+
+      return {
+        openid,
+        unionid,
+        session_key,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('微信登录服务异常');
+    }
+  }
+}

@@ -1,0 +1,63 @@
+.price-estimator {
+  .section-title {
+    display: block;
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20rpx;
+
+    .required {
+      color: #ff4757;
+    }
+  }
+
+  .weight-input-container {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 2rpx solid #e8e8e8;
+    border-radius: 16rpx;
+    padding: 0 32rpx;
+    min-height: 88rpx;
+
+    .weight-input {
+      flex: 1;
+      font-size: 28rpx;
+      color: #333;
+    }
+
+    .weight-unit {
+      font-size: 28rpx;
+      color: #666;
+      margin-left: 16rpx;
+    }
+  }
+
+  .estimating-text {
+    display: block;
+    font-size: 24rpx;
+    color: #666;
+    margin-top: 16rpx;
+  }
+
+  .price-estimate {
+    display: flex;
+    align-items: center;
+    margin-top: 16rpx;
+    padding: 20rpx 24rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12rpx;
+
+    .estimate-label {
+      font-size: 26rpx;
+      color: #fff;
+      margin-right: 16rpx;
+    }
+
+    .estimate-price {
+      font-size: 32rpx;
+      font-weight: bold;
+      color: #fff;
+    }
+  }
+}

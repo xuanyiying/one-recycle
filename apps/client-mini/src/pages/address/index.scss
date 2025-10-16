@@ -1,0 +1,91 @@
+@import '../../styles/variables.scss';
+
+// 地址页面样式
+.address-page {
+  padding-top: $spacing-sm;
+  padding-bottom: $spacing-sm;
+  background-color: $bg-secondary;
+  min-height: 100vh;
+}
+
+.address-list {
+  padding-left: $page-padding;
+  padding-right: $page-padding;
+  padding-bottom: $spacing-sm;
+}
+
+.address-item {
+  position: relative;
+  background-color: white;
+  border-radius: $border-radius-base;
+  padding-left: $spacing-sm; padding-right: $spacing-sm;
+  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
+  margin-bottom: $spacing-sm;
+  box-shadow: $box-shadow-sm;
+}
+
+.default-tag {
+  position: absolute;
+  top: $spacing-xs;
+  left: $spacing-xs;
+  background-color: #00B894;
+  color: white;
+  font-size: $font-size-xs;
+  padding-left: $spacing-xs; padding-right: $spacing-xs;
+  padding-top: $spacing-xs; padding-bottom: $spacing-xs;
+  border-radius: $border-radius-sm;
+}
+
+.address-info {
+  margin-bottom: $spacing-sm;
+}
+
+.address-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-xs;
+}
+
+.consignee {
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  color: $text-color;
+}
+
+.mobile {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+}
+
+.address-detail {
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  line-height: 1.5;
+}
+
+.address-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  margin-left: $spacing-xs;
+  background-color: $bg-secondary !important;
+  border: 1rpx solid $border-color !important;
+  font-size: $font-size-xs;
+  padding-left: $spacing-xs; padding-right: $spacing-xs;
+  height: 56rpx;
+  line-height: 56rpx;
+
+  &.delete-btn {
+    border-color: #ff7675 !important;
+    color: #ff7675 !important;
+  }
+}
+
+.add-address-btn {
+  width: 90%;
+  margin: 0 auto;
+  background-color: #00B894 !important;
+  border-color: #00B894 !important;
+}

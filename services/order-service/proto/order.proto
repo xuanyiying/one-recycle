@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package order;
+
+service OrderService {
+  rpc Create(CreateOrderRequest) returns (OrderResponse) {}
+  rpc FindOne(FindOneRequest) returns (OrderResponse) {}
+  rpc UpdateStatus(UpdateStatusRequest) returns (OrderResponse) {}
+  rpc FindByUserId(FindByUserIdRequest) returns (OrderListResponse) {}
+  rpc Cancel(CancelOrderRequest) returns (OrderResponse) {}
+  rpc GetUserStatistics(GetUserStatisticsRequest) returns (UserStatisticsResponse) {}
+}
+
+message FindOneRequest {
+  int64 id = 1;
+}
+
+message FindByUserIdRequest {
+  int64 user_id = 1;
+}
+
+message CreateOrderRequest {
+  int64 user_id = 1;
+  int64 address_id = 2;
+  repeated OrderItemRequest items = 3;
+  string expect_pickup_time = 4;
+  string channel = 5;
+  string remark = 6;
+}
+
+message OrderItemRequest {
+  int64 category_id = 1;
+  double estimated_weight = 2;
+  double unit_price = 3;
+  int32 quantity = 4;
+}
+
+message UpdateStatusRequest {
+  int64 id = 1;
+  string status = 2;
+}
+
+message CancelOrderRequest {
+  int64 id = 1;
+  string reason = 2;
+}
+
+message GetUserStatisticsRequest {
+  int64 user_id = 1;
+}
+
+message UserStatisticsResponse {
+  int64 total_orders = 1;
+  double total_amount = 2;
+  double saved_carbon = 3;
+}
+
+message OrderResponse {
+  int64 id = 1;
+  string order_no = 2;
+  int64 user_id = 3;
+  int64 address_id = 4;
+  string status = 5;
+  string expect_pickup_time = 6;
+  string actual_pickup_time = 7;
+  double estimated_amount = 8;
+  double settlement_amount = 9;
+  double pay_amount = 10;
+  string channel = 11;
+  string remark = 12;
+  string created_at = 13;
+  string updated_at = 14;
+  repeated OrderItemResponse items = 15;
+}
+
+message OrderItemResponse {
+  int64 id = 1;
+  int64 order_id = 2;
+  int64 category_id = 3;
+  double estimated_weight = 4;
+  double actual_weight = 5;
+  double unit_price = 6;
+  double amount = 7;
+  string created_at = 8;
+}
+
+message OrderListResponse {
+  repeated OrderResponse orders = 1;
+}

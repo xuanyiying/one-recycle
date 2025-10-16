@@ -1,0 +1,71 @@
+.withdrawal-list-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+
+  .empty-state {
+    padding-top: 100px;
+    text-align: center;
+
+    .empty-text {
+      color: #999;
+      font-size: 14px;
+    }
+  }
+
+  .withdrawal-list {
+    height: 100vh;
+    padding: 10px;
+
+    .withdrawal-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+      .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .item-amount {
+          font-size: 24px;
+          font-weight: bold;
+          color: #333;
+        }
+      }
+
+      .item-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .info-text {
+          font-size: 13px;
+          color: #666;
+        }
+      }
+
+      .item-reason {
+        margin-top: 10px;
+        padding: 8px;
+        background: #fff3e0;
+        border-radius: 6px;
+
+        .reason-text {
+          font-size: 12px;
+          color: #f57c00;
+        }
+      }
+    }
+
+    .loading-more,
+    .no-more {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 13px;
+    }
+  }
+}
