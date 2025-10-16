@@ -23,6 +23,7 @@ pnpm-debug.log*
 # IDE and editor files
 .vscode/
 .idea/
+./.kiro
 *.swp
 *.swo
 *~
