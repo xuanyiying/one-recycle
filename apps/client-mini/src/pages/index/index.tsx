@@ -170,12 +170,14 @@ export default function Index() {
 
   // 处理一键预约回收
   const handleQuickRecycle = useCallback(() => {
-    if (requireAuth()) {
+    if (isLoggedIn) {
       Taro.navigateTo({
         url: '/pages/recycle/form/index'
       })
+    }else {
+      requireAuth()
     }
-  }, [requireAuth])
+  }, [isLoggedIn])
 
   // 处理品类点击
   const handleCategoryClick = useCallback((categoryName: string) => {
@@ -266,23 +268,7 @@ export default function Index() {
 
       {/* 核心功能入口 */}
       <View className='quick-action'>
-        <Button 
-          className='recycle-btn' 
-          size='large'
-          color='primary'
-          block
-          onClick={handleQuickRecycle}
-        >
-          <View className='btn-content'>
-            <Text className='btn-icon'>♻️</Text>
-            <Text className='btn-text'>一键预约回收</Text>
-          </View>
-        </Button>
-        {!isLoggedIn && (
-          <View className='auth-tip'>
-            <Text className='auth-tip-text'>未登录，点击后将提示登录</Text>
-          </View>
-        )}
+       <Button variant="contained" block color="primary" shape="round" onClick={handleQuickRecycle}>预约回收</Button>
       </View>
 
       {/* 品类导航 */}

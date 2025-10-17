@@ -1,17 +1,20 @@
-import { IsEnum, IsOptional, IsString, IsNumber, IsArray, IsDateString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNumber, IsArray, IsDateString, IsNotEmpty } from 'class-validator';
+import { CheckType, CheckResult } from '../entities/inventory.entity';
 
 export class CreateQualityCheckDto {
-  @IsNumber()
-  itemId: number;
+  @IsNotEmpty()
+  itemId: bigint;
   
-  @IsNumber()
-  checkerId: number;
+  @IsNotEmpty()
+  checkerId: bigint;
   
-  @IsEnum(['INITIAL', 'DETAILED', 'FINAL', 'RANDOM'])
-  checkType: 'INITIAL' | 'DETAILED' | 'FINAL' | 'RANDOM';
+  @IsNotEmpty()
+  @IsEnum(CheckType)
+  checkType: CheckType;
   
-  @IsEnum(['PASSED', 'FAILED', 'CONDITIONAL'])
-  result: 'PASSED' | 'FAILED' | 'CONDITIONAL';
+  @IsNotEmpty()
+  @IsEnum(CheckResult)
+  result: CheckResult;
   
   @IsNumber()
   @IsOptional()
@@ -27,5 +30,5 @@ export class CreateQualityCheckDto {
   images?: string[];
   
   @IsDateString()
-  checkedAt: string;
+  checkedAt: Date;
 }

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { PaymentStatus, PaymentProvider, RefundStatus } from '../prisma/generated/client';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
+import { PaymentStatus, PaymentProvider, RefundStatus } from '../prisma/generated/client';
 
 @Injectable()
 export class PaymentService {

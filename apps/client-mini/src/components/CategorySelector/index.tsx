@@ -1,5 +1,4 @@
 import { View, Text, Picker } from '@tarojs/components'
-import './index.scss'
 
 interface Category {
   id: number

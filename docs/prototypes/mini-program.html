@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneRecycle 小程序原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .phone-frame {
+            width: 375px;
+            height: 667px;
+            background: white;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .screen.active {
+            display: flex;
+        }
+        
+        /* Navigation Bar */
+        .nav-bar {
+            background: linear-gradient(135deg, #00D2A0 0%, #00B894 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 44px;
+            box-shadow: 0 2px 8px rgba(0,184,148,0.15);
+        }
+        
+        .nav-bar .back-btn {
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            opacity: 0.95;
+        }
+        
+        .nav-bar .title {
+            font-size: 17px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            background: #f7f8fc;
+        }
+        
+        .content::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Tab Bar */
+        .tab-bar {
+            display: flex;
+            background: white;
+            border-top: 1px solid #e8e8e8;
+            padding: 8px 0;
+        }
+        
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .tab-item .icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .tab-item .label {
+            font-size: 12px;
+            color: #636E72;
+        }
+        
+        .tab-item.active .icon,
+        .tab-item.active .label {
+            color: #00B894;
+        }
+        
+        /* Home Screen */
+        .home-header {
+            background: linear-gradient(180deg, #00D2A0 0%, #00B894 100%);
+            padding: 20px 16px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .home-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .location-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .location {
+            color: white;
+            font-size: 14px;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .search-box {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 24px;
+            color: #999;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 140px;
+            margin: 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(102,126,234,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .banner::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .main-action {
+            margin: 16px;
+            background: linear-gradient(135deg, #00D2A0 0%, #00B894 100%);
+            color: white;
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,184,148,0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .main-action:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 12px rgba(0,184,148,0.3);
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px 16px;
+            background: white;
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        
+        .category-item {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .category-item:active {
+            transform: scale(0.95);
+        }
+        
+        .category-item .icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            border-radius: 16px;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        
+        .category-item .name {
+            font-size: 13px;
+            color: #2D3436;
+            font-weight: 500;
+        }
+        
+        .info-cards {
+            padding: 0 16px 80px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .info-card:active {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        
+        .info-card .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2D3436;
+            margin-bottom: 8px;
+        }
+        
+        .info-card .desc {
+            font-size: 14px;
+            color: #8e9aaf;
+            line-height: 1.5;
+        }
+        
+        /* Item Form Screen */
+        .address-section {
+            background: white;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        
+        .address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .address-info {
+            flex: 1;
+        }
+        
+        .address-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2D3436;
+            margin-bottom: 4px;
+        }
+        
+        .address-detail {
+            font-size: 14px;
+            color: #636E72;
+        }
+        
+        .address-arrow {
+            color: #636E72;
+        }
+        
+        .item-list {
+            padding: 16px;
+        }
+        
+        .add-item-btn {
+            background: linear-gradient(135deg, #f0fdf9 0%, #e6fcf5 100%);
+            padding: 16px;
+            border-radius: 16px;
+            text-align: center;
+            color: #00B894;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 12px;
+            border: 2px dashed rgba(0,184,148,0.3);
+            transition: all 0.2s;
+        }
+        
+        .add-item-btn:active {
+            background: linear-gradient(135deg, #e6fcf5 0%, #ccfbef 100%);
+            border-color: #00B894;
+        }
+        
+        .item-card {
+            background: white;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        
+        .form-row {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            font-size: 14px;
+            color: #636E72;
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e8ecf1;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #f7f8fc;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #00B894;
+            background: white;
+        }
+        
+        .photo-upload {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .photo-box {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #f7f8fc 0%, #e8ecf1 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #8e9aaf;
+            cursor: pointer;
+            border: 2px dashed rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        
+        .photo-box:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #e8ecf1 0%, #dde2e8 100%);
+        }
+        
+        .delete-btn {
+            color: #D63031;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* Bottom Action Bar */
+        .bottom-action {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 16px;
+            border-top: 1px solid #e8e8e8;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #00D2A0 0%, #00B894 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,184,148,0.3);
+            transition: all 0.2s;
+        }
+        
+        .action-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0,184,148,0.3);
+        }
+        
+        .action-btn.disabled {
+            background: #e8ecf1;
+            color: #8e9aaf;
+            box-shadow: none;
+        }
+        
+        /* Order Confirmation */
+        .summary-section {
+            background: white;
+            padding: 16px;
+            margin: 0 16px 12px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f6fa;
+        }
+        
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            font-size: 14px;
+            color: #636E72;
+        }
+        
+        .summary-value {
+            font-size: 14px;
+            color: #2D3436;
+        }
+        
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        
+        .price-row.total {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00B894;
+            padding-top: 12px;
+            border-top: 1px solid #e8e8e8;
+        }
+        
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            font-size: 14px;
+            color: #636E72;
+        }
+        
+        .checkbox-row input {
+            margin-right: 8px;
+        }
+        
+        /* Order Details */
+        .status-header {
+            background: linear-gradient(135deg, #00D2A0 0%, #00B894 100%);
+            padding: 32px 16px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .status-time {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .courier-info {
+            background: white;
+            padding: 16px;
+            margin: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        
+        .courier-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .courier-avatar {
+            width: 48px;
+            height: 48px;
+            background: #f5f6fa;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .courier-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2D3436;
+        }
+        
+        .call-btn {
+            background: linear-gradient(135deg, #00D2A0 0%, #00B894 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,184,148,0.25);
+            transition: all 0.2s;
+        }
+        
+        .call-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .timeline {
+            background: white;
+            padding: 16px;
+            margin: 0 16px 12px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+        
+        .timeline-item {
+            display: flex;
+            padding: 12px 0;
+        }
+        
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e8e8e8;
+            margin-right: 12px;
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+        
+        .timeline-item.completed .timeline-dot {
+            background: #00B894;
+        }
+        
+        .timeline-item.active .timeline-dot {
+            background: #FFC107;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-title {
+            font-size: 14px;
+            color: #2D3436;
+            margin-bottom: 4px;
+        }
+        
+        .timeline-time {
+            font-size: 12px;
+            color: #636E72;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn-secondary {
+            flex: 1;
+            background: white;
+            color: #636E72;
+            border: 1px solid #e8ecf1;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:active {
+            background: #f7f8fc;
+        }
+        
+        .btn-primary {
+            flex: 1;
+            background: linear-gradient(135deg, #00D2A0 0%, #00B894 100%);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,184,148,0.25);
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <!-- Home Screen -->
+        <div class="screen active" id="home">
+            <div class="content">
+                <div class="home-header">
+                    <div class="location-bar">
+                        <div class="logo">♻️ OneRecycle</div>
+                        <div class="location">深圳 ▼</div>
+                    </div>
+                    <div class="search-box">🔍 搜索回收品类</div>
+                </div>
+                
+                <div class="banner">
+                    🌱 环保回收 · 高价回收活动
+                </div>
+                
+                <div class="main-action" onclick="showScreen('itemForm')">
+                    📦 一键预约回收
+                </div>
+                
+                <div class="category-grid">
+                    <div class="category-item">
+                        <div class="icon">📱</div>
+                        <div class="name">手机数码</div>
+                    </div>
+                    <div class="category-item">
+                        <div class="icon">🖥️</div>
+                        <div class="name">家用电器</div>
+                    </div>
+                    <div class="category-item">
+                        <div class="icon">👕</div>
+                        <div class="name">旧衣物</div>
+                    </div>
+                    <div class="category-item">
+                        <div class="icon">📚</div>
+                        <div class="name">查看更多</div>
+                    </div>
+                </div>
+                
+                <div class="info-cards">
+                    <div class="info-card">
+                        <div class="title">🌍 环保知识</div>
+                        <div class="desc">了解回收分类，共建绿色家园</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="title">📈 回收动态</div>
+                        <div class="desc">本月已回收 10,000+ 件物品</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-bar">
+                <div class="tab-item active">
+                    <div class="icon">🏠</div>
+                    <div class="label">首页</div>
+                </div>
+                <div class="tab-item">
+                    <div class="icon">📋</div>
+                    <div class="label">分类</div>
+                </div>
+                <div class="tab-item" onclick="showScreen('orderList')">
+                    <div class="icon">📦</div>
+                    <div class="label">订单</div>
+                </div>
+                <div class="tab-item">
+                    <div class="icon">👤</div>
+                    <div class="label">我的</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Item Form Screen -->
+        <div class="screen" id="itemForm">
+            <div class="nav-bar">
+                <div class="back-btn" onclick="showScreen('home')">← 返回</div>
+                <div class="title">填写回收信息</div>
+                <div></div>
+            </div>
+            
+            <div class="content">
+                <div class="address-section" onclick="alert('选择地址')">
+                    <div class="address-header">
+                        <div class="address-info">
+                            <div class="address-name">📍 张三, 138****1234</div>
+                            <div class="address-detail">广东省深圳市南山区科技园...</div>
+                        </div>
+                        <div class="address-arrow">›</div>
+                    </div>
+                </div>
+                
+                <div class="item-list">
+                    <div class="add-item-btn">
+                        ➕ 添加回收物品
+                    </div>
+                    
+                    <div class="item-card">
+                        <div class="form-row">
+                            <div class="form-label">品类</div>
+                            <input class="form-input" value="手机数码 > iPhone 13 Pro" readonly>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">照片 (最多3张)</div>
+                            <div class="photo-upload">
+                                <div class="photo-box">📷</div>
+                                <div class="photo-box">➕</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">预估重量</div>
+                            <input class="form-input" placeholder="例如: 2kg">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-label">备注</div>
+                            <input class="form-input" placeholder="屏幕有轻微划痕">
+                        </div>
+                        
+                        <div class="delete-btn">🗑️ 删除</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-action">
+                <div class="action-btn" onclick="showScreen('orderConfirm')">
+                    下一步: 预约时间
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Confirmation Screen -->
+        <div class="screen" id="orderConfirm">
+            <div class="nav-bar">
+                <div class="back-btn" onclick="showScreen('itemForm')">← 返回</div>
+                <div class="title">确认订单</div>
+                <div></div>
+            </div>
+            
+            <div class="content">
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <div class="summary-label">📍 上门地址</div>
+                    </div>
+                    <div class="address-name">张三, 138****1234</div>
+                    <div class="address-detail">广东省深圳市南山区科技园...</div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <div class="summary-label">🕐 上门时间</div>
+                        <div class="summary-value">2025-10-05 14:00-16:00</div>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <div class="summary-label">📦 回收物品</div>
+                    </div>
+                    <div class="summary-row">
+                        <div>iPhone 13 Pro</div>
+                        <div>预估2kg</div>
+                    </div>
+                    <div class="summary-row">
+                        <div>旧衣物</div>
+                        <div>预估5kg</div>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="price-row">
+                        <div>回收预估</div>
+                        <div style="color: #00B894;">+ ¥120.00</div>
+                    </div>
+                    <div class="price-row">
+                        <div>上门服务费</div>
+                        <div style="color: #D63031;">- ¥5.00</div>
+                    </div>
+                    <div class="price-row total">
+                        <div>总计预估</div>
+                        <div>¥115.00</div>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <div class="summary-label">🎫 优惠券</div>
+                        <div class="summary-value" style="color: #636E72;">暂无可用 ›</div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">📝 备注</div>
+                        <div class="summary-value" style="color: #636E72;">点击填写</div>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="checkbox-row">
+                        <input type="checkbox" checked>
+                        我已阅读并同意《回收服务协议》
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bottom-action">
+                <div class="action-btn" onclick="showScreen('orderDetail')">
+                    提交订单
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order Detail Screen -->
+        <div class="screen" id="orderDetail">
+            <div class="nav-bar">
+                <div class="back-btn" onclick="showScreen('home')">← 返回</div>
+                <div class="title">订单详情</div>
+                <div></div>
+            </div>
+            
+            <div class="content">
+                <div class="status-header">
+                    <div class="status-icon">🚚</div>
+                    <div class="status-text">快递员正在路上</div>
+                    <div class="status-time">预计到达时间: 14:30</div>
+                </div>
+                
+                <div class="courier-info">
+                    <div class="courier-left">
+                        <div class="courier-avatar">👨</div>
+                        <div class="courier-name">李师傅</div>
+                    </div>
+                    <div class="call-btn">📞 电话</div>
+                </div>
+                
+                <div class="timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">✅ 订单已提交</div>
+                            <div class="timeline-time">10-05 12:30</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item completed">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">✅ 快递员已接单</div>
+                            <div class="timeline-time">10-05 12:35</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item active">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">🚚 快递员待上门</div>
+                            <div class="timeline-time">进行中</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">回收完成</div>
+                            <div class="timeline-time">待完成</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">结算完成</div>
+                            <div class="timeline-time">待完成</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <div class="summary-label">订单号</div>
+                        <div class="summary-value">20251005123456</div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">上门地址</div>
+                    </div>
+                    <div class="address-detail">张三, 138****1234<br>广东省深圳市南山区科技园...</div>
+                </div>
+            </div>
+            
+            <div class="bottom-action">
+                <div class="button-group">
+                    <div class="btn-secondary">取消订单</div>
+                    <div class="btn-primary">联系客服</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Order List Screen -->
+        <div class="screen" id="orderList">
+            <div class="nav-bar">
+                <div class="back-btn" onclick="showScreen('home')">← 返回</div>
+                <div class="title">我的订单</div>
+                <div></div>
+            </div>
+            
+            <div class="content">
+                <div class="item-list">
+                    <div class="item-card" onclick="showScreen('orderDetail')">
+                        <div class="summary-row">
+                            <div class="summary-label">订单号: 20251005123456</div>
+                            <div style="color: #FFC107; font-weight: 600;">待上门</div>
+                        </div>
+                        <div class="summary-row">
+                            <div>iPhone 13 Pro, 旧衣物</div>
+                        </div>
+                        <div class="summary-row">
+                            <div class="summary-label">预约时间: 10-05 14:00-16:00</div>
+                            <div style="color: #00B894; font-weight: 600;">¥115.00</div>
+                        </div>
+                    </div>
+                    
+                    <div class="item-card">
+                        <div class="summary-row">
+                            <div class="summary-label">订单号: 20251004098765</div>
+                            <div style="color: #00B894; font-weight: 600;">已完成</div>
+                        </div>
+                        <div class="summary-row">
+                            <div>旧书籍</div>
+                        </div>
+                        <div class="summary-row">
+                            <div class="summary-label">完成时间: 10-04 16:30</div>
+                            <div style="color: #00B894; font-weight: 600;">¥45.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-bar">
+                <div class="tab-item" onclick="showScreen('home')">
+                    <div class="icon">🏠</div>
+                    <div class="label">首页</div>
+                </div>
+                <div class="tab-item">
+                    <div class="icon">📋</div>
+                    <div class="label">估价</div>
+                </div>
+                <div class="tab-item active">
+                    <div class="icon">📦</div>
+                    <div class="label">订单</div>
+                </div>
+                <div class="tab-item">
+                    <div class="icon">👤</div>
+                    <div class="label">我的</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

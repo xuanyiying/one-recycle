@@ -75,7 +75,7 @@
 
     .status-icons {
       display: flex;
-      gap: $spacing-xs / 2;
+      gap: calc($spacing-xs / 2);
     }
   }
 
@@ -141,8 +141,8 @@
       .banner-desc {
         background: rgba(255, 255, 255, 0.2);
         padding-left: $spacing-sm; padding-right: $spacing-sm;
-        padding-top: $spacing-xs / 2;
-        padding-bottom: $spacing-xs / 2;
+        padding-top: calc($spacing-xs / 2);
+        padding-bottom: calc($spacing-xs / 2);
         border-radius: $border-radius-base;
         font-size: $font-size-xs;
         display: inline-block;
@@ -334,7 +334,7 @@
 
 // 核心功能入口
 .quick-action {
-  margin-left: $page-padding; margin-right: $page-padding;
+  margin-left: 35%; margin-right: 35%;
 
   .recycle-btn {
     width: 100%;

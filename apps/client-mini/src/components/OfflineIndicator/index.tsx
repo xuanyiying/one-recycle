@@ -2,7 +2,7 @@ import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useNetworkStatus } from '../../utils/networkStatus';
 import syncQueue from '../../utils/syncQueue';
-import './index.scss';
+import { useState, useEffect } from 'react';
 
 /**
  * Offline Indicator Component
@@ -11,10 +11,10 @@ import './index.scss';
 
 export default function OfflineIndicator() {
   const networkStatus = useNetworkStatus();
-  const [pendingCount, setPendingCount] = Taro.useState(0);
-  const [showBanner, setShowBanner] = Taro.useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [showBanner, setShowBanner] = useState(false);
 
-  Taro.useEffect(() => {
+  useEffect(() => {
     // Update pending count
     const updatePendingCount = () => {
       setPendingCount(syncQueue.getPendingCount());
@@ -28,7 +28,7 @@ export default function OfflineIndicator() {
     return () => clearInterval(interval);
   }, []);
 
-  Taro.useEffect(() => {
+  useEffect(() => {
     // Show banner when offline
     if (!networkStatus.isConnected) {
       setShowBanner(true);

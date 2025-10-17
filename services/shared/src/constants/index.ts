@@ -14,8 +14,20 @@ export const SERVICE_NAMES = {
   INVENTORY: 'inventory-service',
   DISPATCH: 'dispatch-service',
   API_GATEWAY: 'api-gateway',
+  MESSAGE_QUEUE: 'message-queue',
 } as const;
-
+export const SERVICE_PORTS = {
+  ACCOUNT: 50051,
+  AUTH: 50052,
+  ORDER: 50053,
+  PAYMENT: 50054,
+  COURIER: 50055,
+  NOTIFICATION: 50056,
+  CATEGORY: 50057,
+  INVENTORY: 50058,
+  DISPATCH: 50059,
+  MESSAGE_QUEUE: 50060,
+} as const;
 // gRPC端口配置
 export const GRPC_PORTS = {
   ACCOUNT: 50051,
@@ -27,6 +39,7 @@ export const GRPC_PORTS = {
   CATEGORY: 50057,
   INVENTORY: 50058,
   DISPATCH: 50059,
+  MESSAGE_QUEUE: 50060,
 } as const;
 
 // HTTP端口配置
@@ -41,6 +54,7 @@ export const HTTP_PORTS = {
   CATEGORY: 3007,
   INVENTORY: 3008,
   DISPATCH: 3009,
+  MESSAGE_QUEUE: 3010,
 } as const;
 
 // 缓存键前缀
@@ -53,6 +67,7 @@ export const CACHE_KEYS = {
   INVENTORY: 'inventory:',
   SESSION: 'session:',
   RATE_LIMIT: 'rate_limit:',
+  USER_SESSIONS: 'user:sessions:',
 } as const;
 
 // 缓存过期时间（秒）

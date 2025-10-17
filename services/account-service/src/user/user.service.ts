@@ -217,54 +217,6 @@ export class UserService {
     return identity ? this.mapToUserResponse(identity.user) : null;
   }
 
-  async createOrUpdateIdentity(
-    userId: string,
-    identityData: { provider: string; openid: string; unionid?: string; appId: string }
-  ): Promise<void> {
-    // 检查用户是否存在
-    const user = await this.prisma.user.findUnique({
-      where: { id: BigInt(userId) }
-    });
-
-    if (!user) {
-      throw new NotFoundException('用户不存在');
-    }
-
-    // 检查该身份是否已存在
-    const existingIdentity = await this.prisma.userIdentity.findFirst({
-      where: {
-        provider: identityData.provider,
-        openid: identityData.openid
-      }
-    });
-
-    if (existingIdentity) {
-      // 如果身份已存在但属于其他用户，抛出错误
-      if (existingIdentity.userId !== BigInt(userId)) {
-        throw new ValidationException('该平台身份已被其他用户绑定');
-      }
-      // 如果是同一用户，更新身份信息
-      await this.prisma.userIdentity.update({
-        where: { id: existingIdentity.id },
-        data: {
-          unionid: identityData.unionid,
-          appId: identityData.appId
-        }
-      });
-    } else {
-      // 创建新身份
-      await this.prisma.userIdentity.create({
-        data: {
-          userId: BigInt(userId),
-          provider: identityData.provider,
-          openid: identityData.openid,
-          unionid: identityData.unionid,
-          appId: identityData.appId
-        }
-      });
-    }
-  }
-
   private mapToUserResponse(user: any): UserResponseDto {
     return {
       id: user.id.toString(),

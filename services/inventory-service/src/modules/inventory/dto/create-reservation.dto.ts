@@ -1,22 +1,25 @@
-import { IsEnum, IsOptional, IsString, IsNumber, IsDateString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNumber, IsDateString, IsNotEmpty } from 'class-validator';
+import { ReservationStatus } from '../entities/inventory.entity';
 
 export class CreateReservationDto {
-  @IsString()
-  itemId: string;
+  @IsNotEmpty()
+  itemId: bigint;
   
+  @IsNotEmpty()
   @IsNumber()
   quantity: number;
   
+  @IsNotEmpty()
   @IsString()
   orderId: string;
   
-  @IsEnum(['PENDING', 'CONFIRMED', 'EXPIRED', 'CANCELLED'])
+  @IsEnum(ReservationStatus)
   @IsOptional()
-  status?: 'PENDING' | 'CONFIRMED' | 'EXPIRED' | 'CANCELLED';
+  status?: ReservationStatus;
   
   @IsDateString()
-  @IsOptional()
-  expiresAt?: string;
+  @IsNotEmpty()
+  expiresAt: Date;
   
   @IsString()
   @IsOptional()

@@ -1,7 +1,6 @@
-import { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import './index.scss'
 
 interface ImageUploaderProps {
   images: string[]

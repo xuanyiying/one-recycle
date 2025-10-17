@@ -1,57 +1,62 @@
-import { IsEnum, IsOptional, IsString, IsNumber, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { ItemType, ItemCondition, ProcessingStatus } from '../entities/inventory.entity';
 
 export class CreateInventoryItemDto {
-  @IsNumber()
-  warehouseId: number;
+    @IsNotEmpty()
+    warehouseId: bigint;
 
-  @IsNumber()
-  categoryId: number;
+    @IsNotEmpty()
+    categoryId: bigint;
 
-  @IsString()
-  name: string;
+    @IsNotEmpty()
+    @IsString()
+    name: string;
 
-  @IsOptional()
-  @IsString()
-  description?: string;
+    @IsOptional()
+    @IsString()
+    description?: string;
 
-  @IsString()
-  unit: string;
+    @IsNotEmpty()
+    @IsString()
+    unit: string;
 
-  @IsNumber()
-  quantity: number;
+    @IsNotEmpty()
+    @IsNumber()
+    quantity: number;
 
-  @IsNumber()
-  unitPrice: number;
+    @IsNotEmpty()
+    @IsNumber()
+    unitPrice: number;
 
-  @IsOptional()
-  @IsString()
-  location?: string;
-  
-  @IsEnum(['RECYCLED', 'PURCHASED', 'RETURNED'])
-  @IsOptional()
-  itemType?: 'RECYCLED' | 'PURCHASED' | 'RETURNED';
-  
-  @IsEnum(['EXCELLENT', 'GOOD', 'FAIR', 'POOR', 'DAMAGED'])
-  @IsOptional()
-  condition?: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED';
-  
-  @IsString()
-  @IsOptional()
-  sourceOrderId?: string;
-  
-  @IsString()
-  @IsOptional()
-  qualityGrade?: string;
-  
-  @IsEnum(['RECEIVED', 'INSPECTING', 'PROCESSING', 'CLEANED', 'REPAIRED', 'READY', 'REJECTED'])
-  @IsOptional()
-  processingStatus?: 'RECEIVED' | 'INSPECTING' | 'PROCESSING' | 'CLEANED' | 'REPAIRED' | 'READY' | 'REJECTED';
-  
-  @IsDateString()
-  @IsOptional()
-  expiryDate?: string;
-  
-  @IsString()
-  @IsOptional()
-  batchNumber?: string;
+    @IsOptional()
+    @IsString()
+    location?: string;
+
+    @IsNotEmpty()
+    @IsEnum(ItemType)
+    itemType: ItemType;
+
+    @IsNotEmpty()
+    @IsEnum(ItemCondition)
+    condition: ItemCondition;
+
+    @IsOptional()
+    @IsString()
+    sourceOrderId?: string;
+
+    @IsOptional()
+    @IsString()
+    qualityGrade?: string;
+
+    @IsNotEmpty()
+    @IsEnum(ProcessingStatus)
+    processingStatus: ProcessingStatus;
+
+    @IsOptional()
+    @IsDateString()
+    expiryDate?: Date;
+
+    @IsOptional()
+    @IsString()
+    batchNumber?: string;
 }

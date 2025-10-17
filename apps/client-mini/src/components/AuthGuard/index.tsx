@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, Button } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuth } from '../../hooks/useAuth'
-import './index.scss'
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -62,7 +61,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
             <Text className="prompt-icon">🔒</Text>
             <Text className="prompt-title">需要登录</Text>
             <Text className="prompt-message">请先登录后再访问此页面</Text>
-            <Button 
+            <View
               className="login-btn"
               onClick={() => {
                 Taro.navigateTo({
@@ -70,8 +69,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
                 })
               }}
             >
-              去登录
-            </Button>
+              <Text className="login-btn-text">去登录</Text>
+            </View>
           </View>
         </View>
       )
@@ -81,7 +80,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     Taro.redirectTo({
       url: redirectTo
     })
-    
+
     return null
   }
 

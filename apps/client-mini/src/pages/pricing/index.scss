@@ -1,4 +1,4 @@
-@import '../../styles/variables.scss';
+@use '../../styles/variables.scss' as *;
 
 // 价格估算页面样式
 .pricing-page {
@@ -59,7 +59,7 @@
 .back-button {
   display: flex;
   align-items: center;
-  gap: $spacing-xs / 2;
+  gap: calc($spacing-xs / 2);
 }
 
 .header-title {

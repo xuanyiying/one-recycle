@@ -5,7 +5,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/client"
+    output   = "../src/prisma/generated/client"
 }
 
 // 仓库表

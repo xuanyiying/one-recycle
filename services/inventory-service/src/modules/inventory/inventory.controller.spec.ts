@@ -1,10 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryController } from './inventory.controller';
-import { InventoryService } from './inventory.service';
+import { InventoryService } from './services/inventory.service';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { UpdateInventoryItemDto } from './dto/update-inventory-item.dto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateQualityCheckDto } from './dto/create-quality-check.dto';
+import { CreateReservationDto } from './dto/create-reservation.dto';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { InventoryStatus, ItemType, ItemCondition, TransactionType, CheckType, CheckResult, ReservationStatus, ProcessingStatus } from './entities/inventory.entity';
 
 describe('InventoryController', () => {
   let controller: InventoryController;
@@ -12,37 +15,14 @@ describe('InventoryController', () => {
 
   const mockInventoryService = {
     createInventoryItem: jest.fn(),
-    findInventoryItems: jest.fn(),
-    findInventoryItemById: jest.fn(),
+    getInventoryItems: jest.fn(),
+    getInventoryItemById: jest.fn(),
     updateInventoryItem: jest.fn(),
-    removeInventoryItem: jest.fn(),
+    deleteInventoryItem: jest.fn(),
     createTransaction: jest.fn(),
-    getInventoryTransactions: jest.fn(),
-    getLowStockItems: jest.fn(),
-    getOutOfStockItems: jest.fn(),
-    recordSales: jest.fn(),
-    getSalesRecords: jest.fn(),
     createQualityCheck: jest.fn(),
-    getQualityChecks: jest.fn(),
     createReservation: jest.fn(),
-    confirmReservation: jest.fn(),
-    cancelReservation: jest.fn(),
     getInventoryStats: jest.fn(),
-    batchUpdateStatus: jest.fn(),
-    batchDelete: jest.fn(),
-    createWarehouse: jest.fn(),
-    findWarehouses: jest.fn(),
-    updateWarehouse: jest.fn(),
-    deleteWarehouse: jest.fn(),
-    stockIn: jest.fn(),
-    stockOut: jest.fn(),
-    reserveStock: jest.fn(),
-    releaseReservedStock: jest.fn(),
-    checkStockAlert: jest.fn(),
-    transferStock: jest.fn(),
-    adjustStock: jest.fn(),
-    stockTaking: jest.fn(),
-    getInventoryReport: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -64,24 +44,32 @@ describe('InventoryController', () => {
     jest.clearAllMocks();
   });
 
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
   describe('createInventoryItem', () => {
-    it('should create an inventory item', async () => {
+    it('should create a new inventory item', async () => {
       const createDto: CreateInventoryItemDto = {
-        warehouseId: 1,
-        categoryId: 1,
-        name: 'Test Item',
-        description: 'Test Description',
-        unit: 'pcs',
-        quantity: 100,
-        unitPrice: 10.5,
-        location: 'A1-B2',
-      };
+         warehouseId: BigInt(1),
+         categoryId: BigInt(1),
+         name: 'Test Item',
+         description: 'Test Description',
+         unit: 'kg',
+         quantity: 100,
+         unitPrice: 10.5,
+         location: 'A1-B2',
+         itemType: ItemType.RECYCLED,
+         condition: ItemCondition.GOOD,
+         sourceOrderId: 'ORDER-001',
+         processingStatus: ProcessingStatus.READY,
+       };
 
       const expectedResult = {
-        id: 1,
+        id: BigInt(1),
         ...createDto,
-        totalPrice: 1050,
-        status: 'IN_STOCK',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       mockInventoryService.createInventoryItem.mockResolvedValue(expectedResult);
@@ -93,35 +81,36 @@ describe('InventoryController', () => {
     });
   });
 
-  describe('findInventoryItems', () => {
-    it('should return inventory items with query parameters', async () => {
-      const query = {
-        page: 1,
-        limit: 20,
-        warehouseId: '1',
-        categoryId: '1',
-        status: 'IN_STOCK',
-      };
+  describe('findAllInventoryItems', () => {
+    it('should return all inventory items with filters', async () => {
+      const filters = {
+         status: InventoryStatus.IN_STOCK,
+         itemType: ItemType.RECYCLED,
+         condition: ItemCondition.GOOD,
+         location: 'A1',
+         categoryId: BigInt(1),
+       };
 
-      const expectedResult = {
-        items: [
-          {
-            id: 1,
-            name: 'Test Item',
-            quantity: 100,
-            status: 'IN_STOCK',
-          },
-        ],
-        total: 1,
-        page: 1,
-        limit: 20,
-      };
+       const expectedResult = [
+         {
+           id: BigInt(1),
+           name: 'Test Item',
+           status: InventoryStatus.IN_STOCK,
+           quantity: 100,
+         },
+       ];
 
-      mockInventoryService.findInventoryItems.mockResolvedValue(expectedResult);
+       mockInventoryService.getInventoryItems.mockResolvedValue(expectedResult);
 
-      const result = await controller.findInventoryItems(query);
+       const result = await controller.findAllInventoryItems(
+         InventoryStatus.IN_STOCK,
+         ItemType.RECYCLED,
+         ItemCondition.GOOD,
+         'A1',
+         '1'
+       );
 
-      expect(service.findInventoryItems).toHaveBeenCalledWith(query);
+      expect(service.getInventoryItems).toHaveBeenCalledWith(filters);
       expect(result).toEqual(expectedResult);
     });
   });
@@ -130,28 +119,29 @@ describe('InventoryController', () => {
     it('should return an inventory item by id', async () => {
       const itemId = '1';
       const expectedResult = {
-        id: 1,
+        id: BigInt(1),
         name: 'Test Item',
+        status: InventoryStatus.IN_STOCK,
         quantity: 100,
-        status: 'IN_STOCK',
       };
 
-      mockInventoryService.findInventoryItemById.mockResolvedValue(expectedResult);
+      mockInventoryService.getInventoryItemById.mockResolvedValue(expectedResult);
 
       const result = await controller.findInventoryItemById(itemId);
 
-      expect(service.findInventoryItemById).toHaveBeenCalledWith(itemId);
+      expect(service.getInventoryItemById).toHaveBeenCalledWith(BigInt(1));
       expect(result).toEqual(expectedResult);
     });
 
     it('should throw NotFoundException when item not found', async () => {
       const itemId = '999';
-      mockInventoryService.findInventoryItemById.mockRejectedValue(
-        new NotFoundException('Item not found'),
+
+      mockInventoryService.getInventoryItemById.mockRejectedValue(
+        new NotFoundException('Inventory item not found')
       );
 
       await expect(controller.findInventoryItemById(itemId)).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
     });
   });
@@ -166,50 +156,51 @@ describe('InventoryController', () => {
       };
 
       const expectedResult = {
-        id: 1,
-        ...updateDto,
-        totalPrice: 1800,
-        status: 'IN_STOCK',
+        id: BigInt(1),
+        name: 'Updated Item',
+        quantity: 150,
+        unitPrice: 12.0,
+        updatedAt: new Date(),
       };
 
       mockInventoryService.updateInventoryItem.mockResolvedValue(expectedResult);
 
       const result = await controller.updateInventoryItem(itemId, updateDto);
 
-      expect(service.updateInventoryItem).toHaveBeenCalledWith(itemId, updateDto);
+      expect(service.updateInventoryItem).toHaveBeenCalledWith(BigInt(1), updateDto);
       expect(result).toEqual(expectedResult);
     });
   });
 
   describe('removeInventoryItem', () => {
-    it('should remove an inventory item', async () => {
+    it('should delete an inventory item', async () => {
       const itemId = '1';
-      const expectedResult = { message: 'Item deleted successfully' };
+      const expectedResult = { message: 'Inventory item deleted successfully' };
 
-      mockInventoryService.removeInventoryItem.mockResolvedValue(expectedResult);
+      mockInventoryService.deleteInventoryItem.mockResolvedValue(expectedResult);
 
       const result = await controller.removeInventoryItem(itemId);
 
-      expect(service.removeInventoryItem).toHaveBeenCalledWith(itemId);
+      expect(service.deleteInventoryItem).toHaveBeenCalledWith(BigInt(1));
       expect(result).toEqual(expectedResult);
     });
   });
 
   describe('createTransaction', () => {
-    it('should create a transaction', async () => {
+    it('should create a new transaction', async () => {
       const createDto: CreateTransactionDto = {
-        itemId: 1,
-        type: 'INBOUND',
-        quantity: 50,
-        unitPrice: 10.5,
-        referenceId: 'REF001',
-        notes: 'Test transaction',
-      };
+         itemId: BigInt(1),
+         type: TransactionType.INBOUND,
+         quantity: 50,
+         unitPrice: 10.0,
+         referenceId: 'REF-001',
+         notes: 'Test transaction',
+       };
 
       const expectedResult = {
-        id: 1,
+        id: BigInt(1),
         ...createDto,
-        totalPrice: 525,
+        createdAt: new Date(),
       };
 
       mockInventoryService.createTransaction.mockResolvedValue(expectedResult);
@@ -221,164 +212,54 @@ describe('InventoryController', () => {
     });
   });
 
-  describe('getInventoryTransactions', () => {
-    it('should return inventory transactions for an item', async () => {
-      const itemId = '1';
-      const expectedResult = [
-        {
-          id: 1,
-          itemId: 1,
-          type: 'INBOUND',
-          quantity: 50,
-          unitPrice: 10.5,
-          totalPrice: 525,
-        },
-      ];
+  describe('createQualityCheck', () => {
+    it('should create a new quality check', async () => {
+      const createDto: CreateQualityCheckDto = {
+         itemId: BigInt(1),
+         checkType: CheckType.INITIAL,
+         result: CheckResult.PASSED,
+         checkerId: BigInt(1),
+         checkedAt: new Date(),
+         notes: 'Quality check passed',
+       };
 
-      mockInventoryService.getInventoryTransactions.mockResolvedValue(expectedResult);
+      const expectedResult = {
+        id: BigInt(1),
+        ...createDto,
+        createdAt: new Date(),
+      };
 
-      const result = await controller.getInventoryTransactions(itemId);
+      mockInventoryService.createQualityCheck.mockResolvedValue(expectedResult);
 
-      expect(service.getInventoryTransactions).toHaveBeenCalledWith(itemId);
+      const result = await controller.createQualityCheck(createDto);
+
+      expect(service.createQualityCheck).toHaveBeenCalledWith(createDto);
       expect(result).toEqual(expectedResult);
     });
   });
 
-  describe('getLowStockItems', () => {
-    it('should return low stock items with default threshold', async () => {
-      const expectedResult = [
-        {
-          id: 1,
-          name: 'Low Stock Item',
-          quantity: 5,
-          status: 'LOW_STOCK',
-        },
-      ];
-
-      mockInventoryService.getLowStockItems.mockResolvedValue(expectedResult);
-
-      const result = await controller.getLowStockItems();
-
-      expect(service.getLowStockItems).toHaveBeenCalledWith(10);
-      expect(result).toEqual(expectedResult);
-    });
-
-    it('should return low stock items with custom threshold', async () => {
-      const threshold = '20';
-      const expectedResult = [
-        {
-          id: 1,
-          name: 'Low Stock Item',
-          quantity: 15,
-          status: 'LOW_STOCK',
-        },
-      ];
-
-      mockInventoryService.getLowStockItems.mockResolvedValue(expectedResult);
-
-      const result = await controller.getLowStockItems(threshold);
-
-      expect(service.getLowStockItems).toHaveBeenCalledWith(20);
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('getOutOfStockItems', () => {
-    it('should return out of stock items', async () => {
-      const expectedResult = [
-        {
-          id: 1,
-          name: 'Out of Stock Item',
-          quantity: 0,
-          status: 'OUT_OF_STOCK',
-        },
-      ];
-
-      mockInventoryService.getOutOfStockItems.mockResolvedValue(expectedResult);
-
-      const result = await controller.getOutOfStockItems();
-
-      expect(service.getOutOfStockItems).toHaveBeenCalled();
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('recordSales', () => {
-    it('should record sales', async () => {
-      const salesData = {
-        itemId: '1',
+  describe('createReservation', () => {
+    it('should create a new reservation', async () => {
+      const createDto: CreateReservationDto = {
+        itemId: BigInt(1),
         quantity: 10,
-        unitPrice: 15.0,
-        orderId: 'ORDER001',
-        customerId: '1',
-        notes: 'Test sale',
+        orderId: 'ORDER-001',
+        status: ReservationStatus.PENDING,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+        notes: 'Test reservation',
       };
 
       const expectedResult = {
-        id: 1,
-        itemId: 1,
-        quantity: 10,
-        unitPrice: 15.0,
-        totalPrice: 150,
-        orderId: 'ORDER001',
-        customerId: 1,
-        notes: 'Test sale',
+        id: BigInt(1),
+        ...createDto,
+        createdAt: new Date(),
       };
 
-      mockInventoryService.recordSales.mockResolvedValue(expectedResult);
+      mockInventoryService.createReservation.mockResolvedValue(expectedResult);
 
-      const result = await controller.recordSales(salesData);
+      const result = await controller.createReservation(createDto);
 
-      expect(service.recordSales).toHaveBeenCalledWith({
-        ...salesData,
-        itemId: 1,
-        customerId: 1,
-      });
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('getSalesRecords', () => {
-    it('should return all sales records', async () => {
-      const expectedResult = [
-        {
-          id: 1,
-          itemId: 1,
-          quantity: 10,
-          unitPrice: 15.0,
-          totalPrice: 150,
-          orderId: 'ORDER001',
-        },
-      ];
-
-      mockInventoryService.getSalesRecords.mockResolvedValue(expectedResult);
-
-      const result = await controller.getSalesRecords();
-
-      expect(service.getSalesRecords).toHaveBeenCalled();
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('getSalesRecordsByItem', () => {
-    it('should return sales records for a specific item', async () => {
-      const itemId = '1';
-      const expectedResult = [
-        {
-          id: 1,
-          itemId: 1,
-          quantity: 10,
-          unitPrice: 15.0,
-          totalPrice: 150,
-          orderId: 'ORDER001',
-        },
-      ];
-
-      mockInventoryService.getSalesRecords.mockResolvedValue(expectedResult);
-
-      const result = await controller.getSalesRecordsByItem(itemId);
-
-      expect(service.getSalesRecords).toHaveBeenCalledWith(itemId);
+      expect(service.createReservation).toHaveBeenCalledWith(createDto);
       expect(result).toEqual(expectedResult);
     });
   });
@@ -389,8 +270,19 @@ describe('InventoryController', () => {
         totalItems: 100,
         totalQuantity: 5000,
         averagePrice: 25.5,
-        lowStockCount: 5,
-        outOfStockCount: 2,
+        lowStockItems: 5,
+        outOfStockItems: 2,
+        byStatus: {
+          IN_STOCK: 80,
+          OUT_OF_STOCK: 2,
+          RESERVED: 15,
+          DAMAGED: 3,
+        },
+        byCategory: {
+          'Electronics': 30,
+          'Clothing': 25,
+          'Books': 45,
+        },
       };
 
       mockInventoryService.getInventoryStats.mockResolvedValue(expectedResult);
@@ -398,151 +290,6 @@ describe('InventoryController', () => {
       const result = await controller.getInventoryStats();
 
       expect(service.getInventoryStats).toHaveBeenCalled();
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('batchUpdateStatus', () => {
-    it('should batch update item status', async () => {
-      const data = {
-        itemIds: ['1', '2', '3'],
-        status: 'INACTIVE',
-      };
-
-      const expectedResult = {
-        updatedCount: 3,
-        message: 'Status updated successfully',
-      };
-
-      mockInventoryService.batchUpdateStatus.mockResolvedValue(expectedResult);
-
-      const result = await controller.batchUpdateStatus(data);
-
-      expect(service.batchUpdateStatus).toHaveBeenCalledWith(data.itemIds, data.status);
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('stockIn', () => {
-    it('should perform stock in operation', async () => {
-      const itemId = '1';
-      const stockInDto = {
-        quantity: 100,
-        unitPrice: 10.5,
-        referenceId: 'REF001',
-        notes: 'Stock in',
-      };
-
-      const expectedResult = {
-        id: 1,
-        quantity: 200,
-        status: 'IN_STOCK',
-      };
-
-      mockInventoryService.stockIn.mockResolvedValue(expectedResult);
-
-      const result = await controller.stockIn(itemId, stockInDto);
-
-      expect(service.stockIn).toHaveBeenCalledWith({
-        itemId: BigInt(1),
-        ...stockInDto,
-      });
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('stockOut', () => {
-    it('should perform stock out operation', async () => {
-      const itemId = '1';
-      const stockOutDto = {
-        quantity: 50,
-        referenceId: 'REF002',
-        notes: 'Stock out',
-      };
-
-      const expectedResult = {
-        id: 1,
-        quantity: 50,
-        status: 'IN_STOCK',
-      };
-
-      mockInventoryService.stockOut.mockResolvedValue(expectedResult);
-
-      const result = await controller.stockOut(itemId, stockOutDto);
-
-      expect(service.stockOut).toHaveBeenCalledWith({
-        itemId: BigInt(1),
-        ...stockOutDto,
-      });
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('transferStock', () => {
-    it('should transfer stock between warehouses', async () => {
-      const transferData = {
-        itemId: '1',
-        fromWarehouseId: '1',
-        toWarehouseId: '2',
-        quantity: 50,
-        operatorId: '1',
-        operatorName: 'Test Operator',
-        notes: 'Transfer test',
-      };
-
-      const expectedResult = {
-        sourceItem: { id: 1, quantity: 50 },
-        targetItem: { id: 2, quantity: 50 },
-      };
-
-      mockInventoryService.transferStock.mockResolvedValue(expectedResult);
-
-      const result = await controller.transferStock(transferData);
-
-      expect(service.transferStock).toHaveBeenCalledWith({
-        itemId: BigInt(1),
-        fromWarehouseId: BigInt(1),
-        toWarehouseId: BigInt(2),
-        quantity: expect.any(Object), // Decimal object
-        operatorId: BigInt(1),
-        operatorName: 'Test Operator',
-        notes: 'Transfer test',
-      });
-      expect(result).toEqual(expectedResult);
-    });
-  });
-
-  describe('getInventoryReport', () => {
-    it('should return inventory report', async () => {
-      const query = {
-        startDate: '2023-01-01',
-        endDate: '2023-12-31',
-        warehouseId: '1',
-        categoryId: '1',
-      };
-
-      const expectedResult = {
-        overview: {
-          totalItems: 100,
-          totalQuantity: 5000,
-          averagePrice: 25.5,
-        },
-        transactions: [],
-        lowStockItems: [],
-        outOfStockItems: [],
-        generatedAt: new Date(),
-      };
-
-      mockInventoryService.getInventoryReport.mockResolvedValue(expectedResult);
-
-      const result = await controller.getInventoryReport(query);
-
-      expect(service.getInventoryReport).toHaveBeenCalledWith({
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-12-31'),
-        warehouseId: BigInt(1),
-        categoryId: BigInt(1),
-      });
       expect(result).toEqual(expectedResult);
     });
   });

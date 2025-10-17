@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma.service';
 import { 
   CreateInventoryItemData, 
   CreateTransactionData, 
@@ -19,7 +18,8 @@ import {
   InventorySearchResultEntity,
   InventoryStatsEntity
 } from '../entities/inventory.entity';
-import { InventoryStatus, ItemType, ItemCondition, ProcessingStatus, TransactionType, ReservationStatus, CheckType, CheckResult, WarehouseType, WarehouseStatus } from '../entities/inventory.entity';
+import { InventoryStatus, ItemType, ItemCondition, ProcessingStatus, ReservationStatus, WarehouseType, WarehouseStatus } from '../entities/inventory.entity';
+import { PrismaService } from '../../../prisma.service';
 
 @Injectable()
 export class InventoryService {

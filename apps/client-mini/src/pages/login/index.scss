@@ -1,15 +1,28 @@
-@import '../../styles/variables.scss';
+@use '../../styles/variables.scss' as *;
+
+// 确保页面占满整个屏幕
+page {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
 
 // 登录页面样式
 .login-container {
-  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: linear-gradient(180deg, $bg-secondary 0%, #ffffff 100%);
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   animation: fadeInUp 0.6s ease-out;
-  padding: 0; // 移除容器级别的padding，由子元素控制
+  padding: 0;
 
   // 背景装饰
   &::before {
@@ -22,6 +35,13 @@
     background: radial-gradient(circle, rgba(64, 224, 208, 0.05) 0%, transparent 70%);
     animation: float 6s ease-in-out infinite;
     pointer-events: none;
+    z-index: 0;
+  }
+
+  // 确保内容在背景装饰之上
+  >* {
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -31,6 +51,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -39,9 +60,12 @@
 
 // 浮动动画
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   50% {
     transform: translateY(-20px) rotate(180deg);
   }
@@ -53,6 +77,7 @@
     opacity: 0;
     transform: translateY(-30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -64,6 +89,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -75,6 +101,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -83,12 +110,16 @@
 
 // 抖动动画
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-4px);
   }
+
   75% {
     transform: translateX(4px);
   }
@@ -99,9 +130,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-left: $page-padding; padding-right: $page-padding;
-  padding-top: $spacing-xxl * 2;
-  margin-bottom: $spacing-xl;
+  padding: 60px 32px 32px;
+  width: 100%;
+  flex-shrink: 0; // 防止头部被压缩
 
   .logo {
     width: 160rpx;
@@ -137,15 +168,11 @@
 
   // 响应式调整
   @media screen and (max-width: 414px) {
-    padding-left: $spacing-lg; padding-right: $spacing-lg;
-    padding-top: $spacing-xxl;
-    margin-bottom: $spacing-lg;
+    padding: 50px 24px 24px;
   }
 
   @media screen and (max-width: 375px) {
-    padding-left: $spacing-md; padding-right: $spacing-md;
-    padding-top: $spacing-xl;
-    margin-bottom: $spacing-lg;
+    padding: 40px 20px 20px;
 
     .logo {
       width: 144rpx;
@@ -173,16 +200,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-left: $page-padding; padding-right: $page-padding;
-  min-height: 0; // 确保flex子元素可以正确收缩
+  padding: 0 32px 60px;
+  width: 100%;
+  min-height: 0;
+  justify-content: flex-start;
 
   // 响应式调整
   @media screen and (max-width: 414px) {
-    padding-left: $spacing-lg; padding-right: $spacing-lg;
+    padding: 0 24px 50px;
   }
 
   @media screen and (max-width: 375px) {
-    padding-left: $spacing-md; padding-right: $spacing-md;
+    padding: 0 20px 40px;
   }
 }
 
@@ -518,7 +547,7 @@
     position: relative;
     overflow: hidden;
     transform: translateZ(0); // 启用硬件加速
-    
+
     // 确保文字完全居中
     display: flex;
     align-items: center;
@@ -587,7 +616,7 @@
     font-weight: 400;
     color: #666666;
     transition: all 0.3s ease;
-    
+
     // 确保文字完全居中
     display: flex;
     align-items: center;
@@ -717,6 +746,7 @@
       opacity: 0;
       backdrop-filter: blur(0px);
     }
+
     to {
       opacity: 1;
       backdrop-filter: blur(4px);
@@ -726,8 +756,8 @@
 
 // 头像选择器模态框
 .avatar-picker-modal {
-  width: 100%;
-  max-width: 500px;
+  width: 100vw;
+  max-width: none;
   background: #ffffff;
   border-radius: 20px 20px 0 0;
   animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -739,6 +769,7 @@
       transform: translateY(100%);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;
@@ -805,7 +836,7 @@
       font-weight: 400;
       color: #666666;
       transition: all 0.3s ease;
-      
+
       // 确保文字完全居中
       display: flex;
       align-items: center;
@@ -862,11 +893,33 @@
   }
 }
 
+// 加载容器
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f7f8fc;
+  z-index: 9999;
+
+  .loading-text {
+    font-size: 14px;
+    color: #666666;
+    margin-top: 16px;
+  }
+}
+
 // 加载状态动画
 @keyframes spin {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -877,9 +930,11 @@
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(0.95);
   }
+
   100% {
     transform: scale(1);
   }
@@ -887,12 +942,16 @@
 
 // 错误抖动动画
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-5px);
   }
+
   75% {
     transform: translateX(5px);
   }

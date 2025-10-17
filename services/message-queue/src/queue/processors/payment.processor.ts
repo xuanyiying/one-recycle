@@ -11,9 +11,9 @@ import {
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
 import { NotificationQueueService } from '../services/notification-queue.service';
-import { generateUniqueId } from '@one-recycle/shared';
 import { OrderServiceClient } from '../../clients/order-service.client';
 import { PaymentServiceClient } from '../../clients/payment-service.client';
+import { PaymentLogRepository } from '../../database/repositories/payment-log.repository';
 
 @Processor(QUEUE_NAMES.PAYMENT)
 export class PaymentProcessor {

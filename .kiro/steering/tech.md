@@ -1,3 +1,7 @@
+---
+inclusion: always
+---
+
 # Technology Stack & Build System
 
 ## Frontend Technologies
@@ -158,3 +162,36 @@ await orderQueueService.handleOrderCreated({
 - **notification-queue**: Priority 8, 3 retries, rate limit 100/min
 - **payment-queue**: Priority 10, 5 retries, idempotency guaranteed
 - **dispatch-queue**: Priority 9, 3 retries, delayed execution
+
+## Code Style Guidelines
+
+### TypeScript
+- Use strict mode with explicit types
+- Prefer interfaces over types for object shapes
+- Use enums for fixed sets of values (order status, payment methods)
+- Avoid `any` - use `unknown` or proper typing
+
+### NestJS Patterns
+- Use dependency injection for all services
+- Implement DTOs with class-validator decorators
+- Use guards for authentication/authorization
+- Implement interceptors for logging and transformation
+- Use pipes for validation and transformation
+
+### Error Handling
+- Throw NestJS HTTP exceptions (BadRequestException, NotFoundException, etc.)
+- Use custom exception filters for consistent error responses
+- Log errors with context (service name, operation, user ID)
+- Return user-friendly error messages
+
+### Database Operations
+- Use Prisma transactions for multi-step operations
+- Implement proper indexing for query performance
+- Use select to limit returned fields
+- Handle unique constraint violations gracefully
+
+### API Design
+- RESTful endpoints for external APIs (api-gateway)
+- gRPC for internal service-to-service communication
+- Use proper HTTP methods (GET, POST, PUT, DELETE)
+- Version APIs when making breaking changes

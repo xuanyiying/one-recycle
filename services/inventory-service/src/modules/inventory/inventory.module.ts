@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { InventoryService } from './inventory.service';
 import { InventoryController } from './inventory.controller';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../../prisma.service';
+import { InventoryService } from './services/inventory.service';
 
 @Module({
     controllers: [InventoryController],

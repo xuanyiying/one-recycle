@@ -1,16 +1,16 @@
-import { config } from 'dotenv';
+// Jest setup file
+// This file is executed before running tests
 
-// 加载测试环境变量
-config({ path: '.env.test' });
+// Mock console methods to reduce noise in test output
+global.console = {
+  ...console,
+  // Uncomment to ignore specific console methods
+  // log: jest.fn(),
+  // debug: jest.fn(),
+  // info: jest.fn(),
+  // warn: jest.fn(),
+  // error: jest.fn(),
+};
 
-// 设置测试超时
+// Set test timeout
 jest.setTimeout(30000);
-
-// 全局测试设置
-beforeAll(async () => {
-  // 全局测试前置操作
-});
-
-afterAll(async () => {
-  // 全局测试后置操作
-});

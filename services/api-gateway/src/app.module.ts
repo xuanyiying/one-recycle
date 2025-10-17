@@ -26,8 +26,13 @@ import { gatewayConfig } from './config/gateway.config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        ttl: configService.get<number>('rateLimit.ttl') * 1000,
-        limit: configService.get<number>('rateLimit.limit'),
+        throttlers: [
+          {
+            name: 'default',
+            ttl: configService.get<number>('rateLimit.ttl') * 1000,
+            limit: configService.get<number>('rateLimit.limit'),
+          },
+        ],
       }),
     }),
     JwtModule.registerAsync({
@@ -36,7 +41,7 @@ import { gatewayConfig } from './config/gateway.config';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.expiresIn'),
+          expiresIn: configService.get<number>('jwt.expiresIn') || 3600,
         },
       }),
     }),

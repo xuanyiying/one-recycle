@@ -18,9 +18,9 @@ export default {
         'pages/address/form/index',
         'pages/agreement/index',
         'pages/withdrawal/index',
-        'pages/withdrawal/list',
-        'pages/withdrawal/detail',
-        'pages/transaction/list'
+        'pages/withdrawal/list/index',
+        'pages/withdrawal/detail/index',
+        'pages/transaction/list/index'
     ],
     window: {
         backgroundTextStyle: 'light',
@@ -30,7 +30,6 @@ export default {
         navigationStyle: 'default'
     },
     tabBar: {
-        custom: true,
         color: '#666666',
         selectedColor: '#00c896',
         backgroundColor: '#ffffff',
@@ -38,19 +37,27 @@ export default {
         list: [
             {
                 pagePath: 'pages/index/index',
-                text: '首页'
+                text: '首页',
+                iconPath: 'assets/icons/home.png',
+                selectedIconPath: 'assets/icons/home-active.png'
             },
             {
                 pagePath: 'pages/recycle/index',
-                text: '回收'
+                text: '回收',
+                iconPath: 'assets/icons/recycle.png',
+                selectedIconPath: 'assets/icons/recycle-active.png'
             },
             {
                 pagePath: 'pages/order/list/index',
-                text: '订单'
+                text: '订单',
+                iconPath: 'assets/icons/order.png',
+                selectedIconPath: 'assets/icons/order-active.png'
             },
             {
                 pagePath: 'pages/profile/index',
-                text: '我的'
+                text: '我的',
+                iconPath: 'assets/icons/profile.png',
+                selectedIconPath: 'assets/icons/profile-active.png'
             }
         ]
     },

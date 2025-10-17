@@ -1,4 +1,17 @@
 // 全局样式文件
+
+// 统一导入所有组件CSS以确保一致的加载顺序
+@use './components/AuthGuard/index.scss' as auth-guard;
+@use './components/PriceEstimator/index.scss' as price-estimator;
+@use './components/AddressSelector/index.scss' as address-selector;
+@use './components/CategorySelector/index.scss' as category-selector;
+
+@use './components/ImageUploader/index.scss' as image-uploader;
+@use './components/OfflineIndicator/index.scss' as offline-indicator;
+@use './components/PerformanceDashboard/index.scss' as performance-dashboard;
+@use './components/TimeSelector/index.scss' as time-selector;
+@use './components/JdExpressOption.scss' as jd-express-option;
+
 .container {
   background-color: #f5f6fa;
   min-height: 100vh;
