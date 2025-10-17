@@ -9,34 +9,34 @@
 ```mermaid
 graph TD
     subgraph "用户端 (Clients)"
-        A[微信小程序]
-        B[支付宝小程序]
-        C[抖音/快手小程序]
+        A["微信小程序"]
+        B["支付宝小程序"]
+        C["抖音/快手小程序"]
     end
 
     subgraph "管理端 (Admin)"
-        D[Web后台 (Next.js)]
+        D["Web后台 (Next.js)"]
     end
 
     subgraph "基础设施 (Infrastructure)"
-        E[负载均衡 (Nginx)]
-        F[API 网关]
-        G[对象存储 (OSS/S3)]
+        E["负载均衡 (Nginx)"]
+        F["API 网关"]
+        G["对象存储 (OSS/S3)"]
     end
 
     subgraph "服务端 (Services)"
-        H[API 服务 (NestJS)]
-        I[数据库 (PostgreSQL)]
-        J[缓存 (Redis)]
-        K[消息队列 (Redis/RabbitMQ)]
+        H["API 服务 (NestJS)"]
+        I["数据库 (PostgreSQL)"]
+        J["缓存 (Redis)"]
+        K["消息队列 (Redis/RabbitMQ)"]
     end
 
     subgraph "第三方服务 (3rd Party Services)"
-        L[微信支付]
-        M[支付宝支付]
-        N[短信服务 (SMS)]
-        O[内容安全]
-        P[快递服务 (Optional)]
+        L["微信支付"]
+        M["支付宝支付"]
+        N["短信服务 (SMS)"]
+        O["内容安全"]
+        P["快递服务 (Optional)"]
     end
 
     A & B & C --> E

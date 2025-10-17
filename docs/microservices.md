@@ -60,7 +60,7 @@ graph TD
     end
 
     subgraph "网络入口"
-        LB[云负载均衡器] --> Ingress[K8s Ingress <br> (Nginx/Traefik)]
+        LB["云负载均衡器"] --> Ingress["K8s Ingress<br/>(Nginx/Traefik)"]
     end
 
     subgraph "Kubernetes 集群"
@@ -82,7 +82,7 @@ graph TD
             PaymentSvc --> DB_P[(payment_db)]
             CourierSvc --> DB_C[(courier_db)]
 
-            AccountSvc -- Pub --> MQ[消息队列 <br> (RabbitMQ/Kafka)]
+            AccountSvc -- Pub --> MQ["消息队列<br/>(RabbitMQ/Kafka)"]
             OrderSvc -- Pub --> MQ
             PaymentSvc -- Pub --> MQ
 
