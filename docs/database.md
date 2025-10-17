@@ -31,10 +31,10 @@ erDiagram
 
     USER {
         bigint id PK
-        varchar(20) mobile
-        varchar(50) nickname
-        varchar(255) avatar_url
-        varchar(20) status
+        varchar mobile
+        varchar nickname
+        varchar avatar_url
+        varchar status
         timestamp created_at
         timestamp updated_at
     }
@@ -42,22 +42,22 @@ erDiagram
     USER_IDENTITY {
         bigint id PK
         bigint user_id FK
-        varchar(20) provider
-        varchar(100) app_id
-        varchar(100) openid
-        varchar(100) unionid
+        varchar provider
+        varchar app_id
+        varchar openid
+        varchar unionid
         jsonb extra_data
     }
 
     ADDRESS {
         bigint id PK
         bigint user_id FK
-        varchar(50) consignee
-        varchar(20) mobile
-        varchar(50) province
-        varchar(50) city
-        varchar(50) district
-        varchar(255) detail
+        varchar consignee
+        varchar mobile
+        varchar province
+        varchar city
+        varchar district
+        varchar detail
         point location
         boolean is_default
     }
@@ -66,51 +66,51 @@ erDiagram
         bigint id PK
         bigint user_id FK
         bigint address_id FK
-        varchar(30) status
+        varchar status
         timestamp expect_pickup_time
-        decimal(10,2) pay_amount
-        decimal(10,2) settlement_amount
-        varchar(30) channel
+        decimal pay_amount
+        decimal settlement_amount
+        varchar channel
     }
 
     ORDER_ITEM {
         bigint id PK
         bigint order_id FK
         bigint category_id FK
-        decimal(10,2) estimated_weight
-        decimal(10,2) actual_weight
-        decimal(10,2) unit_price
-        decimal(10,2) amount
+        decimal estimated_weight
+        decimal actual_weight
+        decimal unit_price
+        decimal amount
     }
 
     ITEM_CATEGORY {
         bigint id PK
-        varchar(50) name
+        varchar name
         bigint parent_id FK
         boolean enabled
-        varchar(255) icon_url
+        varchar icon_url
     }
 
     PRICING_RULE {
         bigint id PK
         bigint category_id FK
-        varchar(20) region_code
-        decimal(10,2) base_price_per_kg
+        varchar region_code
+        decimal base_price_per_kg
         jsonb weight_tiers
     }
 
     COURIER {
         bigint id PK
-        varchar(50) name
-        varchar(20) mobile
-        varchar(30) status
+        varchar name
+        varchar mobile
+        varchar status
     }
 
     ASSIGNMENT {
         bigint id PK
         bigint order_id FK
         bigint courier_id FK
-        varchar(30) status
+        varchar status
         timestamp accepted_at
         timestamp finished_at
     }
@@ -118,45 +118,45 @@ erDiagram
     PAYMENT {
         bigint id PK
         bigint order_id FK
-        varchar(20) provider
-        varchar(128) out_trade_no
-        varchar(128) transaction_id
-        decimal(10,2) total
-        varchar(30) status
+        varchar provider
+        varchar out_trade_no
+        varchar transaction_id
+        decimal total
+        varchar status
     }
 
     REFUND {
         bigint id PK
         bigint payment_id FK
-        varchar(128) out_refund_no
-        decimal(10,2) refund_amount
-        varchar(30) status
+        varchar out_refund_no
+        decimal refund_amount
+        varchar status
     }
 
     INVOICE_REQUEST {
         bigint id PK
         bigint user_id FK
-        varchar(100) title
-        varchar(50) tax_no
-        varchar(100) email
-        varchar(30) status
+        varchar title
+        varchar tax_no
+        varchar email
+        varchar status
     }
 
     ADMIN_USER {
         bigint id PK
-        varchar(50) username
-        varchar(255) password_hash
+        varchar username
+        varchar password_hash
     }
 
     ROLE {
         bigint id PK
-        varchar(50) name
+        varchar name
     }
 
     PERMISSION {
         bigint id PK
-        varchar(100) code
-        varchar(255) description
+        varchar code
+        varchar description
     }
 ```
 
