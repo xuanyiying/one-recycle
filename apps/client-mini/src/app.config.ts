@@ -4,7 +4,7 @@ export default {
         'pages/login/index',
         'pages/category/index',
         'pages/recycle/index',
-        'pages/recycle/form/index',
+        'pages/recycle/index',
         'pages/address/select/index',
         'pages/order/index',
         'pages/order/confirm/index',
@@ -25,7 +25,7 @@ export default {
     window: {
         backgroundTextStyle: 'light',
         navigationBarBackgroundColor: '#00c896',
-        navigationBarTitleText: '支付宝回收',
+        navigationBarTitleText: '爱回收',
         navigationBarTextStyle: 'white',
         navigationStyle: 'default'
     },

@@ -12,6 +12,8 @@ async function bootstrap() {
         prefix: '/uploads/',
     });
     
-    await app.listen(3008);
+    const port = process.env.PORT || 3008;
+    await app.listen(port);
+    console.log(`Category service is running on port ${port}`);
 }
 bootstrap();

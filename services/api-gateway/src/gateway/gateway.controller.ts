@@ -205,7 +205,28 @@ export class GatewayController {
   }
 
   /**
-   * 分类服务路由
+   * 分类服务路由 - 处理 /api/category/categories
+   */
+  @All('category/categories')
+  async proxyToCategoryRoot(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const path = (req as any).originalUrl.replace('/api/category/categories', '');
+    await this.proxyService.streamProxy(req, res, 'category-service', `/api/categories${path}`);
+  }
+
+  @All('category/categories/*')
+  async proxyToCategoryWithPath(
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const path = (req as any).originalUrl.replace('/api/category/categories', '');
+    await this.proxyService.streamProxy(req, res, 'category-service', `/api/categories${path}`);
+  }
+
+  /**
+   * 分类服务路由 - v1版本
    */
   @All('v1/categories/*')
   async proxyToCategoryService(
@@ -213,7 +234,7 @@ export class GatewayController {
     @Res() res: Response,
   ) {
     const path = (req as any).originalUrl.replace('/api/v1/categories', '');
-    await this.proxyService.streamProxy(req, res, 'category-service', `/categories${path}`);
+    await this.proxyService.streamProxy(req, res, 'category-service', `/api/categories${path}`);
   }
 
   /**

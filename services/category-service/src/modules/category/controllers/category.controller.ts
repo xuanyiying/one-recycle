@@ -8,8 +8,6 @@ import {
   Param,
   Query,
   ParseIntPipe,
-  UseInterceptors,
-  UploadedFile,
   HttpStatus,
   HttpCode,
   BadRequestException,

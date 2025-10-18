@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
-import { PaymentStatus, PaymentProvider, RefundStatus } from '../prisma/generated/client';
+import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -204,7 +204,7 @@ export class PaymentService {
     const totalRefundAmountResult = await this.prisma.refund.findMany({
       where: { status: RefundStatus.SUCCESS },
       select: { refundAmount: true }
-      });
+    });
     const totalRefundAmount = totalRefundAmountResult.reduce((sum, refund) => sum + Number(refund.refundAmount), 0);
 
     return {

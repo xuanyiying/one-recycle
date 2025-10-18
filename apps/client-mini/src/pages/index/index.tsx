@@ -172,7 +172,7 @@ export default function Index() {
   const handleQuickRecycle = useCallback(() => {
     if (isLoggedIn) {
       Taro.navigateTo({
-        url: '/pages/recycle/form/index'
+        url: '/pages/recycle/index'
       })
     }else {
       requireAuth()
@@ -187,7 +187,7 @@ export default function Index() {
       })
     } else {
       Taro.navigateTo({
-        url: `/pages/recycle/form/index?category=${encodeURIComponent(categoryName)}`
+        url: `/pages/recycle/index?category=${encodeURIComponent(categoryName)}`
       })
     }
   }, [])

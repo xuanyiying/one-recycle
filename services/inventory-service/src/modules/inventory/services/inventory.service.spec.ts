@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryService } from './inventory.service';
-import { PrismaService } from '../../../prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { ItemType, ItemCondition, ProcessingStatus, TransactionType, ReservationStatus, CheckType, CheckResult, WarehouseType, WarehouseStatus, InventoryStatus } from '../entities/inventory.entity';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -103,12 +102,12 @@ describe('InventoryService', () => {
   });
 
   describe('getInventoryItems', () => {
-     it('should return inventory items with filters', async () => {
-       const filters = {
-         status: InventoryStatus.IN_STOCK,
-         itemType: ItemType.RECYCLED,
-         categoryId: BigInt(1),
-       };
+    it('should return inventory items with filters', async () => {
+      const filters = {
+        status: InventoryStatus.IN_STOCK,
+        itemType: ItemType.RECYCLED,
+        categoryId: BigInt(1),
+      };
 
       const expectedItems = [
         {
@@ -294,14 +293,14 @@ describe('InventoryService', () => {
   });
 
   describe('createReservation', () => {
-     it('should create a reservation', async () => {
-       const createData = {
-         itemId: BigInt(1),
-         orderId: 'ORDER-123',
-         quantity: 10,
-         status: ReservationStatus.PENDING,
-         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
-       };
+    it('should create a reservation', async () => {
+      const createData = {
+        itemId: BigInt(1),
+        orderId: 'ORDER-123',
+        quantity: 10,
+        status: ReservationStatus.PENDING,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+      };
 
       const expectedReservation = {
         id: BigInt(1),

@@ -1,323 +1,372 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Button, Input, Picker, Switch } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import { View, Text, Input, Textarea, Button, Switch } from '@tarojs/components'
+import Taro, { useRouter } from '@tarojs/taro'
 import { Icon } from '@taroify/icons'
-import { useAppContext } from '../../store'
-import { createOrder, createJdExpressOrder } from '../../services/order'
-import { getUserAddresses } from '../../services/user'
-import { getActiveCategories } from '../../services/category'  // 导入分类服务
+import { useAuth } from '../../hooks/useAuth'
+import { getAllCategories } from '../../services/category'
+import { createOrder } from '../../services/order'
+import CategorySelector from '../../components/CategorySelector'
+import ImageUploader from '../../components/ImageUploader'
+import AddressSelector from '../../components/AddressSelector'
+import TimeSelector from '../../components/TimeSelector'
+import PriceEstimator from '../../components/PriceEstimator'
+import AuthGuard from '../../components/AuthGuard'
 import './index.scss'
 
-
-interface Category {
-    id: number
-    name: string
-}
-interface Address {
-    id: number
-    detail: string
-}
-
-interface PickupTimeOption {
-    value: string
-    label: string
+interface FormData {
+  category: string
+  description: string
+  weight: string
+  images: string[]
+  pickupAddress: string
+  addressId?: number
+  pickupTime: string
+  contactPhone: string
+  remarks: string
+  useJDExpress?: boolean  // 京东快递选项
 }
 
-export default function Recycle() {
-    const { state } = useAppContext()
+export default function RecycleForm() {
+  const router = useRouter()
+  const { isLoggedIn, requireAuth } = useAuth()
+  const [categories, setCategories] = useState<any[]>([])
+  const [formData, setFormData] = useState<FormData>({
+    category: '',
+    description: '',
+    weight: '',
+    images: [],
+    pickupAddress: '',
+    pickupTime: '',
+    contactPhone: '',
+    remarks: '',
+    useJDExpress: false
+  })
+  const [loading, setLoading] = useState(false)
+
+  // 初始化数据
+  useEffect(() => {
+    initPageData()
+  }, [])
+
+  // 从路由参数获取预选分类、重量、估价等信息
+  useEffect(() => {
+    const { category, weight } = router.params
+    const updates: Partial<FormData> = {}
     
-    const [categories, setCategories] = useState<Category[]>([])
-    const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0)
-    const [weight, setWeight] = useState('')
-    const [description, setDescription] = useState('')
-    const [addresses, setAddresses] = useState<Address[]>([])
-    const [selectedAddressId, setSelectedAddressId] = useState(0)
-    const [pickupTimeOptions, setPickupTimeOptions] = useState<PickupTimeOption[]>([])
+    if (category) {
+      updates.category = decodeURIComponent(category)
+    }
+    
+    if (weight) {
+      // 处理重量参数，可能是范围格式如 "3-5" 或 具体数值
+      const weightValue = weight.includes('-') ? weight.split('-')[0] : weight
+      updates.weight = weightValue
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        ...updates
+      }))
+    }
+  }, [router.params])
 
-    // 生成动态的预约时间选项
-    const generatePickupTimeOptions = useCallback(() => {
-        const options: PickupTimeOption[] = []
-        const now = new Date()
-        const currentHour = now.getHours()
+  const initPageData = async () => {
+    try {
+      const categories = await getAllCategories()
+      setCategories(categories || [])
+    } catch (error) {
+      console.error('初始化数据失败:', error)
+      Taro.showToast({
+        title: '数据加载失败',
+        icon: 'none'
+      })
+    }
+  }
+
+  // 处理表单输入
+  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }, [])
+
+  // 监听地址选择事件
+  useEffect(() => {
+    const handleAddressSelected = (data: { address: string; addressId?: number }) => {
+      setFormData(prev => ({
+        ...prev,
+        pickupAddress: data.address,
+        addressId: data.addressId
+      }))
+    }
+    
+    Taro.eventCenter.on('addressSelected', handleAddressSelected)
+    
+    return () => {
+      Taro.eventCenter.off('addressSelected', handleAddressSelected)
+    }
+  }, [])
+
+  // 表单验证
+  const validateForm = useCallback(() => {
+    if (!formData.category) {
+      Taro.showToast({ title: '请选择回收分类', icon: 'none' })
+      return false
+    }
+    if (!formData.description.trim()) {
+      Taro.showToast({ title: '请填写物品描述', icon: 'none' })
+      return false
+    }
+    if (!formData.weight || parseFloat(formData.weight) <= 0) {
+      Taro.showToast({ title: '请填写正确的重量', icon: 'none' })
+      return false
+    }
+    if (!formData.pickupAddress.trim()) {
+      Taro.showToast({ title: '请选择上门地址', icon: 'none' })
+      return false
+    }
+    if (!formData.pickupTime) {
+      Taro.showToast({ title: '请选择上门时间', icon: 'none' })
+      return false
+    }
+    if (!formData.contactPhone.trim()) {
+      Taro.showToast({ title: '请填写联系电话', icon: 'none' })
+      return false
+    }
+    
+    // 验证手机号格式
+    const phoneRegex = /^1[3-9]\d{9}$/
+    if (!phoneRegex.test(formData.contactPhone)) {
+      Taro.showToast({ title: '请填写正确的手机号', icon: 'none' })
+      return false
+    }
+    
+    return true
+  }, [formData])
+
+  // 提交表单
+  const handleSubmit = useCallback(async () => {
+    if (!isLoggedIn) {
+      requireAuth()
+      return
+    }
+
+    if (!validateForm()) return
+
+    setLoading(true)
+      
+    try {
+      // 获取选中的分类ID
+      const selectedCategory = categories.find(cat => cat.name === formData.category)
+      if (!selectedCategory) {
+        throw new Error('请选择回收分类')
+      }
+
+      // 检查是否选择了地址
+      if (!formData.addressId) {
+        Taro.showToast({
+          title: '请选择取件地址',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 构造RecycleFormData格式的数据
+      const recycleFormData = {
+        categoryId: selectedCategory.id,
+        items: [{
+          name: formData.category,
+          description: formData.description,
+          estimatedWeight: parseFloat(formData.weight) || 0,
+          photos: formData.images,
+          condition: 'good' // 默认状态
+        }],
+        addressId: formData.addressId,
+        appointmentTime: formData.pickupTime,
+        notes: formData.remarks,
+        doorToDoorService: true,
+        channel: formData.useJDExpress ? 'jd-express' : 'platform'  // 添加渠道选择
+      }
+
+      const result = await createOrder(recycleFormData)
+
+      if (result.success && result.data) {
+        Taro.showToast({
+          title: '提交成功',
+          icon: 'success'
+        })
         
-        // 时间段配置
-        const timeSlots = [
-            { start: 9, end: 11, label: '09:00-11:00' },
-            { start: 14, end: 16, label: '14:00-16:00' },
-            { start: 16, end: 18, label: '16:00-18:00' }
-        ]
-        
-        // 生成接下来7天的时间选项
-        for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-            const targetDate = new Date(now)
-            targetDate.setDate(now.getDate() + dayOffset)
-            
-            const year = targetDate.getFullYear()
-            const month = String(targetDate.getMonth() + 1).padStart(2, '0')
-            const day = String(targetDate.getDate()).padStart(2, '0')
-            const dateStr = `${year}-${month}-${day}`
-            
-            timeSlots.forEach(slot => {
-                // 如果是今天，只显示当前时间之后的时间段
-                if (dayOffset === 0 && currentHour >= slot.start) {
-                    return
-                }
-                
-                // 如果是今天且当前时间已经过了最早的预约时间（9点），则跳过当天的早班
-                if (dayOffset === 0 && currentHour >= 9 && slot.start === 9) {
-                    return
-                }
-                
-                const isoDateTime = `${dateStr}T${String(slot.start).padStart(2, '0')}:00:00Z`
-                const label = `${dateStr} ${slot.label}`
-                
-                options.push({
-                    value: isoDateTime,
-                    label: label
-                })
-            })
-        }
-        
-        return options
-    }, [])
+        // 跳转到订单确认页
+        setTimeout(() => {
+          Taro.navigateTo({
+            url: `/pages/order/confirm/index?data=${encodeURIComponent(JSON.stringify({
+              ...formData,
+              orderId: result.data!.id
+            }))}`
+          })
+        }, 1500)
+      } else {
+        throw new Error(result.message || '提交失败')
+      }
+    } catch (error) {
+      console.error('提交订单失败:', error)
+      Taro.showToast({
+        title: error instanceof Error ? error.message : '提交失败',
+        icon: 'none'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [formData, validateForm, requireAuth, categories, isLoggedIn])
 
-    // 初始化预约时间选项
-    useEffect(() => {
-        const options = generatePickupTimeOptions()
-        setPickupTimeOptions(options)
-    }, [])
-    const [selectedPickupTimeIndex, setSelectedPickupTimeIndex] = useState(0)
-    const [useJdExpress, setUseJdExpress] = useState(false)
+  return (
+    <AuthGuard>
+      <View className='recycle-form-page'>
+      {/* 页面标题 */}
+      <View className='page-header'>
+        <Text className='page-title'>回收物信息</Text>
+        <Text className='page-subtitle'>请详细填写回收物品信息</Text>
+      </View>
 
-    const loadCategories = useCallback(async () => {
-        try {
-            const categories = await getActiveCategories()
-            setCategories(categories.map((cat: any) => ({
-                id: cat.id,
-                name: cat.name
-            })))
-        } catch (error) {
-            console.error('获取分类失败:', error)
-        }
-    }, [])
-
-    const loadUserAddresses = useCallback(async () => {
-        try {
-            if (state.user?.id) {
-                const addresses = await getUserAddresses(state.user.id)
-                setAddresses(addresses)
-                setSelectedAddressId(addresses.length > 0 ? addresses[0].id : 0)
-            }
-        } catch (error) {
-            console.error('获取地址失败:', error)
-        }
-    }, [state.user?.id])
-
-    useEffect(() => {
-        loadUserAddresses()
-        loadCategories()
-    }, [loadUserAddresses, loadCategories])
-
-    const onCategoryChange = useCallback((e) => {
-        setSelectedCategoryIndex(e.detail.value)
-    }, [])
-
-    const onWeightChange = useCallback((e) => {
-        setWeight(e.detail.value)
-    }, [])
-
-    const onDescriptionChange = useCallback((e) => {
-        setDescription(e.detail.value)
-    }, [])
-
-    const onAddressChange = useCallback((e) => {
-        setSelectedAddressId(e.detail.value)
-    }, [])
-
-    const onPickupTimeChange = useCallback((e) => {
-        setSelectedPickupTimeIndex(e.detail.value)
-    }, [])
-
-    const onJdExpressToggle = useCallback((enabled: boolean) => {
-        setUseJdExpress(enabled)
-    }, [])
-
-    const onSubmit = useCallback(async () => {
-        // 检查用户是否已登录
-        const token = Taro.getStorageSync('token')
-        if (!token) {
-            Taro.showToast({
-                title: '请先登录',
-                icon: 'none'
-            })
-            return
-        }
-
-        // 获取用户ID
-        const userId = state.user?.id
-        if (!userId) {
-            Taro.showToast({
-                title: '用户信息异常',
-                icon: 'none'
-            })
-            return
-        }
-        try {
-            // 构造订单数据
-            const orderData = {
-                userId: userId,
-                addressId: selectedAddressId,
-                items: [
-                    {
-                        categoryId: categories[selectedCategoryIndex].id,
-                        category: categories[selectedCategoryIndex],
-                        weight: parseFloat(weight) || 0,
-                        description,
-                        estimatedWeight: parseFloat(weight) || 0,
-                        unitPrice: 10, // 实际应用中应从定价规则中获取
-                        quantity: 1
-                    }
-                ],
-                expectPickupTime: pickupTimeOptions[selectedPickupTimeIndex].value,
-                channel: useJdExpress ? 'jd-express' : 'platform',
-                remark: description
-            };
-
-            // 调用后端 API 提交订单
-            let result
-            if (useJdExpress) {
-                result = await createJdExpressOrder(orderData)
-            } else {
-                result = await createOrder(orderData)
-            }
-
-            console.log('提交订单成功:', result)
-
-            Taro.showToast({
-                title: '提交成功',
-                icon: 'success'
-            })
-
-            // 延迟跳转到订单页面
-            setTimeout(() => {
-                Taro.switchTab({
-                    url: '/pages/order/list/index'
-                })
-            }, 1500)
-        } catch (error) {
-            console.error('提交订单失败:', error)
-            Taro.showToast({
-                title: '提交失败: ' + (error.message || '未知错误'),
-                icon: 'none'
-            })
-        }
-    }, [state.user?.id, categories, selectedCategoryIndex, weight, description, selectedAddressId, pickupTimeOptions, selectedPickupTimeIndex, useJdExpress])
-
-    return (
-        <View className='recycle-page'>
-            <View className='form-section'>
-                <View className='form-item'>
-                    <Text className='label'>物品分类</Text>
-                    <Picker
-                        mode='selector'
-                        range={categories}
-                        rangeKey='name'
-                        onChange={onCategoryChange}
-                    >
-                        <View className='picker'>
-                            <Icon name='tag' size='16' color='#00B894'></Icon>
-                            <Text style={{ marginLeft: '8px' }}>{categories[selectedCategoryIndex]?.name || '请选择分类'}</Text>
-                        </View>
-                    </Picker>
-                </View>
-
-                <View className='form-item'>
-                    <Text className='label'>预估重量</Text>
-                    <Input
-                        className='input'
-                        type='digit'
-                        placeholder='请输入预估重量(kg)'
-                        value={weight}
-                        onInput={onWeightChange}
-                    />
-                </View>
-
-                <View className='form-item'>
-                    <Text className='label'>物品描述</Text>
-                    <Input
-                        className='input'
-                        placeholder='请输入物品描述'
-                        value={description}
-                        onInput={onDescriptionChange}
-                    />
-                </View>
-
-                <View className='form-item'>
-                    <Text className='label'>上门地址</Text>
-                    <Picker
-                        mode='selector'
-                        range={addresses}
-                        rangeKey='detail'
-                        onChange={onAddressChange}
-                    >
-                        <View className='picker'>
-                            <Icon name='location' size='16' color='#00B894'></Icon>
-                            <Text style={{ marginLeft: '8px' }}>
-                                {addresses.length > 0 ?
-                                    addresses.find(addr => addr.id === selectedAddressId)?.detail || '请选择地址' :
-                                    '暂无地址'}
-                            </Text>
-                        </View>
-                    </Picker>
-                </View>
-
-                <View className='form-item'>
-                    <Text className='label'>预约时间</Text>
-                    <Picker
-                        mode='selector'
-                        range={pickupTimeOptions}
-                        rangeKey='label'
-                        onChange={onPickupTimeChange}
-                    >
-                        <View className='picker'>
-                            <Icon name='clock' size='16' color='#00B894'></Icon>
-                            <Text style={{ marginLeft: '8px' }}>
-                                {pickupTimeOptions[selectedPickupTimeIndex]?.label || '请选择时间'}
-                            </Text>
-                        </View>
-                    </Picker>
-                </View>
-            </View>
-
-            {/* 京东快递选项 */}
-            <View className='jd-express-section'>
-                <View className='jd-express-header'>
-                    <Icon name='delivery' size='18' color='#E32B2B'></Icon>
-                    <Text className='jd-title' style={{ marginLeft: '8px' }}>京东快递上门取件</Text>
-                    <Switch
-                        checked={useJdExpress}
-                        onChange={(e) => onJdExpressToggle(e.detail.value)}
-                        color='#E32B2B'
-                    />
-                </View>
-
-                {useJdExpress && (
-                    <View className='jd-express-details'>
-                        <Text className='detail-text'>• 专业快递员上门取件</Text>
-                        <Text className='detail-text'>• 快速安全送达</Text>
-                        <Text className='detail-text'>• 实时跟踪订单状态</Text>
-                        <Text className='note-text'>注：使用京东快递服务将收取额外费用</Text>
-                    </View>
-                )}
-            </View>
-
-            <Button
-                className='submit-btn'
-                type='primary'
-                onClick={onSubmit}
-            >
-                提交订单
-            </Button>
+      <View className='form-container'>
+        {/* 分类选择 */}
+        <View className='form-section'>
+          <CategorySelector
+            categories={categories}
+            value={formData.category}
+            onChange={(category) => handleInputChange('category', category)}
+            placeholder='请选择回收分类'
+            required={true}
+          />
         </View>
-    )
+
+        {/* 物品描述 */}
+        <View className='form-section'>
+          <Text className='section-title'>物品描述 *</Text>
+          <Textarea
+            className='textarea-input'
+            placeholder='请详细描述物品的品牌、型号、新旧程度等信息'
+            value={formData.description}
+            onInput={(e) => handleInputChange('description', e.detail.value)}
+            maxlength={200}
+          />
+          <Text className='char-count'>{formData.description.length}/200</Text>
+        </View>
+
+        {/* 重量输入和价格估算 */}
+        <View className='form-section'>
+          <PriceEstimator
+            categories={categories}
+            category={formData.category}
+            weight={formData.weight}
+            onWeightChange={(weight) => handleInputChange('weight', weight)}
+            title='预估重量'
+            required={true}
+          />
+        </View>
+
+        {/* 图片上传 */}
+        <View className='form-section'>
+          <ImageUploader
+            images={formData.images}
+            onChange={(images) => setFormData(prev => ({ ...prev, images }))}
+            maxCount={6}
+            title='物品照片'
+            description='上传物品照片有助于更准确的估价'
+          />
+        </View>
+
+        {/* 上门地址 */}
+        <View className='form-section'>
+          <AddressSelector
+            value={formData.pickupAddress}
+            onChange={(address, addressId) => {
+              setFormData(prev => ({ 
+                ...prev, 
+                pickupAddress: address,
+                addressId: addressId 
+              }))
+            }}
+            placeholder='请选择上门地址'
+            required={true}
+          />
+        </View>
+
+        {/* 上门时间 */}
+        <View className='form-section'>
+          <TimeSelector
+            value={formData.pickupTime}
+            onChange={(time) => handleInputChange('pickupTime', time)}
+            placeholder='请选择上门时间'
+            required={true}
+            title='上门时间'
+          />
+        </View>
+
+        {/* 联系电话 */}
+        <View className='form-section'>
+          <Text className='section-title'>联系电话 *</Text>
+          <Input
+            className='phone-input'
+            type='number'
+            placeholder='请输入联系电话'
+            value={formData.contactPhone}
+            onInput={(e) => handleInputChange('contactPhone', e.detail.value)}
+            maxlength={11}
+          />
+        </View>
+
+        {/* 备注 */}
+        <View className='form-section'>
+          <Text className='section-title'>备注信息</Text>
+          <Textarea
+            className='textarea-input'
+            placeholder='其他需要说明的信息（选填）'
+            value={formData.remarks}
+            onInput={(e) => handleInputChange('remarks', e.detail.value)}
+            maxlength={100}
+          />
+          <Text className='char-count'>{formData.remarks.length}/100</Text>
+        </View>
+
+        {/* 京东快递选项 */}
+        <View className='form-section jd-express-section'>
+          <View className='jd-express-header'>
+            <View className='jd-express-left'>
+              <Icon name='delivery' size='18' color='#E32B2B' />
+              <Text className='section-title' style={{ marginLeft: '8px' }}>京东快递上门取件</Text>
+            </View>
+            <Switch
+              checked={formData.useJDExpress}
+              onChange={(e) => setFormData(prev => ({ ...prev, useJDExpress: e.detail.value }))}
+              color='#E32B2B'
+            />
+          </View>
+          
+          {formData.useJDExpress && (
+            <View className='jd-express-details'>
+              <Text className='detail-text'>• 专业快递员上门取件</Text>
+              <Text className='detail-text'>• 快速安全送达</Text>
+              <Text className='detail-text'>• 实时跟踪订单状态</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* 底部提交按钮 */}
+      <View className='submit-container'>
+        <Button 
+          className='submit-btn' 
+          onClick={handleSubmit}
+          loading={loading}
+          disabled={loading}
+        >
+          {loading ? '提交中...' : '提交回收申请'}
+        </Button>
+      </View>
+      </View>
+    </AuthGuard>
+  )
 }

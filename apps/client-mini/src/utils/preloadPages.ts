@@ -24,7 +24,7 @@ export function preloadRelatedPages(currentPage: string) {
   const preloadMap: Record<string, Array<() => Promise<any>>> = {
     // From home page, preload recycle and order pages
     '/pages/index/index': [
-      () => import('../pages/recycle/form/index'),
+      () => import('../pages/recycle/index'),
       () => import('../pages/order/list/index'),
       () => import('../pages/category/index'),
     ],

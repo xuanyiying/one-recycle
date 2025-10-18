@@ -1,35 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import { 
-  CreateInventoryItemData, 
-  CreateTransactionData, 
-  CreateReservationData, 
+import {
+  CreateInventoryItemData,
+  CreateTransactionData,
+  CreateReservationData,
   CreateQualityCheckData,
   CreateWarehouseData,
   InventoryFilters,
   InventorySortOptions,
   PaginationOptions
 } from '../interfaces/inventory.interface';
-import { 
-  InventoryItemEntity, 
-  InventoryTransactionEntity, 
-  InventoryReservationEntity, 
+import {
+  InventoryItemEntity,
+  InventoryTransactionEntity,
+  InventoryReservationEntity,
   QualityCheckEntity,
   WarehouseEntity,
   InventorySearchResultEntity,
   InventoryStatsEntity
 } from '../entities/inventory.entity';
 import { InventoryStatus, ItemType, ItemCondition, ProcessingStatus, ReservationStatus, WarehouseType, WarehouseStatus } from '../entities/inventory.entity';
-import { PrismaService } from '../../../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class InventoryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // 创建库存项目
   async createInventoryItem(data: CreateInventoryItemData): Promise<InventoryItemEntity> {
     const totalPrice = data.unitPrice * data.quantity;
     const availableQty = data.quantity - (data.reservedQty || 0);
-    
+
     const item = await this.prisma.inventoryItem.create({
       data: {
         warehouseId: data.warehouseId,
@@ -70,7 +70,7 @@ export class InventoryService {
     const take = pageSize;
 
     const where: any = {};
-    
+
     if (filters) {
       if (filters.name) {
         where.name = { contains: filters.name, mode: 'insensitive' };
@@ -147,7 +147,7 @@ export class InventoryService {
   // 更新库存项目
   async updateInventoryItem(id: bigint, data: Partial<CreateInventoryItemData>): Promise<InventoryItemEntity> {
     const updateData: any = { ...data };
-    
+
     if (data.quantity !== undefined || data.reservedQty !== undefined) {
       const current = await this.prisma.inventoryItem.findUnique({ where: { id } });
       if (current) {

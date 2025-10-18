@@ -6,7 +6,7 @@ import { UpdateInventoryItemDto } from './dto/update-inventory-item.dto';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { CreateQualityCheckDto } from './dto/create-quality-check.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { InventoryStatus, ItemType, ItemCondition, TransactionType, CheckType, CheckResult, ReservationStatus, ProcessingStatus } from './entities/inventory.entity';
 
 describe('InventoryController', () => {
@@ -51,19 +51,19 @@ describe('InventoryController', () => {
   describe('createInventoryItem', () => {
     it('should create a new inventory item', async () => {
       const createDto: CreateInventoryItemDto = {
-         warehouseId: BigInt(1),
-         categoryId: BigInt(1),
-         name: 'Test Item',
-         description: 'Test Description',
-         unit: 'kg',
-         quantity: 100,
-         unitPrice: 10.5,
-         location: 'A1-B2',
-         itemType: ItemType.RECYCLED,
-         condition: ItemCondition.GOOD,
-         sourceOrderId: 'ORDER-001',
-         processingStatus: ProcessingStatus.READY,
-       };
+        warehouseId: BigInt(1),
+        categoryId: BigInt(1),
+        name: 'Test Item',
+        description: 'Test Description',
+        unit: 'kg',
+        quantity: 100,
+        unitPrice: 10.5,
+        location: 'A1-B2',
+        itemType: ItemType.RECYCLED,
+        condition: ItemCondition.GOOD,
+        sourceOrderId: 'ORDER-001',
+        processingStatus: ProcessingStatus.READY,
+      };
 
       const expectedResult = {
         id: BigInt(1),
@@ -84,31 +84,31 @@ describe('InventoryController', () => {
   describe('findAllInventoryItems', () => {
     it('should return all inventory items with filters', async () => {
       const filters = {
-         status: InventoryStatus.IN_STOCK,
-         itemType: ItemType.RECYCLED,
-         condition: ItemCondition.GOOD,
-         location: 'A1',
-         categoryId: BigInt(1),
-       };
+        status: InventoryStatus.IN_STOCK,
+        itemType: ItemType.RECYCLED,
+        condition: ItemCondition.GOOD,
+        location: 'A1',
+        categoryId: BigInt(1),
+      };
 
-       const expectedResult = [
-         {
-           id: BigInt(1),
-           name: 'Test Item',
-           status: InventoryStatus.IN_STOCK,
-           quantity: 100,
-         },
-       ];
+      const expectedResult = [
+        {
+          id: BigInt(1),
+          name: 'Test Item',
+          status: InventoryStatus.IN_STOCK,
+          quantity: 100,
+        },
+      ];
 
-       mockInventoryService.getInventoryItems.mockResolvedValue(expectedResult);
+      mockInventoryService.getInventoryItems.mockResolvedValue(expectedResult);
 
-       const result = await controller.findAllInventoryItems(
-         InventoryStatus.IN_STOCK,
-         ItemType.RECYCLED,
-         ItemCondition.GOOD,
-         'A1',
-         '1'
-       );
+      const result = await controller.findAllInventoryItems(
+        InventoryStatus.IN_STOCK,
+        ItemType.RECYCLED,
+        ItemCondition.GOOD,
+        'A1',
+        '1'
+      );
 
       expect(service.getInventoryItems).toHaveBeenCalledWith(filters);
       expect(result).toEqual(expectedResult);
@@ -189,13 +189,13 @@ describe('InventoryController', () => {
   describe('createTransaction', () => {
     it('should create a new transaction', async () => {
       const createDto: CreateTransactionDto = {
-         itemId: BigInt(1),
-         type: TransactionType.INBOUND,
-         quantity: 50,
-         unitPrice: 10.0,
-         referenceId: 'REF-001',
-         notes: 'Test transaction',
-       };
+        itemId: BigInt(1),
+        type: TransactionType.INBOUND,
+        quantity: 50,
+        unitPrice: 10.0,
+        referenceId: 'REF-001',
+        notes: 'Test transaction',
+      };
 
       const expectedResult = {
         id: BigInt(1),
@@ -215,13 +215,13 @@ describe('InventoryController', () => {
   describe('createQualityCheck', () => {
     it('should create a new quality check', async () => {
       const createDto: CreateQualityCheckDto = {
-         itemId: BigInt(1),
-         checkType: CheckType.INITIAL,
-         result: CheckResult.PASSED,
-         checkerId: BigInt(1),
-         checkedAt: new Date(),
-         notes: 'Quality check passed',
-       };
+        itemId: BigInt(1),
+        checkType: CheckType.INITIAL,
+        result: CheckResult.PASSED,
+        checkerId: BigInt(1),
+        checkedAt: new Date(),
+        notes: 'Quality check passed',
+      };
 
       const expectedResult = {
         id: BigInt(1),

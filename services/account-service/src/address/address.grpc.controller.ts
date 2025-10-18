@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { AddressService } from './address.service';
-import { 
+import {
   CreateAddressRequest,
   GetAddressesRequest,
   UpdateAddressRequest,
@@ -13,7 +13,7 @@ import {
 
 @Controller()
 export class AddressGrpcController {
-  constructor(private readonly addressService: AddressService) {}
+  constructor(private readonly addressService: AddressService) { }
 
   @GrpcMethod('AccountService', 'CreateAddress')
   async createAddress(data: CreateAddressRequest): Promise<AddressResponse> {
@@ -39,7 +39,7 @@ export class AddressGrpcController {
     try {
       const addresses = await this.addressService.findAllByUserId(Number(data.userId));
       return {
-        addresses: addresses.map(address => this.mapToAddressResponse(address))
+        addresses: addresses.map((address: any) => this.mapToAddressResponse(address))
       };
     } catch (error) {
       throw this.handleGrpcError(error);

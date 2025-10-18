@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
@@ -57,7 +56,6 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly prisma: PrismaService,
     private readonly wechatPlatform: WeChatPlatform,
     private readonly alipayPlatform: AlipayPlatform,
     private readonly tiktokPlatform: TikTokPlatform,
@@ -89,7 +87,7 @@ export class AuthService {
 
     // 生成会话ID
     const sessionId = this.generateSessionId();
-    
+
     // 存储会话信息
     this.sessions.set(sessionId, {
       userId: user.id,
@@ -337,7 +335,7 @@ export class AuthService {
 
   private async verifyCode(phone: string, code: string): Promise<boolean> {
     const codeData = this.verificationCodes.get(phone);
-    
+
     if (!codeData) {
       return false;
     }
@@ -372,7 +370,7 @@ export class AuthService {
   private async sendSMS(phone: string, code: string, type: string): Promise<void> {
     try {
       const notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL', 'http://localhost:3008');
-      
+
       await axios.post(`${notificationServiceUrl}/api/v1/notifications/send-sms`, {
         phone,
         message: `您的验证码是：${code}，5分钟内有效。`,
@@ -429,7 +427,7 @@ export class AuthService {
 
   private async generateTokens(user: any, sessionId: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
     const payload = { sub: user.id, phone: user.phone, role: user.role, sessionId };
-    
+
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.idGenerator.nextId();
     const expiresIn = this.TOKEN_EXPIRY_HOURS * 3600;

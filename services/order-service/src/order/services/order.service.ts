@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { IOrderService, CreateOrderData, UpdateOrderData, OrderFilters } from '../interfaces/order.interface';
-import { OrderEntity, OrderType, OrderStatus, OrderPriority } from '../entities/order.entity';
+import { OrderEntity, OrderType, OrderStatus } from '../entities/order.entity';
 
 @Injectable()
 export class OrderService implements IOrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(data: CreateOrderData): Promise<OrderEntity> {
     const order = await this.prisma.order.create({
@@ -34,7 +34,7 @@ export class OrderService implements IOrderService {
 
   async findAll(filters: OrderFilters, page?: number, limit?: number): Promise<{ orders: OrderEntity[]; total: number }> {
     const where: any = {};
-    
+
     if (filters?.userId) {
       where.userId = BigInt(filters.userId);
     }
@@ -100,7 +100,7 @@ export class OrderService implements IOrderService {
 
   async update(id: number, data: UpdateOrderData): Promise<OrderEntity> {
     const updateData: any = {};
-    
+
     if (data.status) updateData.status = data.status;
     if (data.expectPickupTime) updateData.expectPickupTime = data.expectPickupTime;
     if (data.actualPickupTime) updateData.actualPickupTime = data.actualPickupTime;
@@ -230,13 +230,13 @@ export class OrderService implements IOrderService {
         where: { userId: BigInt(userId) },
       }),
       this.prisma.order.count({
-        where: { 
+        where: {
           userId: BigInt(userId),
           status: OrderStatus.COMPLETED as any,
         },
       }),
       this.prisma.order.aggregate({
-        where: { 
+        where: {
           userId: BigInt(userId),
           status: OrderStatus.COMPLETED as any,
         },

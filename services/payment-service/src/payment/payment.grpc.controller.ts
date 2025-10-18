@@ -1,9 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { PaymentService } from './payment.service';
-import { GetPaymentRequest, CreatePaymentRequest, PaymentNotifyRequest, CreateRefundRequest, RefundResponse, RefundNotifyRequest, PaymentResponse } from '../proto/payment.pb';
-import { RefundStatus } from '../prisma/generated/client';
-
+import { RefundStatus } from '@prisma/client';
+import { CreatePaymentRequest, CreateRefundRequest, GetPaymentRequest, PaymentNotifyRequest, RefundNotifyRequest, RefundResponse, PaymentResponse } from '../../proto/payment.pb';
 
 @Controller()
 export class PaymentGrpcController {
@@ -89,7 +88,7 @@ export class PaymentGrpcController {
 
   private mapToPaymentResponse(payment: any): PaymentResponse {
     return {
-      id: payment.id.toString(),
+      id: payment.id,
       outTradeNo: payment.outTradeNo,
       transactionId: payment.transactionId || '',
       total: payment.total?.toString() || '0',

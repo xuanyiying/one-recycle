@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { PaymentStatus, RefundStatus } from '../prisma/generated/client';
-import { Decimal } from '../prisma/generated/client/runtime/library';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { mockPrismaService, createTestPaymentDto, createTestPaymentRecord, createTestRefundRecord } from '../../tests/test-utils';
 import { PaymentService } from './payment.service';
+import { PaymentStatus, RefundStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 
 
@@ -42,9 +43,9 @@ describe('PaymentService', () => {
       const result = await service.create(createPaymentDto);
 
       expect(prismaService.payment.findFirst).toHaveBeenCalledWith({
-        where: { 
-          orderId: BigInt(createPaymentDto.orderId), 
-          status: PaymentStatus.SUCCESS 
+        where: {
+          orderId: BigInt(createPaymentDto.orderId),
+          status: PaymentStatus.SUCCESS
         }
       });
       expect(prismaService.payment.create).toHaveBeenCalledWith({

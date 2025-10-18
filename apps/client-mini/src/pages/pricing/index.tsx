@@ -150,6 +150,7 @@ export default function Pricing() {
   // 提交估价
   const onSubmitEstimate = useCallback(() => {
     const selectedWeight = weightOptions[selectedWeightIndex];
+    const weightValue = selectedWeight?.value || '';
     
     Taro.showModal({
       title: '估价结果',
@@ -158,9 +159,9 @@ export default function Pricing() {
       cancelText: '重新估价',
       success: (res) => {
         if (res.confirm) {
-          // 跳转到下单页面
+          // 跳转到回收表单页面，携带估价信息
           Taro.navigateTo({
-            url: `/pages/recycle/index?categoryId=${categoryId}&estimatedPrice=${estimatedPrice}`
+            url: `/pages/recycle/index?categoryId=${categoryId}&category=${encodeURIComponent(category?.name || categoryName || '')}&weight=${weightValue}&estimatedPrice=${estimatedPrice}`
           });
         }
       }

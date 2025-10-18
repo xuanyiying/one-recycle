@@ -2,7 +2,6 @@ import { View, Text } from '@tarojs/components'
 import { useEffect, useState } from 'react'
 import Taro from '@tarojs/taro'
 import { Icon } from '@taroify/icons'
-import { Divider } from '@taroify/core'
 import './index.scss'
 
 // 分类数据 - 使用taro-ui图标
@@ -34,9 +33,9 @@ const CategoryPage = () => {
   const handleCategoryClick = (category: typeof CATEGORIES[0]) => {
     setSelectedCategory(category.id)
     
-    // 跳转到回收订单页面
+    // 跳转到回收表单页面
     Taro.navigateTo({
-      url: `/pages/recycle/index?categoryId=${category.id}&categoryName=${encodeURIComponent(category.name)}`
+      url: `/pages/recycle/index?categoryId=${category.id}&category=${encodeURIComponent(category.name)}`
     })
   }
 

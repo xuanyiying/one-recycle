@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { IPaymentProvider } from './interfaces/payment-provider.interface';
 import { WeChatPayProvider } from './providers/wechat-pay.provider';
 import { AlipayProvider } from './providers/alipay.provider';
-import { PaymentProvider } from '../prisma/generated/client';
+import { PaymentProvider } from '@prisma/client';
 
 /**
  * 支付提供商工厂
@@ -13,7 +13,7 @@ export class PaymentProviderFactory {
   constructor(
     private readonly wechatPayProvider: WeChatPayProvider,
     private readonly alipayProvider: AlipayProvider,
-  ) {}
+  ) { }
 
   /**
    * 获取支付提供商实例

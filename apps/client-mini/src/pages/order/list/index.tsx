@@ -86,7 +86,7 @@ const OrderListPage: React.FC = () => {
 
   const handleCreateOrder = () => {
     Taro.navigateTo({
-      url: '/pages/recycle/form/index'
+      url: '/pages/recycle/index'
     });
   };
 

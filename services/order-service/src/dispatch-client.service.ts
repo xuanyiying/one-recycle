@@ -1,37 +1,37 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { Client, ClientGrpc, Transport } from '@nestjs/microservices';
-import { join } from 'path';
-import { Observable } from 'rxjs';
-
-interface DispatchService {
-    assignOrder(data: { orderId: string; courierId: string }): Observable<any>;
-}
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class DispatchClientService implements OnModuleInit {
-    @Client({
-        transport: Transport.GRPC,
-        options: {
-            package: 'dispatch',
-            protoPath: join(__dirname, '../proto/dispatch.proto'),
-            url: 'dispatch-service:50056', // 派发服务地址
-        },
-    })
-    private readonly client: ClientGrpc;
+export class DispatchClientService {
+    private readonly dispatchServiceUrl: string;
 
-    private dispatchService: DispatchService;
+    constructor(private readonly httpService: HttpService) {
+        // 从环境变量获取派发服务地址，如果没有则使用默认值
+        this.dispatchServiceUrl = process.env.DISPATCH_SERVICE_URL || 'http://localhost:3007';
+    }
 
-    onModuleInit() {
-        this.dispatchService = this.client.getService<DispatchService>('DispatchService');
+    async assignOrder(data: { orderId: string; courierId: string }): Promise<any> {
+        try {
+            const response = await firstValueFrom(
+                this.httpService.post(`${this.dispatchServiceUrl}/api/dispatch/assign`, data)
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Failed to assign order to dispatch service:', error);
+            throw error;
+        }
     }
 
     async notifyJdExpressForPickup(orderId: string): Promise<any> {
         try {
-            const result = await this.dispatchService.assignOrder({
-                orderId,
-                courierId: 'jd-express'
-            }).toPromise();
-            return result;
+            const response = await firstValueFrom(
+                this.httpService.post(`${this.dispatchServiceUrl}/api/jd-express/notify-pickup`, {
+                    orderId,
+                    courierId: 'jd-express'
+                })
+            );
+            return response.data;
         } catch (error) {
             console.error('Failed to notify JD Express:', error);
             throw error;

@@ -2,13 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaService } from '../../src/prisma/prisma.service';
-import { cleanupTestDatabase } from '../test-utils';
-import { UserStatus } from '@prisma/client';
-
+import { UserStatus } from '@one-recycle/shared';
 describe('UserController (e2e)', () => {
   let app: INestApplication;
-  let prismaService: PrismaService;
   let accessToken: string;
   let userId: string;
 
@@ -18,19 +14,16 @@ describe('UserController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    prismaService = moduleFixture.get<PrismaService>(PrismaService);
-    
+
     await app.init();
   });
 
   afterAll(async () => {
-    await cleanupTestDatabase(prismaService);
     await app.close();
   });
 
   beforeEach(async () => {
-    await cleanupTestDatabase(prismaService);
-    
+
     // Login to get access token
     await request(app.getHttpServer())
       .post('/auth/send-code')
@@ -336,7 +329,7 @@ describe('UserController (e2e)', () => {
 
     it('should handle expired tokens', () => {
       const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJpYXQiOjE2MDk0NTkyMDAsImV4cCI6MTYwOTQ1OTIwMH0.invalid';
-      
+
       return request(app.getHttpServer())
         .get('/user/profile')
         .set('Authorization', `Bearer ${expiredToken}`)

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { OrderModule } from '../src/order/order.module';
-import { PrismaService } from '../src/prisma.service';
+import { PrismaService } from '../src/prisma/prisma.service';
 import { InventoryService } from '../src/inventory/inventory.service';
 import { DispatchClientService } from '../src/dispatch-client.service';
 import {
@@ -45,7 +45,7 @@ describe('OrderController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
-    
+
     await app.init();
   });
 

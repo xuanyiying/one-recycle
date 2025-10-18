@@ -7,10 +7,10 @@ import {
   TransferStatus,
   WithdrawalAccountInfo,
 } from '../interfaces/payment-provider.interface';
-import { PaymentProvider } from '../../prisma/generated/client';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
 import * as crypto from 'crypto';
 import axios, { AxiosInstance } from 'axios';
+import { PaymentProvider } from '@prisma/client';
 
 /**
  * 支付宝支付提供商

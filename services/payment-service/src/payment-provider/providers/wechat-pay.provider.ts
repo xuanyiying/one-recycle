@@ -7,13 +7,13 @@ import {
   TransferStatus,
   WithdrawalAccountInfo,
 } from '../interfaces/payment-provider.interface';
-import { PaymentProvider } from '../../prisma/generated/client';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
 import * as crypto from 'crypto';
 import * as https from 'https';
 import * as fs from 'fs';
 import axios, { AxiosInstance } from 'axios';
 import * as xml2js from 'xml2js';
+import { PaymentProvider } from '@prisma/client';
 
 /**
  * 微信支付提供商
