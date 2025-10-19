@@ -19,7 +19,7 @@ import {
   InventoryStatsEntity
 } from '../entities/inventory.entity';
 import { InventoryStatus, ItemType, ItemCondition, ProcessingStatus, ReservationStatus, WarehouseType, WarehouseStatus } from '../entities/inventory.entity';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../../prisma.service';
 
 @Injectable()
 export class InventoryService {

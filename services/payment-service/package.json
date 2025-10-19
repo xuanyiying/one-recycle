@@ -7,7 +7,7 @@
   "private": true,
   "description": "Account microservice",
   "scripts": {
-    "build": "nest build && cp -r src/prisma/generated dist/prisma/",
+    "build": "nest build",
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
@@ -30,6 +30,7 @@
     "@one-recycle/shared": "file:../shared",
     "@prisma/client": "^6.17.1",
     "@types/passport-jwt": "^4.0.1",
+    "alipay-sdk": "^4.14.0",
     "axios": "^1.12.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",

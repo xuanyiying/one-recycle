@@ -9,7 +9,7 @@ import {
   PaymentCallbackVerificationException,
 } from '../src/withdrawal/exceptions/withdrawal.exceptions';
 import { InsufficientBalanceException } from '../src/account/exceptions/account.exceptions';
-import { WithdrawalStatus, PaymentProvider } from '../src/prisma/generated/client';
+import { WithdrawalStatus, PaymentProvider } from '@prisma/client';
 import { PaymentProviderFactory } from '../src/payment-provider';
 
 describe('WithdrawalService', () => {

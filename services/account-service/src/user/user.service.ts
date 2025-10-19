@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  NotFoundException,
-  ValidationException,
-  BusinessException
-} from '@shared/exceptions/business.exception';
+import { 
+  NotFoundException, 
+  ValidationException} from '@shared/exceptions/business.exception';
 import { UserRole } from '@shared/types/auth.types';
-import { PaginationParams } from '@shared/types/common.types';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  UserResponseDto,
+import { 
+  CreateUserDto, 
+  UpdateUserDto, 
+  UserResponseDto, 
   UserListResponseDto,
-  QueryUserDto
+  QueryUserDto 
 } from './dto';
 
 // 添加 BigInt 序列化支持
@@ -22,7 +19,7 @@ import {
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // 检查手机号是否已存在
@@ -82,15 +79,15 @@ export class UserService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-
+    
     if (filters.mobile) {
       where.mobile = { contains: filters.mobile };
     }
-
+    
     if (filters.nickname) {
       where.nickname = { contains: filters.nickname };
     }
-
+    
     if (filters.status) {
       where.status = filters.status;
     }
@@ -115,7 +112,7 @@ export class UserService {
     ]);
 
     return {
-      items: users.map((user: any) => this.mapToUserResponse(user)),
+      items: users.map(user => this.mapToUserResponse(user)),
       total,
       page,
       limit,

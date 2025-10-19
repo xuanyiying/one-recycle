@@ -1,4 +1,4 @@
-import { TransactionType } from '../../prisma/generated/client';
+import { TransactionType } from '@prisma/client';
 
 export class Transaction {
   id: bigint;

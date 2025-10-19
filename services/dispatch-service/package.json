@@ -8,7 +8,7 @@
         "start": "nest start",
         "start:dev": "nest start --watch",
         "start:debug": "nest start --debug --watch",
-        "start:prod": "node dist/main",
+        "start:prod": "node dist/src/main",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:cov": "jest --coverage",
@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "@nestjs/common": "^10.0.0",
+        "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^10.0.0",
         "@nestjs/platform-express": "^10.0.0",
         "@one-recycle/shared": "file:../shared",

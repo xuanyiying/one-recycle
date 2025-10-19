@@ -1,9 +1,8 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
 import { JdExpressService } from '../jd-express/jd-express.service';
-import { PickupResponse, PickupStatus } from '../jd-express/interfaces/jd-express.interface';
-import { CancelPickupDto } from '../jd-express/dto/pickup.dto';
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { PickupResponse } from '../jd-express/interfaces/jd-express.interface';
+import axios, { AxiosInstance } from 'axios';
 
 // 订单状态枚举
 export enum OrderStatus {

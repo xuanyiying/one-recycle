@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-import { PrismaService } from '../src/prisma/prisma.service';
-
 /**
  * 创建测试应用
  */
@@ -103,14 +99,4 @@ export function createMockRedisService() {
     exists: jest.fn().mockResolvedValue(0),
     expire: jest.fn().mockResolvedValue(1),
   };
-}
-
-/**
- * 清理测试数据库
- */
-export async function cleanupTestDatabase(prisma: PrismaService) {
-  // 按照外键依赖顺序删除数据
-  await prisma.userIdentity.deleteMany();
-  await prisma.address.deleteMany();
-  await prisma.user.deleteMany();
 }

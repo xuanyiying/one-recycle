@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TransactionType, Prisma } from '../prisma/generated/client';
+import { TransactionType, Prisma } from '@prisma/client';
 import {
   AccountNotFoundException,
   InsufficientBalanceException,

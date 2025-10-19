@@ -1,8 +1,25 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { PaymentService } from './payment.service';
-import { RefundStatus } from '@prisma/client';
-import { CreatePaymentRequest, CreateRefundRequest, GetPaymentRequest, PaymentNotifyRequest, RefundNotifyRequest, RefundResponse, PaymentResponse } from '../../proto/payment.pb';
+import { RefundStatus, PaymentProvider, PaymentStatus } from '@prisma/client';
+import { 
+  CreatePaymentRequest, 
+  CreateRefundRequest, 
+  GetPaymentRequest, 
+  PaymentNotifyRequest, 
+  RefundNotifyRequest, 
+  RefundResponse, 
+  PaymentResponse,
+  CreatePaymentLogRequest,
+  GetPaymentLogsByOrderIdRequest,
+  GetPaymentLogByTransactionIdRequest,
+  IsTransactionProcessedRequest,
+  GetPaymentStatsRequest,
+  PaymentLogResponse,
+  PaymentLogsResponse,
+  IsTransactionProcessedResponse,
+  PaymentStatsResponse
+} from '../../proto/payment.pb';
 
 @Controller()
 export class PaymentGrpcController {
@@ -96,6 +113,88 @@ export class PaymentGrpcController {
       provider: payment.provider,
       createdAt: payment.createdAt.toISOString(),
       updatedAt: payment.updatedAt.toISOString()
+    };
+  }
+
+  @GrpcMethod('PaymentService', 'CreatePaymentLog')
+  async createPaymentLog(data: CreatePaymentLogRequest): Promise<PaymentLogResponse> {
+    try {
+      const paymentLog = await this.paymentService.createPaymentLog({
+        orderId: data.orderId,
+        transactionId: data.transactionId,
+        status: data.status as PaymentStatus,
+        amount: parseFloat(data.amount),
+        provider: data.provider as PaymentProvider,
+        reason: data.reason
+      });
+      return this.mapToPaymentLogResponse(paymentLog);
+    } catch (error) {
+      throw this.handleGrpcError(error);
+    }
+  }
+
+  @GrpcMethod('PaymentService', 'GetPaymentLogsByOrderId')
+  async getPaymentLogsByOrderId(data: GetPaymentLogsByOrderIdRequest): Promise<PaymentLogsResponse> {
+    try {
+      const logs = await this.paymentService.getPaymentLogsByOrderId(data.orderId);
+      return {
+        logs: logs.map(log => this.mapToPaymentLogResponse(log))
+      };
+    } catch (error) {
+      throw this.handleGrpcError(error);
+    }
+  }
+
+  @GrpcMethod('PaymentService', 'GetPaymentLogByTransactionId')
+  async getPaymentLogByTransactionId(data: GetPaymentLogByTransactionIdRequest): Promise<PaymentLogResponse> {
+    try {
+      const log = await this.paymentService.getPaymentLogByTransactionId(data.transactionId);
+      return this.mapToPaymentLogResponse(log);
+    } catch (error) {
+      throw this.handleGrpcError(error);
+    }
+  }
+
+  @GrpcMethod('PaymentService', 'IsTransactionProcessed')
+  async isTransactionProcessed(data: IsTransactionProcessedRequest): Promise<IsTransactionProcessedResponse> {
+    try {
+      const processed = await this.paymentService.isTransactionProcessed(data.transactionId);
+      return { processed };
+    } catch (error) {
+      throw this.handleGrpcError(error);
+    }
+  }
+
+  @GrpcMethod('PaymentService', 'GetPaymentStats')
+  async getPaymentStats(data: GetPaymentStatsRequest): Promise<PaymentStatsResponse> {
+    try {
+      const stats = await this.paymentService.getPaymentStatsInRange(
+        new Date(data.startDate),
+        new Date(data.endDate)
+      );
+      return {
+        total: stats.total,
+        success: stats.success,
+        failed: stats.failed,
+        closed: stats.closed,
+        totalAmount: stats.totalAmount.toString()
+      };
+    } catch (error) {
+      throw this.handleGrpcError(error);
+    }
+  }
+
+  private mapToPaymentLogResponse(paymentLog: any): PaymentLogResponse {
+    return {
+      id: paymentLog.id,
+      orderId: paymentLog.orderId.toString(),
+      transactionId: paymentLog.transactionId || '',
+      status: paymentLog.status,
+      amount: paymentLog.total?.toString() || '0',
+      provider: paymentLog.provider,
+      reason: paymentLog.notifyRaw || '',
+      createdAt: paymentLog.createdAt.toISOString(),
+      updatedAt: paymentLog.updatedAt.toISOString()
     };
   }
 

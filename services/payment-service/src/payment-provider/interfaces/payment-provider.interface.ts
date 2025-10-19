@@ -1,4 +1,4 @@
-import { PaymentProvider } from '../../prisma/generated/client';
+import { PaymentProvider } from '@prisma/client';
 
 /**
  * 支付结果

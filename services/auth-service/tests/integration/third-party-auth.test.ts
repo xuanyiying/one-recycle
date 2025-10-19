@@ -1,4 +1,4 @@
-import { AuthService } from '../../src/auth/auth.service';
+import { AuthRedisService } from '../../src/auth/auth-redis.service';
 import { WeChatPlatform } from '../../src/auth/platforms/wechat.platform';
 import { AlipayPlatform } from '../../src/auth/platforms/alipay.platform';
 import { TikTokPlatform } from '../../src/auth/platforms/tiktok.platform';
@@ -7,7 +7,7 @@ import { AccountClient } from '../../src/auth/clients/account.client';
 import { ThirdPartyLoginDto } from '../../src/auth/dto/third-party-login.dto';
 
 describe('Third-Party Authentication Integration', () => {
-  let authService: AuthService;
+  let authService: AuthRedisService;
   let wechatPlatform: WeChatPlatform;
   let alipayPlatform: AlipayPlatform;
   let tiktokPlatform: TikTokPlatform;
@@ -46,7 +46,7 @@ describe('Third-Party Authentication Integration', () => {
     kuaishouPlatform = new KuaishouPlatform(mockConfigService as any);
     accountClient = new AccountClient(mockConfigService as any);
 
-    authService = new AuthService(
+    authService = new AuthRedisService(
       mockJwtService as any,
       mockConfigService as any,
       mockPrismaService as any,

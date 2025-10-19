@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    const port = process.env.PORT || 3004;
+    const port = process.env.PORT || 3008;
     await app.listen(port);
     console.log(`Notification service is running on: http://localhost:${port}`);
 }

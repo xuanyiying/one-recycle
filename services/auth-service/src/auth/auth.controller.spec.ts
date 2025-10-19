@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthRedisService } from './auth-redis.service';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -10,7 +10,7 @@ import { ThirdPartyLoginDto } from './dto/third-party-login.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: AuthService;
+  let authService: AuthRedisService;
 
   beforeEach(async () => {
     const mockAuthService = {
@@ -24,7 +24,7 @@ describe('AuthController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
-        { provide: AuthService, useValue: mockAuthService },
+        { provide: AuthRedisService, useValue: mockAuthService },
       ],
     })
       .overrideGuard(ThrottlerGuard)
@@ -32,7 +32,7 @@ describe('AuthController', () => {
       .compile();
 
     controller = module.get<AuthController>(AuthController);
-    authService = module.get<AuthService>(AuthService);
+    authService = module.get<AuthRedisService>(AuthRedisService);
   });
 
   it('should be defined', () => {

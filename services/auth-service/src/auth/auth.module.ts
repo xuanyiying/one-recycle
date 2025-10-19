@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthRedisService } from './auth-redis.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { WeChatPlatform } from './platforms/wechat.platform';
 import { AlipayPlatform } from './platforms/alipay.platform';
 import { TikTokPlatform } from './platforms/tiktok.platform';
@@ -25,14 +26,15 @@ import { AccountClient } from './clients/account.client';
   ],
   controllers: [AuthController],
   providers: [
-    AuthService,
+    AuthRedisService,
     JwtStrategy,
+    JwtAuthGuard,
     WeChatPlatform,
     AlipayPlatform,
     TikTokPlatform,
     KuaishouPlatform,
     AccountClient,
   ],
-  exports: [AuthService],
+  exports: [AuthRedisService, JwtAuthGuard],
 })
 export class AuthModule {}

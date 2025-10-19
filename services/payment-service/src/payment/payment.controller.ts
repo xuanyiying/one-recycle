@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Body, Param } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 // 修复导入语句
-import { PaymentStatus, RefundStatus } from '../prisma/generated/client';
+import { PaymentStatus, RefundStatus } from '@prisma/client';
 
 @Controller('payments')
 export class PaymentController {

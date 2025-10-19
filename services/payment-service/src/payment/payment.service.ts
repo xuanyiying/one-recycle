@@ -3,12 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
 import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
+import { PaymentLogRepository, PaymentLogData } from './payment-log.repository';
 
 @Injectable()
 export class PaymentService {
   private readonly idGenerator = new SnowflakeIdGenerator({ workerId: 6, datacenterId: 1 });
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private paymentLogRepository: PaymentLogRepository
+  ) { }
 
   async create(createPaymentDto: CreatePaymentDto) {
     // 检查是否已有支付记录
@@ -214,7 +218,28 @@ export class PaymentService {
       pendingPayments,
       totalAmount,
       totalRefunds,
-      totalRefundAmount,
+      totalRefundAmount
     };
+  }
+
+  // 支付日志相关方法
+  async createPaymentLog(data: PaymentLogData) {
+    return this.paymentLogRepository.createPaymentLog(data);
+  }
+
+  async getPaymentLogsByOrderId(orderId: string) {
+    return this.paymentLogRepository.findByOrderId(orderId);
+  }
+
+  async getPaymentLogByTransactionId(transactionId: string) {
+    return this.paymentLogRepository.findByTransactionId(transactionId);
+  }
+
+  async isTransactionProcessed(transactionId: string) {
+    return this.paymentLogRepository.isTransactionProcessed(transactionId);
+  }
+
+  async getPaymentStatsInRange(startDate: Date, endDate: Date) {
+    return this.paymentLogRepository.getPaymentStats(startDate, endDate);
   }
 }

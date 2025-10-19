@@ -22,7 +22,7 @@ async function bootstrap() {
       }),
     );
     
-    const port = configService.get('port') || 3010;
+    const port = configService.get('port') || 3007;
     await app.listen(port);
     
     logger.log(`🚀 Message Queue Service is running on port ${port}`);

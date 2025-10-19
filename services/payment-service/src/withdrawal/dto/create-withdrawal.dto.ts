@@ -1,6 +1,6 @@
 import { IsNumber, IsEnum, IsObject, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentProvider } from '../../prisma/generated/client';
+import { PaymentProvider } from '@prisma/client';
 
 export class WithdrawalAccountInfo {
   // WeChat

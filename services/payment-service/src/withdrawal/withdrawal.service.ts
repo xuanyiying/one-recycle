@@ -12,10 +12,8 @@ import {
   PaymentCallbackVerificationException,
 } from './exceptions/withdrawal.exceptions';
 import { InsufficientBalanceException } from '../account/exceptions/account.exceptions';
-import { WithdrawalStatus, Prisma, TransactionType } from '../prisma/generated/client';
-import { randomBytes } from 'crypto';
+import { WithdrawalStatus, Prisma } from '@prisma/client';
 import { PaymentProviderFactory } from '../payment-provider';
-import { TransferStatus } from '../payment-provider/interfaces/payment-provider.interface';
 import { MessageQueueClient } from '../common/message-queue.client';
 import { SnowflakeIdGenerator } from '@one-recycle/shared';
 

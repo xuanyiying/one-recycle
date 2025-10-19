@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccountService } from '../src/account/account.service';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { TransactionType } from '../src/prisma/generated/client';
+import { TransactionType } from '@prisma/client';
 
 describe('AccountService - Query Methods (Integration)', () => {
   let service: AccountService;

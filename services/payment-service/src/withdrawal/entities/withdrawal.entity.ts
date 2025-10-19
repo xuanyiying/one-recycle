@@ -1,4 +1,4 @@
-import { Withdrawal as PrismaWithdrawal, WithdrawalStatus, PaymentProvider } from '../../prisma/generated/client';
+import { Withdrawal as PrismaWithdrawal, WithdrawalStatus, PaymentProvider } from '@prisma/client';
 
 export class WithdrawalEntity implements PrismaWithdrawal {
   id: bigint;

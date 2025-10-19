@@ -11,7 +11,7 @@
     "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
     "proto:generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=env=node,useOptionals=messages,outputServices=grpc-js ./proto/*.proto",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/src/main"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.9.13",

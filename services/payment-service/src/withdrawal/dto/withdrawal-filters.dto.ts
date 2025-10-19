@@ -1,5 +1,5 @@
 import { IsOptional, IsEnum, IsDateString } from 'class-validator';
-import { WithdrawalStatus } from '../../prisma/generated/client';
+import { WithdrawalStatus } from '@prisma/client';
 
 export class WithdrawalFiltersDto {
   @IsOptional()

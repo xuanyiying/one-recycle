@@ -2,12 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaService } from '../../src/prisma/prisma.service';
-import { cleanupTestDatabase } from '../test-utils';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
-  let prismaService: PrismaService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -15,18 +12,12 @@ describe('AuthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    prismaService = moduleFixture.get<PrismaService>(PrismaService);
     
     await app.init();
   });
 
   afterAll(async () => {
-    await cleanupTestDatabase(prismaService);
     await app.close();
-  });
-
-  beforeEach(async () => {
-    await cleanupTestDatabase(prismaService);
   });
 
   describe('/auth/send-code (POST)', () => {

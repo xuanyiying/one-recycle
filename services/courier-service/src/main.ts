@@ -12,7 +12,7 @@ async function bootstrap() {
         transform: true,
     }));
     
-    const port = process.env.PORT || 3005;
+    const port = process.env.PORT || 3004;
     await app.listen(port);
     console.log(`Courier service is running on: http://localhost:${port}`);
 }

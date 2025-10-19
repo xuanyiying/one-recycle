@@ -55,12 +55,72 @@ export interface RefundResponse {
   updatedAt: string;
 }
 
+// 支付日志相关接口
+export interface CreatePaymentLogRequest {
+  orderId: string;
+  transactionId: string;
+  status: string;
+  amount: string;
+  provider: string;
+  reason: string;
+}
+
+export interface GetPaymentLogsByOrderIdRequest {
+  orderId: string;
+}
+
+export interface GetPaymentLogByTransactionIdRequest {
+  transactionId: string;
+}
+
+export interface IsTransactionProcessedRequest {
+  transactionId: string;
+}
+
+export interface GetPaymentStatsRequest {
+  startDate: string;
+  endDate: string;
+}
+
+export interface PaymentLogResponse {
+  id: string;
+  orderId: string;
+  transactionId: string;
+  status: string;
+  amount: string;
+  provider: string;
+  reason: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentLogsResponse {
+  logs: PaymentLogResponse[];
+}
+
+export interface IsTransactionProcessedResponse {
+  processed: boolean;
+}
+
+export interface PaymentStatsResponse {
+  total: number;
+  success: number;
+  failed: number;
+  closed: number;
+  totalAmount: string;
+}
+
 export interface PaymentServiceHandlers extends grpc.UntypedServiceImplementation {
   createPayment: grpc.handleUnaryCall<CreatePaymentRequest, PaymentResponse>;
   getPayment: grpc.handleUnaryCall<GetPaymentRequest, PaymentResponse>;
   handlePaymentNotify: grpc.handleUnaryCall<PaymentNotifyRequest, PaymentResponse>;
   createRefund: grpc.handleUnaryCall<CreateRefundRequest, RefundResponse>;
   handleRefundNotify: grpc.handleUnaryCall<RefundNotifyRequest, RefundResponse>;
+  createPaymentLog: grpc.handleUnaryCall<CreatePaymentLogRequest, PaymentLogResponse>;
+  getPaymentLogsByOrderId: grpc.handleUnaryCall<GetPaymentLogsByOrderIdRequest, PaymentLogsResponse>;
+  getPaymentLogByTransactionId: grpc.handleUnaryCall<GetPaymentLogByTransactionIdRequest, PaymentLogResponse>;
+  isTransactionProcessed: grpc.handleUnaryCall<IsTransactionProcessedRequest, IsTransactionProcessedResponse>;
+  getPaymentStats: grpc.handleUnaryCall<GetPaymentStatsRequest, PaymentStatsResponse>;
 }
 
 export const PaymentServiceService: grpc.ServiceDefinition<PaymentServiceHandlers> = {} as any;

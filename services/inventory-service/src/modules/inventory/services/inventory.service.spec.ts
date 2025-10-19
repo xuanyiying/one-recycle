@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryService } from './inventory.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../../prisma.service';
 import { ItemType, ItemCondition, ProcessingStatus, TransactionType, ReservationStatus, CheckType, CheckResult, WarehouseType, WarehouseStatus, InventoryStatus } from '../entities/inventory.entity';
 import { Decimal } from '@prisma/client/runtime/library';
 

@@ -10,8 +10,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
+import { AuthRedisService } from './auth-redis.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Public } from './decorators/public.decorator';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -22,9 +23,10 @@ import { ThirdPartyLoginDto } from './dto/third-party-login.dto';
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthRedisService) {}
 
   @Post('login')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '用户登录' })
   @ApiResponse({ status: 200, description: '登录成功' })
@@ -35,6 +37,7 @@ export class AuthController {
   }
 
   @Post('send-code')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '发送验证码' })
   @ApiResponse({ status: 200, description: '验证码发送成功' })
@@ -44,6 +47,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '刷新访问令牌' })
   @ApiResponse({ status: 200, description: '令牌刷新成功' })
@@ -63,6 +67,7 @@ export class AuthController {
   }
 
   @Post('third-party/:platform')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '第三方平台登录' })
   @ApiResponse({ status: 200, description: '登录成功' })

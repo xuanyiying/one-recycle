@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { RedisModule } from '@one-recycle/shared';
 import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
-import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -19,12 +18,11 @@ import { PrismaModule } from './prisma/prisma.module';
       limit: 100, // 每分钟最多100个请求
     }]),
     
-    // 数据库模块
-    PrismaModule,
+    // Redis模块
+    RedisModule,
     
     // 业务模块
     AuthModule,
-    UserModule,
   ],
 })
 export class AppModule {}

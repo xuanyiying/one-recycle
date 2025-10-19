@@ -1,6 +1,6 @@
 import { IsOptional, IsEnum, IsDateString, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { TransactionType } from '../../prisma/generated/client';
+import { TransactionType } from '@prisma/client';
 
 export class TransactionFiltersDto {
   @IsOptional()

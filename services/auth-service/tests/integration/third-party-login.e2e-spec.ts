@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../../src/auth/auth.module';
-import { PrismaModule } from '../../src/prisma/prisma.module';
-import { AuthService } from '../../src/auth/auth.service';
+import { AuthRedisService } from '../../src/auth/auth-redis.service';
 import { WeChatPlatform } from '../../src/auth/platforms/wechat.platform';
 import { AlipayPlatform } from '../../src/auth/platforms/alipay.platform';
 import { TikTokPlatform } from '../../src/auth/platforms/tiktok.platform';
@@ -12,7 +11,7 @@ import { AccountClient } from '../../src/auth/clients/account.client';
 
 describe('Third-Party Login (e2e)', () => {
   let app: INestApplication;
-  let authService: AuthService;
+  let authService: AuthRedisService;
   let wechatPlatform: WeChatPlatform;
   let accountClient: AccountClient;
 
@@ -23,7 +22,6 @@ describe('Third-Party Login (e2e)', () => {
           isGlobal: true,
           envFilePath: '.env.test',
         }),
-        PrismaModule,
         AuthModule,
       ],
     }).compile();
@@ -31,7 +29,7 @@ describe('Third-Party Login (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    authService = moduleFixture.get<AuthService>(AuthService);
+    authService = moduleFixture.get<AuthRedisService>(AuthRedisService);
     wechatPlatform = moduleFixture.get<WeChatPlatform>(WeChatPlatform);
     accountClient = moduleFixture.get<AccountClient>(AccountClient);
   });

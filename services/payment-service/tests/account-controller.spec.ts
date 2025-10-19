@@ -3,7 +3,7 @@ import { AccountController } from '../src/account/account.controller';
 import { AccountService } from '../src/account/account.service';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
 import { AdminGuard } from '../src/common/guards/admin.guard';
-import { TransactionType } from '../src/prisma/generated/client';
+import { TransactionType } from '@prisma/client';
 
 describe('AccountController', () => {
   let controller: AccountController;

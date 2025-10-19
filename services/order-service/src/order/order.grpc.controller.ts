@@ -10,7 +10,7 @@ import {
   OrderResponse,
   GetUserStatisticsRequest,
   UserStatisticsResponse
-} from '../proto/order.pb';
+} from '../../proto/order.pb';
 
 @Controller()
 export class OrderGrpcController {
