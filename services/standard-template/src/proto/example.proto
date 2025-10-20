@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package example;
+
+// 示例服务定义
+service ExampleService {
+  rpc GetExample (ExampleRequest) returns (ExampleResponse);
+  rpc CreateExample (CreateExampleRequest) returns (ExampleResponse);
+}
+
+// 示例请求消息
+message ExampleRequest {
+  int32 id = 1;
+}
+
+// 创建示例请求消息
+message CreateExampleRequest {
+  string name = 1;
+  string description = 2;
+}
+
+// 示例响应消息
+message ExampleResponse {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  int64 created_at = 4;
+  int64 updated_at = 5;
+}

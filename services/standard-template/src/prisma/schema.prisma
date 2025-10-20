@@ -1,0 +1,31 @@
+// datasource 配置
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// generator 配置
+generator client {
+    provider = "prisma-client-js"
+    output   = "../src/prisma/generated/client"
+}
+
+// 示例模型定义
+model Example {
+    id          Int      @id @default(autoincrement())
+    name        String   @unique
+    description String?
+    user        User     @relation(fields: [userId], references: [id])
+    userId      Int
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+model User {
+    id        Int       @id @default(autoincrement())
+    email     String    @unique
+    name      String?
+    examples  Example[]
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+}
