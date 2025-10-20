@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package payment;
+
+service PaymentService {
+  rpc CreatePayment(CreatePaymentRequest) returns (PaymentResponse);
+  rpc GetPayment(GetPaymentRequest) returns (PaymentResponse);
+  rpc HandlePaymentNotify(PaymentNotifyRequest) returns (PaymentResponse);
+  rpc CreateRefund(CreateRefundRequest) returns (RefundResponse);
+  rpc HandleRefundNotify(RefundNotifyRequest) returns (RefundResponse);
+  
+  // 支付日志相关方法
+  rpc CreatePaymentLog(CreatePaymentLogRequest) returns (PaymentLogResponse);
+  rpc GetPaymentLogsByOrderId(GetPaymentLogsByOrderIdRequest) returns (PaymentLogsResponse);
+  rpc GetPaymentLogByTransactionId(GetPaymentLogByTransactionIdRequest) returns (PaymentLogResponse);
+  rpc IsTransactionProcessed(IsTransactionProcessedRequest) returns (IsTransactionProcessedResponse);
+  rpc GetPaymentStats(GetPaymentStatsRequest) returns (PaymentStatsResponse);
+}
+
+message CreatePaymentRequest {
+  string order_id = 1;
+  string total = 2;
+  string provider = 3;
+}
+
+message GetPaymentRequest {
+  string id = 1;
+}
+
+message PaymentNotifyRequest {
+  string out_trade_no = 1;
+  string transaction_id = 2;
+  string total_fee = 3;
+  string trade_state = 4;
+  string notify_raw = 5;
+}
+
+message CreateRefundRequest {
+  string payment_id = 1;
+  string refund_amount = 2;
+  string reason = 3;
+}
+
+message RefundNotifyRequest {
+  string out_refund_no = 1;
+  string refund_status = 2;
+  string success_time = 3;
+  string notify_raw = 4;
+}
+
+message PaymentResponse {
+  string id = 1;
+  string out_trade_no = 2;
+  string transaction_id = 3;
+  string total = 4;
+  string status = 5;
+  string provider = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message RefundResponse {
+  string id = 1;
+  string out_refund_no = 2;
+  string refund_amount = 3;
+  string status = 4;
+  string reason = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+// 支付日志相关消息
+message CreatePaymentLogRequest {
+  string order_id = 1;
+  string transaction_id = 2;
+  string status = 3;
+  string amount = 4;
+  string provider = 5;
+  string reason = 6;
+}
+
+message GetPaymentLogsByOrderIdRequest {
+  string order_id = 1;
+}
+
+message GetPaymentLogByTransactionIdRequest {
+  string transaction_id = 1;
+}
+
+message IsTransactionProcessedRequest {
+  string transaction_id = 1;
+}
+
+message GetPaymentStatsRequest {
+  string start_date = 1;
+  string end_date = 2;
+}
+
+message PaymentLogResponse {
+  string id = 1;
+  string order_id = 2;
+  string transaction_id = 3;
+  string status = 4;
+  string amount = 5;
+  string provider = 6;
+  string reason = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message PaymentLogsResponse {
+  repeated PaymentLogResponse logs = 1;
+}
+
+message IsTransactionProcessedResponse {
+  bool processed = 1;
+}
+
+message PaymentStatsResponse {
+  int32 total = 1;
+  int32 success = 2;
+  int32 failed = 3;
+  int32 closed = 4;
+  string total_amount = 5;
+}

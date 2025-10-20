@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id                 BigInt        @id @default(autoincrement())
+  orderNo            String        @unique @map("order_no") @db.VarChar(40)
+  userId             BigInt        @map("user_id")
+  addressId          BigInt        @map("address_id")
+  orderType          OrderType     @default(RECYCLE) @map("order_type") // 订单类型
+  status             OrderStatus   @default(PENDING)
+  expectPickupTime   DateTime?     @map("expect_pickup_time") // 回收订单必填，销售订单可选
+  actualPickupTime   DateTime?     @map("actual_pickup_time")
+  expectDeliveryTime DateTime?     @map("expect_delivery_time") // 销售订单必填
+  actualDeliveryTime DateTime?     @map("actual_delivery_time")
+  estimatedAmount    Decimal       @default(0) @map("estimated_amount") @db.Decimal(10, 2)
+  settlementAmount   Decimal       @default(0) @map("settlement_amount") @db.Decimal(10, 2)
+  payAmount          Decimal       @default(0) @map("pay_amount") @db.Decimal(10, 2)
+  channel            String        @db.VarChar(30) // 'WECHAT_MP', 'ALIPAY_MP'
+  remark             String?       @db.VarChar(500)
+  priority           OrderPriority @default(NORMAL) // 订单优先级
+  source             String?       @db.VarChar(50) // 订单来源
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  items              OrderItem[]
+  assignments        Assignment[]
+
+  @@index([userId, status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id              BigInt   @id @default(autoincrement())
+  orderId         BigInt   @map("order_id")
+  categoryId      BigInt   @map("category_id")
+  estimatedWeight Decimal? @map("estimated_weight") @db.Decimal(10, 2)
+  actualWeight    Decimal? @map("actual_weight") @db.Decimal(10, 2)
+  unitPrice       Decimal  @map("unit_price") @db.Decimal(10, 2)
+  amount          Decimal  @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  order           Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Assignment {
+  id         BigInt           @id @default(autoincrement())
+  orderId    BigInt           @map("order_id")
+  courierId  BigInt           @map("courier_id")
+  status     AssignmentStatus @default(ASSIGNED)
+  acceptedAt DateTime?        @map("accepted_at")
+  arrivedAt  DateTime?        @map("arrived_at")
+  finishedAt DateTime?        @map("finished_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  order      Order            @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([courierId, status])
+  @@map("assignments")
+}
+
+enum OrderType {
+  RECYCLE // 回收订单
+  SALE // 销售订单
+}
+
+enum OrderPriority {
+  LOW // 低优先级
+  NORMAL // 普通优先级
+  HIGH // 高优先级
+  URGENT // 紧急
+}
+
+enum OrderStatus {
+  PENDING // 待派单
+  ASSIGNED // 待接单
+  ACCEPTED // 待上门
+  PROCESSING // 回收中/配送中
+  COMPLETED // 已完成
+  CANCELLED // 已取消
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  ACCEPTED
+  REJECTED
+  ARRIVED
+  FINISHED
+  CANCELLED
+}
