@@ -3,20 +3,20 @@ import { Type } from 'class-transformer';
 
 export class RecycleOrderItemDto {
   @IsNumber()
-  categoryId: number;
+  categoryId!: number;
   
   @IsString()
-  name: string;
+  name!: string;
   
   @IsString()
   @IsOptional()
   description?: string;
   
   @IsNumber()
-  estimatedQuantity: number;
+  estimatedQuantity!: number;
   
   @IsString()
-  unit: string;
+  unit!: string;
   
   @IsNumber()
   @IsOptional()
@@ -33,13 +33,13 @@ export class RecycleOrderItemDto {
 
 export class CreateRecycleOrderDto {
   @IsNumber()
-  userId: number;
+  userId!: number;
   
   @IsNumber()
-  addressId: number;
+  addressId!: number;
   
   @IsDateString()
-  expectPickupTime: string;
+  expectPickupTime!: string;
   
   @IsEnum(['LOW', 'NORMAL', 'HIGH', 'URGENT'])
   @IsOptional()
@@ -56,5 +56,5 @@ export class CreateRecycleOrderDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RecycleOrderItemDto)
-  items: RecycleOrderItemDto[];
+  items!: RecycleOrderItemDto[];
 }

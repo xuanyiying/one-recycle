@@ -1,5 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+
+// 添加 BigInt 序列化支持
+if (!(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+}
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +14,7 @@ import { join } from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   try {
     const app = await NestFactory.create(AppModule);
     const configService = app.get(ConfigService);
@@ -52,10 +59,10 @@ async function bootstrap() {
 
     // 启动所有微服务
     await app.startAllMicroservices();
-    
+
     // 启动HTTP服务器
     await app.listen(port);
-    
+
     logger.log(`🚀 Account service is running on: ${await app.getUrl()}`);
     logger.log(`🔧 gRPC service is running on: 0.0.0.0:${grpcPort}`);
     logger.log(`🌍 Environment: ${environment}`);

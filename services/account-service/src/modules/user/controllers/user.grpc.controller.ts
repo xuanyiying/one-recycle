@@ -1,16 +1,16 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { UserService } from './user.service';
-import { 
+import { UserService } from '../services/user.service';
+import {
   GetUserRequest,
-  CreateUserRequest, 
+  CreateUserRequest,
   UpdateUserRequest,
-  UserResponse 
-} from '../proto/account.pb';
+  UserResponse
+} from '../../../proto/account.pb';
 
 @Controller()
 export class UserGrpcController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @GrpcMethod('AccountService', 'GetUser')
   async getUser(data: GetUserRequest): Promise<UserResponse> {
@@ -67,6 +67,13 @@ export class UserGrpcController {
     }
     if (error.code === 'ALREADY_EXISTS') {
       return { code: 6, message: error.message }; // ALREADY_EXISTS
+    }
+    if (error.code === 'INTERNAL') {
+      return { code: 13, message: error.message }; // INTERNAL
+    }
+    // 处理普通错误对象
+    if (error instanceof Error) {
+      return { code: 13, message: error.message || 'Internal server error' };
     }
     return { code: 13, message: 'Internal server error' }; // INTERNAL
   }

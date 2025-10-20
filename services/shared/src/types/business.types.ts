@@ -4,6 +4,81 @@
 
 import { BaseEntity } from './common.types';
 
+// 用户状态
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  PENDING = 'PENDING'
+}
+
+
+
+// 交易类型
+export enum TransactionType {
+  PAYMENT = 'PAYMENT',
+  REFUND = 'REFUND',
+  WITHDRAWAL = 'WITHDRAWAL',
+  DEPOSIT = 'DEPOSIT'
+}
+
+// 提现状态
+export enum WithdrawalStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
+}
+
+// 支付提供商
+export enum PaymentProvider {
+  ALIPAY = 'ALIPAY',
+  WECHAT = 'WECHAT',
+  BANK_CARD = 'BANK_CARD',
+  CASH = 'CASH'
+}
+
+// 物流状态
+export enum DispatchStatus {
+  PENDING = 'PENDING',
+  ASSIGNED = 'ASSIGNED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  DELIVERED = 'DELIVERED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
+}
+
+// 快递提供商
+export enum CourierProvider {
+  JD_EXPRESS = 'JD_EXPRESS',
+  SF_EXPRESS = 'SF_EXPRESS',
+  YTO_EXPRESS = 'YTO_EXPRESS',
+  INTERNAL = 'INTERNAL'
+}
+
+// 分类状态
+export enum CategoryStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE'
+}
+
+// 通知类型
+export enum NotificationType {
+  EMAIL = 'EMAIL',
+  SMS = 'SMS',
+  PUSH = 'PUSH',
+  IN_APP = 'IN_APP'
+}
+
+// 通知状态
+export enum NotificationStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  DELIVERED = 'DELIVERED',
+  FAILED = 'FAILED'
+}
+
 // 订单状态
 export enum OrderStatus {
   PENDING = 'PENDING',           // 待确认

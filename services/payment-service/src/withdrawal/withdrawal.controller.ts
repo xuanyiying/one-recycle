@@ -164,7 +164,7 @@ export class WithdrawalController {
       }
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       // 返回失败响应
       if (provider.toUpperCase() === 'WECHAT') {
         return {

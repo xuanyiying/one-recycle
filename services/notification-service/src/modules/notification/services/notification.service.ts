@@ -341,8 +341,8 @@ export class NotificationService implements INotificationService {
         failed: notifications.filter(n => n.status === NotificationStatus.FAILED).length,
         pending: notifications.filter(n => n.status === NotificationStatus.PENDING).length,
       },
-      byType: {},
-      byDay: {},
+      byType: {} as Record<string, any>,
+      byDay: {} as Record<string, any>,
     };
 
     // 按类型统计
@@ -474,7 +474,7 @@ export class NotificationService implements INotificationService {
       this.notifications.set(notification.id, notification);
       this.logger.log(`Processed notification ${notification.id}: ${notification.status}`);
 
-    } catch (error) {
+    } catch (error: any) {
       notification.status = NotificationStatus.FAILED;
       notification.failedAt = new Date();
       notification.updatedAt = new Date();
@@ -526,7 +526,7 @@ export class NotificationService implements INotificationService {
       batch.status = 'COMPLETED';
       batch.completedAt = new Date();
       
-    } catch (error) {
+    } catch (error: any) {
       batch.status = 'FAILED';
       this.logger.error(`Batch processing failed for ${batch.id}: ${error.message}`);
     }

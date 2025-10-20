@@ -1,17 +1,31 @@
 {
   "name": "order-service",
-  "prisma": {
-    "schema": "prisma/schema.prisma"
-  },
   "version": "1.0.0",
+  "description": "Order microservice for One Recycle platform",
+  "author": "One Recycle Team",
   "private": true,
-  "description": "Account microservice",
+  "license": "UNLICENSED",
+  "prisma": {
+    "schema": "src/prisma/schema.prisma"
+  },
   "scripts": {
-    "build": "nest build --tsc",
-    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
-    "proto:generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=env=node,useOptionals=messages,outputServices=grpc-js ./proto/*.proto",
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
     "start:dev": "nest start --watch",
-    "start:prod": "node dist/src/main"
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prisma:generate": "prisma generate --schema=./src/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema=./src/prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema=./src/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=./src/prisma/schema.prisma",
+    "proto:generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=env=node,useOptionals=messages,outputServices=grpc-js ./src/proto/*.proto"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.9.13",
@@ -34,6 +48,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.0.0",
+    "@types/express": "^4.17.17",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.19",
     "jest": "^30.2.0",

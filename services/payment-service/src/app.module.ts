@@ -8,11 +8,14 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { AppController } from './app.controller';
 import { JwtStrategy } from './common/strategies/jwt.strategy';
+import { appConfig } from './config/app.config';
+import { paymentConfig } from './config/payment.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [appConfig, paymentConfig],
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({

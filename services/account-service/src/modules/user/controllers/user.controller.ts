@@ -1,32 +1,32 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Put, 
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
   Delete,
-  Body, 
-  Param, 
+  Body,
+  Param,
   Query,
   UseInterceptors,
   UseFilters
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import { 
-  CreateUserDto, 
-  UpdateUserDto, 
+import { UserService } from '../services/user.service';
+import {
+  CreateUserDto,
+  UpdateUserDto,
   QueryUserDto,
   UserResponseDto,
-  UserListResponseDto 
-} from './dto';
+  UserListResponseDto
+} from '../dto';
 import { ApiResponse } from '@shared/types/common.types';
-import { ResponseInterceptor } from '../common';
-import { GlobalExceptionFilter } from '../common';
+import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
+import { GlobalExceptionFilter } from '../../../common/filters/global-exception.filter';
 
 @Controller('users')
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(GlobalExceptionFilter)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -45,7 +45,7 @@ export class UserController {
 
   @Put(':id')
   async update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto
   ): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);

@@ -218,7 +218,7 @@ export class OrderService implements IOrderService {
       },
     });
 
-    return stats.reduce((acc, stat) => {
+    return stats.reduce((acc: any, stat: any) => {
       acc[stat.status] = stat._count.status;
       return acc;
     }, {} as Record<string, number>);

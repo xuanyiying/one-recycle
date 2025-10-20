@@ -39,7 +39,7 @@ export class AccountService {
 
       this.logger.log(`Account created successfully for user ${userId}`);
       return this.mapAccountToEntity(account);
-    } catch (error) {
+    } catch (error: any) {
       // 如果账户已存在，返回现有账户
       if (error.code === 'P2002') {
         this.logger.log(`Account already exists for user ${userId}`);
@@ -439,7 +439,7 @@ export class AccountService {
   private async retryOnOptimisticLock<T>(
     operation: () => Promise<T>,
   ): Promise<T> {
-    let lastError: Error;
+    let lastError: Error | undefined;
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
@@ -463,7 +463,7 @@ export class AccountService {
       }
     }
 
-    throw lastError;
+    throw lastError || new Error('Unexpected error in retry operation');
   }
 
   /**

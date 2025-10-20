@@ -1,15 +1,22 @@
+// 添加 BigInt 序列化支持
+if (!(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+}
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AddressGrpcController } from './address.grpc.controller';
-import { AddressService } from './address.service';
+import { AddressService } from '../services/address.service';
 import {
   createTestAddress,
-} from '../../tests/test-utils';
+} from '../../../../tests/test-utils';
 import {
   CreateAddressRequest,
   GetAddressesRequest,
   UpdateAddressRequest,
   DeleteAddressRequest,
-} from '../proto/account.pb';
+} from '../../../proto/account.pb';
 
 describe('AddressGrpcController', () => {
   let controller: AddressGrpcController;
@@ -69,7 +76,7 @@ describe('AddressGrpcController', () => {
         detail: request.detail,
         isDefault: request.isDefault,
       });
-      expect(result.id).toEqual(expectedAddress.id);
+      expect(result.id).toEqual(Number(expectedAddress.id));
       expect(result.consignee).toEqual(expectedAddress.consignee);
       expect(result.mobile).toEqual(expectedAddress.mobile);
     });
@@ -85,13 +92,13 @@ describe('AddressGrpcController', () => {
         detail: '123 Main St',
         isDefault: false,
       };
-      const error = new Error('Address creation failed') as any;
-      error.code = 'NOT_FOUND';
+      const error = new Error('Address creation failed');
+      (error as any).code = 'NOT_FOUND';
 
       addressService.create.mockRejectedValue(error);
 
       const result = await controller.createAddress(request) as any;
-      expect(result.code).toEqual(5); // NOT_FOUND
+      expect(result).toEqual({ code: 5, message: 'Address creation failed' }); // NOT_FOUND
     });
   });
 
@@ -109,19 +116,19 @@ describe('AddressGrpcController', () => {
 
       expect(addressService.findAllByUserId).toHaveBeenCalledWith(Number(request.userId));
       expect(result.addresses).toHaveLength(2);
-      expect(result.addresses[0].id).toEqual(expectedAddresses[0].id);
-      expect(result.addresses[1].id).toEqual(expectedAddresses[1].id);
+      expect(result.addresses[0].id).toEqual(Number(expectedAddresses[0].id));
+      expect(result.addresses[1].id).toEqual(Number(expectedAddresses[1].id));
     });
 
     it('should handle address not found', async () => {
       const request: GetAddressesRequest = { userId: 999 };
-      const error = new Error('User not found') as any;
-      error.code = 'NOT_FOUND';
+      const error = new Error('User not found');
+      (error as any).code = 'NOT_FOUND';
 
       addressService.findAllByUserId.mockRejectedValue(error);
 
       const result = await controller.getAddresses(request) as any;
-      expect(result.code).toEqual(5); // NOT_FOUND
+      expect(result).toEqual({ code: 5, message: 'User not found' }); // NOT_FOUND
     });
   });
 
@@ -160,7 +167,7 @@ describe('AddressGrpcController', () => {
         detail: request.detail,
         isDefault: request.isDefault,
       });
-      expect(result.id).toEqual(expectedAddress.id);
+      expect(result.id).toEqual(Number(expectedAddress.id));
       expect(result.consignee).toEqual(expectedAddress.consignee);
     });
 
@@ -175,13 +182,13 @@ describe('AddressGrpcController', () => {
         detail: '456 New St',
         isDefault: false,
       };
-      const error = new Error('Address not found') as any;
-      error.code = 'NOT_FOUND';
+      const error = new Error('Address not found');
+      (error as any).code = 'NOT_FOUND';
 
       addressService.update.mockRejectedValue(error);
 
       const result = await controller.updateAddress(request) as any;
-      expect(result.code).toEqual(5); // NOT_FOUND
+      expect(result).toEqual({ code: 5, message: 'Address not found' }); // NOT_FOUND
     });
   });
 
@@ -200,13 +207,13 @@ describe('AddressGrpcController', () => {
 
     it('should handle service errors', async () => {
       const request: DeleteAddressRequest = { id: 999 };
-      const error = new Error('Address not found') as any;
-      error.code = 'NOT_FOUND';
+      const error = new Error('Address not found');
+      (error as any).code = 'NOT_FOUND';
 
       addressService.remove.mockRejectedValue(error);
 
       const result = await controller.deleteAddress(request) as any;
-      expect(result.code).toEqual(5); // NOT_FOUND
+      expect(result).toEqual({ code: 5, message: 'Address not found' }); // NOT_FOUND
     });
   });
 });

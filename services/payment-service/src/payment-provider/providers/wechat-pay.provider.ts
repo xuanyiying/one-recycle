@@ -163,7 +163,7 @@ export class WeChatPayProvider implements IPaymentProvider {
         transactionId: result.payment_no,
         message: '转账成功',
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`WeChat transfer failed: ${error.message}`, error.stack);
       return {
         success: false,
@@ -237,7 +237,7 @@ export class WeChatPayProvider implements IPaymentProvider {
         transactionId: result.detail_id,
         message: result.reason,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Query WeChat transfer failed: ${error.message}`);
       return {
         status: TransferStatus.FAILED,
@@ -266,7 +266,7 @@ export class WeChatPayProvider implements IPaymentProvider {
       }
 
       return isValid;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Verify callback failed: ${error.message}`);
       return false;
     }
@@ -360,7 +360,7 @@ export class WeChatPayProvider implements IPaymentProvider {
         key: fs.readFileSync(this.keyPath),
         rejectUnauthorized: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to load certificates: ${error.message}`);
       return undefined;
     }

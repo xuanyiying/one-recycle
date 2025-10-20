@@ -30,10 +30,10 @@ export class RecipientDto {
 
 export class NotificationContentDto {
   @IsString()
-  title: string;
+  title!: string;
 
   @IsString()
-  body: string;
+  body!: string;
 
   @IsOptional()
   @IsObject()
@@ -84,15 +84,15 @@ export class DeliveryOptionsDto {
 
 export class SendNotificationDto {
   @IsEnum(NotificationType)
-  type: NotificationType;
+  type!: NotificationType;
 
   @ValidateNested()
   @Type(() => RecipientDto)
-  recipient: RecipientDto;
+  recipient!: RecipientDto;
 
   @ValidateNested()
   @Type(() => NotificationContentDto)
-  content: NotificationContentDto;
+  content!: NotificationContentDto;
 
   @IsOptional()
   @IsEnum(NotificationPriority)

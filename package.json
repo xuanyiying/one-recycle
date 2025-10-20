@@ -1,0 +1,52 @@
+{
+  "name": "one-recycle",
+  "version": "1.0.0",
+  "description": "One Recycle - Microservices Architecture",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:services",
+    "install:services": "npm run install:auth && npm run install:order && npm run install:payment && npm run install:dispatch",
+    "install:auth": "cd services/auth-service && npm install",
+    "install:order": "cd services/order-service && npm install",
+    "install:payment": "cd services/payment-service && npm install",
+    "install:dispatch": "cd services/dispatch-service && npm install",
+    "build:all": "npm run build:auth && npm run build:order && npm run build:payment && npm run build:dispatch",
+    "build:auth": "cd services/auth-service && npm run build",
+    "build:order": "cd services/order-service && npm run build",
+    "build:payment": "cd services/payment-service && npm run build",
+    "build:dispatch": "cd services/dispatch-service && npm run build",
+    "start:dev": "concurrently \"npm run start:auth\" \"npm run start:order\" \"npm run start:payment\" \"npm run start:dispatch\"",
+    "start:auth": "cd services/auth-service && npm run start:dev",
+    "start:order": "cd services/order-service && npm run start:dev",
+    "start:payment": "cd services/payment-service && npm run start:dev",
+    "start:dispatch": "cd services/dispatch-service && npm run start:dev",
+    "test:all": "npm run test:auth && npm run test:order && npm run test:payment && npm run test:dispatch",
+    "test:auth": "cd services/auth-service && npm test",
+    "test:order": "cd services/order-service && npm test",
+    "test:payment": "cd services/payment-service && npm test",
+    "test:dispatch": "cd services/dispatch-service && npm test",
+    "lint:all": "npm run lint:auth && npm run lint:order && npm run lint:payment && npm run lint:dispatch",
+    "lint:auth": "cd services/auth-service && npm run lint",
+    "lint:order": "cd services/order-service && npm run lint",
+    "lint:payment": "cd services/payment-service && npm run lint",
+    "lint:dispatch": "cd services/dispatch-service && npm run lint",
+    "format:all": "npm run format:auth && npm run format:order && npm run format:payment && npm run format:dispatch",
+    "format:auth": "cd services/auth-service && npm run format",
+    "format:order": "cd services/order-service && npm run format",
+    "format:payment": "cd services/payment-service && npm run format",
+    "format:dispatch": "cd services/dispatch-service && npm run format"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "author": "One Recycle Team",
+  "license": "MIT"
+}

@@ -1,13 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import { UserController } from './user.controller';
-import { UserService } from './user.service';
+import { UserService } from '../services/user.service';
 import {
-  createTestUser,
   createTestUserResponse,
-  createCreateUserDto,
-  createUpdateUserDto,
-} from '../../tests/test-utils';
+} from '../../../../tests/test-utils';
+import { NotFoundException } from '@nestjs/common';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+
+// DTO 工厂函数
+function createCreateUserDto(overrides: Partial<CreateUserDto> = {}): CreateUserDto {
+  return {
+    mobile: '13800138000',
+    nickname: '测试用户',
+    avatarUrl: 'https://example.com/avatar.jpg',
+    ...overrides,
+  };
+}
+
+function createUpdateUserDto(overrides: Partial<UpdateUserDto> = {}): UpdateUserDto {
+  return {
+    nickname: '更新的用户',
+    avatarUrl: 'https://example.com/new-avatar.jpg',
+    ...overrides,
+  };
+}
 
 describe('UserController', () => {
   let controller: UserController;

@@ -2,17 +2,17 @@ import { IsInt, IsNumber, IsString, Min } from 'class-validator';
 
 export class OrderItemDto {
   @IsInt()
-  categoryId: number;
+  categoryId!: number;
 
   @IsNumber()
   @Min(0)
-  estimatedWeight: number;
+  estimatedWeight!: number;
 
   @IsNumber()
   @Min(0)
-  unitPrice: number;
+  unitPrice!: number;
 
   @IsInt()
   @Min(1)
-  quantity: number;
+  quantity!: number;
 }

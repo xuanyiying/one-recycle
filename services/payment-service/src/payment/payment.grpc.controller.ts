@@ -19,7 +19,7 @@ import {
   PaymentLogsResponse,
   IsTransactionProcessedResponse,
   PaymentStatsResponse
-} from '../../proto/payment.pb';
+} from '../proto/payment.pb';
 
 @Controller()
 export class PaymentGrpcController {

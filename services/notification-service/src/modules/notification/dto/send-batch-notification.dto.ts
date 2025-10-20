@@ -1,7 +1,7 @@
 import { SendNotificationDto } from './send-notification.dto';
 
 export class SendBatchNotificationDto {
-  batchName: string;
+  batchName!: string;
   description?: string;
-  notifications: SendNotificationDto[];
+  notifications!: SendNotificationDto[];
 }

@@ -54,7 +54,7 @@ export class MessageQueueClient {
       }
 
       this.logger.log(`Withdrawal created event published successfully: ${event.withdrawalId}`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to publish withdrawal created event: ${event.withdrawalId}`,
         error.stack,
@@ -87,7 +87,7 @@ export class MessageQueueClient {
       }
 
       this.logger.log(`Withdrawal completed event published successfully: ${event.withdrawalId}`);
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to publish withdrawal completed event: ${event.withdrawalId}`,
         error.stack,

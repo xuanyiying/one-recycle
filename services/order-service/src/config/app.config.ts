@@ -1,7 +1,7 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('app', () => ({
-  port: parseInt(process.env.PORT, 10) || 3003,
+  port: parseInt(process.env.PORT || '3003', 10),
   environment: process.env.NODE_ENV || 'development',
   
   // 数据库配置
@@ -9,34 +9,34 @@ export default registerAs('app', () => ({
     url: process.env.DATABASE_URL,
   },
   
-  // gRPC配置
+  // gRPC 配置
   grpc: {
-    port: parseInt(process.env.GRPC_PORT, 10) || 50003,
+    port: parseInt(process.env.GRPC_PORT || '50003', 10),
     package: 'order',
     protoPath: 'proto/order.proto',
   },
   
-  // Redis配置
+  // Redis 配置
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
     password: process.env.REDIS_PASSWORD,
-    db: parseInt(process.env.REDIS_DB, 10) || 0,
+    db: parseInt(process.env.REDIS_DB || '0', 10),
   },
   
   // 外部服务配置
   services: {
     dispatch: {
       host: process.env.DISPATCH_SERVICE_HOST || 'localhost',
-      port: parseInt(process.env.DISPATCH_SERVICE_PORT, 10) || 50006,
+      port: parseInt(process.env.DISPATCH_SERVICE_PORT || '50006', 10),
     },
     inventory: {
       host: process.env.INVENTORY_SERVICE_HOST || 'localhost',
-      port: parseInt(process.env.INVENTORY_SERVICE_PORT, 10) || 50005,
+      port: parseInt(process.env.INVENTORY_SERVICE_PORT || '50005', 10),
     },
     payment: {
       host: process.env.PAYMENT_SERVICE_HOST || 'localhost',
-      port: parseInt(process.env.PAYMENT_SERVICE_PORT, 10) || 50004,
+      port: parseInt(process.env.PAYMENT_SERVICE_PORT || '50004', 10),
     },
   },
   

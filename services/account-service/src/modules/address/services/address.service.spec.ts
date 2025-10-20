@@ -1,13 +1,20 @@
+// 添加 BigInt 序列化支持
+if (!(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+}
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { AddressService } from './address.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import {
   createMockPrismaService,
   createTestAddress,
   createTestUser,
   createCreateAddressDto,
-} from '../../tests/test-utils';
+} from '../../../../tests/test-utils';
 
 describe('AddressService', () => {
   let service: AddressService;

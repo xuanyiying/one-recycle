@@ -1,10 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AddressController } from './address.controller';
-import { AddressService } from './address.service';
+import { AddressService } from '../services/address.service';
 import {
   createTestAddress,
-  createCreateAddressDto,
-} from '../../tests/test-utils';
+} from '../../../../tests/test-utils';
+import { CreateAddressDto } from '../dto/create-address.dto';
+
+// DTO 工厂函数
+function createCreateAddressDto(overrides: Partial<CreateAddressDto> = {}): CreateAddressDto {
+  return {
+    userId: 1,
+    consignee: '张三',
+    mobile: '13800138000',
+    province: '北京市',
+    city: '北京市',
+    district: '朝阳区',
+    detail: '某某街道123号',
+    isDefault: false,
+    ...overrides,
+  };
+}
 
 describe('AddressController', () => {
   let controller: AddressController;
@@ -102,7 +117,7 @@ describe('AddressController', () => {
   describe('update', () => {
     it('should update an address successfully', async () => {
       const addressId = 1;
-      const updateData = { 
+      const updateData = {
         consignee: 'Updated Name',
         mobile: '13800138001'
       };

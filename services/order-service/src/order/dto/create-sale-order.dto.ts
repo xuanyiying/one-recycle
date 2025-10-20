@@ -3,13 +3,13 @@ import { Type } from 'class-transformer';
 
 export class SaleOrderItemDto {
   @IsNumber()
-  inventoryItemId: number;
+  inventoryItemId!: number;
   
   @IsNumber()
-  quantity: number;
+  quantity!: number;
   
   @IsNumber()
-  unitPrice: number;
+  unitPrice!: number;
   
   @IsString()
   @IsOptional()
@@ -18,10 +18,10 @@ export class SaleOrderItemDto {
 
 export class CreateSaleOrderDto {
   @IsNumber()
-  userId: number;
+  userId!: number;
   
   @IsNumber()
-  addressId: number;
+  addressId!: number;
   
   @IsDateString()
   @IsOptional()
@@ -42,5 +42,5 @@ export class CreateSaleOrderDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SaleOrderItemDto)
-  items: SaleOrderItemDto[];
+  items!: SaleOrderItemDto[];
 }

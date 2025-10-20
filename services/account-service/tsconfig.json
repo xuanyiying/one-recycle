@@ -23,27 +23,56 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "exactOptionalPropertyTypes": false,
+    "types": [
+      "node",
+      "jest"
+    ],
     "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["../shared/src/*"],
-      "@prisma/*": ["src/prisma/*"],
-      "@proto/*": ["src/proto/*"],
-      "@user/*": ["src/user/*"],
-      "@address/*": ["src/address/*"],
-      "@common/*": ["src/common/*"],
-      "@config/*": ["src/config/*"],
-      "@guards/*": ["src/guards/*"],
-      "@interceptors/*": ["src/interceptors/*"],
-      "@filters/*": ["src/filters/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@shared/*": [
+        "../shared/src/*"
+      ],
+      "@prisma/*": [
+        "src/prisma/*"
+      ],
+      "@proto/*": [
+        "src/proto/*"
+      ],
+      "@user/*": [
+        "src/modules/user/*"
+      ],
+      "@address/*": [
+        "src/modules/address/*"
+      ],
+      "@common/*": [
+        "src/common/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@guards/*": [
+        "src/common/guards/*"
+      ],
+      "@interceptors/*": [
+        "src/common/interceptors/*"
+      ],
+      "@filters/*": [
+        "src/common/filters/*"
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ]
     }
   },
   "include": [
     "src/**/*",
+    "tests/**/*",
     "../shared/src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "tests"
+    "dist"
   ]
 }

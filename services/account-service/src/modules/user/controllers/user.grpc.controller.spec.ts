@@ -1,15 +1,22 @@
+// 添加 BigInt 序列化支持
+if (!(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+}
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserGrpcController } from './user.grpc.controller';
-import { UserService } from './user.service';
+import { UserService } from '../services/user.service';
 import {
   createTestUser,
   createTestUserResponse,
-} from '../../tests/test-utils';
+} from '../../../../tests/test-utils';
 import {
   CreateUserRequest,
   UpdateUserRequest,
   GetUserRequest,
-} from '../proto/account.pb';
+} from '../../../proto/account.pb';
 
 describe('UserGrpcController', () => {
   let controller: UserGrpcController;
@@ -59,7 +66,7 @@ describe('UserGrpcController', () => {
         nickname: request.nickname,
         avatarUrl: request.avatarUrl,
       });
-      expect(result.id).toEqual(expectedUser.id);
+      expect(result.id).toEqual(Number(expectedUser.id));
       expect(result.mobile).toEqual(expectedUser.mobile);
       expect(result.nickname).toEqual(expectedUser.nickname);
     });
@@ -71,11 +78,12 @@ describe('UserGrpcController', () => {
         avatarUrl: 'https://example.com/avatar.jpg',
       };
       const error = new Error('Creation failed');
+      (error as any).code = 'INTERNAL';
 
       userService.create.mockRejectedValue(error);
 
       const result = await controller.createUser(request);
-      expect(result).toEqual({ code: 13 }); // INTERNAL
+      expect(result).toEqual({ code: 13, message: 'Internal server error' }); // INTERNAL
     });
   });
 
@@ -88,8 +96,8 @@ describe('UserGrpcController', () => {
 
       const result = await controller.getUser(request);
 
-      expect(userService.findOne).toHaveBeenCalledWith(request.id);
-      expect(result.id).toEqual(expectedUser.id);
+      expect(userService.findOne).toHaveBeenCalledWith(request.id.toString());
+      expect(result.id).toEqual(Number(expectedUser.id));
       expect(result.mobile).toEqual(expectedUser.mobile);
       expect(result.nickname).toEqual(expectedUser.nickname);
     });
@@ -97,11 +105,12 @@ describe('UserGrpcController', () => {
     it('should handle user not found', async () => {
       const request: GetUserRequest = { id: 999 };
       const error = new Error('User not found');
+      (error as any).code = 'NOT_FOUND';
 
       userService.findOne.mockRejectedValue(error);
 
       const result = await controller.getUser(request);
-      expect(result).toEqual({ code: 5 }); // NOT_FOUND
+      expect(result).toEqual({ code: 5, message: 'User not found' }); // NOT_FOUND
     });
   });
 
@@ -118,11 +127,11 @@ describe('UserGrpcController', () => {
 
       const result = await controller.updateUser(request);
 
-      expect(userService.update).toHaveBeenCalledWith(request.id, {
+      expect(userService.update).toHaveBeenCalledWith(request.id.toString(), {
         nickname: request.nickname,
         avatarUrl: request.avatarUrl,
       });
-      expect(result.id).toEqual(expectedUser.id);
+      expect(result.id).toEqual(Number(expectedUser.id));
       expect(result.mobile).toEqual(expectedUser.mobile);
       expect(result.nickname).toEqual(expectedUser.nickname);
     });
@@ -134,11 +143,12 @@ describe('UserGrpcController', () => {
         avatarUrl: 'https://example.com/updated-avatar.jpg',
       };
       const error = new Error('User not found');
+      (error as any).code = 'NOT_FOUND';
 
       userService.update.mockRejectedValue(error);
 
       const result = await controller.updateUser(request);
-      expect(result).toEqual({ code: 5 }); // NOT_FOUND
+      expect(result).toEqual({ code: 5, message: 'User not found' }); // NOT_FOUND
     });
   });
 

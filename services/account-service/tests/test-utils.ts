@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateUserDto } from '../src/user/dto/create-user.dto';
-import { UpdateUserDto } from '../src/user/dto/update-user.dto';
-import { CreateAddressDto } from '../src/address/dto/create-address.dto';
-import { UserRole } from '@shared/types/auth.types';
+import { CreateUserDto } from '../src/modules/user/dto/create-user.dto';
+import { UpdateUserDto } from '../src/modules/user/dto/update-user.dto';
+import { CreateAddressDto } from '../src/modules/address/dto/create-address.dto';
+import { UserRole } from '../../shared/src/types/auth.types';
 import { UserStatus } from '@prisma/client';
 
 // Mock PrismaService
@@ -21,6 +21,7 @@ export function createMockPrismaService() {
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn().mockResolvedValue({}),
       update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({}),
       delete: jest.fn().mockResolvedValue({}),
       deleteMany: jest.fn().mockResolvedValue({}),
     },

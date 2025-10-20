@@ -18,10 +18,6 @@ describe('Third-Party Login (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          envFilePath: '.env.test',
-        }),
         AuthModule,
       ],
     }).compile();

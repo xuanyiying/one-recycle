@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { PrismaService } from '../src/prisma.service';
+import { PrismaService } from '../src/prisma/prisma.service';
 import { createMockPrismaService } from './test-utils';
 
 describe('AppController (e2e)', () => {
@@ -20,14 +20,14 @@ describe('AppController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // 启用全局验证管道
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
     }));
-    
+
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
     await app.init();
   });
@@ -87,7 +87,7 @@ describe('AppController (e2e)', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       prismaService.user.findUnique.mockResolvedValue(existingUser);
 
       return request(app.getHttpServer())

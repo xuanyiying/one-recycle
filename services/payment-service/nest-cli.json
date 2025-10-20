@@ -2,9 +2,11 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "deleteOutDir": true,
     "assets": [
       "**/*.proto",
-      "prisma/schema.prisma"
+      "prisma/schema.prisma",
+      "prisma/generated/**/*"
     ],
     "watchAssets": true
   }

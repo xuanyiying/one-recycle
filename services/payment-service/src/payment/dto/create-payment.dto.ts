@@ -15,14 +15,14 @@ export enum PaymentMethod {
 
 export class CreatePaymentDto {
   @IsString()
-  orderId: string;
+  orderId!: string;
 
   @IsNumber()
   @Min(0)
-  amount: number;
+  amount!: number;
 
   @IsString()
-  provider: string;
+  provider!: string;
 
   @IsEnum(PaymentStatus)
   @IsOptional()

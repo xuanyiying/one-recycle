@@ -166,7 +166,7 @@ export class AlipayProvider implements IPaymentProvider {
         transactionId: transferResponse.order_id,
         message: '转账成功',
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Alipay transfer failed: ${error.message}`, error.stack);
       return {
         success: false,
@@ -257,7 +257,7 @@ export class AlipayProvider implements IPaymentProvider {
         transactionId: queryResponse.order_id,
         message: queryResponse.fail_reason,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Query Alipay transfer failed: ${error.message}`);
       return {
         status: TransferStatus.FAILED,
@@ -296,7 +296,7 @@ export class AlipayProvider implements IPaymentProvider {
       }
 
       return isValid;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Verify callback failed: ${error.message}`);
       return false;
     }
@@ -323,7 +323,7 @@ export class AlipayProvider implements IPaymentProvider {
         response.sign,
         'base64',
       );
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Verify response sign failed: ${error.message}`);
       return false;
     }

@@ -3,12 +3,12 @@ import { IsNumber, IsPositive, IsString } from 'class-validator';
 export class DeductFrozenBalanceDto {
   @IsNumber()
   @IsPositive()
-  userId: number;
+  userId!: number;
 
   @IsNumber()
   @IsPositive()
-  amount: number;
+  amount!: number;
 
   @IsString()
-  withdrawalId: string;
+  withdrawalId!: string;
 }

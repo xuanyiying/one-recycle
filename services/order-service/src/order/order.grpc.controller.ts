@@ -101,7 +101,7 @@ export class OrderGrpcController {
       remark: order.remark || '',
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
-      items: order.items?.map(item => ({
+      items: order.items?.map((item: any) => ({
         id: Number(item.id),
         categoryId: Number(item.categoryId),
         estimatedWeight: item.estimatedWeight?.toString() || '0',
@@ -109,7 +109,7 @@ export class OrderGrpcController {
         unitPrice: item.unitPrice?.toString() || '0',
         amount: item.amount?.toString() || '0'
       })) || [],
-      assignments: order.assignments?.map(assignment => ({
+      assignments: order.assignments?.map((assignment: any) => ({
         id: Number(assignment.id),
         courierId: Number(assignment.courierId),
         status: assignment.status,

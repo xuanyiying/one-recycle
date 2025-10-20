@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
-import { AddressService } from './address.service';
-import { CreateAddressDto } from './dto/create-address.dto';
+import { AddressService } from '../services/address.service';
+import { CreateAddressDto } from '../dto/create-address.dto';
 
 @Controller('addresses')
 export class AddressController {
-  constructor(private readonly addressService: AddressService) {}
+  constructor(private readonly addressService: AddressService) { }
 
   @Post()
   create(@Body() createAddressDto: CreateAddressDto) {

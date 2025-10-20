@@ -3,14 +3,14 @@ import { IsNumber, IsPositive, IsString, IsOptional } from 'class-validator';
 export class IncreaseBalanceDto {
   @IsNumber()
   @IsPositive()
-  userId: number;
+  userId!: number;
 
   @IsNumber()
   @IsPositive()
-  amount: number;
+  amount!: number;
 
   @IsString()
-  orderId: string;
+  orderId!: string;
 
   @IsString()
   @IsOptional()

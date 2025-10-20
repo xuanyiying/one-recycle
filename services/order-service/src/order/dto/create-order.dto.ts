@@ -5,21 +5,21 @@ import { OrderType, OrderStatus } from '../entities';
 
 export class CreateOrderDto {
   @IsInt()
-  userId: number;
+  userId!: number;
 
   @IsInt()
-  addressId: number;
+  addressId!: number;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
-  items: OrderItemDto[];
+  items!: OrderItemDto[];
 
   @IsString()
-  expectPickupTime: string;
+  expectPickupTime!: string;
 
   @IsString()
-  channel: string;
+  channel!: string;
 
   @IsString()
   @IsOptional()

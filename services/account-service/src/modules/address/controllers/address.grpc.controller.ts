@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { AddressService } from './address.service';
+import { AddressService } from '../services/address.service';
 import {
   CreateAddressRequest,
   GetAddressesRequest,
@@ -9,7 +9,7 @@ import {
   AddressResponse,
   AddressListResponse,
   Empty
-} from '../proto/account.pb';
+} from '../../../proto/account.pb';
 
 @Controller()
 export class AddressGrpcController {
@@ -96,6 +96,13 @@ export class AddressGrpcController {
     }
     if (error.code === 'ALREADY_EXISTS') {
       return { code: 6, message: error.message }; // ALREADY_EXISTS
+    }
+    if (error.code === 'INTERNAL') {
+      return { code: 13, message: error.message }; // INTERNAL
+    }
+    // 处理普通错误对象
+    if (error instanceof Error) {
+      return { code: 13, message: error.message || 'Internal server error' };
     }
     return { code: 13, message: 'Internal server error' }; // INTERNAL
   }

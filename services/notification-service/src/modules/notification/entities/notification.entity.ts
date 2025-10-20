@@ -70,56 +70,56 @@ export interface NotificationResultEntity {
 }
 
 export class NotificationEntity {
-  id: string;
-  type: NotificationType;
-  status: NotificationStatus;
-  priority: NotificationPriority;
-  recipient: RecipientEntity;
-  content: NotificationContentEntity;
+  id!: string;
+  type!: NotificationType;
+  status!: NotificationStatus;
+  priority!: NotificationPriority;
+  recipient!: RecipientEntity;
+  content!: NotificationContentEntity;
   deliveryOptions?: DeliveryOptionsEntity;
   result?: NotificationResultEntity;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt!: Date;
+  updatedAt!: Date;
   sentAt?: Date;
   deliveredAt?: Date;
   failedAt?: Date;
 }
 
 export class NotificationTemplateEntity {
-  id: string;
-  name: string;
-  type: TemplateType;
+  id!: string;
+  name!: string;
+  type!: TemplateType;
   subject?: string;
-  content: string;
-  variables: string[];
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  content!: string;
+  variables!: string[];
+  isActive!: boolean;
+  createdAt!: Date;
+  updatedAt!: Date;
 }
 
 export class NotificationBatchEntity {
-  id: string;
-  name: string;
+  id!: string;
+  name!: string;
   description?: string;
-  totalCount: number;
-  sentCount: number;
-  deliveredCount: number;
-  failedCount: number;
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  createdAt: Date;
-  updatedAt: Date;
+  totalCount!: number;
+  sentCount!: number;
+  deliveredCount!: number;
+  failedCount!: number;
+  status!: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  createdAt!: Date;
+  updatedAt!: Date;
   completedAt?: Date;
 }
 
 export class NotificationStatsEntity {
-  totalSent: number;
-  totalDelivered: number;
-  totalFailed: number;
-  deliveryRate: number;
-  averageDeliveryTime: number;
-  costTotal: number;
-  period: string;
-  breakdown: {
+  totalSent!: number;
+  totalDelivered!: number;
+  totalFailed!: number;
+  deliveryRate!: number;
+  averageDeliveryTime!: number;
+  costTotal!: number;
+  period!: string;
+  breakdown!: {
     sms: { sent: number; delivered: number; failed: number; cost: number };
     email: { sent: number; delivered: number; failed: number; cost: number };
     push: { sent: number; delivered: number; failed: number; cost: number };

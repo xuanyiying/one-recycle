@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { join } from 'path';
 
 async function bootstrap() {
@@ -11,9 +12,12 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     // 获取配置
-    const port = parseInt(process.env.PORT) || 3009;
-    const grpcPort = parseInt(process.env.GRPC_PORT) || 50059;
+    const port = parseInt(process.env.PORT || '3009');
+    const grpcPort = parseInt(process.env.GRPC_PORT || '50059');
     const environment = process.env.NODE_ENV || 'development';
+
+    // 启用全局异常过滤器
+    app.useGlobalFilters(new GlobalExceptionFilter());
 
     // 启用全局验证管道
     app.useGlobalPipes(new ValidationPipe({

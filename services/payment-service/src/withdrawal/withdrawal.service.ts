@@ -357,7 +357,7 @@ export class WithdrawalService {
           result.message || '支付失败',
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       // 发生异常：解冻余额，更新提现状态
       await this.accountService.unfreezeBalance(
         Number(withdrawal.userId),

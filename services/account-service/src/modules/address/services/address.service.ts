@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateAddressDto } from './dto/create-address.dto';
-import { PrismaService } from '../prisma/prisma.service';
+import { CreateAddressDto } from '../dto/create-address.dto';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class AddressService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createAddressDto: CreateAddressDto) {
     // 检查用户是否存在

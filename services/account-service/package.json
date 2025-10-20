@@ -5,13 +5,16 @@
   "author": "One Recycle Team",
   "private": true,
   "license": "UNLICENSED",
+  "prisma": {
+        "schema": "src/prisma/schema.prisma"
+    },
   "scripts": {
-    "build": "nest build && mkdir -p dist/account-service/src/proto && cp src/proto/* dist/account-service/src/proto/",
+    "build": "nest build && mkdir -p dist/src/proto && cp src/proto/* dist/src/proto/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/account-service/src/main",
+    "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -23,7 +26,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "proto:generate": "protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=nestJs=true --proto_path=./proto ./proto/*.proto"
+    "proto:generate": "protoc --plugin=protoc-gen-ts_proto=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=nestJs=true --proto_path=./src/proto ./src/proto/*.proto"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.9.0",
@@ -46,7 +49,7 @@
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@types/express": "^4.17.17",
-    "@types/jest": "^29.5.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.3.1",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -82,8 +85,14 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
-    "moduleNameMapping": {
-      "^@shared/(.*)$": "<rootDir>/../shared/src/$1",
+    "setupFilesAfterEnv": [
+      "<rootDir>/../tests/setup.ts"
+    ],
+    "setupFiles": [
+      "<rootDir>/../tests/setup.ts"
+    ],
+    "moduleNameMapper": {
+      "^@shared/(.*)$": "<rootDir>/../../shared/src/$1",
       "^@/(.*)$": "<rootDir>/$1"
     }
   }
