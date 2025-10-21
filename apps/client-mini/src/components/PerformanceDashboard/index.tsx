@@ -19,6 +19,7 @@ const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
 }) => {
   const [summary, setSummary] = useState(performanceMonitor.getSummary());
   const [refreshKey, setRefreshKey] = useState(0);
+  void refreshKey;
 
   useEffect(() => {
     if (visible) {

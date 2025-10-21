@@ -86,12 +86,12 @@ export const createMockConfigService = () => ({
 });
 
 export const createMockHttpService = () => ({
-  get: jest.fn(() => of(createTestAxiosResponse({ success: true }))),
-  post: jest.fn(() => of(createTestAxiosResponse({ success: true }))),
-  put: jest.fn(() => of(createTestAxiosResponse({ success: true }))),
-  delete: jest.fn(() => of(createTestAxiosResponse({ success: true }))),
-  patch: jest.fn(() => of(createTestAxiosResponse({ success: true }))),
-  request: jest.fn(() => of(createTestAxiosResponse({ success: true }))),
+  get: jest.fn(() => of(createTestAxiosResponse({ success: true })) as any),
+  post: jest.fn(() => of(createTestAxiosResponse({ success: true })) as any),
+  put: jest.fn(() => of(createTestAxiosResponse({ success: true })) as any),
+  delete: jest.fn(() => of(createTestAxiosResponse({ success: true })) as any),
+  patch: jest.fn(() => of(createTestAxiosResponse({ success: true })) as any),
+  request: jest.fn(() => of(createTestAxiosResponse({ success: true })) as any),
 });
 
 export const createMockJwtService = () => ({

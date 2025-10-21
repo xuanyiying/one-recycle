@@ -327,20 +327,20 @@
     }
   }
 
-  // 功能菜单区域
+  // 功能菜单区域（优化后，使用 rpx）
   .menu-section {
     background: #fff;
-    border-radius: 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border-radius: 32rpx;  // 使用 rpx
+    margin-bottom: 48rpx;  // 使用 rpx
+    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.06);  // 使用 rpx
     overflow: hidden;
 
     .menu-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 32px;
-      border-bottom: 2px solid #f0f0f0;
+      padding: 64rpx;  // 使用 rpx
+      border-bottom: 4rpx solid #f0f0f0;  // 使用 rpx
       cursor: pointer;
       transition: background-color 0.3s ease;
 
@@ -357,110 +357,110 @@
         align-items: center;
 
         .menu-icon {
-          font-size: 40px;
-          margin-right: 20px;
+          font-size: 80rpx;  // 使用 rpx，增大字体
+          margin-right: 40rpx;  // 使用 rpx
         }
 
         .menu-title {
-          font-size: 30px;
+          font-size: 60rpx;  // 使用 rpx，增大字体
           color: #1a1a1a;
         }
       }
 
       .menu-arrow {
-        font-size: 32px;
+        font-size: 64rpx;  // 使用 rpx，增大字体
         color: #ccc;
         font-weight: 300;
       }
     }
   }
 
-  // 退出登录区域
+  // 退出登录区域（优化后，使用 rpx）
   .logout-section {
-    margin-bottom: 24px;
+    margin-bottom: 48rpx;  // 使用 rpx
 
     .logout-btn {
       width: 100%;
-      height: 88px;
+      height: 176rpx;  // 使用 rpx，增大高度
       background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
       color: #fff;
-      font-size: 32px;
+      font-size: 64rpx;  // 使用 rpx，增大字体
       font-weight: 600;
-      border-radius: 16px;
+      border-radius: 32rpx;  // 使用 rpx
       border: none;
-      box-shadow: 0 8px 24px rgba(255, 107, 107, 0.3);
+      box-shadow: 0 16rpx 48rpx rgba(255, 107, 107, 0.3);  // 使用 rpx
       transition: all 0.3s ease;
 
       &:active {
-        transform: translateY(2px);
-        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        transform: translateY(4rpx);  // 使用 rpx
+        box-shadow: 0 8rpx 24rpx rgba(255, 107, 107, 0.3);  // 使用 rpx
       }
     }
   }
 
-  // 版本信息区域
+  // 版本信息区域（优化后，使用 rpx）
   .version-section {
     text-align: center;
-    padding: 24px 0;
+    padding: 48rpx 0;  // 使用 rpx
 
     .version-text {
-      font-size: 24px;
+      font-size: 48rpx;  // 使用 rpx，增大字体
       color: #999;
     }
   }
 }
 
-// 响应式适配
-@media (max-width: 375px) {
+// 响应式适配（使用新断点和 rpx）
+@media (max-width: $breakpoint-sm) {
   .profile-page {
     .content-container {
-      padding: 24px;
+      padding: 48rpx;  // 使用 rpx
     }
 
     .user-section {
-      padding: 24px;
+      padding: 48rpx;  // 使用 rpx
 
       .user-info {
         .user-avatar {
-          width: 100px;
-          height: 100px;
-          border-radius: 50px;
-          margin-right: 20px;
+          width: 200rpx;  // 使用 rpx
+          height: 200rpx;  // 使用 rpx
+          border-radius: 100rpx;  // 使用 rpx
+          margin-right: 40rpx;  // 使用 rpx
         }
 
         .user-details {
           .user-nickname {
-            font-size: 32px;
+            font-size: 64rpx;  // 使用 rpx
           }
 
           .user-level {
-            font-size: 24px;
+            font-size: 48rpx;  // 使用 rpx
           }
 
           .user-phone {
-            font-size: 26px;
+            font-size: 52rpx;  // 使用 rpx
           }
         }
 
         .edit-btn {
-          font-size: 24px;
-          padding: 10px 20px;
+          font-size: 48rpx;  // 使用 rpx
+          padding: 20rpx 40rpx;  // 使用 rpx
         }
       }
 
       .stats-section {
         .stats-grid {
-          gap: 20px;
+          gap: 40rpx;  // 使用 rpx
 
           .stat-item {
-            padding: 20px;
+            padding: 40rpx;  // 使用 rpx
 
             .stat-value {
-              font-size: 28px;
+              font-size: 56rpx;  // 使用 rpx
             }
 
             .stat-label {
-              font-size: 22px;
+              font-size: 44rpx;  // 使用 rpx
             }
           }
         }
@@ -468,42 +468,42 @@
 
       .points-section {
         .points-card {
-          padding: 20px;
+          padding: 40rpx;  // 使用 rpx
 
           .points-info {
             .points-label {
-              font-size: 24px;
+              font-size: 48rpx;  // 使用 rpx
             }
 
             .points-value {
-              font-size: 32px;
+              font-size: 64rpx;  // 使用 rpx
             }
           }
 
           .points-btn {
-            font-size: 24px;
-            padding: 10px 20px;
+            font-size: 48rpx;  // 使用 rpx
+            padding: 20rpx 40rpx;  // 使用 rpx
           }
         }
       }
 
       .login-section {
         .login-prompt {
-          padding: 32px 0;
+          padding: 64rpx 0;  // 使用 rpx
 
           .default-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50px;
+            width: 200rpx;  // 使用 rpx
+            height: 200rpx;  // 使用 rpx
+            border-radius: 100rpx;  // 使用 rpx
           }
 
           .login-text {
-            font-size: 28px;
+            font-size: 56rpx;  // 使用 rpx
           }
 
           .login-btn {
-            font-size: 26px;
-            padding: 14px 40px;
+            font-size: 52rpx;  // 使用 rpx
+            padding: 28rpx 80rpx;  // 使用 rpx
           }
         }
       }
@@ -511,35 +511,35 @@
 
     .menu-section {
       .menu-item {
-        padding: 28px 24px;
+        padding: 56rpx 48rpx;  // 使用 rpx
 
         .menu-content {
           .menu-icon {
-            font-size: 36px;
-            margin-right: 16px;
+            font-size: 72rpx;  // 使用 rpx
+            margin-right: 32rpx;  // 使用 rpx
           }
 
           .menu-title {
-            font-size: 28px;
+            font-size: 56rpx;  // 使用 rpx
           }
         }
 
         .menu-arrow {
-          font-size: 28px;
+          font-size: 56rpx;  // 使用 rpx
         }
       }
     }
 
     .logout-section {
       .logout-btn {
-        height: 80px;
-        font-size: 30px;
+        height: 160rpx;  // 使用 rpx
+        font-size: 60rpx;  // 使用 rpx
       }
     }
 
     .version-section {
       .version-text {
-        font-size: 22px;
+        font-size: 44rpx;  // 使用 rpx
       }
     }
   }

@@ -6,6 +6,7 @@ import { useAppContext } from '../../store'
 import { login, getUserInfo } from '../../services/auth'
 import { uploadImage } from '../../services/upload'
 import './index.scss'
+import { PlatformDetector } from '@/utils/platformDetector'
 
 // 常量定义
 const NICKNAME_MIN_LENGTH = 2
@@ -469,19 +470,14 @@ export default function Login() {
         <View className="avatar-picker-overlay" onTap={() => setShowAvatarPicker(false)}>
           <View className="avatar-picker-modal" onTap={(e) => e.stopPropagation()}>
             <View className="avatar-picker-header">
-              <Text className="picker-title">用微信头像</Text>
-            </View>
-            
-            <View className="avatar-picker-content">
-              <View className="avatar-option" onTap={handleUseWechatAvatar}>
-                <Image 
+              <Text className="picker-title">用{PlatformDetector.getPlatformChineseName()}头像</Text>
+               <Image 
                   src="/assets/icons/wechat-avatar.png"
                   className="option-icon"
                   mode="aspectFit"
                 />
-                <Text className="option-text">从微信选择</Text>
-              </View>
-              
+            </View>
+            
               <View className="avatar-option" onTap={handleSelectFromAlbum}>
                 <Image 
                   src="/assets/icons/album.png"
@@ -513,7 +509,6 @@ export default function Login() {
               </Button>
             </View>
           </View>
-        </View>
       )}
     </View>
   )

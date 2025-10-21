@@ -390,18 +390,18 @@
   }
 }
 
-// 主要分类区域 - 合并版本
+// 主要分类区域 - 合并版本（优化后，使用 rpx）
 .main-categories {
   background: white;
-  margin: 16px;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 32rpx;  // 使用 rpx
+  border-radius: 24rpx;  // 使用 rpx
+  padding: 32rpx;  // 使用 rpx
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);  // 使用 rpx
 
   .category-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 32rpx;  // 使用 rpx
 
     &:last-child {
       margin-bottom: 0;
@@ -413,21 +413,21 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 4px;
+    padding: 16rpx 8rpx;  // 使用 rpx
     position: relative;
 
     .category-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+      width: 96rpx;  // 使用 rpx，增大尺寸
+      height: 96rpx;  // 使用 rpx，增大尺寸
+      border-radius: 24rpx;  // 使用 rpx
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 8px;
+      margin-bottom: 16rpx;  // 使用 rpx
       position: relative;
 
       .icon {
-        font-size: 24px;
+        font-size: 48rpx;  // 使用 rpx，增大字体
       }
     }
 
@@ -441,18 +441,18 @@
 
     .hot-tag {
       position: absolute;
-      top: -4px;
-      right: -4px;
+      top: -8rpx;  // 使用 rpx
+      right: -8rpx;  // 使用 rpx
       background: #FF4444;
       color: white;
-      font-size: 8px;
-      padding: 2px 4px;
-      border-radius: 6px;
+      font-size: 16rpx;  // 使用 rpx，增大字体
+      padding: 4rpx 8rpx;  // 使用 rpx
+      border-radius: 12rpx;  // 使用 rpx
       transform: scale(0.8);
     }
 
     .category-name {
-      font-size: 12px;
+      font-size: 24rpx;  // 使用 rpx，增大字体
       color: #333;
       text-align: center;
     }
@@ -596,131 +596,131 @@
   }
 }
 
-// 估价区域
+// 估价区域（优化后，使用 rpx）
 .estimate-section {
   background: white;
-  margin: 16px;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 32rpx;  // 使用 rpx
+  border-radius: 24rpx;  // 使用 rpx
+  padding: 40rpx;  // 使用 rpx
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);  // 使用 rpx
 
   .estimate-title {
-    font-size: 16px;
+    font-size: 32rpx;  // 使用 rpx，增大字体
     color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 16rpx;  // 使用 rpx
   }
 
   .estimate-amount {
-    font-size: 28px;
+    font-size: 56rpx;  // 使用 rpx，增大字体
     font-weight: bold;
     color: #FF6B35;
-    margin-bottom: 16px;
+    margin-bottom: 32rpx;  // 使用 rpx
   }
 
   .estimate-items {
     display: flex;
-    gap: 12px;
+    gap: 24rpx;  // 使用 rpx
 
     .estimate-item {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 24rpx;  // 使用 rpx
+      border-radius: 16rpx;  // 使用 rpx
       background: #F8F9FA;
 
       .item-icon {
-        font-size: 24px;
-        margin-bottom: 8px;
+        font-size: 48rpx;  // 使用 rpx，增大字体
+        margin-bottom: 16rpx;  // 使用 rpx
       }
 
       .item-price {
-        font-size: 14px;
+        font-size: 28rpx;  // 使用 rpx，增大字体
         font-weight: bold;
         color: #FF6B35;
-        margin-bottom: 4px;
+        margin-bottom: 8rpx;  // 使用 rpx
       }
 
       .item-label {
-        font-size: 12px;
+        font-size: 24rpx;  // 使用 rpx，增大字体
         color: #666;
       }
     }
 
     .add-btn {
-      font-size: 12px;
+      font-size: 24rpx;  // 使用 rpx，增大字体
       color: #4A90E2;
       text-align: center;
     }
   }
 }
 
-// 功能区域
+// 功能区域（优化后，使用 rpx）
 .function-section {
   background: white;
-  margin: 16px;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 32rpx;  // 使用 rpx
+  border-radius: 24rpx;  // 使用 rpx
+  padding: 32rpx;  // 使用 rpx
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);  // 使用 rpx
 
   .function-item {
     display: flex;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid #F0F0F0;
+    padding: 24rpx 0;  // 使用 rpx
+    border-bottom: 2rpx solid #F0F0F0;  // 使用 rpx
 
     &:last-child {
       border-bottom: none;
     }
 
     .function-icon {
-      font-size: 24px;
-      margin-right: 12px;
+      font-size: 48rpx;  // 使用 rpx，增大字体
+      margin-right: 24rpx;  // 使用 rpx
     }
 
     .function-content {
       flex: 1;
 
       .function-title {
-        font-size: 16px;
+        font-size: 32rpx;  // 使用 rpx，增大字体
         color: #333;
-        margin-bottom: 4px;
+        margin-bottom: 8rpx;  // 使用 rpx
       }
 
       .function-desc {
-        font-size: 12px;
+        font-size: 24rpx;  // 使用 rpx，增大字体
         color: #999;
       }
     }
   }
 }
 
-// 衣物回收推广区域
+// 衣物回收推广区域（优化后，使用 rpx）
 .clothes-recycle-section {
   background: white;
-  margin: 16px;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 32rpx;  // 使用 rpx
+  border-radius: 24rpx;  // 使用 rpx
+  padding: 32rpx;  // 使用 rpx
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);  // 使用 rpx
 
   .section-title {
-    font-size: 16px;
+    font-size: 32rpx;  // 使用 rpx，增大字体
     font-weight: bold;
     color: #333;
-    margin-bottom: 4px;
+    margin-bottom: 8rpx;  // 使用 rpx
   }
 
   .section-subtitle {
-    font-size: 12px;
+    font-size: 24rpx;  // 使用 rpx，增大字体
     color: #999;
-    margin-bottom: 16px;
+    margin-bottom: 32rpx;  // 使用 rpx
   }
 
   .clothes-showcase {
     display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 24rpx;  // 使用 rpx
+    margin-bottom: 32rpx;  // 使用 rpx
     position: relative;
 
     .clothes-item {
@@ -729,20 +729,20 @@
 
       .clothes-image {
         width: 100%;
-        height: 80px;
-        border-radius: 8px;
+        height: 160rpx;  // 使用 rpx，增大高度
+        border-radius: 16rpx;  // 使用 rpx
         background: #F5F5F5;
       }
 
       .clothes-tag {
         position: absolute;
-        bottom: 4px;
-        right: 4px;
+        bottom: 8rpx;  // 使用 rpx
+        right: 8rpx;  // 使用 rpx
         background: rgba(0, 0, 0, 0.7);
         color: white;
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
+        font-size: 20rpx;  // 使用 rpx，增大字体
+        padding: 4rpx 12rpx;  // 使用 rpx
+        border-radius: 8rpx;  // 使用 rpx
       }
     }
   }
@@ -751,21 +751,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 32rpx;  // 使用 rpx
 
     .recycle-price {
-      font-size: 14px;
+      font-size: 28rpx;  // 使用 rpx，增大字体
       color: #333;
     }
 
     .recycle-weight {
-      font-size: 16px;
+      font-size: 32rpx;  // 使用 rpx，增大字体
       font-weight: bold;
       color: #4CAF50;
     }
 
     .recycle-energy {
-      font-size: 12px;
+      font-size: 24rpx;  // 使用 rpx，增大字体
       color: #666;
     }
   }
@@ -776,9 +776,9 @@
     .action-btn {
       background: #4A90E2;
       color: white;
-      padding: 12px 24px;
-      border-radius: 20px;
-      font-size: 14px;
+      padding: 24rpx 48rpx;  // 使用 rpx
+      border-radius: 40rpx;  // 使用 rpx
+      font-size: 28rpx;  // 使用 rpx，增大字体
       display: inline-block;
     }
   }
@@ -786,8 +786,8 @@
 
 
 
-// 响应式设计 - 合并版本
-@media (max-width: 375px) {
+// 响应式设计 - 合并版本（使用新断点和 rpx）
+@media (max-width: $breakpoint-sm) {
   .category-nav .category-grid {
     gap: 30rpx;
     
@@ -801,22 +801,22 @@
     }
   }
 
-  // CSS版本的响应式样式
+  // CSS版本的响应式样式（使用 rpx）
   .category-item {
-    padding: 6px 2px;
+    padding: 12rpx 4rpx;  // 使用 rpx
   }
   
   .category-icon {
-    width: 40px;
-    height: 40px;
+    width: 80rpx;  // 使用 rpx
+    height: 80rpx;  // 使用 rpx
   }
   
   .icon {
-    font-size: 20px;
+    font-size: 40rpx;  // 使用 rpx
   }
   
   .category-name {
-    font-size: 11px;
+    font-size: 22rpx;  // 使用 rpx，增大字体
   }
 }
 

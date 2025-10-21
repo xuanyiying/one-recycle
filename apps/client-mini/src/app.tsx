@@ -7,6 +7,9 @@ import OfflineIndicator from './components/OfflineIndicator'
 import './styles/global.scss' // 引入全局样式
 import './app.scss'
 
+// 导入mock系统以确保路由被正确注册
+import './mock'
+
 class App extends Component<PropsWithChildren> {
     private performanceInterval?: ReturnType<typeof setInterval>;
 

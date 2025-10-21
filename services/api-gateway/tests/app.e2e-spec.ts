@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { of } from 'rxjs';
-import { createMockResponse, createTestJwtPayload, createTestAxiosResponse } from './test-utils';
+import { createTestJwtPayload, createTestAxiosResponse } from './test-utils';
 
 describe('API Gateway (e2e)', () => {
   let app: INestApplication;
@@ -74,7 +74,7 @@ describe('API Gateway (e2e)', () => {
 
     it('should require token for protected routes', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'Unauthorized' }))
+        of(createTestAxiosResponse({ message: 'Unauthorized' })) as any
       );
 
       await request(app.getHttpServer())
@@ -87,7 +87,7 @@ describe('API Gateway (e2e)', () => {
       const token = jwtService.sign(payload);
       
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ id: '1', name: 'Test User' }))
+        of(createTestAxiosResponse({ id: '1', name: 'Test User' })) as any
       );
 
       await request(app.getHttpServer())
@@ -109,7 +109,7 @@ describe('API Gateway (e2e)', () => {
       it('should proxy GET requests to user service', async () => {
         const mockUser = { id: '1', name: 'Test User', email: 'test@example.com' };
         jest.spyOn(httpService, 'get').mockReturnValue(
-          of(createTestAxiosResponse(mockUser))
+          of(createTestAxiosResponse(mockUser)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -125,7 +125,7 @@ describe('API Gateway (e2e)', () => {
         const mockCreatedUser = { id: '2', ...createUserDto };
         
         jest.spyOn(httpService, 'post').mockReturnValue(
-          of(createTestAxiosResponse(mockCreatedUser))
+          of(createTestAxiosResponse(mockCreatedUser)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -146,7 +146,7 @@ describe('API Gateway (e2e)', () => {
         ];
         
         jest.spyOn(httpService, 'get').mockReturnValue(
-          of(createTestAxiosResponse(mockOrders))
+          of(createTestAxiosResponse(mockOrders)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -162,7 +162,7 @@ describe('API Gateway (e2e)', () => {
         const mockCreatedOrder = { id: '3', ...createOrderDto, status: 'PENDING' };
         
         jest.spyOn(httpService, 'post').mockReturnValue(
-          of(createTestAxiosResponse(mockCreatedOrder))
+          of(createTestAxiosResponse(mockCreatedOrder)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -180,7 +180,7 @@ describe('API Gateway (e2e)', () => {
         const mockPayment = { id: '1', orderId: '1', amount: 100, status: 'COMPLETED' };
         
         jest.spyOn(httpService, 'get').mockReturnValue(
-          of(createTestAxiosResponse(mockPayment))
+          of(createTestAxiosResponse(mockPayment)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -200,7 +200,7 @@ describe('API Gateway (e2e)', () => {
         ];
         
         jest.spyOn(httpService, 'get').mockReturnValue(
-          of(createTestAxiosResponse(mockCouriers))
+          of(createTestAxiosResponse(mockCouriers)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -219,7 +219,7 @@ describe('API Gateway (e2e)', () => {
         ];
         
         jest.spyOn(httpService, 'get').mockReturnValue(
-          of(createTestAxiosResponse(mockDispatches))
+          of(createTestAxiosResponse(mockDispatches)) as any
         );
 
         const response = await request(app.getHttpServer())
@@ -258,7 +258,7 @@ describe('API Gateway (e2e)', () => {
 
       // Mock the aggregateRequests method
       jest.spyOn(httpService, 'post').mockReturnValue(
-        of(createTestAxiosResponse(mockAggregatedResponse))
+        of(createTestAxiosResponse(mockAggregatedResponse)) as any
       );
 
       const response = await request(app.getHttpServer())
@@ -282,7 +282,7 @@ describe('API Gateway (e2e)', () => {
   describe('Error Handling', () => {
     it('should handle service unavailable errors', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'Service Unavailable' }))
+        of(createTestAxiosResponse({ message: 'Service Unavailable' })) as any
       );
 
       await request(app.getHttpServer())
@@ -293,7 +293,7 @@ describe('API Gateway (e2e)', () => {
 
     it('should handle not found errors', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'User not found' }))
+        of(createTestAxiosResponse({ message: 'User not found' })) as any
       );
 
       await request(app.getHttpServer())
@@ -304,7 +304,7 @@ describe('API Gateway (e2e)', () => {
 
     it('should handle validation errors', async () => {
       jest.spyOn(httpService, 'post').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'Validation failed' }))
+        of(createTestAxiosResponse({ message: 'Validation failed' })) as any
       );
 
       await request(app.getHttpServer())
@@ -318,7 +318,7 @@ describe('API Gateway (e2e)', () => {
   describe('Rate Limiting', () => {
     it('should apply rate limiting', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'OK' }))
+        of(createTestAxiosResponse({ message: 'OK' })) as any
       );
 
       // Make multiple requests quickly
@@ -359,7 +359,7 @@ describe('API Gateway (e2e)', () => {
   describe('Request/Response Transformation', () => {
     it('should preserve request headers', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'OK' }))
+        of(createTestAxiosResponse({ message: 'OK' })) as any
       );
 
       await request(app.getHttpServer())
@@ -375,7 +375,7 @@ describe('API Gateway (e2e)', () => {
     it('should handle different content types', async () => {
       const mockData = { message: 'File uploaded' };
       jest.spyOn(httpService, 'post').mockReturnValue(
-        of(createTestAxiosResponse(mockData))
+        of(createTestAxiosResponse(mockData)) as any
       );
 
       await request(app.getHttpServer())
@@ -389,7 +389,7 @@ describe('API Gateway (e2e)', () => {
   describe('Dynamic Service Routing', () => {
     it('should route to dynamic services', async () => {
       jest.spyOn(httpService, 'get').mockReturnValue(
-        of(createTestAxiosResponse({ message: 'Custom service response' }))
+        of(createTestAxiosResponse({ message: 'Custom service response' })) as any
       );
 
       const response = await request(app.getHttpServer())

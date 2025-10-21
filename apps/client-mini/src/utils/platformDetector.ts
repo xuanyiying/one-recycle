@@ -143,6 +143,27 @@ export class PlatformDetector {
   static getPlatformName(): string {
     return this.getPlatformInfo().name
   }
+  /**
+   * 获取所有登录提供商
+   */
+  static getPlatformChineseName(): string {
+    switch (this.getPlatformName()) {
+      case 'wechat':
+        return '微信'
+      case 'alipay':
+        return '支付宝'
+      case 'douyin':
+        return '抖音'
+      case 'kuaishou':
+        return '快手'
+      case 'baidu':
+        return '百度'
+      case 'qq':
+        return 'QQ'
+      default:
+        return '微信'
+    }
+  }
 
   /**
    * 获取支持的登录方式

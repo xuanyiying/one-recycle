@@ -301,22 +301,22 @@
   }
 }
 
-// 响应式适配
-@media (max-width: 375px) {
+// 响应式适配（使用新断点和 rpx）
+@media (max-width: $breakpoint-sm) {
   .recycle-form-page {
     .form-container {
-      padding: 24px;
+      padding: 48rpx;  // 使用 rpx
     }
 
     .form-section {
-      padding: 24px;
+      padding: 48rpx;  // 使用 rpx
 
       .section-title {
-        font-size: 30px;
+        font-size: 60rpx;  // 使用 rpx
       }
 
       .section-desc {
-        font-size: 24px;
+        font-size: 48rpx;  // 使用 rpx
       }
 
       .picker-item,
@@ -324,31 +324,31 @@
       .time-selector {
         .selected,
         .placeholder {
-          font-size: 28px;
+          font-size: 56rpx;  // 使用 rpx
         }
       }
 
       .textarea-input,
       .weight-input,
       .phone-input {
-        font-size: 28px;
+        font-size: 56rpx;  // 使用 rpx
       }
 
       .image-upload-container {
         .image-item,
         .add-image-btn {
-          width: 140px;
-          height: 140px;
+          width: 280rpx;  // 使用 rpx
+          height: 280rpx;  // 使用 rpx
         }
       }
     }
 
     .submit-container {
-      padding: 20px 24px;
+      padding: 40rpx 48rpx;  // 使用 rpx
 
       .submit-btn {
-        height: 80px;
-        font-size: 30px;
+        height: 160rpx;  // 使用 rpx
+        font-size: 60rpx;  // 使用 rpx
       }
     }
   }

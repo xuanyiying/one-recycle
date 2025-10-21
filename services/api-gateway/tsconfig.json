@@ -17,7 +17,26 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "types": ["node", "express", "jest"],
-    "typeRoots": ["./node_modules/@types"]
+    "strict": false,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitThis": false,
+    "types": [
+      "node",
+      "express",
+      "jest"
+    ],
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
+  },
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.e2e-spec.ts",
+    "tests/**/*"
+  ],
+  "ts-node": {
+    "esm": false
   }
 }

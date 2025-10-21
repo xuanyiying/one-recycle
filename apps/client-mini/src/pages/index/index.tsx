@@ -119,30 +119,45 @@ export default function Index() {
   const initPageData = async () => {
     try {
       setLoading(true)
+      console.log('🚀 开始初始化页面数据...')
+      
       const [bannersResult, categoriesResult, articlesResult] = await Promise.all([
         getBanners(),
         getAllCategories(),
         getArticles()
       ])
       
+      console.log('📊 API调用结果:')
+      console.log('- Banners:', bannersResult)
+      console.log('- Categories:', categoriesResult)
+      console.log('- Articles:', articlesResult)
+      
       if (bannersResult.success) {
         setBanners(bannersResult.data || [])
+        console.log('✅ Banners数据设置成功，数量:', bannersResult.data?.length || 0)
+      } else {
+        console.log('❌ Banners数据获取失败')
       }
       
       // getAllCategories直接返回数组
       setCategories(categoriesResult || [])
+      console.log('✅ Categories数据设置成功，数量:', categoriesResult?.length || 0)
       
       if (articlesResult.success) {
         setArticles(articlesResult.data || [])
+        console.log('✅ Articles数据设置成功，数量:', articlesResult.data?.length || 0)
+      } else {
+        console.log('❌ Articles数据获取失败')
       }
     } catch (error) {
-      console.error('初始化页面数据失败:', error)
+      console.error('❌ 初始化页面数据失败:', error)
       Taro.showToast({
         title: '数据加载失败',
         icon: 'none'
       })
     } finally {
       setLoading(false)
+      console.log('🏁 页面数据初始化完成')
     }
   }
 

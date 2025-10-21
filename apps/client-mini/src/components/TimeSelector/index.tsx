@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Picker } from '@tarojs/components'
-import { Button } from '@taroify/core'
+import { useCallback } from 'react'
+import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 
 interface TimeSelectorProps {

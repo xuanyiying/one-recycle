@@ -2,11 +2,6 @@
 // 符合前端规范的环境变量管理方案
 
 interface EnvConfig {
-  CATEGORY_SERVICE_URL: string
-  ORDER_SERVICE_URL: string
-  ACCOUNT_SERVICE_URL: string
-  INVENTORY_SERVICE_URL: string
-  DISPATCH_SERVICE_URL: string
   API_TIMEOUT: number
   USE_MOCK_DATA: boolean
   API_BASE_URL: string
@@ -14,23 +9,13 @@ interface EnvConfig {
 
 // 开发环境配置
 const developmentConfig: EnvConfig = {
-  CATEGORY_SERVICE_URL: 'http://localhost:3008/api',
-  ORDER_SERVICE_URL: 'http://localhost:3003/api',
-  ACCOUNT_SERVICE_URL: 'http://localhost:3001/api',
-  INVENTORY_SERVICE_URL: 'http://localhost:3009/api',
-  DISPATCH_SERVICE_URL: 'http://localhost:3006/api',
   API_TIMEOUT: 10000,
-  USE_MOCK_DATA: false,
-  API_BASE_URL: 'http://localhost:3000/api'
+  USE_MOCK_DATA: true,
+  API_BASE_URL: 'http://localhost:3000/api',
 }
 
 // 生产环境配置
 const productionConfig: EnvConfig = {
-  CATEGORY_SERVICE_URL: 'https://api.onerecycle.com/category',
-  ORDER_SERVICE_URL: 'https://api.onerecycle.com/order',
-  ACCOUNT_SERVICE_URL: 'https://api.onerecycle.com/account',
-  INVENTORY_SERVICE_URL: 'https://api.onerecycle.com/inventory',
-  DISPATCH_SERVICE_URL: 'https://api.onerecycle.com/dispatch',
   API_TIMEOUT: 15000,
   USE_MOCK_DATA: false,
   API_BASE_URL: 'https://api.onerecycle.com'
@@ -38,11 +23,6 @@ const productionConfig: EnvConfig = {
 
 // 测试环境配置
 const testConfig: EnvConfig = {
-  CATEGORY_SERVICE_URL: 'https://test-api.onerecycle.com/category',
-  ORDER_SERVICE_URL: 'https://test-api.onerecycle.com/order',
-  ACCOUNT_SERVICE_URL: 'https://test-api.onerecycle.com/account',
-  INVENTORY_SERVICE_URL: 'https://test-api.onerecycle.com/inventory',
-  DISPATCH_SERVICE_URL: 'https://test-api.onerecycle.com/dispatch',
   API_TIMEOUT: 12000,
   USE_MOCK_DATA: false,
   API_BASE_URL: 'https://test-api.onerecycle.com'

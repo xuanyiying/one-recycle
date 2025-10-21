@@ -7,15 +7,15 @@ page {
   overflow: hidden;
 }
 
-// 登录页面样式
+// 登录页面样式（优化后，统一使用 rpx 单位）
 .login-container {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 750rpx;  // 使用 rpx 替代 vw
+  height: 100vh;  // 保持 vh 确保全屏高度
   background: linear-gradient(180deg, $bg-secondary 0%, #ffffff 100%);
   display: flex;
   flex-direction: column;
@@ -23,6 +23,7 @@ page {
   overflow-x: hidden;
   animation: fadeInUp 0.6s ease-out;
   padding: 0;
+  box-sizing: border-box;
 
   // 背景装饰
   &::before {
@@ -125,19 +126,19 @@ page {
   }
 }
 
-// 登录头部
+// 登录头部（优化后，减少 padding，增大 logo 和字体）
 .login-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60px 32px 32px;
+  padding: 60rpx 48rpx 40rpx; // 使用 rpx，适当减少 padding
   width: 100%;
   flex-shrink: 0; // 防止头部被压缩
 
   .logo {
-    width: 160rpx;
-    height: 160rpx;
-    margin-bottom: $spacing-sm;
+    width: 200rpx;  // 增大 logo 尺寸
+    height: 200rpx;
+    margin-bottom: $spacing-base;
     border-radius: $border-radius-lg;
     overflow: hidden;
     box-shadow: $box-shadow-lg;
@@ -147,8 +148,8 @@ page {
     justify-content: center;
 
     .logo-image {
-      width: 120rpx;
-      height: 120rpx;
+      width: 160rpx;  // 相应增大图片尺寸
+      height: 160rpx;
     }
   }
 
@@ -157,30 +158,30 @@ page {
     font-weight: $font-weight-bold;
     color: $text-color;
     margin-bottom: $spacing-xs;
-    letter-spacing: 1px;
+    letter-spacing: 2rpx;  // 使用 rpx
   }
 
   .welcome-text {
-    font-size: $font-size-base;
+    font-size: $font-size-lg;  // 增大欢迎文字
     color: $text-secondary;
     font-weight: $font-weight-normal;
   }
 
-  // 响应式调整
-  @media screen and (max-width: 414px) {
-    padding: 50px 24px 24px;
+  // 响应式调整（使用新的断点）
+  @media screen and (max-width: $breakpoint-md) {
+    padding: 50rpx 40rpx 32rpx;
   }
 
-  @media screen and (max-width: 375px) {
-    padding: 40px 20px 20px;
+  @media screen and (max-width: $breakpoint-sm) {
+    padding: 40rpx 32rpx 24rpx;
 
     .logo {
-      width: 144rpx;
-      height: 144rpx;
+      width: 180rpx;
+      height: 180rpx;
 
       .logo-image {
-        width: 108rpx;
-        height: 108rpx;
+        width: 140rpx;
+        height: 140rpx;
       }
     }
 
@@ -189,62 +190,64 @@ page {
     }
 
     .welcome-text {
-      font-size: $font-size-sm;
+      font-size: $font-size-base;
     }
   }
 }
 
-// 主要内容区域
+// 主要内容区域（优化后，减少 padding，改善布局）
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 32px 60px;
+  padding: 0 48rpx 60rpx; // 使用 rpx，减少左右和底部 padding
   width: 100%;
   min-height: 0;
-  justify-content: flex-start;
+  justify-content: flex-start; // 改为顶部对齐，减少上方留白
 
-  // 响应式调整
-  @media screen and (max-width: 414px) {
-    padding: 0 24px 50px;
+  // 响应式调整（使用新的断点）
+  @media screen and (max-width: $breakpoint-md) {
+    padding: 0 40rpx 50rpx;
   }
 
-  @media screen and (max-width: 375px) {
-    padding: 0 20px 40px;
+  @media screen and (max-width: $breakpoint-sm) {
+    padding: 0 32rpx 40rpx;
   }
 }
 
-// 手机号输入区域
+// 手机号输入区域（优化后，使用 rpx 单位，增大尺寸）
 .phone-input-section {
-  margin-bottom: 32px;
+  margin-bottom: 48rpx;  // 使用 rpx
+  width: 100%;
+  max-width: 600rpx;     // 限制最大宽度
 
   .input-group {
     position: relative;
     background: #ffffff;
-    border-radius: 12px;
-    border: 2px solid #f0f0f0;
+    border-radius: 24rpx;  // 使用 rpx
+    border: 4rpx solid #f0f0f0;  // 使用 rpx
     transition: all 0.3s ease;
     overflow: hidden;
 
     &:focus-within {
       border-color: #40e0d0;
-      box-shadow: 0 0 0 4px rgba(64, 224, 208, 0.1);
+      box-shadow: 0 0 0 8rpx rgba(64, 224, 208, 0.1);  // 使用 rpx
     }
 
     .phone-input {
       width: 100%;
-      height: 52px;
-      padding: 0 16px;
+      height: 88rpx;       // 增大高度，使用 rpx
+      padding: 0 32rpx;    // 使用 rpx
       border: none;
       outline: none;
-      font-size: 16px;
+      font-size: $font-size-lg;  // 使用变量，更大字体
       color: #333333;
       background: transparent;
 
       &::placeholder {
         color: #999999;
-        font-size: 16px;
+        font-size: $font-size-base;  // 使用变量
       }
     }
   }
@@ -279,24 +282,24 @@ page {
   }
 }
 
-// 头像区域
+// 头像区域（优化后，增大尺寸，使用 rpx）
 .avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 32px; // 减少底部边距
+  margin-bottom: 40rpx; // 使用 rpx，适当增加间距
   animation: slideInDown 0.8s ease-out 0.2s both;
 
   .avatar-container {
-    width: 100px;
-    height: 100px;
+    width: 160rpx;        // 增大头像尺寸，使用 rpx
+    height: 160rpx;
     border-radius: 50%;
     overflow: hidden;
-    margin-bottom: 12px;
+    margin-bottom: 24rpx; // 使用 rpx
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.1);  // 使用 rpx
 
     &:hover {
       transform: scale(1.05) translateY(-2px);
@@ -358,45 +361,45 @@ page {
   }
 
   .avatar-tip {
-    font-size: 14px;
+    font-size: $font-size-base;  // 使用变量，增大字体
     color: #999999;
     font-weight: 400;
   }
 
-  // 响应式调整 - 统一断点系统
+  // 响应式调整 - 统一断点系统（使用 rpx）
   @media screen and (max-width: $breakpoint-md) {
-    margin-bottom: 24px;
+    margin-bottom: 32rpx;
 
     .avatar-container {
-      width: 90px;
-      height: 90px;
+      width: 140rpx;
+      height: 140rpx;
     }
   }
 
   @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 20px; // 小屏幕进一步减少边距
+    margin-bottom: 24rpx; // 小屏幕进一步减少边距
 
     .avatar-container {
-      width: 80px;
-      height: 80px;
+      width: 120rpx;
+      height: 120rpx;
 
       .default-avatar .avatar-icon {
-        width: 32px;
-        height: 32px;
+        width: 60rpx;
+        height: 60rpx;
       }
     }
 
     .avatar-tip {
-      font-size: 12px;
+      font-size: $font-size-sm;
     }
   }
 }
 
-// 昵称输入区域
+// 昵称输入区域（优化后，使用 rpx，增大尺寸）
 .nickname-section {
   width: 100%;
-  max-width: 320px;
-  margin-bottom: 24px; // 减少底部边距
+  max-width: 600rpx;    // 使用 rpx，增大最大宽度
+  margin-bottom: 40rpx; // 使用 rpx，适当增加间距
   animation: slideInUp 0.8s ease-out 0.4s both;
 
   .input-wrapper {
@@ -406,20 +409,20 @@ page {
 
   .nickname-input {
     width: 100%;
-    height: 52px;
+    height: 88rpx;        // 增大高度，使用 rpx
     background: #ffffff;
-    border: 1px solid #e6e6e6;
-    border-radius: 12px;
-    padding: 0 16px;
-    font-size: 16px;
+    border: 2rpx solid #e6e6e6;  // 使用 rpx
+    border-radius: 24rpx; // 使用 rpx
+    padding: 0 32rpx;     // 使用 rpx
+    font-size: $font-size-lg;  // 使用变量，更大字体
     color: #333333;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-sizing: border-box;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);  // 使用 rpx
 
     &::placeholder {
       color: #cccccc;
-      font-size: 16px;
+      font-size: $font-size-base;  // 使用变量
       transition: all 0.3s ease;
     }
 
@@ -458,52 +461,52 @@ page {
     }
   }
 
-  // 响应式调整 - 统一断点系统
+  // 响应式调整 - 统一断点系统（使用 rpx）
   @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 16px; // 小屏幕减少边距
+    margin-bottom: 32rpx; // 小屏幕减少边距
 
     .nickname-input {
-      height: 48px;
-      font-size: 15px; // 提高可读性
+      height: 80rpx;
+      font-size: $font-size-base; // 提高可读性
 
       &::placeholder {
-        font-size: 15px;
+        font-size: $font-size-sm;
       }
     }
   }
 }
 
-// 授权说明区域
+// 授权说明区域（优化后，使用 rpx，增大字体）
 .auth-description {
   text-align: center;
-  margin-bottom: 20px; // 减少底部边距
-  max-width: 280px;
+  margin-bottom: 32rpx; // 使用 rpx
+  max-width: 520rpx;    // 使用 rpx，增大最大宽度
 
   .description-title {
-    font-size: 16px;
+    font-size: $font-size-lg;  // 使用变量，更大字体
     color: #333333;
     font-weight: 500;
-    margin-bottom: 8px;
+    margin-bottom: 16rpx;      // 使用 rpx
     display: block;
   }
 
   .description-content {
-    font-size: 14px;
+    font-size: $font-size-base;  // 使用变量，更大字体
     color: #666666;
     line-height: 1.5;
     font-weight: 400;
   }
 
-  // 响应式调整 - 统一断点系统
+  // 响应式调整 - 统一断点系统（使用 rpx）
   @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 16px; // 小屏幕减少边距
+    margin-bottom: 24rpx; // 小屏幕减少边距
 
     .description-title {
-      font-size: 15px; // 提高可读性
+      font-size: $font-size-base; // 提高可读性
     }
 
     .description-content {
-      font-size: 13px; // 提高可读性
+      font-size: $font-size-sm; // 提高可读性
     }
   }
 }
@@ -525,25 +528,25 @@ page {
   }
 }
 
-// 操作按钮区域
+// 操作按钮区域（优化后，使用 rpx，增大尺寸）
 .action-buttons {
   width: 100%;
-  max-width: 320px;
-  margin-bottom: 20px; // 减少底部边距
+  max-width: 600rpx;    // 使用 rpx，增大最大宽度
+  margin-bottom: 32rpx; // 使用 rpx
   animation: slideInUp 0.8s ease-out 0.6s both;
 
   .authorize-btn {
     width: 100%;
-    height: 52px;
+    height: 88rpx;        // 增大高度，使用 rpx
     background: linear-gradient(135deg, #40e0d0 0%, #36d1c1 100%);
     border: none;
-    border-radius: 26px;
-    font-size: 16px;
+    border-radius: 44rpx; // 使用 rpx
+    font-size: $font-size-lg;  // 使用变量，更大字体
     font-weight: 600;
     color: #ffffff;
-    margin-bottom: 12px; // 减少按钮间距
+    margin-bottom: 24rpx; // 使用 rpx
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 16px rgba(64, 224, 208, 0.3);
+    box-shadow: 0 8rpx 32rpx rgba(64, 224, 208, 0.3);  // 使用 rpx
     position: relative;
     overflow: hidden;
     transform: translateZ(0); // 启用硬件加速
@@ -608,11 +611,11 @@ page {
 
   .skip-btn {
     width: 100%;
-    height: 48px;
+    height: 80rpx;        // 增大高度，使用 rpx
     background: transparent;
-    border: 1px solid #e6e6e6;
-    border-radius: 24px;
-    font-size: 16px;
+    border: 2rpx solid #e6e6e6;  // 使用 rpx
+    border-radius: 40rpx; // 使用 rpx
+    font-size: $font-size-lg;  // 使用变量，更大字体
     font-weight: 400;
     color: #666666;
     transition: all 0.3s ease;
@@ -639,58 +642,58 @@ page {
     }
   }
 
-  // 响应式调整 - 统一断点，保持更好的可用性
+  // 响应式调整 - 统一断点，保持更好的可用性（使用 rpx）
   @media screen and (max-width: $breakpoint-md) {
-    margin-bottom: 20px;
+    margin-bottom: 28rpx;
 
     .authorize-btn {
-      height: 50px;
-      font-size: 15px;
-      margin-bottom: 11px;
+      height: 80rpx;
+      font-size: $font-size-base;
+      margin-bottom: 20rpx;
     }
 
     .skip-btn {
-      height: 46px;
-      font-size: 15px;
+      height: 72rpx;
+      font-size: $font-size-base;
     }
   }
 
   @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 16px; // 进一步减少小屏幕边距
+    margin-bottom: 24rpx; // 进一步减少小屏幕边距
 
     .authorize-btn {
-      height: 48px;
-      font-size: 16px; // 保持16px以确保iOS不缩放
-      margin-bottom: 10px; // 减少按钮间距
+      height: 80rpx;
+      font-size: $font-size-base; // 保持合适大小确保可读性
+      margin-bottom: 20rpx; // 减少按钮间距
     }
 
     .skip-btn {
-      height: 44px;
-      font-size: 16px; // 保持16px以确保iOS不缩放
+      height: 72rpx;
+      font-size: $font-size-base; // 保持合适大小确保可读性
     }
   }
 }
 
-// 用户协议
+// 用户协议（优化后，使用 rpx，增大字体）
 .agreement {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin-bottom: 24px;
-  gap: 4px;
+  margin-bottom: 0; // 移除底部边距，因为这是最后一个元素
+  gap: 8rpx;        // 使用 rpx
 
   .agreement-text {
-    font-size: 14px; // 增大字体提高可读性
+    font-size: $font-size-base;  // 使用变量，更大字体
     color: #999999;
     line-height: 1.4;
   }
 
   .link-container {
     display: inline-block;
-    padding: 2px 4px;
-    border-radius: 4px;
+    padding: 4rpx 8rpx;  // 使用 rpx
+    border-radius: 8rpx; // 使用 rpx
     transition: background-color 0.2s ease;
 
     &:active {
@@ -698,7 +701,7 @@ page {
     }
 
     .link {
-      font-size: 14px; // 增大字体提高可读性
+      font-size: $font-size-base;  // 使用变量，更大字体
       color: #40e0d0;
       text-decoration: underline;
       cursor: pointer;
@@ -710,17 +713,17 @@ page {
     }
   }
 
-  // 响应式调整 - 统一断点，保持更好的可读性
+  // 响应式调整 - 统一断点，保持更好的可读性（使用 rpx）
   @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 20px;
+    margin-bottom: 40rpx;
 
     .agreement-text {
-      font-size: 13px; // 保持较大字体确保可读性
+      font-size: $font-size-sm; // 保持较大字体确保可读性
     }
 
     .link-container {
       .link {
-        font-size: 13px; // 保持较大字体确保可读性
+        font-size: $font-size-sm; // 保持较大字体确保可读性
       }
     }
   }
@@ -854,40 +857,40 @@ page {
     }
   }
 
-  // 响应式调整
-  @media screen and (max-width: 375px) {
+  // 响应式调整（使用新的断点和 rpx）
+  @media screen and (max-width: $breakpoint-sm) {
     .avatar-picker-header {
-      padding: 16px 20px 12px;
+      padding: 32rpx 40rpx 24rpx;
 
       .picker-title {
-        font-size: 16px;
+        font-size: $font-size-lg;
       }
     }
 
     .avatar-picker-content {
-      padding: 20px;
+      padding: 40rpx;
 
       .avatar-option {
-        padding: 12px 0;
+        padding: 24rpx 0;
 
         .option-icon {
-          width: 28px;
-          height: 28px;
-          margin-right: 12px;
+          width: 56rpx;
+          height: 56rpx;
+          margin-right: 24rpx;
         }
 
         .option-text {
-          font-size: 14px;
+          font-size: $font-size-base;
         }
       }
     }
 
     .avatar-picker-footer {
-      padding: 12px 20px 24px;
+      padding: 24rpx 40rpx 48rpx;
 
       .cancel-btn {
-        height: 44px;
-        font-size: 14px;
+        height: 80rpx;
+        font-size: $font-size-base;
       }
     }
   }

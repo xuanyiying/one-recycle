@@ -42,16 +42,16 @@ $gradient-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 $font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $font-family-number: 'DIN Alternate', 'Helvetica Neue', Helvetica, Arial, sans-serif; // 数字专用字体
 
-// 字体大小 - 移动端标准化
-$font-size-xs: 20rpx;      // 辅助信息、标签
-$font-size-sm: 24rpx;      // 次要文本、说明文字
-$font-size-base: 28rpx;    // 正文、基础文本
-$font-size-md: 30rpx;      // 重要文本
-$font-size-lg: 32rpx;      // 小标题、按钮文字
-$font-size-xl: 36rpx;      // 标题、重要信息
-$font-size-xxl: 40rpx;     // 大标题
-$font-size-title: 48rpx;   // 页面主标题
-$font-size-display: 56rpx; // 展示型大字
+// 字体大小 - 移动端标准化（优化后，增大字体提升可读性）
+$font-size-xs: 24rpx;      // 辅助信息、标签 (12px)
+$font-size-sm: 28rpx;      // 次要文本、说明文字 (14px)
+$font-size-base: 32rpx;    // 正文、基础文本 (16px)
+$font-size-md: 36rpx;      // 重要文本 (18px)
+$font-size-lg: 40rpx;      // 小标题、按钮文字 (20px)
+$font-size-xl: 44rpx;      // 标题、重要信息 (22px)
+$font-size-xxl: 48rpx;     // 大标题 (24px)
+$font-size-title: 56rpx;   // 页面主标题 (28px)
+$font-size-display: 64rpx; // 展示型大字 (32px)
 
 // 字体权重
 $font-weight-light: 300;
@@ -113,12 +113,12 @@ $z-index-modal: 1050;
 $z-index-popover: 1060;
 $z-index-tooltip: 1070;
 
-// 断点
-$breakpoint-xs: 320px;
-$breakpoint-sm: 375px;
-$breakpoint-md: 414px;
-$breakpoint-lg: 768px;
-$breakpoint-xl: 1024px;
+// 断点（优化后，适配现代手机屏幕）
+$breakpoint-xs: 360px;   // 小屏安卓手机
+$breakpoint-sm: 390px;   // iPhone 12/13/14 标准版
+$breakpoint-md: 430px;   // iPhone 12/13/14 Pro Max
+$breakpoint-lg: 768px;   // 平板
+$breakpoint-xl: 1024px;  // 大平板/桌面
 
 // 容器宽度
 $container-xs: 100%;

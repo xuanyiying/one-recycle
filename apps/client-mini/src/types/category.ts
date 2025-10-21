@@ -14,7 +14,7 @@ export interface Category {
 
 // 后端返回的原始分类数据（包含BigInt）
 export interface CategoryRaw {
-  id: bigint | string;
+  id: number;
   name: string;
   description?: string;
   unitPrice: number;
@@ -28,7 +28,7 @@ export interface CategoryRaw {
 // 转换函数：将后端数据转换为前端可用格式
 export const transformCategory = (raw: CategoryRaw): Category => {
   return {
-    id: typeof raw.id === 'bigint' ? Number(raw.id) : parseInt(raw.id.toString()),
+    id: Number(raw.id),
     name: raw.name,
     description: raw.description,
     unitPrice: Number(raw.unitPrice),
@@ -42,5 +42,5 @@ export const transformCategory = (raw: CategoryRaw): Category => {
 
 // 批量转换函数
 export const transformCategories = (rawCategories: CategoryRaw[]): Category[] => {
-  return rawCategories.map(transformCategory);
+  return rawCategories?.map(transformCategory) || [];
 };
