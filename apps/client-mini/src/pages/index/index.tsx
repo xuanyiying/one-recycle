@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Image, Input, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { Button } from '@taroify/core'
-import { useAuth } from '../../hooks/useAuth'
 import { getBanners, getArticles } from '../../services/system'
 import { getAllCategories } from '../../services/category'
 import './index.scss'
@@ -11,7 +10,6 @@ import { Category } from '../../types/category'
 import { Icon } from '@taroify/icons'
 
 export default function Index() {
-  const { requireAuth, isLoggedIn } = useAuth()
   const [currentCity, setCurrentCity] = useState('深圳')
   const [searchValue, setSearchValue] = useState('')
   const [banners, setBanners] = useState<Banner[]>([])
@@ -183,17 +181,6 @@ export default function Index() {
     })
   }, [])
 
-  // 处理一键预约回收
-  const handleQuickRecycle = useCallback(() => {
-    if (isLoggedIn) {
-      Taro.navigateTo({
-        url: '/pages/recycle/index'
-      })
-    }else {
-      requireAuth()
-    }
-  }, [isLoggedIn])
-
   // 处理品类点击
   const handleCategoryClick = useCallback((categoryName: string) => {
     if (categoryName === '查看更多') {
@@ -232,10 +219,15 @@ export default function Index() {
           <View className='logo-area'>
             <Text className='logo'>OneRecycle</Text>
           </View>
-          <View className='city-selector' onClick={handleCitySelect}>
+          <Button
+            className='city-selector'
+            variant="text"
+            size="small"
+            onClick={handleCitySelect}
+          >
             <Text className='city-name'>{currentCity}</Text>
             <Text className='city-arrow'>▼</Text>
-          </View>
+          </Button>
         </View>
         
         {/* 搜索框 */}
@@ -280,24 +272,19 @@ export default function Index() {
           ))}
         </Swiper>
       </View>
-
-      {/* 核心功能入口 */}
-      <View className='quick-action'>
-       <Button variant="contained" block color="primary" shape="round" onClick={handleQuickRecycle}>预约回收</Button>
-      </View>
-
       {/* 品类导航 */}
       <View className='category-nav'>
         <View className='category-grid'>
           {categories.map((item, index) => (
-            <View
+            <Button
               key={index}
               className='category-item'
+              variant="text"
               onClick={() => handleCategoryClick(item.name)}
             >
             <Icon name={item?.icon || 'book'} size='24' color='#636e72'></Icon>
             <Text className='category-name'>{item.name}</Text>
-            </View>
+            </Button>
           ))}
         </View>
       </View>
@@ -310,9 +297,10 @@ export default function Index() {
         </View>
         <View className='article-list'>
           {articles.map((article, index) => (
-            <View
+            <Button
               key={index}
               className='article-card'
+              variant="text"
               onClick={() => handleArticleClick(article)}
             >
               <Image
@@ -328,7 +316,7 @@ export default function Index() {
                   <Text className='article-views'>{article.views}次阅读</Text>
                 </View>
               </View>
-            </View>
+            </Button>
           ))}
         </View>
       </View>

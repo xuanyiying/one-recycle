@@ -1,6 +1,8 @@
 import Taro from '@tarojs/taro';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
+ *
  * Sync Queue System
  * Manages offline operations and syncs them when online
  */
@@ -56,7 +58,7 @@ class SyncQueue {
             retryDelay: options.retryDelay || this.RETRY_DELAY,
             ...options,
         };
-        this.loadQueue();
+        this.loadQueue().then(r => console.log('loadQueue', r));
     }
 
     /**
@@ -82,7 +84,7 @@ class SyncQueue {
 
         // Try to sync immediately if online
         if (this.isOnline()) {
-            this.processQueue();
+            await this.processQueue();
         }
 
         return operation.id;
@@ -309,10 +311,10 @@ class SyncQueue {
     }
 
     /**
-     * Generate unique ID for operation
+     * Generate unique ID for operation use uuid library
      */
     private generateId(): string {
-        return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        return uuidv4();
     }
 
     /**

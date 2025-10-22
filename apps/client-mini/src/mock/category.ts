@@ -1,6 +1,6 @@
 // 分类相关Mock数据
 import { createMockResponse, MockResponse } from './index'
-import { Category } from '../types/category'
+import { Category } from '@/types/category'
 
 // Banner数据类型
 interface Banner {

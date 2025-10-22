@@ -119,7 +119,7 @@
 }
 
 // 响应式设计
-@media (max-width: 375px) {
+@media (max-width: $breakpoint-xs) {
   .category-page {
     padding-left: $spacing-md; padding-right: $spacing-md;
     padding-top: $spacing-lg;

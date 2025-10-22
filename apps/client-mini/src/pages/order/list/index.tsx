@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { useAuth } from '../../../hooks/useAuth';
-import { getUserOrders } from '../../../services/order';
-import AuthGuard from '../../../components/AuthGuard';
-import { Order, OrderStatus } from '../../../types';
+import { useAuth } from '@/hooks/useAuth';
+import { getUserOrders } from '@/services/order';
+import AuthGuard from '@/components/AuthGuard';
+import { Order, OrderStatus } from '@/types';
 import './index.scss';
 
 const OrderListPage: React.FC = () => {

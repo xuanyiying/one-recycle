@@ -9,7 +9,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
 
     .loading-text {
       font-size: $font-size-title;
@@ -41,7 +41,7 @@
   }
 
   .content-container {
-    height: calc(100vh - 260rpx);
+    min-height: 1000rpx; // Use fixed min-height instead of vh calculation
     padding-left: $page-padding; padding-right: $page-padding;
   }
 
@@ -261,7 +261,7 @@
 }
 
 // 响应式适配
-@media (max-width: 375px) {
+@media (max-width: $breakpoint-xs) {
   .order-confirm-page {
     .content-container {
       padding: 24px;

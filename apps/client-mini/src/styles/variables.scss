@@ -43,15 +43,16 @@ $font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang S
 $font-family-number: 'DIN Alternate', 'Helvetica Neue', Helvetica, Arial, sans-serif; // 数字专用字体
 
 // 字体大小 - 移动端标准化（优化后，增大字体提升可读性）
-$font-size-xs: 24rpx;      // 辅助信息、标签 (12px)
-$font-size-sm: 28rpx;      // 次要文本、说明文字 (14px)
-$font-size-base: 32rpx;    // 正文、基础文本 (16px)
-$font-size-md: 36rpx;      // 重要文本 (18px)
-$font-size-lg: 40rpx;      // 小标题、按钮文字 (20px)
-$font-size-xl: 44rpx;      // 标题、重要信息 (22px)
-$font-size-xxl: 48rpx;     // 大标题 (24px)
-$font-size-title: 56rpx;   // 页面主标题 (28px)
-$font-size-display: 64rpx; // 展示型大字 (32px)
+// Enhanced font scale (26rpx-64rpx) for better mobile readability
+$font-size-xs: 26rpx; // 辅助信息、标签 (13px) - Minimum readable size
+$font-size-sm: 30rpx; // 次要文本、说明文字 (15px) - Improved readability
+$font-size-base: 32rpx; // 正文、基础文本 (16px) - Standard body text
+$font-size-md: 36rpx; // 重要文本 (18px)
+$font-size-lg: 40rpx; // 小标题、按钮文字 (20px) - Enhanced for buttons
+$font-size-xl: 44rpx; // 标题、重要信息 (22px) - Headings
+$font-size-xxl: 48rpx; // 大标题 (24px)
+$font-size-title: 56rpx; // 页面主标题 (28px) - Page titles
+$font-size-display: 64rpx; // 展示型大字 (32px) - Maximum size
 
 // 字体权重
 $font-weight-light: 300;
@@ -61,38 +62,50 @@ $font-weight-semibold: 600;
 $font-weight-bold: 700;
 
 // 行高 - 移动端优化
-$line-height-tight: 1.2;   // 紧凑布局
-$line-height-normal: 1.4;  // 标准行高
+$line-height-tight: 1.2; // 紧凑布局
+$line-height-normal: 1.4; // 标准行高
 $line-height-relaxed: 1.6; // 舒适阅读
-$line-height-loose: 1.8;   // 宽松布局
+$line-height-loose: 1.8; // 宽松布局
 
 // ==================== 移动端间距规范 ====================
 // 基础间距 - 8rpx 为基准单位
-$spacing-xs: 8rpx;        // 最小间距
-$spacing-sm: 16rpx;       // 小间距
-$spacing-base: 24rpx;     // 标准间距
-$spacing-md: 32rpx;       // 中等间距
-$spacing-lg: 40rpx;       // 大间距
-$spacing-xl: 48rpx;       // 超大间距
-$spacing-xxl: 56rpx;      // 最大间距
+$spacing-xs: 8rpx; // 最小间距
+$spacing-sm: 16rpx; // 小间距
+$spacing-base: 24rpx; // 标准间距
+$spacing-md: 32rpx; // 中等间距
+$spacing-lg: 40rpx; // 大间距
+$spacing-xl: 48rpx; // 超大间距
+$spacing-xxl: 56rpx; // 最大间距
 
 // 页面级间距
-$page-padding: 32rpx;     // 页面左右内边距
-$section-margin: 40rpx;   // 区块间距
-$card-padding: 32rpx;     // 卡片内边距
+$page-padding: 32rpx; // 页面左右内边距
+$section-margin: 40rpx; // 区块间距
+$card-padding: 32rpx; // 卡片内边距
+
+// ==================== 触摸目标标准 ====================
+// Touch target standards for accessibility and usability
+$touch-target-min: 88rpx; // 44px - WCAG minimum touch target
+$touch-target-recommended: 96rpx; // 48px - Recommended comfortable size
+$touch-target-comfortable: 104rpx; // 52px - Optimal for thumb interaction
+
+// Button height standards
+$button-height-sm: 64rpx; // Small buttons (32px)
+$button-height-md: 80rpx; // Medium buttons (40px)
+$button-height-lg: 96rpx; // Large buttons (48px) - Meets touch target standards
+$button-height-xl: 104rpx; // Extra large buttons (52px)
 
 // ==================== 移动端圆角规范 ====================
 // 基础圆角 - 4rpx 为基准单位
-$border-radius-none: 0;         // 无圆角
-$border-radius-xs: 4rpx;        // 最小圆角 - 小按钮、标签
-$border-radius-sm: 8rpx;        // 小圆角 - 输入框、小卡片
-$border-radius-base: 12rpx;     // 标准圆角 - 按钮、卡片
-$border-radius-md: 16rpx;       // 中等圆角 - 大卡片
-$border-radius-lg: 20rpx;       // 大圆角 - 弹窗、面板
-$border-radius-xl: 24rpx;       // 超大圆角 - 特殊组件
-$border-radius-xxl: 32rpx;      // 最大圆角 - 装饰性元素
-$border-radius-round: 50%;      // 圆形 - 头像、图标
-$border-radius-pill: 999rpx;    // 胶囊形 - 标签、徽章
+$border-radius-none: 0; // 无圆角
+$border-radius-xs: 4rpx; // 最小圆角 - 小按钮、标签
+$border-radius-sm: 8rpx; // 小圆角 - 输入框、小卡片
+$border-radius-base: 12rpx; // 标准圆角 - 按钮、卡片
+$border-radius-md: 16rpx; // 中等圆角 - 大卡片
+$border-radius-lg: 20rpx; // 大圆角 - 弹窗、面板
+$border-radius-xl: 24rpx; // 超大圆角 - 特殊组件
+$border-radius-xxl: 32rpx; // 最大圆角 - 装饰性元素
+$border-radius-round: 50%; // 圆形 - 头像、图标
+$border-radius-pill: 999rpx; // 胶囊形 - 标签、徽章
 
 // 阴影
 $box-shadow-sm: 0 2rpx 8rpx $shadow-light;
@@ -114,11 +127,12 @@ $z-index-popover: 1060;
 $z-index-tooltip: 1070;
 
 // 断点（优化后，适配现代手机屏幕）
-$breakpoint-xs: 360px;   // 小屏安卓手机
-$breakpoint-sm: 390px;   // iPhone 12/13/14 标准版
-$breakpoint-md: 430px;   // iPhone 12/13/14 Pro Max
-$breakpoint-lg: 768px;   // 平板
-$breakpoint-xl: 1024px;  // 大平板/桌面
+// Modern responsive breakpoints based on current device dimensions
+$breakpoint-xs: 375px; // iPhone SE/12 mini - Modern small screen baseline
+$breakpoint-sm: 390px; // iPhone 12/13/14 标准版 - Current standard iPhone
+$breakpoint-md: 430px; // iPhone 12/13/14 Pro Max - Large iPhone screens
+$breakpoint-lg: 768px; // iPad mini - Tablet breakpoint
+$breakpoint-xl: 1024px; // iPad Pro - Large tablet/desktop
 
 // 容器宽度
 $container-xs: 100%;
@@ -196,7 +210,7 @@ $kuaishou-color: #ff6600;
 
 @mixin hover-lift {
   transition: transform $transition-base;
-  
+
   &:hover {
     transform: translateY(-2rpx);
   }
@@ -212,37 +226,150 @@ $kuaishou-color: #ff6600;
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
 }
 
-// 响应式混合器
+// ==================== 响应式设计混合器 ====================
+// Enhanced responsive design utility mixins
+
+// Mobile-first responsive breakpoints
+@mixin mobile-small {
+  @media (max-width: #{$breakpoint-xs - 1}) {
+    @content;
+  }
+}
+
+@mixin mobile-standard {
+  @media (min-width: #{$breakpoint-xs}) and (max-width: #{$breakpoint-sm - 1}) {
+    @content;
+  }
+}
+
+@mixin mobile-large {
+  @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-md - 1}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: #{$breakpoint-lg}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$breakpoint-xl}) {
+    @content;
+  }
+}
+
+// Legacy responsive mixin (maintained for backward compatibility)
 @mixin respond-to($breakpoint) {
-  @if $breakpoint == xs {
-    @media (max-width: #{$breakpoint-xs}) {
+  @if $breakpoint ==xs {
+    @media (max-width: #{$breakpoint-xs - 1}) {
       @content;
     }
   }
-  @if $breakpoint == sm {
-    @media (max-width: #{$breakpoint-sm}) {
+
+  @if $breakpoint ==sm {
+    @media (min-width: #{$breakpoint-xs}) and (max-width: #{$breakpoint-sm - 1}) {
       @content;
     }
   }
-  @if $breakpoint == md {
-    @media (max-width: #{$breakpoint-md}) {
+
+  @if $breakpoint ==md {
+    @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-md - 1}) {
       @content;
     }
   }
-  @if $breakpoint == lg {
-    @media (max-width: #{$breakpoint-lg}) {
+
+  @if $breakpoint ==lg {
+    @media (min-width: #{$breakpoint-md}) and (max-width: #{$breakpoint-lg - 1}) {
       @content;
     }
   }
-  @if $breakpoint == xl {
-    @media (max-width: #{$breakpoint-xl}) {
+
+  @if $breakpoint ==xl {
+    @media (min-width: #{$breakpoint-lg}) {
       @content;
     }
+  }
+}
+
+// Utility mixins for responsive design
+@mixin responsive-font-size($mobile: $font-size-base, $tablet: null, $desktop: null) {
+  font-size: $mobile;
+
+  @if $tablet {
+    @include tablet {
+      font-size: $tablet;
+    }
+  }
+
+  @if $desktop {
+    @include desktop {
+      font-size: $desktop;
+    }
+  }
+}
+
+@mixin responsive-spacing($mobile: $spacing-base, $tablet: null, $desktop: null) {
+  padding: $mobile;
+
+  @if $tablet {
+    @include tablet {
+      padding: $tablet;
+    }
+  }
+
+  @if $desktop {
+    @include desktop {
+      padding: $desktop;
+    }
+  }
+}
+
+// Touch-friendly button mixin
+@mixin touch-button($size: 'large') {
+  @if $size =='small' {
+    min-height: $button-height-sm;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+  }
+
+  @else if $size =='medium' {
+    min-height: $button-height-md;
+    padding: $spacing-sm $spacing-base;
+    font-size: $font-size-base;
+  }
+
+  @else if $size =='large' {
+    min-height: $button-height-lg;
+    padding: $spacing-base $spacing-lg;
+    font-size: $font-size-lg;
+  }
+
+  @else if $size =='xl' {
+    min-height: $button-height-xl;
+    padding: $spacing-lg $spacing-xl;
+    font-size: $font-size-xl;
+  }
+
+  // Ensure minimum touch target
+  min-width: $touch-target-min;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $border-radius-base;
+  transition: $transition-base;
+  cursor: pointer;
+
+  // Touch feedback
+  &:active {
+    transform: scale(0.98);
   }
 }
 
@@ -255,19 +382,22 @@ $kuaishou-color: #ff6600;
 
 // 安全区域混合器
 @mixin safe-area-padding($position: bottom) {
-  @if $position == top {
+  @if $position ==top {
     padding-top: constant(safe-area-inset-top);
     padding-top: env(safe-area-inset-top);
   }
-  @if $position == bottom {
+
+  @if $position ==bottom {
     padding-bottom: constant(safe-area-inset-bottom);
     padding-bottom: env(safe-area-inset-bottom);
   }
-  @if $position == left {
+
+  @if $position ==left {
     padding-left: constant(safe-area-inset-left);
     padding-left: env(safe-area-inset-left);
   }
-  @if $position == right {
+
+  @if $position ==right {
     padding-right: constant(safe-area-inset-right);
     padding-right: env(safe-area-inset-right);
   }

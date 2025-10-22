@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useAppContext } from '../store'
-import { getUserOrders, createOrder } from '../services/order'
+import { useAppContext } from '@/store'
+import { getUserOrders, createOrder } from '@/services/order'
 
 // 订单 Hook
 export const useOrders = () => {

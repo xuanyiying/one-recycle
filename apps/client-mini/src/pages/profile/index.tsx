@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Button, Image } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { Icon } from '@taroify/icons'
-import { Divider } from '@taroify/core'
+import { Button, Icon, Divider } from '../../components/TaroifyProvider'
 import { useAppContext } from '../../store'
 import { getUserOrders } from '../../services/order'
 import { getUserInfo } from '../../services/user'
@@ -211,28 +210,28 @@ export default function Profile() {
             <View className='user-section'>
                 <View className='stats-section'>
                     <View className='stats-grid'>
-                        <View className='stat-item' onClick={handleViewOrders}>
+                        <Button className='stat-item' variant="text" onClick={handleViewOrders}>
                             <Icon name='file' size='24' color='#00B894'></Icon>
                             <Text className='stat-value'>{stats.totalOrders}</Text>
                             <Text className='stat-label'>累计订单</Text>
-                        </View>
-                        <View className='stat-item' onClick={handleViewBalance}>
+                        </Button>
+                        <Button className='stat-item' variant="text" onClick={handleViewBalance}>
                             <Icon name='money' size='24' color='#00B894'></Icon>
                             <Text className='stat-value'>¥{stats.totalAmount.toFixed(2)}</Text>
                             <Text className='stat-label'>累计收益</Text>
-                        </View>
+                        </Button>
                         <View className='stat-item'>
                             <Icon name='cloud' size='24' color='#00B894'></Icon>
                             <Text className='stat-value'>{stats.savedCarbon.toFixed(1)}kg</Text>
                             <Text className='stat-label'>减碳贡献</Text>
                         </View>
-                        <View className='stat-item' onClick={handleViewBalance}>
+                        <Button className='stat-item' variant="text" onClick={handleViewBalance}>
                             <Icon name='wallet' size='24' color='#00B894'></Icon>
                             <Text className='stat-value'>
                                 {account ? accountService.formatAmount(account.availableBalance) : '¥0.00'}
                             </Text>
                             <Text className='stat-label'>可用余额</Text>
-                        </View>
+                        </Button>
                     </View>
                     {/* 余额操作按钮 */}
                     {account && (
@@ -297,37 +296,37 @@ export default function Profile() {
             <Divider/>
             {/* 功能菜单 */}
             <View className='menu-section'>
-                <View className='menu-item' onClick={onAddressManage}>
+                <Button className='menu-item' variant="text" block onClick={onAddressManage}>
                     <View className='menu-content'>
                         <Icon name='location' size='18' color='#636e72' className='menu-icon'></Icon>
                         <Text className='menu-title'>收货地址</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </View>
+                </Button>
 
-                <View className='menu-item' onClick={onInvoiceManage}>
+                <Button className='menu-item' variant="text" block onClick={onInvoiceManage}>
                     <View className='menu-content'>
                         <Icon name='credit-card' size='18' color='#636e72' className='menu-icon'></Icon>
                         <Text className='menu-title'>发票管理</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </View>
+                </Button>
 
-                <View className='menu-item' onClick={onContactService}>
+                <Button className='menu-item' variant="text" block onClick={onContactService}>
                     <View className='menu-content'>
                         <Icon name='phone' size='18' color='#636e72' className='menu-icon'></Icon>
                         <Text className='menu-title'>联系客服</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </View>
+                </Button>
 
-                <View className='menu-item' onClick={onSettings}>
+                <Button className='menu-item' variant="text" block onClick={onSettings}>
                     <View className='menu-content'>
                         <Icon name='settings' size='18' color='#636e72' className='menu-icon'></Icon>
                         <Text className='menu-title'>设置</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </View>
+                </Button>
             </View>
 
             {/* 退出登录 */}

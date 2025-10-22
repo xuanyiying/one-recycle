@@ -9,7 +9,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
 
     .prompt-text {
       font-size: $font-size-title;
@@ -90,7 +90,7 @@
   }
 
   .content-container {
-    height: calc(100vh - 200rpx);
+    min-height: 1000rpx; // Use fixed min-height instead of vh calculation
     padding-left: $page-padding; padding-right: $page-padding;
 
     .loading-container {
@@ -272,7 +272,7 @@
 }
 
 // 响应式适配
-@media (max-width: 375px) {
+@media (max-width: $breakpoint-xs) {
   .order-list-page {
     .content-container {
       padding: 24px;

@@ -1,6 +1,7 @@
 import { View, Text } from '@tarojs/components'
 import { useEffect, useState } from 'react'
 import Taro from '@tarojs/taro'
+import { Button } from '@taroify/core'
 import { Icon } from '@taroify/icons'
 import './index.scss'
 
@@ -48,9 +49,10 @@ const CategoryPage = () => {
 
       <View className='category-grid'>
         {CATEGORIES.map((category) => (
-          <View
+          <Button
             key={category.id}
             className={`category-item ${selectedCategory === category.id ? 'selected' : ''}`}
+            variant="text"
             onClick={() => handleCategoryClick(category)}
           >
             <View 
@@ -60,7 +62,7 @@ const CategoryPage = () => {
               <Icon name={category.icon} size='24' color='#fff' />
             </View>
             <Text className='category-name'>{category.name}</Text>
-          </View>
+          </Button>
         ))}
       </View>
 

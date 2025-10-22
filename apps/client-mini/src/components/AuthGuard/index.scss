@@ -1,7 +1,4 @@
-// 确保组件占满整个页面
-page {
-  height: 100%;
-}
+// 移除重复的 page 样式定义 - 已在 global.scss 中统一定义
 
 .auth-guard-loading {
   position: fixed;

@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button } from '@tarojs/components';
-import { performanceMonitor } from '../../utils/performanceMonitor';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 
 
 interface PerformanceDashboardProps {

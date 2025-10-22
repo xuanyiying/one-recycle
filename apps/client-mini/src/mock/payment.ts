@@ -194,6 +194,7 @@ export const mockGetRefundStatus = async (refundId: string): Promise<MockRespons
 
 // 获取用户银行卡列表
 export const mockGetUserBankCards = async (userId: string): Promise<MockResponse<BankCard[]>> => {
+  console.log('获取用户银行卡列表', userId)
   const cards: BankCard[] = [
     {
       id: 'CARD_001',

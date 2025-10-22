@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 
 interface AuthGuardProps {
   children: React.ReactNode

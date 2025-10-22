@@ -1,0 +1,446 @@
+@use './variables.scss' as *;
+@use 'sass:color';
+
+// ==================== Taroify Button Compatibility Styles ====================
+// This file ensures Taroify Button components work seamlessly with existing custom styles
+// and provides consistent styling across all button variants
+
+// Reset Taroify Button default styles for custom styling compatibility
+.taroify-button {
+  // Reset default border, padding, and background for custom Button usage
+  border: none !important;
+  padding: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  
+  // Ensure proper box-sizing
+  box-sizing: border-box;
+  
+  // Reset default margins
+  margin: 0;
+  
+  // Ensure proper display and alignment
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  // Reset default font styles to allow custom styling
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  
+  // Reset default line-height
+  line-height: 1;
+  
+  // Ensure proper cursor
+  cursor: pointer;
+  
+  // Reset default text decoration
+  text-decoration: none;
+  
+  // Ensure proper outline behavior
+  outline: none;
+  
+  // Reset default appearance
+  -webkit-appearance: none;
+  appearance: none;
+  
+  // Ensure proper touch behavior on mobile
+  -webkit-tap-highlight-color: transparent;
+  
+  // Allow custom transitions
+  transition: all $transition-base;
+  
+  // Ensure proper positioning context
+  position: relative;
+  
+  // Reset default border-radius to allow custom styling
+  border-radius: 0;
+  
+  // Reset default width behavior
+  width: auto;
+  
+  // Reset default height behavior
+  height: auto;
+  
+  // Ensure proper text alignment
+  text-align: center;
+  
+  // Reset default vertical alignment
+  vertical-align: baseline;
+  
+  // Ensure proper overflow behavior
+  overflow: visible;
+  
+  // Reset default user-select
+  user-select: none;
+  
+  // Ensure proper flex behavior when used as flex item
+  flex-shrink: 0;
+}
+
+// ==================== Button Variant Compatibility ====================
+
+// Contained Button Compatibility
+.taroify-button--contained {
+  // Reset contained variant specific styles
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+// Outlined Button Compatibility  
+.taroify-button--outlined {
+  // Reset outlined variant specific styles
+  background: none !important;
+  border: none !important;
+  color: inherit !important;
+}
+
+// Text Button Compatibility
+.taroify-button--text {
+  // Reset text variant specific styles
+  background: none !important;
+  border: none !important;
+  color: inherit !important;
+  padding: 0 !important;
+}
+
+// ==================== Button Size Compatibility ====================
+
+// Reset all size variants to allow custom sizing
+.taroify-button--mini,
+.taroify-button--small,
+.taroify-button--medium,
+.taroify-button--large {
+  padding: 0 !important;
+  height: auto !important;
+  min-height: auto !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+// ==================== Button State Compatibility ====================
+
+// Disabled state compatibility
+.taroify-button--disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  
+  // Ensure disabled state doesn't override custom styles
+  background: inherit !important;
+  color: inherit !important;
+  border: inherit !important;
+}
+
+// Loading state compatibility
+.taroify-button--loading {
+  cursor: not-allowed !important;
+  pointer-events: none;
+  
+  // Ensure loading state doesn't override custom styles
+  background: inherit !important;
+  color: inherit !important;
+  border: inherit !important;
+}
+
+// Active state compatibility
+.taroify-button:active:not(.taroify-button--disabled):not(.taroify-button--loading) {
+  // Allow custom active states
+  transform: inherit;
+  background: inherit !important;
+  color: inherit !important;
+  border: inherit !important;
+}
+
+// ==================== Button Content Compatibility ====================
+
+// Reset button content wrapper styles
+.taroify-button__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  
+  // Reset default padding and margin
+  padding: 0;
+  margin: 0;
+  
+  // Ensure proper text alignment
+  text-align: center;
+  
+  // Reset default line-height
+  line-height: inherit;
+  
+  // Ensure proper font inheritance
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+// ==================== Custom Button Style Classes ====================
+
+// Enhanced button styles that work with Taroify Button components
+.custom-button {
+  // Apply touch-friendly button mixin
+  @include touch-button('large');
+  
+  // Default button styling
+  background: $gradient-primary;
+  color: white;
+  border: none;
+  border-radius: $border-radius-base;
+  font-weight: $font-weight-medium;
+  
+  // Ensure proper touch feedback
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+  
+  // Hover effect for supported platforms
+  &:hover {
+    opacity: 0.9;
+  }
+  
+  // Disabled state
+  &:disabled,
+  &.disabled {
+    background: $bg-disabled;
+    color: $text-disabled;
+    cursor: not-allowed;
+    opacity: 0.6;
+    
+    &:active,
+    &:hover {
+      transform: none;
+      opacity: 0.6;
+    }
+  }
+}
+
+// Primary button variant
+.custom-button--primary {
+  background: $gradient-primary;
+  color: white;
+  
+  &:active {
+    background: linear-gradient(135deg, $primary-dark 0%, color.adjust($primary-dark, $lightness: -10%) 100%);
+  }
+}
+
+// Secondary button variant
+.custom-button--secondary {
+  background: transparent;
+  color: $primary-color;
+  border: 2rpx solid $primary-color;
+  
+  &:active {
+    background: rgba($primary-color, 0.1);
+  }
+}
+
+// Text button variant
+.custom-button--text {
+  background: transparent;
+  color: $primary-color;
+  border: none;
+  min-height: $touch-target-min;
+  
+  &:active {
+    background: rgba($primary-color, 0.1);
+  }
+}
+
+// Danger button variant
+.custom-button--danger {
+  background: linear-gradient(135deg, $error-color 0%, color.adjust($error-color, $lightness: -10%) 100%);
+  color: white;
+  
+  &:active {
+    background: linear-gradient(135deg, color.adjust($error-color, $lightness: -10%) 0%, color.adjust($error-color, $lightness: -20%) 100%);
+  }
+}
+
+// ==================== Button Size Variants ====================
+
+.custom-button--small {
+  @include touch-button('small');
+}
+
+.custom-button--medium {
+  @include touch-button('medium');
+}
+
+.custom-button--large {
+  @include touch-button('large');
+}
+
+.custom-button--xl {
+  @include touch-button('xl');
+}
+
+// ==================== Block Button ====================
+
+.custom-button--block {
+  width: 100%;
+  display: flex;
+}
+
+// ==================== Button with Icons ====================
+
+.custom-button--with-icon {
+  .button-icon {
+    margin-right: $spacing-xs;
+    font-size: 1.2em;
+    
+    &:only-child {
+      margin-right: 0;
+    }
+  }
+  
+  &.custom-button--icon-right {
+    .button-icon {
+      margin-right: 0;
+      margin-left: $spacing-xs;
+    }
+  }
+}
+
+// ==================== Loading Button ====================
+
+.custom-button--loading {
+  position: relative;
+  color: transparent !important;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20rpx;
+    height: 20rpx;
+    margin: -10rpx 0 0 -10rpx;
+    border: 2rpx solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: button-loading 1s linear infinite;
+  }
+  
+  // Ensure loading indicator is visible
+  &.custom-button--primary::after {
+    border-top-color: white;
+  }
+  
+  &.custom-button--secondary::after {
+    border-top-color: $primary-color;
+  }
+  
+  &.custom-button--text::after {
+    border-top-color: $primary-color;
+  }
+  
+  &.custom-button--danger::after {
+    border-top-color: white;
+  }
+}
+
+@keyframes button-loading {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// ==================== Responsive Button Styles ====================
+
+// Adjust button sizes for different screen sizes
+@include mobile-small {
+  .custom-button {
+    min-height: $button-height-md;
+    font-size: $font-size-base;
+    padding: $spacing-sm $spacing-base;
+  }
+  
+  .custom-button--small {
+    min-height: $button-height-sm;
+    font-size: $font-size-sm;
+    padding: $spacing-xs $spacing-sm;
+  }
+}
+
+@include mobile-standard {
+  .custom-button {
+    min-height: $button-height-lg;
+    font-size: $font-size-lg;
+    padding: $spacing-base $spacing-lg;
+  }
+}
+
+// ==================== Dark Mode Support ====================
+
+@include dark-mode {
+  .custom-button--secondary {
+    border-color: $primary-light;
+    color: $primary-light;
+    
+    &:active {
+      background: rgba($primary-light, 0.1);
+    }
+  }
+  
+  .custom-button--text {
+    color: $primary-light;
+    
+    &:active {
+      background: rgba($primary-light, 0.1);
+    }
+  }
+  
+  .custom-button:disabled,
+  .custom-button.disabled {
+    background: #404040;
+    color: #666666;
+  }
+}
+
+// ==================== Platform-specific Adjustments ====================
+
+// WeChat mini-program specific adjustments
+.platform-weapp {
+  .custom-button {
+    // Ensure proper button behavior in WeChat
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+// Alipay mini-program specific adjustments
+.platform-alipay {
+  .custom-button {
+    // Ensure proper button behavior in Alipay
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+// TikTok mini-program specific adjustments
+.platform-tt {
+  .custom-button {
+    // Ensure proper button behavior in TikTok
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+// Kuaishou mini-program specific adjustments
+.platform-ks {
+  .custom-button {
+    // Ensure proper button behavior in Kuaishou
+    -webkit-tap-highlight-color: transparent;
+  }
+}

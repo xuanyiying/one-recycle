@@ -9,7 +9,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
 
     .loading-text {
       font-size: $font-size-lg;
@@ -342,7 +342,7 @@
 }
 
 // 响应式适配
-@media (max-width: 375px) {
+@media (max-width: $breakpoint-xs) {
   .profile-edit-page {
     padding: $spacing-md;
 

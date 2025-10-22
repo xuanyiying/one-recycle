@@ -40,7 +40,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
     font-size: $font-size-lg;
     color: $text-secondary;
   }
@@ -327,7 +327,7 @@
 }
 
 // 响应式适配
-@media screen and (max-width: 375px) {
+@media screen and (max-width: $breakpoint-xs) {
   .header-background {
     height: 280rpx;
   }

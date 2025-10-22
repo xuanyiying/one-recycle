@@ -13,7 +13,7 @@
   }
 
   .withdrawal-list {
-    height: 100vh;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
     padding: 20rpx;  // 使用 rpx
 
     .withdrawal-item {

@@ -1,7 +1,7 @@
 import { View, Text, ScrollView } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
-import { Tag } from '@taroify/core'
+import { Button, Tag } from '../../../components/TaroifyProvider'
 import withdrawalService from '../../../services/withdrawal'
 import { WithdrawalStatus } from '../../../types/withdrawal'
 import type { Withdrawal } from '../../../types/withdrawal'
@@ -87,9 +87,11 @@ export default function WithdrawalList() {
                 ) : (
                     <ScrollView className="withdrawal-list" scrollY>
                         {withdrawals.map((withdrawal) => (
-                            <View
+                            <Button
                                 key={withdrawal.id}
                                 className="withdrawal-item"
+                                variant="text"
+                                block
                                 onClick={() => handleItemClick(withdrawal.id)}
                             >
                                 <View className="item-header">
@@ -113,7 +115,7 @@ export default function WithdrawalList() {
                                         <Text className="reason-text">拒绝原因：{withdrawal.rejectedReason}</Text>
                                     </View>
                                 )}
-                            </View>
+                            </Button>
                         ))}
                         {loading && (
                             <View className="loading-more">

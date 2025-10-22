@@ -371,7 +371,11 @@ export default function Login() {
       <View className="main-content">
         {/* 头像区域 */}
         <View className="avatar-section">
-          <View className="avatar-container" onTap={handleAvatarClick}>
+          <Button
+            className="avatar-container"
+            variant="text"
+            onClick={handleAvatarClick}
+          >
             {form.avatar ? (
               <Image 
                 src={form.avatar} 
@@ -387,7 +391,7 @@ export default function Login() {
                 />
               </View>
             )}
-          </View>
+          </Button>
           <Text className="avatar-tip">点击获取头像</Text>
         </View>
 
@@ -455,13 +459,23 @@ export default function Login() {
           <Text className="agreement-text">
             登录即表示同意
           </Text>
-          <View className="link-container" onTap={handleUserAgreement}>
+          <Button
+            className="link-container"
+            variant="text"
+            size="small"
+            onClick={handleUserAgreement}
+          >
             <Text className="link">《用户协议》</Text>
-          </View>
+          </Button>
           <Text className="agreement-text">和</Text>
-          <View className="link-container" onTap={handlePrivacyPolicy}>
+          <Button
+            className="link-container"
+            variant="text"
+            size="small"
+            onClick={handlePrivacyPolicy}
+          >
             <Text className="link">《隐私政策》</Text>
-          </View>
+          </Button>
         </View>
       </View>
 
@@ -469,32 +483,47 @@ export default function Login() {
       {showAvatarPicker && (
         <View className="avatar-picker-overlay" onTap={() => setShowAvatarPicker(false)}>
           <View className="avatar-picker-modal" onTap={(e) => e.stopPropagation()}>
-            <View className="avatar-picker-header">
+            <Button
+              className="avatar-picker-header"
+              variant="text"
+              block
+              onClick={handleUseWechatAvatar}
+            >
               <Text className="picker-title">用{PlatformDetector.getPlatformChineseName()}头像</Text>
                <Image 
                   src="/assets/icons/wechat-avatar.png"
                   className="option-icon"
                   mode="aspectFit"
                 />
-            </View>
+            </Button>
             
-              <View className="avatar-option" onTap={handleSelectFromAlbum}>
+              <Button
+                className="avatar-option"
+                variant="text"
+                block
+                onClick={handleSelectFromAlbum}
+              >
                 <Image 
                   src="/assets/icons/album.png"
                   className="option-icon"
                   mode="aspectFit"
                 />
                 <Text className="option-text">从相册选择</Text>
-              </View>
+              </Button>
               
-              <View className="avatar-option" onTap={handleTakePhoto}>
+              <Button
+                className="avatar-option"
+                variant="text"
+                block
+                onClick={handleTakePhoto}
+              >
                 <Image 
                   src="/assets/icons/camera.png"
                   className="option-icon"
                   mode="aspectFit"
                 />
                 <Text className="option-text">拍照</Text>
-              </View>
+              </Button>
             </View>
             
             <View className="avatar-picker-footer">

@@ -1,6 +1,6 @@
 // 认证相关Mock数据
 import { createMockResponse, MockDataGenerator, MockResponse } from './index'
-import { LoginParams, LoginResponse, UserInfoResponse } from '../services/auth'
+import { LoginParams, LoginResponse, UserInfoResponse } from '@/services/auth'
 
 // Mock用户数据
 const mockUsers = [

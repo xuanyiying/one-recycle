@@ -46,6 +46,23 @@ const config = {
                     generateScopedName: '[name]__[local]___[hash:base64:5]'
                 }
             }
+        },
+        // 配置 webpack 来解决 CSS 模块冲突和循环依赖
+        webpackChain(chain) {
+            // 配置 optimization 来处理 CSS 冲突
+            chain.optimization.splitChunks({
+                chunks: 'all',
+                cacheGroups: {
+                    // 将 Taroify 组件提取到独立 chunk，避免循环依赖
+                    taroify: {
+                        name: 'taroify',
+                        test: /[\\/]node_modules[\\/]@taroify[\\/]/,
+                        priority: 30,
+                        chunks: 'all',
+                        enforce: true
+                    }
+                }
+            })
         }
     },
     h5: {

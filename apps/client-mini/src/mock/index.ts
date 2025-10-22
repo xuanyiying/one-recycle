@@ -1,7 +1,7 @@
 // Mock数据管理系统
 // 提供完整的mock数据服务，支持动态开关控制
 
-import { ENV_CONFIG } from '../config/env'
+import { ENV_CONFIG } from '@/config/env'
 
 // Mock数据类型定义
 export interface MockResponse<T = any> {

@@ -28,8 +28,8 @@
   }
 
   .transaction-list {
-    height: calc(100vh - 70px);
-    padding: 0 10px;
+    min-height: 1200rpx; // Use fixed min-height instead of vh calculation
+    padding: 0 20rpx; // Convert px to rpx
 
     .transaction-item {
       background: #fff;

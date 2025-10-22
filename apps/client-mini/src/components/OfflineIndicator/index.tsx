@@ -1,6 +1,6 @@
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
-import { useNetworkStatus } from '../../utils/networkStatus';
+import { useNetworkStatus } from '@/utils/networkStatus';
 import syncQueue from '../../utils/syncQueue';
 import { useState, useEffect } from 'react';
 
@@ -48,7 +48,13 @@ export default function OfflineIndicator() {
 
   const handleRetrySync = () => {
     if (networkStatus.isConnected) {
-      syncQueue.processQueue();
+      syncQueue.processQueue().then(() => {
+        Taro.showToast({
+          title: '同步完成',
+          icon: 'success',
+          duration: 1500,
+        });
+      });
       Taro.showToast({
         title: '正在同步...',
         icon: 'loading',

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
+import { Button } from '@taroify/core'
+import { ArrowLeft } from '@taroify/icons'
 import './index.scss'
 
 interface AgreementSection {
@@ -172,10 +174,15 @@ export default function Agreement() {
     <View className="agreement-container">
       {/* 头部导航 */}
       <View className="agreement-header">
-        <View className="back-button" onTap={handleGoBack}>
-          <Text className="back-icon">‹</Text>
+        <Button
+          className="back-button"
+          variant="text"
+          size="medium"
+          onClick={handleGoBack}
+          icon={<ArrowLeft />}
+        >
           <Text className="back-text">返回</Text>
-        </View>
+        </Button>
         <Text className="page-title">
           {agreementType === 'privacy' ? '隐私政策' : '用户协议'}
         </Text>
@@ -185,13 +192,15 @@ export default function Agreement() {
       <View className="section-nav">
         <ScrollView scrollX className="nav-scroll">
           {currentSections.map((section) => (
-            <View
+            <Button
               key={section.id}
               className={`nav-item ${activeSection === section.id ? 'active' : ''}`}
-              onTap={() => scrollToSection(section.id)}
+              variant="text"
+              size="small"
+              onClick={() => scrollToSection(section.id)}
             >
               <Text className="nav-text">{section.title}</Text>
-            </View>
+            </Button>
           ))}
         </ScrollView>
       </View>

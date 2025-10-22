@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Input, Button, ScrollView } from '@tarojs/components'
+import { View, Text, Input, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { getCities } from '../../../services/system'
-import { getUserAddresses } from '../../../services/user'
-import { useAuth } from '../../../hooks/useAuth'
-import AuthGuard from '../../../components/AuthGuard'
-import { Address } from '../../../types'
+import { Button } from '@taroify/core'
+import { getCities } from '@/services/system'
+import { getUserAddresses } from '@/services/user'
+import { useAuth } from '@/hooks/useAuth'
+import AuthGuard from '@/components/AuthGuard'
+import { Address } from '@/types'
 import './index.scss'
 
 interface City {
@@ -197,9 +198,11 @@ export default function AddressSelect() {
           <View className='address-section'>
             <Text className='section-title'>已保存的地址</Text>
             {addresses.map(address => (
-              <View 
+              <Button
                 key={address.id} 
                 className='address-item'
+                variant="text"
+                block
                 onClick={() => handleSelectAddress(address)}
               >
                 <View className='address-info'>
@@ -211,13 +214,15 @@ export default function AddressSelect() {
                   </View>
                   <Text className='address-text'>{getFullAddress(address)}</Text>
                 </View>
-                <View 
+                <Button
                   className='delete-btn'
+                  variant="text"
+                  size="small"
                   onClick={(e) => handleDeleteAddress(address.id, e)}
                 >
                   <Text className='delete-icon'>×</Text>
-                </View>
-              </View>
+                </Button>
+              </Button>
             ))}
           </View>
         )}
@@ -241,13 +246,15 @@ export default function AddressSelect() {
                 <Text className='form-label'>选择城市</Text>
                 <ScrollView className='city-list' scrollX>
                   {cities.map(city => (
-                    <View 
+                    <Button
                       key={city.id}
                       className={`city-item ${selectedCity?.id === city.id ? 'selected' : ''}`}
+                      variant="text"
+                      size="small"
                       onClick={() => handleSelectCity(city)}
                     >
                       <Text className='city-name'>{city.name}</Text>
-                    </View>
+                    </Button>
                   ))}
                 </ScrollView>
               </View>
@@ -258,13 +265,15 @@ export default function AddressSelect() {
                   <Text className='form-label'>选择区域</Text>
                   <View className='district-grid'>
                     {selectedCity.districts.map(district => (
-                      <View 
+                      <Button
                         key={district.id}
                         className={`district-item ${selectedDistrict?.id === district.id ? 'selected' : ''}`}
+                        variant="text"
+                        size="small"
                         onClick={() => handleSelectDistrict(district)}
                       >
                         <Text className='district-name'>{district.name}</Text>
-                      </View>
+                      </Button>
                     ))}
                   </View>
                 </View>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Taro from '@tarojs/taro'
-import { useAppContext } from '../store'
-import { AuthService } from '../services/authService'
+import { useAppContext } from '@/store'
+import { AuthService } from '@/services/authService'
 
 export const useAuth = () => {
   const { state, dispatch } = useAppContext()

@@ -9,7 +9,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
     font-size: $font-size-title;
     color: $text-secondary;
   }

@@ -20,7 +20,7 @@
   }
 
   .content-container {
-    height: calc(100vh - 120rpx);
+    min-height: 1200rpx; // Fixed height instead of vh calculation
     padding-left: $page-padding; padding-right: $page-padding;
   }
 
@@ -254,7 +254,7 @@
 }
 
 // 响应式适配
-@media (max-width: 375px) {
+@media (max-width: $breakpoint-xs) {
   .address-select-page {
     .content-container {
       padding: 24px;

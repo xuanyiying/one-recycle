@@ -1,6 +1,5 @@
 @use './variables.scss' as *;
-@use './mobile-utilities.scss' as *;
-@use '@taroify/core/index.scss';
+// 移除全局 Taroify 导入，改为通过 TaroifyProvider 按需加载
 
 // ==================== 移动端全局样式 ====================
 page {
@@ -29,7 +28,7 @@ page {
   font-family: $font-family-number;
 }
 
-// 通用工具类
+// 通用工具类 - 移除重复定义，这些已在 mobile-utilities.scss 中定义
 .flex {
   display: flex;
 }
@@ -66,43 +65,6 @@ page {
   text-align: right;
 }
 
-.text-ellipsis {
-  @include text-ellipsis;
-}
-
-.text-ellipsis-2 {
-  @include text-ellipsis-multi(2);
-}
-
-.text-ellipsis-3 {
-  @include text-ellipsis-multi(3);
-}
-
-// 字体大小工具类
-.text-xs { font-size: $font-size-xs; }
-.text-sm { font-size: $font-size-sm; }
-.text-base { font-size: $font-size-base; }
-.text-lg { font-size: $font-size-lg; }
-.text-xl { font-size: $font-size-xl; }
-.text-xxl { font-size: $font-size-xxl; }
-.text-title { font-size: $font-size-title; }
-
-// 字体权重工具类
-.font-light { font-weight: $font-weight-light; }
-.font-normal { font-weight: $font-weight-normal; }
-.font-medium { font-weight: $font-weight-medium; }
-.font-semibold { font-weight: $font-weight-semibold; }
-.font-bold { font-weight: $font-weight-bold; }
-
-// 颜色工具类
-.text-primary { color: $primary-color; }
-.text-secondary { color: $text-secondary; }
-.text-tertiary { color: $text-tertiary; }
-.text-success { color: $success-color; }
-.text-warning { color: $warning-color; }
-.text-error { color: $error-color; }
-.text-info { color: $info-color; }
-
 // 背景色工具类
 .bg-primary { background-color: $primary-color; }
 .bg-secondary { background-color: $bg-secondary; }
@@ -111,97 +73,6 @@ page {
 .bg-warning { background-color: $warning-color; }
 .bg-error { background-color: $error-color; }
 .bg-info { background-color: $info-color; }
-
-// 间距工具类
-.m-0 { margin: 0; }
-.m-xs { margin: $spacing-xs; }
-.m-sm { margin: $spacing-sm; }
-.m-base { margin: $spacing-base; }
-.m-lg { margin: $spacing-lg; }
-.m-xl { margin: $spacing-xl; }
-.m-xxl { margin: $spacing-xxl; }
-
-.mt-0 { margin-top: 0; }
-.mt-xs { margin-top: $spacing-xs; }
-.mt-sm { margin-top: $spacing-sm; }
-.mt-base { margin-top: $spacing-base; }
-.mt-lg { margin-top: $spacing-lg; }
-.mt-xl { margin-top: $spacing-xl; }
-.mt-xxl { margin-top: $spacing-xxl; }
-
-.mb-0 { margin-bottom: 0; }
-.mb-xs { margin-bottom: $spacing-xs; }
-.mb-sm { margin-bottom: $spacing-sm; }
-.mb-base { margin-bottom: $spacing-base; }
-.mb-lg { margin-bottom: $spacing-lg; }
-.mb-xl { margin-bottom: $spacing-xl; }
-.mb-xxl { margin-bottom: $spacing-xxl; }
-
-.ml-0 { margin-left: 0; }
-.ml-xs { margin-left: $spacing-xs; }
-.ml-sm { margin-left: $spacing-sm; }
-.ml-base { margin-left: $spacing-base; }
-.ml-lg { margin-left: $spacing-lg; }
-.ml-xl { margin-left: $spacing-xl; }
-.ml-xxl { margin-left: $spacing-xxl; }
-
-.mr-0 { margin-right: 0; }
-.mr-xs { margin-right: $spacing-xs; }
-.mr-sm { margin-right: $spacing-sm; }
-.mr-base { margin-right: $spacing-base; }
-.mr-lg { margin-right: $spacing-lg; }
-.mr-xl { margin-right: $spacing-xl; }
-.mr-xxl { margin-right: $spacing-xxl; }
-
-.p-0 { padding: 0; }
-.p-xs { padding: $spacing-xs; }
-.p-sm { padding: $spacing-sm; }
-.p-base { padding: $spacing-base; }
-.p-lg { padding: $spacing-lg; }
-.p-xl { padding: $spacing-xl; }
-.p-xxl { padding: $spacing-xxl; }
-
-.pt-0 { padding-top: 0; }
-.pt-xs { padding-top: $spacing-xs; }
-.pt-sm { padding-top: $spacing-sm; }
-.pt-base { padding-top: $spacing-base; }
-.pt-lg { padding-top: $spacing-lg; }
-.pt-xl { padding-top: $spacing-xl; }
-.pt-xxl { padding-top: $spacing-xxl; }
-
-.pb-0 { padding-bottom: 0; }
-.pb-xs { padding-bottom: $spacing-xs; }
-.pb-sm { padding-bottom: $spacing-sm; }
-.pb-base { padding-bottom: $spacing-base; }
-.pb-lg { padding-bottom: $spacing-lg; }
-.pb-xl { padding-bottom: $spacing-xl; }
-.pb-xxl { padding-bottom: $spacing-xxl; }
-
-.pl-0 { padding-left: 0; }
-.pl-xs { padding-left: $spacing-xs; }
-.pl-sm { padding-left: $spacing-sm; }
-.pl-base { padding-left: $spacing-base; }
-.pl-lg { padding-left: $spacing-lg; }
-.pl-xl { padding-left: $spacing-xl; }
-.pl-xxl { padding-left: $spacing-xxl; }
-
-.pr-0 { padding-right: 0; }
-.pr-xs { padding-right: $spacing-xs; }
-.pr-sm { padding-right: $spacing-sm; }
-.pr-base { padding-right: $spacing-base; }
-.pr-lg { padding-right: $spacing-lg; }
-.pr-xl { padding-right: $spacing-xl; }
-.pr-xxl { padding-right: $spacing-xxl; }
-
-// 圆角工具类
-.rounded-none { border-radius: 0; }
-.rounded-xs { border-radius: $border-radius-xs; }
-.rounded-sm { border-radius: $border-radius-sm; }
-.rounded-base { border-radius: $border-radius-base; }
-.rounded-lg { border-radius: $border-radius-lg; }
-.rounded-xl { border-radius: $border-radius-xl; }
-.rounded-xxl { border-radius: $border-radius-xxl; }
-.rounded-full { border-radius: $border-radius-round; }
 
 // 阴影工具类
 .shadow-none { box-shadow: none; }
@@ -231,92 +102,7 @@ page {
 .overflow-auto { overflow: auto; }
 .overflow-scroll { overflow: scroll; }
 
-// 通用组件样式
-.btn {
-  @include button-reset;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-sm $spacing-lg;
-  border-radius: $border-radius-lg;
-  font-size: $font-size-base;
-  font-weight: $font-weight-medium;
-  line-height: 1;
-  text-align: center;
-  vertical-align: middle;
-  cursor: pointer;
-  transition: all $transition-base;
-  border: 2rpx solid transparent;
-  
-  // 确保文字在所有状态下都完美居中
-  &::after {
-    border: none;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  &.btn-primary {
-    background: $gradient-primary;
-    color: #ffffff;
-    box-shadow: $box-shadow-sm;
-
-    &:not(:disabled):active {
-      transform: translateY(2rpx);
-      box-shadow: none;
-    }
-  }
-
-  &.btn-secondary {
-    background: $bg-color;
-    color: $primary-color;
-    border-color: $primary-color;
-
-    &:not(:disabled):active {
-      background: $bg-secondary;
-    }
-  }
-
-  &.btn-ghost {
-    background: transparent;
-    color: $primary-color;
-    border-color: $primary-color;
-
-    &:not(:disabled):active {
-      background: rgba($primary-color, 0.1);
-    }
-  }
-
-  &.btn-text {
-    background: transparent;
-    color: $primary-color;
-    padding: $spacing-xs $spacing-sm;
-
-    &:not(:disabled):active {
-      background: rgba($primary-color, 0.1);
-    }
-  }
-
-  &.btn-sm {
-    padding: $spacing-xs $spacing-base;
-    font-size: $font-size-sm;
-  }
-
-  &.btn-lg {
-    padding: $spacing-lg $spacing-xl;
-    font-size: $font-size-lg;
-  }
-
-  &.btn-block {
-    width: 100%;
-  }
-
-  &.btn-round {
-    border-radius: $border-radius-round;
-  }
-}
+// 移除未使用的通用按钮样式 - 项目使用 Taroify Button 组件和页面特定样式
 
 .card {
   @include card-shadow;

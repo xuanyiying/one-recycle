@@ -302,7 +302,7 @@
 }
 
 // 响应式适配（使用新断点和 rpx）
-@media (max-width: $breakpoint-sm) {
+@include mobile-standard {
   .recycle-form-page {
     .form-container {
       padding: 48rpx;  // 使用 rpx

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, Button, Picker, Icon, Switch } from '@tarojs/components'
+import { View, Text, Picker, Icon, Switch } from '@tarojs/components'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
+import { Button } from '@taroify/core'
 import { getActiveCategories, getCategoryDetail } from '../../services/category'
 import { Category } from '../../types/category'
 import './index.scss'
@@ -197,10 +198,14 @@ export default function Pricing() {
       {/* 头部背景 */}
       <View className='header-background'>
         <View className='header'>
-          <View className='back-button' onClick={onBackToHome}>
+          <Button
+            className='back-button'
+            variant="text"
+            onClick={onBackToHome}
+          >
             <Icon type='success' size={20} color='white' />
             <Text className='header-title'>支付宝回收</Text>
-          </View>
+          </Button>
           <View className='header-icons'>
             <Icon type='success' size={20} color='white' />
             <Icon type='info' size={20} color='white' />
@@ -323,7 +328,9 @@ export default function Pricing() {
       <View className='bottom-actions'>
         <Button 
           className='estimate-button'
-          type='primary'
+          color='primary'
+          size='large'
+          block
           onClick={onSubmitEstimate}
         >
           同意协议并立即估价

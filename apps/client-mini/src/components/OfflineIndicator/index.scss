@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 32px;
+  padding: 40rpx 64rpx;
   animation: slideDown 0.3s ease-out;
 
   &.offline {
@@ -30,35 +30,35 @@
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 16px;
+  gap: 32rpx;
 }
 
 .status-icon {
-  font-size: 32px;
+  font-size: 64rpx;
   font-weight: bold;
 }
 
 .status-text {
-  font-size: 28px;
+  font-size: 56rpx;
   font-weight: 500;
 }
 
 .pending-count {
   margin-left: auto;
-  padding: 8px 16px;
+  padding: 16rpx 32rpx;
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 24px;
-  font-size: 24px;
+  border-radius: 48rpx;
+  font-size: 48rpx;
 }
 
 .retry-button {
-  padding: 12px 24px;
+  padding: 24rpx 48rpx;
   background-color: rgba(255, 255, 255, 0.9);
   color: #52c41a;
-  border-radius: 8px;
-  font-size: 24px;
+  border-radius: 16rpx;
+  font-size: 48rpx;
   font-weight: 500;
-  margin-left: 16px;
+  margin-left: 32rpx;
 
   &:active {
     background-color: rgba(255, 255, 255, 0.7);
