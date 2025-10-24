@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Button, Image, Input } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Icon } from '@taroify/icons'
+import { IconFont } from '@nutui/icons-react-taro'
 import { useAppContext } from '../../../store'
 import { getUserInfo, updateUserInfo } from '../../../services/user'
 import './index.scss'
@@ -355,7 +355,7 @@ export default function ProfileEdit() {
             mode='aspectFill'
           />
           <View className='avatar-overlay'>
-            <Icon name='photograph' size='32' color='#fff' />
+            <IconFont name='photograph' size='32' color='#fff' />
             <Text className='avatar-tip'>点击更换</Text>
           </View>
         </View>
@@ -419,7 +419,7 @@ export default function ProfileEdit() {
             <View className='modal-header'>
               <Text className='modal-title'>绑定手机号</Text>
               <View className='close-btn' onClick={() => setShowPhoneBinding(false)}>
-                <Icon name='cross' size='24' color='#666' />
+                <IconFont name='cross' size='24' color='#666' />
               </View>
             </View>
             

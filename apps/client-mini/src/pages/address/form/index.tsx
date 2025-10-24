@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Input, Button, Picker } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { Icon } from '@taroify/icons'
-import { createAddress, updateAddress, getUserAddresses } from '../../../services/user'
-import { useAppContext } from '../../../store'
-import AuthGuard from '../../../components/AuthGuard'
+import { IconFont } from '@nutui/icons-react-taro'
+import { createAddress, updateAddress, getUserAddresses } from '@/services/user'
+import { useAppContext } from '@/store'
+import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
 // 中国省市区数据（简化版，实际项目中应使用完整的地区数据）
@@ -423,7 +423,7 @@ const AddressFormPage = () => {
                     {/* 收货人 */}
                     <View className='form-item'>
                         <View className='form-label'>
-                            <Icon name='user' size='16' color='#666' />
+                            <IconFont name='user' size='16' color='#666' />
                             <Text className='label-text'>收货人</Text>
                             <Text className='required'>*</Text>
                         </View>
@@ -442,7 +442,7 @@ const AddressFormPage = () => {
                     {/* 手机号 */}
                     <View className='form-item'>
                         <View className='form-label'>
-                            <Icon name='phone' size='16' color='#666' />
+                            <IconFont name='phone' size='16' color='#666' />
                             <Text className='label-text'>手机号</Text>
                             <Text className='required'>*</Text>
                         </View>
@@ -462,7 +462,7 @@ const AddressFormPage = () => {
                     {/* 所在地区 */}
                     <View className='form-item'>
                         <View className='form-label'>
-                            <Icon name='location' size='16' color='#666' />
+                            <IconFont name='location' size='16' color='#666' />
                             <Text className='label-text'>所在地区</Text>
                             <Text className='required'>*</Text>
                         </View>
@@ -479,7 +479,7 @@ const AddressFormPage = () => {
                                     <Text className={formData.province ? 'selected' : 'placeholder'}>
                                         {formData.province || '请选择省份'}
                                     </Text>
-                                    <Icon name='arrow-down' size='12' color='#999' />
+                                    <IconFont name='arrow-down' size='12' color='#999' />
                                 </View>
                             </Picker>
 
@@ -495,7 +495,7 @@ const AddressFormPage = () => {
                                     <Text className={formData.city ? 'selected' : 'placeholder'}>
                                         {formData.city || '请选择城市'}
                                     </Text>
-                                    <Icon name='arrow-down' size='12' color='#999' />
+                                    <IconFont name='arrow-down' size='12' color='#999' />
                                 </View>
                             </Picker>
 
@@ -511,7 +511,7 @@ const AddressFormPage = () => {
                                     <Text className={formData.district ? 'selected' : 'placeholder'}>
                                         {formData.district || '请选择区县'}
                                     </Text>
-                                    <Icon name='arrow-down' size='12' color='#999' />
+                                    <IconFont name='arrow-down' size='12' color='#999' />
                                 </View>
                             </Picker>
                         </View>
@@ -526,7 +526,7 @@ const AddressFormPage = () => {
                     {/* 详细地址 */}
                     <View className='form-item'>
                         <View className='form-label'>
-                            <Icon name='location' size='16' color='#666' />
+                            <IconFont name='location' size='16' color='#666' />
                             <Text className='label-text'>详细地址</Text>
                             <Text className='required'>*</Text>
                         </View>
@@ -545,7 +545,7 @@ const AddressFormPage = () => {
                     {/* 设为默认地址 */}
                     <View className='form-item default-switch'>
                         <View className='form-label'>
-                            <Icon name='star' size='16' color='#666' />
+                            <IconFont name='star' size='16' color='#666' />
                             <Text className='label-text'>设为默认地址</Text>
                         </View>
                         <View

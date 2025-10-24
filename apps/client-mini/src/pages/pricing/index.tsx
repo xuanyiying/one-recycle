@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, Picker, Icon, Switch } from '@tarojs/components'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
-import { Button } from '@taroify/core'
+import { IconFont } from '@nutui/icons-react-taro'
 import { getActiveCategories, getCategoryDetail } from '../../services/category'
 import { Category } from '../../types/category'
 import './index.scss'
+import { Button } from '@nutui/nutui-react-taro'
 
 interface WeightOption {
   label: string;
@@ -200,16 +201,15 @@ export default function Pricing() {
         <View className='header'>
           <Button
             className='back-button'
-            variant="text"
             onClick={onBackToHome}
           >
-            <Icon type='success' size={20} color='white' />
+            <IconFont name='back' size={20} color='white' />
             <Text className='header-title'>支付宝回收</Text>
           </Button>
           <View className='header-icons'>
-            <Icon type='success' size={20} color='white' />
-            <Icon type='info' size={20} color='white' />
-            <Icon type='warn' size={20} color='white' />
+            <IconFont name='success' size={20} color='white' />
+            <IconFont name='info' size={20} color='white' />
+            <IconFont name='warn' size={20} color='white' />
           </View>
         </View>
 
@@ -251,7 +251,7 @@ export default function Pricing() {
                 <Text className='picker-price'>
                   ¥{weightOptions[selectedWeightIndex]?.price || '0'}
                 </Text>
-                <Icon type='waiting' size={16} color='#666' />
+                <IconFont name='waiting' size={16} color='#666' />
               </View>
             </Picker>
           </View>
@@ -261,26 +261,26 @@ export default function Pricing() {
         <View className='service-options'>
           <View className='service-item'>
             <View className='service-info'>
-              <Icon type='info' size={20} color='#666' />
+              <IconFont name='info' size={20} color='#666' />
               <Text className='service-text'>旧衣回收-上门</Text>
             </View>
-            <Icon type='success' size={16} color='#666' />
+            <IconFont name='success' size={16} color='#666' />
           </View>
           
           <View className='service-item'>
             <View className='service-info'>
-              <Icon type='download' size={20} color='#666' />
+              <IconFont name='download' size={20} color='#666' />
               <Text className='service-text'>旧衣回收-到店</Text>
             </View>
-            <Icon type='success' size={16} color='#666' />
+            <IconFont name='success' size={16} color='#666' />
           </View>
           
           <View className='service-item'>
             <View className='service-info'>
-              <Icon type='waiting' size={20} color='#666' />
+              <IconFont name='waiting' size={20} color='#666' />
               <Text className='service-text'>订单查询</Text>
             </View>
-            <Icon type='success' size={16} color='#666' />
+            <IconFont name='success' size={16} color='#666' />
           </View>
         </View>
 
@@ -302,7 +302,7 @@ export default function Pricing() {
               >
                 <View className='time-picker'>
                   <Text className='time-value'>{pickupTime}</Text>
-                  <Icon type='waiting' size={16} color='#666' />
+                  <IconFont name='waiting' size={16} color='#666' />
                 </View>
               </Picker>
             </View>

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Icon } from '@taroify/icons'
-import { useAppContext } from '../../store'
-import { getUserAddresses, deleteAddress } from '../../services/user'
-import AuthGuard from '../../components/AuthGuard'
+import { IconFont } from '@nutui/icons-react-taro'
+import { useAppContext } from '@/store'
+import { getUserAddresses, deleteAddress } from '@/services/user'
+import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
 interface UserAddress {
@@ -110,23 +110,23 @@ const AddressPage = () => {
         <View className='address-item' key={address.id}>
             {address.isDefault && (
                 <View className='default-tag'>
-                    <Icon name='check-circle' size='12' color='#00B894'></Icon>
+                    <IconFont name='check-circle' size='12' color='#00B894'></IconFont>
                     <Text style={{ marginLeft: '2px' }}>默认</Text>
                 </View>
             )}
             <View className='address-info'>
                 <View className='address-header'>
                     <Text className='consignee'>
-                        <Icon name='user' size='14' color='#636e72'></Icon>
+                        <IconFont name='user' size='14' color='#636e72'></IconFont>
                         <Text style={{ marginLeft: '4px' }}>{address.consignee}</Text>
                     </Text>
                     <Text className='mobile'>
-                        <Icon name='phone' size='14' color='#636e72'></Icon>
+                        <IconFont name='phone' size='14' color='#636e72'></IconFont>
                         <Text style={{ marginLeft: '4px' }}>{address.mobile}</Text>
                     </Text>
                 </View>
                 <Text className='address-detail'>
-                    <Icon name='location' size='14' color='#636e72'></Icon>
+                    <IconFont name='location' size='14' color='#636e72'></IconFont>
                     <Text style={{ marginLeft: '4px' }}>
                         {address.province}{address.city}{address.district}{address.detail}
                     </Text>
@@ -178,7 +178,7 @@ const AddressPage = () => {
             </View>
 
             <Button className='add-address-btn' onClick={onAddAddress}>
-                <Icon name='plus' size='18' color='#fff'></Icon>
+                <IconFont name='plus' size='18' color='#fff'></IconFont>
                 <Text style={{ marginLeft: '4px' }}>新增地址</Text>
             </Button>
             </View>

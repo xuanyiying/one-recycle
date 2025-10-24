@@ -1,5 +1,4 @@
 @use './variables.scss' as *;
-// 移除全局 Taroify 导入，改为通过 TaroifyProvider 按需加载
 
 // ==================== 移动端全局样式 ====================
 page {
@@ -19,7 +18,7 @@ page {
 }
 
 // 重置默认样式
-* {
+page, view, text, image, button, input, textarea, scroll-view, picker, picker-view, radio, checkbox, switch, slider {
   box-sizing: border-box;
 }
 
@@ -28,230 +27,129 @@ page {
   font-family: $font-family-number;
 }
 
-// 通用工具类 - 移除重复定义，这些已在 mobile-utilities.scss 中定义
-.flex {
-  display: flex;
-}
+// ==================== 实际使用的工具类 ====================
 
-.flex-center {
-  @include flex-center;
-}
-
-.flex-between {
-  @include flex-between;
-}
-
-.flex-column {
-  @include flex-column;
-}
-
-.flex-wrap {
-  flex-wrap: wrap;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-.text-center {
-  text-align: center;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.text-right {
-  text-align: right;
-}
-
-// 背景色工具类
-.bg-primary { background-color: $primary-color; }
-.bg-secondary { background-color: $bg-secondary; }
-.bg-white { background-color: $bg-color; }
-.bg-success { background-color: $success-color; }
-.bg-warning { background-color: $warning-color; }
-.bg-error { background-color: $error-color; }
-.bg-info { background-color: $info-color; }
-
-// 阴影工具类
-.shadow-none { box-shadow: none; }
-.shadow-sm { box-shadow: $box-shadow-sm; }
-.shadow-base { box-shadow: $box-shadow-base; }
-.shadow-lg { box-shadow: $box-shadow-lg; }
-
-// 显示/隐藏工具类
-.hidden { display: none !important; }
-.visible { visibility: visible; }
-.invisible { visibility: hidden; }
-
-// 位置工具类
-.relative { position: relative; }
-.absolute { position: absolute; }
-.fixed { position: fixed; }
-.sticky { position: sticky; }
-
-// 宽高工具类
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.w-auto { width: auto; }
-.h-auto { height: auto; }
-
-// 溢出工具类
-.overflow-hidden { overflow: hidden; }
-.overflow-auto { overflow: auto; }
-.overflow-scroll { overflow: scroll; }
-
-// 移除未使用的通用按钮样式 - 项目使用 Taroify Button 组件和页面特定样式
-
-.card {
+// 卡片样式
+.card, .item-card, .status-card, .article-card, .recycle-info-card {
   @include card-shadow;
   padding: $spacing-lg;
   margin-bottom: $spacing-base;
+  background: $bg-color;
+  border-radius: $border-radius-base;
 
   &.card-hover {
     @include hover-lift;
   }
 }
 
-.divider {
-  height: 2rpx;
-  background: $divider-color;
-  margin: $spacing-base 0;
-
-  &.divider-vertical {
-    width: 2rpx;
-    height: auto;
-    margin: 0 $spacing-base;
-  }
-}
-
-.loading {
+// 加载状态
+.loading, .loading-container {
   @include flex-center;
   padding: $spacing-xl;
   color: $text-secondary;
   font-size: $font-size-sm;
 }
 
-.empty {
+.loading-text {
+  color: $text-secondary;
+  font-size: $font-size-sm;
+}
+
+.loading-more {
+  @include flex-center;
+  padding: $spacing-base;
+  color: $text-tertiary;
+  font-size: $font-size-xs;
+}
+
+// 空状态
+.empty, .empty-state, .empty-container {
   @include flex-center;
   flex-direction: column;
   padding: $spacing-xxl;
   color: $text-tertiary;
   font-size: $font-size-sm;
-
-  .empty-icon {
-    font-size: 80rpx;
-    margin-bottom: $spacing-base;
-    opacity: 0.5;
-  }
 }
 
-.error {
+.empty-text {
+  color: $text-tertiary;
+  font-size: $font-size-sm;
+  margin-top: $spacing-base;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-base;
+  opacity: 0.5;
+}
+
+.empty-orders {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xxl;
+  color: $text-tertiary;
+}
+
+// 错误状态
+.error, .error-container {
   @include flex-center;
   flex-direction: column;
   padding: $spacing-xxl;
   color: $error-color;
   font-size: $font-size-sm;
-
-  .error-icon {
-    font-size: 80rpx;
-    margin-bottom: $spacing-base;
-  }
 }
 
-// 状态指示器
-.status-indicator {
+.error-text {
+  color: $error-color;
+  font-size: $font-size-xs;
+  margin-top: $spacing-xs;
+}
+
+.error-message {
+  color: $error-color;
+  font-size: $font-size-xs;
+  margin-top: $spacing-xs;
+}
+
+// 标签样式
+.default-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: $spacing-xs $spacing-sm;
+  background: rgba($primary-color, 0.1);
+  color: $primary-color;
+  font-size: $font-size-xs;
+  border-radius: $border-radius-sm;
+}
+
+.status-badge {
   display: inline-flex;
   align-items: center;
   padding: $spacing-xs $spacing-sm;
   border-radius: $border-radius-base;
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
-
-  &.status-pending {
-    background: rgba($status-pending, 0.1);
-    color: $status-pending;
-  }
-
-  &.status-processing {
-    background: rgba($status-processing, 0.1);
-    color: $status-processing;
-  }
-
-  &.status-success {
-    background: rgba($status-success, 0.1);
-    color: $status-success;
-  }
-
-  &.status-error {
-    background: rgba($status-error, 0.1);
-    color: $status-error;
-  }
-
-  &.status-warning {
-    background: rgba($status-warning, 0.1);
-    color: $status-warning;
-  }
-
-  &.status-default {
-    background: rgba($status-default, 0.1);
-    color: $text-secondary;
-  }
 }
 
-// 徽章
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32rpx;
-  height: 32rpx;
-  padding: 0 $spacing-xs;
-  background: $error-color;
-  color: #ffffff;
+.status-text {
   font-size: $font-size-xs;
   font-weight: $font-weight-medium;
-  line-height: 1;
-  border-radius: $border-radius-round;
-
-  &.badge-dot {
-    width: 16rpx;
-    height: 16rpx;
-    min-width: 16rpx;
-    padding: 0;
-  }
 }
 
-// 标签
-.tag {
-  display: inline-flex;
-  align-items: center;
-  padding: $spacing-xs $spacing-sm;
-  background: $bg-secondary;
-  color: $text-secondary;
-  font-size: $font-size-xs;
-  border-radius: $border-radius-sm;
+// 状态指示器
+.status-section {
+  padding: $spacing-base;
+  background: $bg-color;
+  border-radius: $border-radius-base;
+  margin-bottom: $spacing-base;
+}
 
-  &.tag-primary {
-    background: rgba($primary-color, 0.1);
-    color: $primary-color;
-  }
-
-  &.tag-success {
-    background: rgba($success-color, 0.1);
-    color: $success-color;
-  }
-
-  &.tag-warning {
-    background: rgba($warning-color, 0.1);
-    color: $warning-color;
-  }
-
-  &.tag-error {
-    background: rgba($error-color, 0.1);
-    color: $error-color;
-  }
+.status-icon {
+  @include flex-center;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  margin-right: $spacing-sm;
 }
 
 // 安全区域适配
@@ -263,31 +161,6 @@ page {
   @include safe-area-padding(bottom);
 }
 
-.safe-area-left {
-  @include safe-area-padding(left);
-}
-
-.safe-area-right {
-  @include safe-area-padding(right);
-}
-
-// 响应式隐藏
-@include respond-to(xs) {
-  .hidden-xs { display: none !important; }
-}
-
-@include respond-to(sm) {
-  .hidden-sm { display: none !important; }
-}
-
-@include respond-to(md) {
-  .hidden-md { display: none !important; }
-}
-
-@include respond-to(lg) {
-  .hidden-lg { display: none !important; }
-}
-
 // 深色模式适配
 @include dark-mode {
   page {
@@ -295,12 +168,8 @@ page {
     color: #ffffff;
   }
 
-  .card {
+  .card, .item-card, .status-card, .article-card, .recycle-info-card {
     background: #2d2d2d;
     color: #ffffff;
-  }
-
-  .divider {
-    background: #404040;
   }
 }

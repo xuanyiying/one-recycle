@@ -1,25 +1,10 @@
 // 全局样式文件 - 优化后，移除重复定义，统一使用变量系统
 
 // 导入核心样式系统
-// 优化导入顺序，减少重复加载
 @use './styles/variables.scss' as *;
-@use './styles/mobile-utilities.scss' as *;
-@use './styles/button-compatibility.scss' as button-compat;
 
-// 导入全局样式系统（包含 Taroify 基础样式）
+// 导入全局样式系统
 @use './styles/global.scss' as *;
-
-// 只导入实际使用的组件CSS，移除未使用的组件以优化包大小
-@use './components/AuthGuard/index.scss' as auth-guard;
-@use './components/PriceEstimator/index.scss' as price-estimator;
-@use './components/AddressSelector/index.scss' as address-selector;
-@use './components/CategorySelector/index.scss' as category-selector;
-
-@use './components/ImageUploader/index.scss' as image-uploader;
-@use './components/OfflineIndicator/index.scss' as offline-indicator;
-@use './components/PerformanceDashboard/index.scss' as performance-dashboard;
-@use './components/TimeSelector/index.scss' as time-selector;
-@use './components/JdExpressOption.scss' as jd-express-option;
 
 // 应用级容器样式 - 使用变量系统
 .container {

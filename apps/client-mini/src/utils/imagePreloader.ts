@@ -17,7 +17,7 @@ export const preloadImage = (src: string, options: PreloadOptions = {}): Promise
 
   return new Promise((resolve, reject) => {
     // 在小程序环境中使用 Taro.downloadFile
-    if (Taro.getSystemInfoSync().platform === 'weapp') {
+    if (Taro.getEnv && Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
       const downloadTask = Taro.downloadFile({
         url: src,
         success: () => resolve(),

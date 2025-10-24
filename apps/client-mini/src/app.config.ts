@@ -4,12 +4,10 @@ export default {
         'pages/login/index',
         'pages/category/index',
         'pages/recycle/index',
-        'pages/recycle/index',
         'pages/address/select/index',
-        'pages/order/index',
+        'pages/order/list/index',
         'pages/order/confirm/index',
         'pages/order/detail/index',
-        'pages/order/list/index',
         'pages/pricing/index',
         'pages/profile/index',
         'pages/profile/edit/index',
@@ -20,7 +18,7 @@ export default {
         'pages/withdrawal/index',
         'pages/withdrawal/list/index',
         'pages/withdrawal/detail/index',
-        'pages/transaction/list/index'
+        'pages/transaction/list/index',
     ],
     window: {
         backgroundTextStyle: 'light',

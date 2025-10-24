@@ -1,13 +1,11 @@
 {
-  "miniprogramRoot": "./dist",
+  "miniprogramRoot": "./",
   "projectname": "recycle-mini",
   "description": "爱回收",
   "appid": "touristappid",
   "setting": {
     "urlCheck": true,
     "es6": false,
-    "enhance": false,
-    "compileHotReLoad": false,
     "postcss": false,
     "minified": false
   },

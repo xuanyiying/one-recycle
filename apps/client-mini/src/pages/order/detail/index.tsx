@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Button, Image, ScrollView } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { Steps, Tag, Icon } from '../../../components/TaroifyProvider'
-import { getOrderDetail, cancelOrder, confirmOrder } from '../../../services/order'
-import { OrderDetail, OrderStatus } from '../../../types'
+import { Step, Steps, Tag } from '@nutui/nutui-react-taro'
+import { IconFont } from '@nutui/icons-react-taro'
+import { getOrderDetail, cancelOrder, confirmOrder } from '@/services/order'
+import { OrderDetail, OrderStatus } from '@/types'
 import './index.scss'
 
 const statusMap: Record<OrderStatus, { label: string; color: string }> = {
@@ -166,9 +167,9 @@ export default function OrderDetailPage() {
           style={{ margin: '20px 0' }}
         >
           {stepItems.map((item, index) => (
-            <Steps.Step key={index} label={item.title}>
+            <Step key={index} title={item.title}>
               {item.desc}
-            </Steps.Step>
+            </Step>
           ))}
         </Steps>
       </View>
@@ -176,7 +177,7 @@ export default function OrderDetailPage() {
       {/* 订单信息 */}
       <View className='order-info-section'>
         <View className='section-title'>
-          <Icon name='file-text' size='18' color='#00c896' />
+          <IconFont name='file-text' size='18' color='#00c896' />
           <Text className='title-text'>订单信息</Text>
         </View>
         
@@ -209,7 +210,7 @@ export default function OrderDetailPage() {
       {/* 物品详情 */}
       <View className='items-section'>
         <View className='section-title'>
-          <Icon name='shopping-bag' size='18' color='#00c896' />
+          <IconFont name='shopping-bag' size='18' color='#00c896' />
           <Text className='title-text'>物品详情</Text>
         </View>
         
@@ -246,7 +247,7 @@ export default function OrderDetailPage() {
       {/* 价格信息 */}
       <View className='price-section'>
         <View className='section-title'>
-          <Icon name='money' size='18' color='#00c896' />
+          <IconFont name='money' size='18' color='#00c896' />
           <Text className='title-text'>价格信息</Text>
         </View>
         
@@ -304,7 +305,7 @@ export default function OrderDetailPage() {
       {orderDetail.courier && (
         <View className='courier-section'>
           <View className='section-title'>
-            <Icon name='user' size='18' color='#00c896' />
+            <IconFont name='user' size='18' color='#00c896' />
             <Text className='title-text'>回收员信息</Text>
           </View>
           
@@ -318,7 +319,7 @@ export default function OrderDetailPage() {
               <Text className='courier-name'>{orderDetail.courier.name}</Text>
               <Text className='courier-phone'>{orderDetail.courier.phone}</Text>
               <View className='courier-rating'>
-                <Icon name='star' size='14' color='#ffca28' />
+                <IconFont name='star' size='14' color='#ffca28' />
                 <Text className='rating-text'>{orderDetail.courier.rating}</Text>
               </View>
             </View>
@@ -340,7 +341,7 @@ export default function OrderDetailPage() {
       {/* 订单时间线 */}
       <View className='timeline-section'>
         <View className='section-title'>
-          <Icon name='clock' size='18' color='#00c896' />
+          <IconFont name='clock' size='18' color='#00c896' />
           <Text className='title-text'>订单动态</Text>
         </View>
         

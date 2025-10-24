@@ -1,11 +1,11 @@
 import { View, Text, ScrollView, Picker } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
-import { ArrowDown, Plus, Minus, Replay, Info } from '@taroify/icons'
 import accountService from '../../../services/account'
 import type { Transaction } from '../../../types/account'
 import AuthGuard from '../../../components/AuthGuard'
 import './index.scss'
+import { ArrowDown, Minus, Plus, Received } from '@nutui/icons-react-taro'
 
 export default function TransactionList() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -99,14 +99,14 @@ export default function TransactionList() {
 
   const getTransactionIcon = (type: string) => {
     const iconMap: Record<string, any> = {
-      ORDER_INCOME: Plus,
-      WITHDRAWAL_FREEZE: Minus,
-      WITHDRAWAL_SUCCESS: Minus,
-      WITHDRAWAL_FAILED: Replay,
-      WITHDRAWAL_UNFREEZE: Plus,
-      REFUND: Minus,
+      ORDER_INCOME: Plus, // 订单收入
+      WITHDRAWAL_FREEZE: Minus, // 提现冻结
+      WITHDRAWAL_SUCCESS: Minus, // 提现成功
+      WITHDRAWAL_FAILED: Minus, // 提现失败
+      WITHDRAWAL_UNFREEZE: Plus, // 提现解冻
+      REFUND: Minus, // 退款
     }
-    return iconMap[type] || Info
+    return iconMap[type] || ArrowDown
   }
 
   return (

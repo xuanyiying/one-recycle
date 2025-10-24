@@ -3,7 +3,7 @@ import Taro from '@tarojs/taro';
 import { useNetworkStatus } from '@/utils/networkStatus';
 import syncQueue from '../../utils/syncQueue';
 import { useState, useEffect } from 'react';
-
+import './index.scss'
 /**
  * Offline Indicator Component
  * Shows a banner when device is offline and displays pending sync count

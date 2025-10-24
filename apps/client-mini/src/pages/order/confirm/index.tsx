@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Button, Image, ScrollView, Checkbox } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { Divider } from '@taroify/core'
-import { Icon } from '@taroify/icons'
-import { useAuth } from '../../../hooks/useAuth'
-import { createOrder } from '../../../services/order'
+import { useAuth } from '@/hooks/useAuth'
+import { createOrder } from '@/services/order'
 import './index.scss'
+import { IconFont } from '@nutui/icons-react-taro'
+import { Divider } from '@nutui/nutui-react-taro'
 
 interface OrderData {
   category: string
@@ -151,10 +151,10 @@ export default function OrderConfirm() {
       {/* 地址信息 */}
       <View className='section address-section'>
         <View className='section-header'>
-          <Icon name='map-pin' size='20' color='#00B894' />
+          <IconFont name='map-pin' size='20' color='#00B894' />
           <Text className='section-title'>上门地址</Text>
           <Button className='edit-btn' onClick={handleEditAddress}>
-            <Icon name='edit' size='16' color='#666' />
+            <IconFont name='edit' size='16' color='#666' />
             <Text>修改</Text>
           </Button>
         </View>
@@ -167,10 +167,10 @@ export default function OrderConfirm() {
       {/* 时间信息 */}
       <View className='section time-section'>
         <View className='section-header'>
-          <Icon name='clock' size='20' color='#00B894' />
+          <IconFont name='clock' size='20' color='#00B894' />
           <Text className='section-title'>上门时间</Text>
           <Button className='edit-btn' onClick={handleEditTime}>
-            <Icon name='edit' size='16' color='#666' />
+            <IconFont name='edit' size='16' color='#666' />
             <Text>修改</Text>
           </Button>
         </View>
@@ -183,7 +183,7 @@ export default function OrderConfirm() {
       {/* 物品信息 */}
       <View className='section items-section'>
         <View className='section-header'>
-          <Icon name='shopping-bag' size='20' color='#00B894' />
+          <IconFont name='shopping-bag' size='20' color='#00B894' />
           <Text className='section-title'>回收物品</Text>
         </View>
         <View className='item-info'>
@@ -224,7 +224,7 @@ export default function OrderConfirm() {
       {/* 价格预估 */}
       <View className='section price-section'>
         <View className='section-header'>
-          <Icon name='credit-card' size='20' color='#00B894' />
+          <IconFont name='credit-card' size='20' color='#00B894' />
           <Text className='section-title'>价格预估</Text>
         </View>
         <View className='price-info'>
@@ -233,7 +233,7 @@ export default function OrderConfirm() {
             <Text className='price-value'>¥{orderData.estimatedPrice.toFixed(2)}</Text>
           </View>
           <View className='price-note'>
-            <Icon name='info' size='14' color='#999' />
+            <IconFont name='info' size='14' color='#999' />
             <Text className='tip-text'>实际价格以回收员现场评估为准</Text>
           </View>
         </View>

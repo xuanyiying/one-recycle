@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, Switch } from '@tarojs/components';
-
+import './JdExpressOption.scss';
 interface JdExpressOptionProps {
     enabled: boolean;
     onToggle: (enabled: boolean) => void;

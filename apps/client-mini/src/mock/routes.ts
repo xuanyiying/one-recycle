@@ -9,17 +9,31 @@ import { systemMockData } from './system'
 
 // 注册所有mock路由
 export const registerAllMockRoutes = () => {
-  // 认证相关路由
-  mockManager.registerRoute('POST /auth/login', async (data) => authMockData.login(data))
-  mockManager.registerRoute('GET /auth/user', async () => authMockData.getUserInfo())
-  mockManager.registerRoute('POST /auth/wechat', async (data) => authMockData.wechatLogin(data))
-  mockManager.registerRoute('POST /auth/alipay', async (data) => authMockData.alipayLogin(data))
-  mockManager.registerRoute('POST /auth/douyin', async (data) => authMockData.douyinLogin(data))
+  console.log('[Mock Routes] ==================== Registering Mock Routes ====================')
+  
+  try {
+    // 认证相关路由
+    console.log('[Mock Routes] Registering auth routes...')
+    mockManager.registerRoute('POST /auth/login', async (data) => authMockData.login(data))
+    mockManager.registerRoute('GET /auth/user', async () => authMockData.getUserInfo())
+    mockManager.registerRoute('POST /auth/wechat', async (data) => authMockData.wechatLogin(data))
+    mockManager.registerRoute('POST /auth/alipay', async (data) => authMockData.alipayLogin(data))
+    mockManager.registerRoute('POST /auth/douyin', async (data) => authMockData.douyinLogin(data))
 
-  // 分类相关路由
-  mockManager.registerRoute('GET /category/banners', async () => categoryMockData.getBanners())
-  mockManager.registerRoute('GET /category/categories', async () => categoryMockData.getAllCategories())
-  mockManager.registerRoute('GET /category/articles', async (data) => categoryMockData.getArticles(data?.categoryId))
+    // 分类相关路由
+    console.log('[Mock Routes] Registering category routes...')
+    mockManager.registerRoute('GET /system/banners', async () => {
+      console.log('[Mock Routes] Handling GET /system/banners')
+      return categoryMockData.getBanners()
+    })
+    mockManager.registerRoute('GET /category/categories', async () => {
+      console.log('[Mock Routes] Handling GET /category/categories')
+      return categoryMockData.getAllCategories()
+    })
+    mockManager.registerRoute('GET /system/articles', async (data) => {
+      console.log('[Mock Routes] Handling GET /system/articles with data:', data)
+      return categoryMockData.getArticles(data?.categoryId)
+    })
   
   // 保留原有的路由以兼容其他调用
   mockManager.registerRoute('GET /categories/active', async () => categoryMockData.getActiveCategories())
@@ -93,5 +107,15 @@ export const registerAllMockRoutes = () => {
   mockManager.registerRoute('GET /system/customer-service', async () => systemMockData.getCustomerService())
   mockManager.registerRoute('POST /system/upload', async (data) => systemMockData.uploadImage(data))
 
-  console.log('[Mock] All routes registered successfully')
+  console.log('[Mock Routes] ==================== Route Registration Complete ====================')
+  console.log('[Mock Routes] Total routes registered:', Object.keys(mockManager.getRoutes()).length)
+  
+  // 运行诊断检查
+  console.log('[Mock Routes] Running post-registration diagnosis...')
+  mockManager.diagnose()
+  
+  } catch (error) {
+    console.error('[Mock Routes] ❌ Error during route registration:', error)
+    throw error
+  }
 }

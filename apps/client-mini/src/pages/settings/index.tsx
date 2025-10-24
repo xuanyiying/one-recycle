@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { View, Text, Switch } from '@tarojs/components'
-import { Icon } from '@taroify/icons'
 import './index.scss'
+import { IconFont } from '@nutui/icons-react-taro'
 
 interface SettingItem {
     id: string
@@ -72,7 +72,7 @@ const Settings = () => {
                     >
                         <View className='setting-info'>
                             <Text className='setting-title'>
-                                <Icon name={setting.id} size='18' color='#636e72'></Icon>
+                                <IconFont name={setting.id} size='18' color='#636e72'></IconFont>
                                 <Text style={{ marginLeft: '8px' }}>{setting.title}</Text>
                             </Text>
                             {setting.description && (
@@ -96,7 +96,7 @@ const Settings = () => {
                 <View className='setting-item' onClick={clearCache}>
                     <View className='setting-info'>
                         <Text className='setting-title'>
-                            <Icon name='trash' size='18' color='#636e72'></Icon>
+                            <IconFont name='trash' size='18' color='#636e72'></IconFont>
                             <Text style={{ marginLeft: '8px' }}>清除缓存</Text>
                         </Text>
                     </View>

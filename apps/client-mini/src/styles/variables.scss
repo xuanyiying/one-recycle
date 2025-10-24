@@ -44,15 +44,15 @@ $font-family-number: 'DIN Alternate', 'Helvetica Neue', Helvetica, Arial, sans-s
 
 // 字体大小 - 移动端标准化（优化后，增大字体提升可读性）
 // Enhanced font scale (26rpx-64rpx) for better mobile readability
-$font-size-xs: 26rpx; // 辅助信息、标签 (13px) - Minimum readable size
-$font-size-sm: 30rpx; // 次要文本、说明文字 (15px) - Improved readability
-$font-size-base: 32rpx; // 正文、基础文本 (16px) - Standard body text
-$font-size-md: 36rpx; // 重要文本 (18px)
-$font-size-lg: 40rpx; // 小标题、按钮文字 (20px) - Enhanced for buttons
-$font-size-xl: 44rpx; // 标题、重要信息 (22px) - Headings
-$font-size-xxl: 48rpx; // 大标题 (24px)
-$font-size-title: 56rpx; // 页面主标题 (28px) - Page titles
-$font-size-display: 64rpx; // 展示型大字 (32px) - Maximum size
+$font-size-xs: 13px; // 辅助信息、标签 (13px) - Minimum readable size
+$font-size-sm: 15px; // 次要文本、说明文字 (15px) - Improved readability
+$font-size-base: 16px; // 正文、基础文本 (16px) - Standard body text
+$font-size-md: 18px; // 重要文本 (18px)
+$font-size-lg: 20px; // 小标题、按钮文字 (20px) - Enhanced for buttons
+$font-size-xl: 22px; // 标题、重要信息 (22px) - Headings
+$font-size-xxl: 24px; // 大标题 (24px)
+$font-size-title: 28px; // 页面主标题 (28px) - Page titles
+$font-size-display: 32px; // 展示型大字 (32px) - Maximum size
 
 // 字体权重
 $font-weight-light: 300;
@@ -69,48 +69,48 @@ $line-height-loose: 1.8; // 宽松布局
 
 // ==================== 移动端间距规范 ====================
 // 基础间距 - 8rpx 为基准单位
-$spacing-xs: 8rpx; // 最小间距
-$spacing-sm: 16rpx; // 小间距
-$spacing-base: 24rpx; // 标准间距
-$spacing-md: 32rpx; // 中等间距
-$spacing-lg: 40rpx; // 大间距
-$spacing-xl: 48rpx; // 超大间距
-$spacing-xxl: 56rpx; // 最大间距
+$spacing-xs: 8px; // 最小间距
+$spacing-sm: 16px; // 小间距
+$spacing-base: 24px; // 标准间距
+$spacing-md: 32px; // 中等间距
+$spacing-lg: 40px; // 大间距
+$spacing-xl: 48px; // 超大间距
+$spacing-xxl: 56px; // 最大间距
 
 // 页面级间距
-$page-padding: 32rpx; // 页面左右内边距
-$section-margin: 40rpx; // 区块间距
-$card-padding: 32rpx; // 卡片内边距
+$page-padding: 32px; // 页面左右内边距
+$section-margin: 40px; // 区块间距
+$card-padding: 32px; // 卡片内边距
 
 // ==================== 触摸目标标准 ====================
 // Touch target standards for accessibility and usability
-$touch-target-min: 88rpx; // 44px - WCAG minimum touch target
-$touch-target-recommended: 96rpx; // 48px - Recommended comfortable size
-$touch-target-comfortable: 104rpx; // 52px - Optimal for thumb interaction
+$touch-target-min: 44px; // 44px - WCAG minimum touch target
+$touch-target-recommended: 48px; // 48px - Recommended comfortable size
+$touch-target-comfortable: 52px; // 52px - Optimal for thumb interaction
 
 // Button height standards
-$button-height-sm: 64rpx; // Small buttons (32px)
-$button-height-md: 80rpx; // Medium buttons (40px)
-$button-height-lg: 96rpx; // Large buttons (48px) - Meets touch target standards
-$button-height-xl: 104rpx; // Extra large buttons (52px)
+$button-height-sm: 64px; // Small buttons (32px)
+$button-height-md: 80px; // Medium buttons (40px)
+$button-height-lg: 96px; // Large buttons (48px) - Meets touch target standards
+$button-height-xl: 104px; // Extra large buttons (52px)
 
 // ==================== 移动端圆角规范 ====================
 // 基础圆角 - 4rpx 为基准单位
 $border-radius-none: 0; // 无圆角
-$border-radius-xs: 4rpx; // 最小圆角 - 小按钮、标签
-$border-radius-sm: 8rpx; // 小圆角 - 输入框、小卡片
-$border-radius-base: 12rpx; // 标准圆角 - 按钮、卡片
-$border-radius-md: 16rpx; // 中等圆角 - 大卡片
-$border-radius-lg: 20rpx; // 大圆角 - 弹窗、面板
-$border-radius-xl: 24rpx; // 超大圆角 - 特殊组件
-$border-radius-xxl: 32rpx; // 最大圆角 - 装饰性元素
+$border-radius-xs: 4px; // 最小圆角 - 小按钮、标签
+$border-radius-sm: 8px; // 小圆角 - 输入框、小卡片
+$border-radius-base: 12px; // 标准圆角 - 按钮、卡片
+$border-radius-md: 16px; // 中等圆角 - 大卡片
+$border-radius-lg: 20px; // 大圆角 - 弹窗、面板
+$border-radius-xl: 24px; // 超大圆角 - 特殊组件
+$border-radius-xxl: 32px; // 最大圆角 - 装饰性元素
 $border-radius-round: 50%; // 圆形 - 头像、图标
-$border-radius-pill: 999rpx; // 胶囊形 - 标签、徽章
+$border-radius-pill: 999px; // 胶囊形 - 标签、徽章
 
 // 阴影
-$box-shadow-sm: 0 2rpx 8rpx $shadow-light;
-$box-shadow-base: 0 4rpx 16rpx $shadow-medium;
-$box-shadow-lg: 0 8rpx 24rpx $shadow-dark;
+$box-shadow-sm: 0 2px 8px $shadow-light;
+$box-shadow-base: 0 4px 16px $shadow-medium;
+$box-shadow-lg: 0 8px 24px $shadow-dark;
 
 // 过渡动画
 $transition-fast: 0.2s ease;
@@ -138,8 +138,8 @@ $breakpoint-xl: 1024px; // iPad Pro - Large tablet/desktop
 $container-xs: 100%;
 $container-sm: 100%;
 $container-md: 100%;
-$container-lg: 750rpx;
-$container-xl: 1200rpx;
+$container-lg: 750px;
+$container-xl: 1200px;
 
 // 状态色彩
 $status-pending: #faad14;

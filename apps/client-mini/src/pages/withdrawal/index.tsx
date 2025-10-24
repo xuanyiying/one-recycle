@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Input, Button, RadioGroup, Radio, Label } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import accountService from '../../services/account'
-import withdrawalService from '../../services/withdrawal'
-import { WithdrawalProvider } from '../../types/withdrawal'
-import type { Account } from '../../types/account'
-import AuthGuard from '../../components/AuthGuard'
+import accountService from '@/services/account'
+import withdrawalService from '@/services/withdrawal'
+import { WithdrawalProvider } from '@/types/withdrawal'
+import type { Account } from '@/types/account'
+import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
 export default function WithdrawalApplication() {

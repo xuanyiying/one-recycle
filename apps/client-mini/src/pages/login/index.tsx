@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Input, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Button } from '@taroify/core'
-import { useAppContext } from '../../store'
-import { login, getUserInfo } from '../../services/auth'
-import { uploadImage } from '../../services/upload'
+import { useAppContext } from '@/store'
+import { login, getUserInfo } from '@/services/auth'
+import { uploadImage } from '@/services/upload'
 import './index.scss'
 import { PlatformDetector } from '@/utils/platformDetector'
+import { Button } from '@nutui/nutui-react-taro'
 
 // 常量定义
 const NICKNAME_MIN_LENGTH = 2
@@ -286,10 +286,15 @@ export default function Login() {
 
       if (authResult.success && authResult.data) {
         // 存储用户信息
-        const { token, user } = authResult.data
+        const { token, refreshToken, user } = authResult.data
         
-        // 存储token
+        // 存储token和刷新令牌
         await Taro.setStorageSync('token', token)
+        if (refreshToken) {
+          await Taro.setStorageSync('refreshToken', refreshToken)
+        }
+        // 存储用户信息到本地，便于跨会话读取
+        await Taro.setStorageSync('user', user)
         
         // 更新全局状态
         dispatch({
@@ -373,7 +378,6 @@ export default function Login() {
         <View className="avatar-section">
           <Button
             className="avatar-container"
-            variant="text"
             onClick={handleAvatarClick}
           >
             {form.avatar ? (
@@ -433,7 +437,7 @@ export default function Login() {
           <Button
             className={`authorize-btn ${loading ? 'loading' : ''}`}
             color="primary"
-            size="medium"
+            size={'normal'}
             block
             loading={loading}
             onClick={handleAuthorizeLogin}
@@ -445,7 +449,7 @@ export default function Login() {
           <Button
             className="skip-btn"
             color="default"
-            size="medium"
+            size={'normal'}
             block
             onClick={handleSkipAuthorization}
             disabled={loading}
@@ -461,7 +465,6 @@ export default function Login() {
           </Text>
           <Button
             className="link-container"
-            variant="text"
             size="small"
             onClick={handleUserAgreement}
           >
@@ -470,7 +473,6 @@ export default function Login() {
           <Text className="agreement-text">和</Text>
           <Button
             className="link-container"
-            variant="text"
             size="small"
             onClick={handlePrivacyPolicy}
           >
@@ -485,7 +487,6 @@ export default function Login() {
           <View className="avatar-picker-modal" onTap={(e) => e.stopPropagation()}>
             <Button
               className="avatar-picker-header"
-              variant="text"
               block
               onClick={handleUseWechatAvatar}
             >
@@ -499,7 +500,6 @@ export default function Login() {
             
               <Button
                 className="avatar-option"
-                variant="text"
                 block
                 onClick={handleSelectFromAlbum}
               >
@@ -513,7 +513,6 @@ export default function Login() {
               
               <Button
                 className="avatar-option"
-                variant="text"
                 block
                 onClick={handleTakePhoto}
               >
@@ -530,7 +529,7 @@ export default function Login() {
               <Button 
                 className="cancel-btn"
                 color="default"
-                size="medium"
+                size={'normal'}
                 block
                 onClick={() => setShowAvatarPicker(false)}
               >

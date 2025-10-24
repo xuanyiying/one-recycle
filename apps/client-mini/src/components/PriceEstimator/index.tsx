@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Input } from '@tarojs/components'
-
+import './index.scss'
 interface Category {
   id: number
   name: string

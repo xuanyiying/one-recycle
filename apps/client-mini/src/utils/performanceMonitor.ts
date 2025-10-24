@@ -294,19 +294,50 @@ export async function measureExecutionTime<T>(
  * Get device performance info
  */
 export function getDevicePerformance() {
-    const systemInfo = Taro.getSystemInfoSync();
+  // 安全获取系统信息，避免在启动阶段出现空值
+  const info = (() => { 
+    try { 
+      const systemInfo = Taro.getSystemInfoSync() as any;
+      // 确保所有可能为 null 的属性都有默认值
+      return {
+        platform: systemInfo?.platform || '',
+        system: systemInfo?.system || '',
+        model: systemInfo?.model || '',
+        brand: systemInfo?.brand || '',
+        pixelRatio: systemInfo?.pixelRatio ?? 2,
+        screenWidth: systemInfo?.screenWidth ?? 750,
+        screenHeight: systemInfo?.screenHeight ?? 1334,
+        windowWidth: systemInfo?.windowWidth ?? systemInfo?.screenWidth ?? 750,
+        windowHeight: systemInfo?.windowHeight ?? systemInfo?.screenHeight ?? 1334,
+        benchmarkLevel: systemInfo?.benchmarkLevel ?? 'unknown'
+      };
+    } catch { 
+      return {
+        platform: '',
+        system: '',
+        model: '',
+        brand: '',
+        pixelRatio: 2,
+        screenWidth: 750,
+        screenHeight: 1334,
+        windowWidth: 750,
+        windowHeight: 1334,
+        benchmarkLevel: 'unknown'
+      };
+    } 
+  })()
 
-    return {
-        platform: systemInfo.platform,
-        system: systemInfo.system,
-        model: systemInfo.model,
-        pixelRatio: systemInfo.pixelRatio,
-        screenWidth: systemInfo.screenWidth,
-        screenHeight: systemInfo.screenHeight,
-        windowWidth: systemInfo.windowWidth,
-        windowHeight: systemInfo.windowHeight,
-        benchmarkLevel: systemInfo.benchmarkLevel || 'unknown'
-    };
+  return {
+    platform: info.platform || '',
+    system: info.system || '',
+    model: info.model || '',
+    pixelRatio: info.pixelRatio ?? 2,
+    screenWidth: info.screenWidth ?? 750,
+    screenHeight: info.screenHeight ?? 1334,
+    windowWidth: info.windowWidth ?? info.screenWidth ?? 750,
+    windowHeight: info.windowHeight ?? info.screenHeight ?? 1334,
+    benchmarkLevel: info.benchmarkLevel ?? 'unknown'
+  };
 }
 
 // Export class for testing

@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Input, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Button } from '@taroify/core'
 import { getCities } from '@/services/system'
 import { getUserAddresses } from '@/services/user'
 import { useAuth } from '@/hooks/useAuth'
 import AuthGuard from '@/components/AuthGuard'
 import { Address } from '@/types'
 import './index.scss'
+import { Button } from '@nutui/nutui-react-taro'
 
 interface City {
   id: string
@@ -201,7 +201,6 @@ export default function AddressSelect() {
               <Button
                 key={address.id} 
                 className='address-item'
-                variant="text"
                 block
                 onClick={() => handleSelectAddress(address)}
               >
@@ -216,7 +215,6 @@ export default function AddressSelect() {
                 </View>
                 <Button
                   className='delete-btn'
-                  variant="text"
                   size="small"
                   onClick={(e) => handleDeleteAddress(address.id, e)}
                 >
@@ -249,7 +247,6 @@ export default function AddressSelect() {
                     <Button
                       key={city.id}
                       className={`city-item ${selectedCity?.id === city.id ? 'selected' : ''}`}
-                      variant="text"
                       size="small"
                       onClick={() => handleSelectCity(city)}
                     >
@@ -268,7 +265,6 @@ export default function AddressSelect() {
                       <Button
                         key={district.id}
                         className={`district-item ${selectedDistrict?.id === district.id ? 'selected' : ''}`}
-                        variant="text"
                         size="small"
                         onClick={() => handleSelectDistrict(district)}
                       >

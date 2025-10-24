@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-
+import './index.scss'
 interface TimeSelectorProps {
   value: string
   onChange: (time: string) => void

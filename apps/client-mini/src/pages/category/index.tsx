@@ -1,9 +1,9 @@
 import { View, Text } from '@tarojs/components'
 import { useEffect, useState } from 'react'
 import Taro from '@tarojs/taro'
-import { Button } from '@taroify/core'
-import { Icon } from '@taroify/icons'
 import './index.scss'
+import { Button } from '@nutui/nutui-react-taro'
+import { IconFont } from '@nutui/icons-react-taro'
 
 // 分类数据 - 使用taro-ui图标
 const CATEGORIES = [
@@ -52,14 +52,14 @@ const CategoryPage = () => {
           <Button
             key={category.id}
             className={`category-item ${selectedCategory === category.id ? 'selected' : ''}`}
-            variant="text"
+            size={'small'}
             onClick={() => handleCategoryClick(category)}
           >
             <View 
               className='category-icon'
               style={{ backgroundColor: category.color }}
             >
-              <Icon name={category.icon} size='24' color='#fff' />
+              <IconFont name={category.icon} size='24' color='#fff' />
             </View>
             <Text className='category-name'>{category.name}</Text>
           </Button>

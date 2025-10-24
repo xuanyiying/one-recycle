@@ -1,11 +1,11 @@
 import { View, Text, ScrollView } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
-import { Button, Tag } from '../../../components/TaroifyProvider'
-import withdrawalService from '../../../services/withdrawal'
-import { WithdrawalStatus } from '../../../types/withdrawal'
-import type { Withdrawal } from '../../../types/withdrawal'
-import AuthGuard from '../../../components/AuthGuard'
+import { Button, Tag } from '@nutui/nutui-react-taro'
+import withdrawalService from '@/services/withdrawal'
+import { WithdrawalStatus } from '@/types/withdrawal'
+import type { Withdrawal } from '@/types/withdrawal'
+import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
 export default function WithdrawalList() {
@@ -90,7 +90,6 @@ export default function WithdrawalList() {
                             <Button
                                 key={withdrawal.id}
                                 className="withdrawal-item"
-                                variant="text"
                                 block
                                 onClick={() => handleItemClick(withdrawal.id)}
                             >

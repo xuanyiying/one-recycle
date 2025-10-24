@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
+import './index.scss'
 
 interface AddressSelectorProps {
   value: string

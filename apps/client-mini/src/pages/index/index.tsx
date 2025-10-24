@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Image, Input, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Button } from '@taroify/core'
-import { getBanners, getArticles } from '../../services/system'
-import { getAllCategories } from '../../services/category'
+import { getBanners, getArticles } from '@/services/system'
+import { getAllCategories } from '@/services/category'
 import './index.scss'
 import { Banner, Article } from '@/types'
-import { Category } from '../../types/category'
-import { Icon } from '@taroify/icons'
+import { Category } from '@/types/category'
+import { Button } from '@nutui/nutui-react-taro'
+import { IconFont } from '@nutui/icons-react-taro'
 
 export default function Index() {
   const [currentCity, setCurrentCity] = useState('深圳')
@@ -221,8 +221,7 @@ export default function Index() {
           </View>
           <Button
             className='city-selector'
-            variant="text"
-            size="small"
+            size={'small'}
             onClick={handleCitySelect}
           >
             <Text className='city-name'>{currentCity}</Text>
@@ -279,10 +278,10 @@ export default function Index() {
             <Button
               key={index}
               className='category-item'
-              variant="text"
+              size={'small'}
               onClick={() => handleCategoryClick(item.name)}
             >
-            <Icon name={item?.icon || 'book'} size='24' color='#636e72'></Icon>
+            <IconFont className='category-icon' name={item?.icon || 'book'} size='24' color='#636e72'/>
             <Text className='category-name'>{item.name}</Text>
             </Button>
           ))}
@@ -300,7 +299,7 @@ export default function Index() {
             <Button
               key={index}
               className='article-card'
-              variant="text"
+              size={'small'}
               onClick={() => handleArticleClick(article)}
             >
               <Image

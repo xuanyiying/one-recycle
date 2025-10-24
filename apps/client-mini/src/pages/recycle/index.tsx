@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Input, Textarea, Button, Switch } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
-import { Icon } from '@taroify/icons'
 import { useAuth } from '../../hooks/useAuth'
+import { IconFont } from '@nutui/icons-react-taro'
+
 import { getAllCategories } from '../../services/category'
 import { createOrder } from '../../services/order'
 import CategorySelector from '../../components/CategorySelector'
@@ -335,7 +336,7 @@ export default function RecycleForm() {
         <View className='form-section jd-express-section'>
           <View className='jd-express-header'>
             <View className='jd-express-left'>
-              <Icon name='delivery' size='18' color='#E32B2B' />
+              <IconFont name='delivery' size='18' color='#E32B2B' />
               <Text className='section-title' style={{ marginLeft: '8px' }}>京东快递上门取件</Text>
             </View>
             <Switch

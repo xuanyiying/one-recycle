@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import { performanceMonitor } from '@/utils/performanceMonitor';
-
+import './index.scss'
 
 interface PerformanceDashboardProps {
   visible?: boolean;

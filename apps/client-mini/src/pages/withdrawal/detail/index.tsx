@@ -1,12 +1,12 @@
 import { View, Text } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
-import { Tag } from '@taroify/core'
 import withdrawalService from '../../../services/withdrawal'
 import { WithdrawalStatus } from '../../../types/withdrawal'
 import type { Withdrawal } from '../../../types/withdrawal'
 import AuthGuard from '../../../components/AuthGuard'
 import './index.scss'
+import { Tag } from '@nutui/nutui-react-taro'
 
 export default function WithdrawalDetail() {
     const router = useRouter()
@@ -67,7 +67,7 @@ export default function WithdrawalDetail() {
             <View className="withdrawal-detail-page">
                 {/* Status Card */}
                 <View className="status-card">
-                    <Tag color={getStatusColor(withdrawal.status)} size="large">
+                    <Tag color={getStatusColor(withdrawal.status)}>
                         {withdrawalService.getStatusText(withdrawal.status)}
                     </Tag>
                     <Text className="amount">

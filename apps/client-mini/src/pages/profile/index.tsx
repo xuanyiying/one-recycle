@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { Button, Icon, Divider } from '../../components/TaroifyProvider'
-import { useAppContext } from '../../store'
-import { getUserOrders } from '../../services/order'
-import { getUserInfo } from '../../services/user'
-import accountService from '../../services/account'
-import { Order } from '../../types'
-import type { Account } from '../../types/account'
-import AuthGuard from '../../components/AuthGuard'
+import { Button, Divider } from '@nutui/nutui-react-taro'
+import { IconFont } from '@nutui/icons-react-taro'
+import { useAppContext } from '@/store'
+import { getUserOrders } from '@/services/order'
+import { getUserInfo } from '@/services/user'
+import accountService from '@/services/account'
+import { Order } from '@/types'
+import type { Account } from '@/types/account'
+import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
 interface UserInfo {
@@ -210,23 +211,23 @@ export default function Profile() {
             <View className='user-section'>
                 <View className='stats-section'>
                     <View className='stats-grid'>
-                        <Button className='stat-item' variant="text" onClick={handleViewOrders}>
-                            <Icon name='file' size='24' color='#00B894'></Icon>
+                        <Button className='stat-item' onClick={handleViewOrders}>
+                            <IconFont name='file' size='24' color='#00B894'></IconFont>
                             <Text className='stat-value'>{stats.totalOrders}</Text>
                             <Text className='stat-label'>累计订单</Text>
                         </Button>
-                        <Button className='stat-item' variant="text" onClick={handleViewBalance}>
-                            <Icon name='money' size='24' color='#00B894'></Icon>
+                        <Button className='stat-item'  onClick={handleViewBalance}>
+                            <IconFont name='money' size='24' color='#00B894'></IconFont>
                             <Text className='stat-value'>¥{stats.totalAmount.toFixed(2)}</Text>
                             <Text className='stat-label'>累计收益</Text>
                         </Button>
                         <View className='stat-item'>
-                            <Icon name='cloud' size='24' color='#00B894'></Icon>
+                            <IconFont name='cloud' size='24' color='#00B894'></IconFont>
                             <Text className='stat-value'>{stats.savedCarbon.toFixed(1)}kg</Text>
                             <Text className='stat-label'>减碳贡献</Text>
                         </View>
-                        <Button className='stat-item' variant="text" onClick={handleViewBalance}>
-                            <Icon name='wallet' size='24' color='#00B894'></Icon>
+                        <Button className='stat-item' onClick={handleViewBalance}>
+                            <IconFont name='wallet' size='24' color='#00B894'></IconFont>
                             <Text className='stat-value'>
                                 {account ? accountService.formatAmount(account.availableBalance) : '¥0.00'}
                             </Text>
@@ -296,33 +297,33 @@ export default function Profile() {
             <Divider/>
             {/* 功能菜单 */}
             <View className='menu-section'>
-                <Button className='menu-item' variant="text" block onClick={onAddressManage}>
+                <Button className='menu-item' onClick={onAddressManage} block>
                     <View className='menu-content'>
-                        <Icon name='location' size='18' color='#636e72' className='menu-icon'></Icon>
+                        <IconFont name='location' size='18' color='#636e72' className='menu-icon'></IconFont>
                         <Text className='menu-title'>收货地址</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
                 </Button>
 
-                <Button className='menu-item' variant="text" block onClick={onInvoiceManage}>
+                <Button className='menu-item' onClick={onInvoiceManage} block>
                     <View className='menu-content'>
-                        <Icon name='credit-card' size='18' color='#636e72' className='menu-icon'></Icon>
+                        <IconFont name='credit-card' size='18' color='#636e72' className='menu-icon'></IconFont>
                         <Text className='menu-title'>发票管理</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
                 </Button>
 
-                <Button className='menu-item' variant="text" block onClick={onContactService}>
+                <Button className='menu-item' onClick={onContactService} block>
                     <View className='menu-content'>
-                        <Icon name='phone' size='18' color='#636e72' className='menu-icon'></Icon>
+                        <IconFont name='phone' size='18' color='#636e72' className='menu-icon'></IconFont>
                         <Text className='menu-title'>联系客服</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
                 </Button>
 
-                <Button className='menu-item' variant="text" block onClick={onSettings}>
+                <Button className='menu-item' onClick={onSettings} block>
                     <View className='menu-content'>
-                        <Icon name='settings' size='18' color='#636e72' className='menu-icon'></Icon>
+                        <IconFont name='settings' size='18' color='#636e72' className='menu-icon'></IconFont>
                         <Text className='menu-title'>设置</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>

@@ -5,12 +5,12 @@ import { ApiResponse, Banner, Article } from '@/types'
 
 // 获取轮播图
 export const getBanners = (): Promise<ApiResponse<Banner[]>> => {
-    return get('/category/banners')
+    return get('/system/banners')
 }
 
 // 获取文章列表
 export const getArticles = (): Promise<ApiResponse<Article[]>> => {
-    return get('/category/articles')
+    return get('/system/articles')
 }
 
 // 获取系统配置

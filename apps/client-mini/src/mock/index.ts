@@ -95,29 +95,108 @@ export const mockManager = {
     return { ...mockConfig }
   },
 
+  // Mock系统诊断功能
+  diagnose(): {
+    enabled: boolean
+    totalRoutes: number
+    successCount: number
+    failureCount: number
+    routes: string[]
+  } {
+    console.log('[Mock Diagnosis] ==================== Mock System Diagnosis ====================')
+    console.log('[Mock Diagnosis] Mock enabled:', this.isEnabled())
+    console.log('[Mock Diagnosis] ENV_CONFIG.USE_MOCK_DATA:', ENV_CONFIG.USE_MOCK_DATA)
+    console.log('[Mock Diagnosis] Mock config:', this.getConfig())
+    console.log('[Mock Diagnosis] Total routes loaded:', Object.keys(mockRoutes).length)
+    console.log('[Mock Diagnosis] Available routes:')
+    
+    Object.keys(mockRoutes).forEach((route, index) => {
+      console.log(`[Mock Diagnosis]   ${index + 1}. ${route}`)
+    })
+
+    // 验证Mock数据文件完整性
+    console.log('[Mock Diagnosis] Testing route handlers...')
+    let successCount = 0
+    let failureCount = 0
+    
+    Object.entries(mockRoutes).forEach(([route, handler]) => {
+      try {
+        // 简单测试每个路由处理器
+        const testResult = handler({})
+        if (testResult && typeof testResult.then === 'function') {
+          // 异步处理器
+          testResult.then(() => {
+            console.log(`[Mock Diagnosis] ✅ Route ${route}: OK`)
+            successCount++
+          }).catch((error) => {
+            console.error(`[Mock Diagnosis] ❌ Route ${route}: FAILED`, error)
+            failureCount++
+          })
+        } else {
+          console.log(`[Mock Diagnosis] ✅ Route ${route}: OK`)
+          successCount++
+        }
+      } catch (error) {
+        console.error(`[Mock Diagnosis] ❌ Route ${route}: FAILED`, error)
+        failureCount++
+      }
+    })
+
+    console.log('[Mock Diagnosis] ==================== Diagnosis Complete ====================')
+    
+    // 返回诊断结果
+    return {
+      enabled: this.isEnabled(),
+      totalRoutes: Object.keys(mockRoutes).length,
+      successCount,
+      failureCount,
+      routes: Object.keys(mockRoutes)
+    }
+  },
+
   // 处理请求
   async handleRequest(url: string, method: string, data?: any): Promise<MockResponse<any> | null> {
     if (!this.isEnabled()) {
+      console.log(`[Mock Request] Mock disabled, skipping: ${method} ${url}`)
       return null
     }
 
     // 构建路由键
     const routeKey = `${method.toUpperCase()} ${url}`
+    console.log(`[Mock Request] Attempting to handle: ${routeKey}`)
     
     // 查找精确匹配的路由
     if (mockRoutes[routeKey]) {
-      return await mockRoutes[routeKey](data)
-    }
-
-    // 查找模式匹配的路由
-    for (const pattern in mockRoutes) {
-      const matchResult = this.matchRouteWithParams(pattern, routeKey)
-      if (matchResult) {
-        return await mockRoutes[pattern](data, matchResult.params)
+      console.log(`[Mock Request] ✅ Found exact match for: ${routeKey}`)
+      try {
+        const response = await mockRoutes[routeKey](data)
+        console.log(`[Mock Response] ${routeKey}:`, response)
+        return response
+      } catch (error) {
+        console.error(`[Mock Error] Handler failed for ${routeKey}:`, error)
+        return null
       }
     }
 
-    console.warn(`[Mock] No handler found for ${routeKey}`)
+    // 查找模式匹配的路由
+    console.log(`[Mock Request] No exact match, trying pattern matching...`)
+    for (const pattern in mockRoutes) {
+      const matchResult = this.matchRouteWithParams(pattern, routeKey)
+      if (matchResult) {
+        console.log(`[Mock Request] ✅ Found pattern match: ${pattern} -> ${routeKey}`)
+        try {
+          const response = await mockRoutes[pattern](data, matchResult.params)
+          console.log(`[Mock Response] ${routeKey} (via ${pattern}):`, response)
+          return response
+        } catch (error) {
+          console.error(`[Mock Error] Pattern handler failed for ${pattern}:`, error)
+          return null
+        }
+      }
+    }
+
+    console.warn(`[Mock Request] ❌ No handler found for ${routeKey}`)
+    console.log(`[Mock Request] Available routes:`, Object.keys(mockRoutes))
     return null
   },
 
@@ -184,9 +263,31 @@ export * from './system'
 // 自动注册所有mock路由
 ;(async () => {
   try {
+    console.log('[Mock] Starting auto-registration of mock routes...')
     const { registerAllMockRoutes } = await import('./routes')
     registerAllMockRoutes()
+    
+    // 导入并运行验证器
+    const { validateMockSystem, testCriticalRoutes } = await import('./validator')
+    
+    // 验证Mock系统
+    const validationResult = validateMockSystem()
+    if (!validationResult.isValid) {
+      console.error('[Mock] ❌ Mock system validation failed:', validationResult.errors)
+    } else {
+      console.log('[Mock] ✅ Mock system validation passed')
+    }
+    
+    // 测试关键路由
+    const testResults = await testCriticalRoutes()
+    const failedTests = Object.entries(testResults).filter(([_, success]) => !success)
+    if (failedTests.length > 0) {
+      console.warn('[Mock] ⚠️ Some critical routes failed testing:', failedTests)
+    } else {
+      console.log('[Mock] ✅ All critical routes tested successfully')
+    }
+    
   } catch (e) {
-    console.warn('[Mock] Failed to auto-register routes:', e)
+    console.error('[Mock] ❌ Failed to auto-register routes:', e)
   }
 })()

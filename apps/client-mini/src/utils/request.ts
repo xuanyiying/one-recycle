@@ -24,25 +24,89 @@ const generateCacheKey = (url: string, method: string, data?: any): string => {
     return `${method}:${url}:${dataStr}`;
 }
 
+// 简单的刷新逻辑（避免并发情况下重复刷新）
+let refreshing = false
+let refreshPromise: Promise<string | null> | null = null
+
+const attemptTokenRefresh = async (): Promise<string | null> => {
+    const refreshToken = Taro.getStorageSync('refreshToken')
+    if (!refreshToken) return null
+
+    if (refreshing && refreshPromise) {
+        return refreshPromise
+    }
+
+    refreshing = true
+    refreshPromise = (async () => {
+        try {
+            const response = await Taro.request({
+                url: `${ENV_CONFIG.API_BASE_URL}/auth/refresh`,
+                method: 'POST',
+                header: { 'Content-Type': 'application/json' },
+                data: { refreshToken }
+            })
+
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+                const body = response.data || {}
+                const newToken = body.accessToken || body.token
+                if (newToken) {
+                    Taro.setStorageSync('token', newToken)
+                    return newToken
+                }
+                return null
+            }
+            return null
+        } catch (e) {
+            return null
+        } finally {
+            refreshing = false
+            refreshPromise = null
+        }
+    })()
+
+    return refreshPromise
+}
+
 // 通用请求函数
 const request = async (url: string, options: RequestOptions = {}) => {
     // 检查是否使用mock数据
     const shouldUseMock = ENV_CONFIG.USE_MOCK_DATA || false;
-    console.log(`[Mock Enabled] ${shouldUseMock}`)
+    console.log(`[Mock System] ==================== Mock Request Debug ====================`)
+    console.log(`[Mock System] ENV_CONFIG.USE_MOCK_DATA:`, ENV_CONFIG.USE_MOCK_DATA)
+    console.log(`[Mock System] shouldUseMock:`, shouldUseMock)
+    console.log(`[Mock System] mockManager.isEnabled():`, mockManager.isEnabled())
+    console.log(`[Mock System] Request URL:`, url)
+    console.log(`[Mock System] Request Method:`, options.method || 'GET')
+    console.log(`[Mock System] Request Data:`, options.data)
+    
     if (shouldUseMock && mockManager.isEnabled()) {
-        console.log(`[Mock Request] ${options.method || 'GET'} ${url}`)
+        console.log(`[Mock System] ✅ Mock conditions met, attempting mock request...`)
 
         try {
             const mockResponse = await mockManager.handleRequest(url, options.method || 'GET', options.data)
             if (mockResponse) {
-                console.log(`[Mock Response] ${url}`, mockResponse)
+                console.log(`[Mock System] ✅ Mock response received:`, mockResponse)
+                console.log(`[Mock System] ==================== Mock Request Success ====================`)
                 return mockResponse
+            } else {
+                console.log(`[Mock System] ❌ No mock response returned`)
+                console.log(`[Mock System] Running mock diagnosis...`)
+                mockManager.diagnose()
             }
         } catch (error) {
-            console.warn(`[Mock Error] ${url}`, error)
+            console.error(`[Mock System] ❌ Mock request failed:`, error)
+            console.log(`[Mock System] Running mock diagnosis...`)
+            mockManager.diagnose()
             // 如果mock失败，继续使用真实请求
         }
+    } else {
+        console.log(`[Mock System] ❌ Mock conditions not met:`)
+        console.log(`[Mock System]   - shouldUseMock: ${shouldUseMock}`)
+        console.log(`[Mock System]   - mockManager.isEnabled(): ${mockManager.isEnabled()}`)
+        console.log(`[Mock System] Proceeding with real API request...`)
     }
+    
+    console.log(`[Mock System] ==================== Proceeding to Real API ====================`)
 
     const token = Taro.getStorageSync('token')
 
@@ -124,6 +188,29 @@ const executeRequest = async (url: string, options: any) => {
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
             return response.data
+        } else if (response.statusCode === 401) {
+            // 尝试刷新token并重试一次
+            const newToken = await attemptTokenRefresh()
+            if (newToken) {
+                const retryOptions = {
+                    ...options,
+                    header: {
+                        ...options.header,
+                        Authorization: `Bearer ${newToken}`
+                    }
+                }
+                const retryResp = await Taro.request({ url: fullUrl, ...retryOptions })
+                if (retryResp.statusCode >= 200 && retryResp.statusCode < 300) {
+                    return retryResp.data
+                }
+            }
+            // 刷新失败或重试失败，走统一错误处理
+            const error = {
+                statusCode: response.statusCode,
+                data: response.data,
+                message: response.data?.message || '未授权或会话已过期'
+            }
+            throw errorHandler.handle(error, {showToast: true})
         } else {
             // Handle HTTP error with error handler
             const error = {

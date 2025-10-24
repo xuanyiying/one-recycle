@@ -23,7 +23,7 @@ export class PlatformDetector {
    */
   static getCurrentPlatform(): PlatformType {
     try {
-      const systemInfo = Taro.getSystemInfoSync()
+      const systemInfo = (() => { try { return Taro.getSystemInfoSync() } catch { return null as any } })()
       
       // 通过 Taro 的环境检测
       if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
@@ -39,8 +39,8 @@ export class PlatformDetector {
       }
 
       // 备用检测方案：通过系统信息
-      const platform = systemInfo.platform?.toLowerCase() || ''
-      const appName = (systemInfo as any).app?.toLowerCase() || ''
+      const platform = (systemInfo as any)?.platform?.toLowerCase() || ''
+      const appName = (systemInfo as any)?.app?.toLowerCase() || ''
       
       if (platform.includes('wechat') || appName.includes('wechat')) {
         return 'wechat'

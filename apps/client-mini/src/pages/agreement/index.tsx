@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Button } from '@taroify/core'
-import { ArrowLeft } from '@taroify/icons'
+
 import './index.scss'
+import { Button } from '@nutui/nutui-react-taro'
+import { ArrowLeft } from '@nutui/icons-react-taro'
 
 interface AgreementSection {
   id: string
@@ -176,8 +177,7 @@ export default function Agreement() {
       <View className="agreement-header">
         <Button
           className="back-button"
-          variant="text"
-          size="medium"
+          size={"small"}
           onClick={handleGoBack}
           icon={<ArrowLeft />}
         >
@@ -195,7 +195,6 @@ export default function Agreement() {
             <Button
               key={section.id}
               className={`nav-item ${activeSection === section.id ? 'active' : ''}`}
-              variant="text"
               size="small"
               onClick={() => scrollToSection(section.id)}
             >
