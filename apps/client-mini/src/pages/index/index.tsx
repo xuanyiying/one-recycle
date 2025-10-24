@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Image, Input, Swiper, SwiperItem } from '@tarojs/components'
+import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { getBanners, getArticles } from '@/services/system'
 import { getAllCategories } from '@/services/category'
 import './index.scss'
 import { Banner, Article } from '@/types'
 import { Category } from '@/types/category'
-import { Button } from '@nutui/nutui-react-taro'
+import { Button, SearchBar } from '@nutui/nutui-react-taro'
 import { IconFont } from '@nutui/icons-react-taro'
 
 export default function Index() {
@@ -222,6 +222,7 @@ export default function Index() {
           <Button
             className='city-selector'
             size={'small'}
+            type='default'
             onClick={handleCitySelect}
           >
             <Text className='city-name'>{currentCity}</Text>
@@ -231,16 +232,32 @@ export default function Index() {
         
         {/* 搜索框 */}
         <View className='search-container'>
-          <View className='search-box'>
-            <Text className='search-icon'>🔍</Text>
-            <Input
-              className='search-input'
-              placeholder='搜索回收品类'
-              value={searchValue}
-              onInput={(e) => setSearchValue(e.detail.value)}
-              onConfirm={handleSearch}
-            />
-          </View>
+          <SearchBar
+            className='search-bar'
+            placeholder='搜索回收品类'
+            value={searchValue}
+            onChange={(val) => setSearchValue(val)}
+            onSearch={handleSearch}
+            shape='round'
+            clearable
+          />
+        </View>
+      </View>
+
+      {/* 品类导航 */}
+      <View className='category-nav'>
+        <View className='category-grid'>
+          {categories.map((item, index) => (
+            <Button
+              key={index}
+              className='category-item'
+              size={'small'}
+              onClick={() => handleCategoryClick(item.name)}
+            >
+            <IconFont className='category-icon' name={item?.icon || 'book'} size='24' color='#636e72'/>
+            <Text className='category-name'>{item.name}</Text>
+            </Button>
+          ))}
         </View>
       </View>
 
@@ -271,23 +288,6 @@ export default function Index() {
           ))}
         </Swiper>
       </View>
-      {/* 品类导航 */}
-      <View className='category-nav'>
-        <View className='category-grid'>
-          {categories.map((item, index) => (
-            <Button
-              key={index}
-              className='category-item'
-              size={'small'}
-              onClick={() => handleCategoryClick(item.name)}
-            >
-            <IconFont className='category-icon' name={item?.icon || 'book'} size='24' color='#636e72'/>
-            <Text className='category-name'>{item.name}</Text>
-            </Button>
-          ))}
-        </View>
-      </View>
-
       {/* 信息流/文章 */}
       <View className='article-section'>
         <View className='section-header'>
