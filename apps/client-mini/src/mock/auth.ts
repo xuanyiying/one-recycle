@@ -3,7 +3,7 @@ import { createMockResponse, MockDataGenerator, MockResponse } from './index'
 import { LoginParams, LoginResponse, UserInfoResponse } from '@/services/auth'
 
 // Mock用户数据
-const mockUsers = [
+export const mockUsers = [
   {
     id: 'user_001',
     nickname: '环保小达人',

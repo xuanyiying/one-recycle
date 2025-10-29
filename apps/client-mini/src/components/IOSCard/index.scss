@@ -1,0 +1,23 @@
+@use '../../styles/ios-design-system.scss' as *;
+
+.ios-card-component {
+  @extend .ios-card;
+  
+  &.hover-effect {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2rpx); // 1pt
+    }
+  }
+  
+  &.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:active {
+      transform: scale(0.98);
+      background-color: var(--ios-tertiary-system-grouped-background);
+    }
+  }
+}

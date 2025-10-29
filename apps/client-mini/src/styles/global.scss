@@ -1,20 +1,25 @@
 @use './variables.scss' as *;
+@use './ios-design-system.scss' as *;
 
-// ==================== 移动端全局样式 ====================
+// ==================== iOS 全局样式 ====================
+// 严格遵循 Apple Human Interface Guidelines
 page {
   font-family: $font-family-primary;
-  font-size: $font-size-base;
+  font-size: $font-size-body; // 使用 iOS Body 字号 (34rpx)
   line-height: $line-height-normal;
-  color: $text-color;
-  background-color: $bg-secondary;
+  color: var(--ios-label);
+  background-color: var(--ios-system-grouped-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  // 移动端优化
+  // iOS 移动端优化
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  
+  // iOS 滚动优化
+  -webkit-overflow-scrolling: touch;
 }
 
 // 重置默认样式
@@ -27,129 +32,141 @@ page, view, text, image, button, input, textarea, scroll-view, picker, picker-vi
   font-family: $font-family-number;
 }
 
-// ==================== 实际使用的工具类 ====================
+// ==================== iOS 组件样式 ====================
 
-// 卡片样式
+// iOS 卡片样式 - 遵循 iOS 设计规范
 .card, .item-card, .status-card, .article-card, .recycle-info-card {
-  @include card-shadow;
-  padding: $spacing-lg;
-  margin-bottom: $spacing-base;
-  background: $bg-color;
-  border-radius: $border-radius-base;
+  background-color: var(--ios-secondary-system-grouped-background);
+  border-radius: $card-radius; // 12pt (24rpx)
+  padding: $card-padding; // 16pt (32rpx)
+  margin-bottom: $spacing-16; // 16pt (32rpx)
+  
+  // iOS 卡片不使用阴影，使用背景色区分
+  border: none;
+  box-shadow: none;
 
   &.card-hover {
-    @include hover-lift;
+    transition: background-color 0.2s ease;
+    
+    &:active {
+      background-color: var(--ios-tertiary-system-grouped-background);
+    }
   }
 }
 
-// 加载状态
+// iOS 加载状态
 .loading, .loading-container {
   @include flex-center;
-  padding: $spacing-xl;
-  color: $text-secondary;
-  font-size: $font-size-sm;
+  padding: $spacing-32; // 32pt (64rpx)
+  color: var(--ios-secondary-label);
+  font-size: $font-size-footnote; // iOS Footnote (26rpx)
 }
 
 .loading-text {
-  color: $text-secondary;
-  font-size: $font-size-sm;
+  color: var(--ios-secondary-label);
+  font-size: $font-size-footnote; // iOS Footnote (26rpx)
 }
 
 .loading-more {
   @include flex-center;
-  padding: $spacing-base;
-  color: $text-tertiary;
-  font-size: $font-size-xs;
+  padding: $spacing-16; // 16pt (32rpx)
+  color: var(--ios-tertiary-label);
+  font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
 }
 
-// 空状态
+// iOS 空状态
 .empty, .empty-state, .empty-container {
   @include flex-center;
   flex-direction: column;
-  padding: $spacing-xxl;
-  color: $text-tertiary;
-  font-size: $font-size-sm;
+  padding: $spacing-40; // 40pt (80rpx)
+  color: var(--ios-tertiary-label);
+  font-size: $font-size-footnote; // iOS Footnote (26rpx)
 }
 
 .empty-text {
-  color: $text-tertiary;
-  font-size: $font-size-sm;
-  margin-top: $spacing-base;
+  color: var(--ios-tertiary-label);
+  font-size: $font-size-footnote; // iOS Footnote (26rpx)
+  margin-top: $spacing-16; // 16pt (32rpx)
+  text-align: center;
+  line-height: $line-height-relaxed;
 }
 
 .empty-icon {
-  font-size: 80rpx;
-  margin-bottom: $spacing-base;
-  opacity: 0.5;
+  font-size: 120rpx; // 60pt
+  margin-bottom: $spacing-16; // 16pt (32rpx)
+  color: var(--ios-quaternary-label);
 }
 
 .empty-orders {
   @include flex-center;
   flex-direction: column;
-  padding: $spacing-xxl;
-  color: $text-tertiary;
+  padding: $spacing-40; // 40pt (80rpx)
+  color: var(--ios-tertiary-label);
 }
 
-// 错误状态
+// iOS 错误状态
 .error, .error-container {
   @include flex-center;
   flex-direction: column;
-  padding: $spacing-xxl;
-  color: $error-color;
-  font-size: $font-size-sm;
+  padding: $spacing-40; // 40pt (80rpx)
+  color: #FF3B30; // iOS 系统红色
+  font-size: $font-size-footnote; // iOS Footnote (26rpx)
 }
 
 .error-text {
-  color: $error-color;
-  font-size: $font-size-xs;
-  margin-top: $spacing-xs;
+  color: #FF3B30; // iOS 系统红色
+  font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+  margin-top: $spacing-8; // 8pt (16rpx)
 }
 
 .error-message {
-  color: $error-color;
-  font-size: $font-size-xs;
-  margin-top: $spacing-xs;
+  color: #FF3B30; // iOS 系统红色
+  font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+  margin-top: $spacing-8; // 8pt (16rpx)
+  text-align: center;
+  line-height: $line-height-relaxed;
 }
 
-// 标签样式
+// iOS 标签样式
 .default-tag {
   display: inline-flex;
   align-items: center;
-  padding: $spacing-xs $spacing-sm;
-  background: rgba($primary-color, 0.1);
-  color: $primary-color;
-  font-size: $font-size-xs;
-  border-radius: $border-radius-sm;
+  padding: $spacing-4 $spacing-8; // 4pt 8pt (8rpx 16rpx)
+  background: rgba(0, 122, 255, 0.15); // iOS 蓝色背景
+  color: var(--ios-blue);
+  font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+  border-radius: $border-radius-pill; // 胶囊形
+  font-weight: $font-weight-medium;
 }
 
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: $spacing-xs $spacing-sm;
-  border-radius: $border-radius-base;
-  font-size: $font-size-xs;
+  padding: $spacing-4 $spacing-8; // 4pt 8pt (8rpx 16rpx)
+  border-radius: $border-radius-pill; // 胶囊形
+  font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
   font-weight: $font-weight-medium;
 }
 
 .status-text {
-  font-size: $font-size-xs;
+  font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
   font-weight: $font-weight-medium;
 }
 
-// 状态指示器
+// iOS 状态指示器
 .status-section {
-  padding: $spacing-base;
-  background: $bg-color;
-  border-radius: $border-radius-base;
-  margin-bottom: $spacing-base;
+  padding: $spacing-16; // 16pt (32rpx)
+  background: var(--ios-secondary-system-grouped-background);
+  border-radius: $card-radius; // 12pt (24rpx)
+  margin-bottom: $spacing-16; // 16pt (32rpx)
 }
 
 .status-icon {
   @include flex-center;
-  width: 40rpx;
-  height: 40rpx;
+  width: 48rpx; // 24pt
+  height: 48rpx; // 24pt
   border-radius: 50%;
-  margin-right: $spacing-sm;
+  margin-right: $spacing-12; // 12pt (24rpx)
 }
 
 // 安全区域适配
@@ -161,15 +178,23 @@ page, view, text, image, button, input, textarea, scroll-view, picker, picker-vi
   @include safe-area-padding(bottom);
 }
 
-// 深色模式适配
-@include dark-mode {
-  page {
-    background-color: #1a1a1a;
-    color: #ffffff;
-  }
+// iOS 深色模式适配 - 自动通过 CSS 变量实现
+// 无需额外样式，iOS 设计系统已包含深色模式支持
 
-  .card, .item-card, .status-card, .article-card, .recycle-info-card {
-    background: #2d2d2d;
-    color: #ffffff;
-  }
+// iOS 页面容器
+.ios-page {
+  min-height: 100vh;
+  background-color: var(--ios-system-grouped-background);
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
+}
+
+// iOS 内容容器
+.ios-content {
+  padding: 0 $page-padding; // 16pt (32rpx) 页面边距
+}
+
+// iOS 分组容器
+.ios-section {
+  margin-bottom: $section-margin; // 20pt (40rpx) 分组间距
 }

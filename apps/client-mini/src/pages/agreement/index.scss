@@ -1,101 +1,90 @@
 @use '../../styles/variables.scss' as *;
+@use '../../styles/ios-design-system.scss' as *;
+
+// ==================== iOS 协议页面样式 ====================
+// 严格遵循 Apple Human Interface Guidelines
 
 .agreement-container {
   min-height: 100vh;
-  background: $bg-secondary;
+  background-color: var(--ios-system-background);
   display: flex;
   flex-direction: column;
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
 }
 
-/* 头部导航 */
+// iOS 导航头部
 .agreement-header {
+  @extend .ios-navigation-bar;
   position: sticky;
   top: 0;
   z-index: 100;
-  background: white;
-  padding-left: $page-padding;
-  padding-right: $page-padding;
-  padding-top: $spacing-sm;
-  padding-bottom: $spacing-sm;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1rpx solid $border-color;
-  box-shadow: $box-shadow-sm;
+  background-color: var(--ios-system-background);
+  padding: $spacing-16 $page-padding; // 16pt
+  border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
-  .back-button {
+  .header-content {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding-left: $spacing-sm;
-    padding-right: $spacing-sm;
-    padding-top: $spacing-xs;
-    padding-bottom: $spacing-xs;
-    border-radius: $border-radius-base;
-    background: $bg-secondary;
-    min-height: $touch-target-min;
-    border: none;
-    cursor: pointer;
-    transition: all $transition-base;
+    justify-content: space-between;
+    position: relative;
 
-    &:active {
-      background: $bg-tertiary;
-      transform: scale(0.98);
+    .back-button {
+      @extend .ios-button-text;
+      padding: $spacing-8; // 8pt
+      margin-left: -$spacing-8; // -8pt 扩大触摸区域
+      display: flex;
+      align-items: center;
+
+      .back-icon {
+        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        color: var(--ios-blue);
+        margin-right: $spacing-4; // 4pt
+      }
+
+      .back-text {
+        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        color: var(--ios-blue);
+      }
+
+      &:active {
+        opacity: 0.3; // iOS 标准按下效果
+      }
     }
 
-    .back-icon {
-      font-size: $font-size-display;
-      color: $text-secondary;
-      margin-right: $spacing-xs;
-      font-weight: $font-weight-bold;
+    .page-title {
+      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      font-weight: $font-weight-semibold;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
     }
-
-    .back-text {
-      font-size: $font-size-lg;
-      color: $text-secondary;
-    }
-  }
-
-  .page-title {
-    font-size: $font-size-title;
-    font-weight: $font-weight-semibold;
-    color: $text-color;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
   }
 }
 
-/* 章节导航 */
+// 章节导航
 .section-nav {
-  background: white;
-  padding-top: $spacing-lg;
-  padding-bottom: $spacing-lg;
-  border-bottom: 1rpx solid $border-color;
+  background-color: var(--ios-system-background);
+  padding: $spacing-16 0; // 16pt 0
+  border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
   .nav-scroll {
     white-space: nowrap;
-    padding-left: $page-padding;
-    padding-right: $page-padding;
+    padding: 0 $page-padding; // 0 16pt
 
     .nav-item {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin-right: $spacing-lg;
-      padding-left: $spacing-lg;
-      padding-right: $spacing-lg;
-      padding-top: $spacing-sm;
-      padding-bottom: $spacing-sm;
-      border-radius: $border-radius-pill;
-      background: $bg-secondary;
-      min-height: $touch-target-min;
-      border: none;
-      cursor: pointer;
-      transition: all $transition-base;
+      margin-right: $spacing-12; // 12pt
+      padding: $spacing-8 $spacing-16; // 8pt 16pt
+      border-radius: $border-radius-pill; // 胶囊形
+      background-color: var(--ios-secondary-system-background);
+      min-height: $touch-target-min; // 44pt (88rpx)
+      transition: all 0.2s ease;
 
       &.active {
-        background: $primary-color;
+        background-color: var(--ios-blue);
 
         .nav-text {
           color: white;
@@ -107,8 +96,8 @@
       }
 
       .nav-text {
-        font-size: $font-size-base;
-        color: $text-secondary;
+        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        color: var(--ios-label);
         white-space: nowrap;
         transition: color 0.2s ease;
       }
@@ -116,213 +105,213 @@
   }
 }
 
-/* 内容区域 */
+// 内容区域
 .content-scroll {
   flex: 1;
-  background: white;
+  background-color: var(--ios-system-background);
 }
 
 .content-container {
-  padding-left: $page-padding;
-  padding-right: $page-padding;
+  padding: $spacing-20 $page-padding; // 20pt 16pt
 }
 
 .content-section {
-  margin-bottom: $spacing-xxl;
+  margin-bottom: $spacing-32; // 32pt
 
   .section-title {
-    font-size: $font-size-title;
-    font-weight: $font-weight-semibold;
-    color: $text-color;
-    margin-bottom: $spacing-lg;
-    padding-bottom: $spacing-sm;
-    border-bottom: 2rpx solid $primary-color;
+    @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-16; // 16pt
+    padding-bottom: $spacing-8; // 8pt
+    border-bottom: 4rpx solid var(--ios-blue); // 2pt 蓝色下划线
     display: block;
   }
 
   .section-content {
     .paragraph {
-      font-size: $font-size-lg;
-      line-height: 1.6;
-      color: $text-secondary;
-      margin-bottom: $spacing-sm;
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      line-height: $line-height-relaxed;
+      color: var(--ios-label);
+      margin-bottom: $spacing-16; // 16pt
       display: block;
       text-align: justify;
     }
+
+    .sub-title {
+      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      font-weight: $font-weight-semibold;
+      margin: $spacing-24 0 $spacing-12; // 24pt 0 12pt
+      display: block;
+    }
+
+    .list-item {
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      line-height: $line-height-relaxed;
+      color: var(--ios-label);
+      margin-bottom: $spacing-8; // 8pt
+      padding-left: $spacing-16; // 16pt
+      position: relative;
+      display: block;
+
+      &::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: var(--ios-blue);
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    .highlight-text {
+      background-color: rgba(0, 122, 255, 0.1); // iOS 蓝色背景
+      color: var(--ios-blue);
+      padding: $spacing-2 $spacing-4; // 2pt 4pt
+      border-radius: $border-radius-xs; // 4pt
+      font-weight: $font-weight-medium;
+    }
+
+    .important-note {
+      background-color: rgba(255, 149, 0, 0.1); // iOS 橙色背景
+      border-left: 8rpx solid #FF9500; // 4pt 橙色边框
+      padding: $spacing-12 $spacing-16; // 12pt 16pt
+      margin: $spacing-16 0; // 16pt 0
+      border-radius: $border-radius-sm; // 8pt
+
+      .note-title {
+        @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+        font-weight: $font-weight-semibold;
+        color: #FF9500; // iOS 橙色
+        margin-bottom: $spacing-8; // 8pt
+      }
+
+      .note-content {
+        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        line-height: $line-height-relaxed;
+        color: var(--ios-label);
+      }
+    }
   }
 }
 
-/* 联系信息 */
+// 联系信息卡片
 .contact-info {
-  margin-top: $spacing-xxl;
-  padding-left: $page-padding;
-  padding-right: $page-padding;
-  background: $bg-secondary;
-  border-radius: $border-radius-lg;
-  border: 1rpx solid $border-color;
+  @extend .ios-card;
+  margin-top: $spacing-32; // 32pt
+  background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
+  color: white;
 
   .contact-title {
-    font-size: $font-size-title;
-    font-weight: $font-weight-semibold;
-    color: $text-color;
-    margin-bottom: $spacing-md;
+    @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-16; // 16pt
+    color: white;
     display: block;
   }
 
-  .contact-text {
-    font-size: $font-size-base;
-    color: $text-secondary;
-    margin-bottom: $spacing-xs;
-    display: block;
-    line-height: 1.5;
+  .contact-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-12; // 12pt
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .contact-icon {
+      width: 48rpx; // 24pt
+      height: 48rpx; // 24pt
+      margin-right: $spacing-12; // 12pt
+      @include flex-center;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: $border-radius-sm; // 8pt
+    }
+
+    .contact-text {
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      color: white;
+      line-height: $line-height-normal;
+    }
+  }
+
+  .contact-actions {
+    display: flex;
+    gap: $spacing-12; // 12pt
+    margin-top: $spacing-20; // 20pt
+
+    .contact-btn {
+      flex: 1;
+      padding: $spacing-12; // 12pt
+      background-color: rgba(255, 255, 255, 0.2);
+      border: 2rpx solid rgba(255, 255, 255, 0.3); // 1pt 边框
+      border-radius: $border-radius-base; // 12pt
+      text-align: center;
+      transition: all 0.2s ease;
+
+      &:active {
+        background-color: rgba(255, 255, 255, 0.3);
+        transform: scale(0.95);
+      }
+
+      text {
+        @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+        color: white;
+        font-weight: $font-weight-medium;
+      }
+    }
   }
 }
 
-/* 响应式设计 */
-@media (max-width: 750rpx) {
-  .agreement-header {
-    padding: 16rpx 24rpx;
+// 最后更新时间
+.last-updated {
+  text-align: center;
+  padding: $spacing-32 $page-padding; // 32pt 16pt
+  border-top: 2rpx solid var(--ios-separator); // 1pt 分隔线
+  margin-top: $spacing-32; // 32pt
 
-    .page-title {
-      font-size: 30rpx;
+  .updated-text {
+    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    color: var(--ios-secondary-label);
+  }
+
+  .updated-date {
+    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    color: var(--ios-blue);
+    font-weight: $font-weight-medium;
+    margin-top: $spacing-4; // 4pt
+  }
+}
+
+// ==================== 响应式适配 ====================
+@include mobile-standard {
+  .agreement-container {
+    .content-container {
+      padding: $spacing-16 $spacing-12; // 16pt 12pt
     }
 
-    .back-button {
-      .back-icon {
-        font-size: 32rpx;
-      }
+    .section-nav .nav-scroll {
+      padding: 0 $spacing-12; // 0 12pt
 
-      .back-text {
-        font-size: 26rpx;
+      .nav-item {
+        margin-right: $spacing-8; // 8pt
+        padding: $spacing-8 $spacing-12; // 8pt 12pt
       }
     }
   }
+}
 
+// ==================== 打印样式 ====================
+@media print {
+  .agreement-header,
   .section-nav {
-    padding: 20rpx 0;
-
-    .nav-scroll {
-      padding: 0 24rpx;
-
-      .nav-item {
-        margin-right: 24rpx;
-        padding: 12rpx 20rpx;
-
-        .nav-text {
-          font-size: 24rpx;
-        }
-      }
-    }
+    display: none;
   }
 
   .content-container {
-    padding: 24rpx;
+    padding: 0;
   }
 
   .content-section {
-    margin-bottom: 40rpx;
-
-    .section-title {
-      font-size: 30rpx;
-      margin-bottom: 20rpx;
-    }
-
-    .section-content {
-      .paragraph {
-        font-size: 26rpx;
-        margin-bottom: 14rpx;
-      }
-    }
-  }
-
-  .contact-info {
-    margin-top: 40rpx;
-    padding: 24rpx;
-
-    .contact-title {
-      font-size: 28rpx;
-      margin-bottom: 16rpx;
-    }
-
-    .contact-text {
-      font-size: 24rpx;
-      margin-bottom: 10rpx;
-    }
-  }
-}
-
-/* 深色模式支持 */
-@media (prefers-color-scheme: dark) {
-  .agreement-container {
-    background-color: #1a1a1a;
-  }
-
-  .agreement-header {
-    background-color: #2d2d2d;
-    border-bottom-color: #404040;
-
-    .back-button {
-      background-color: #404040;
-
-      &:active {
-        background-color: #4a4a4a;
-      }
-
-      .back-icon,
-      .back-text {
-        color: #e9ecef;
-      }
-    }
-
-    .page-title {
-      color: #ffffff;
-    }
-  }
-
-  .section-nav {
-    background-color: #2d2d2d;
-    border-bottom-color: #404040;
-
-    .nav-item {
-      background-color: #404040;
-
-      &.active {
-        background-color: #0056b3;
-      }
-
-      .nav-text {
-        color: #adb5bd;
-      }
-    }
-  }
-
-  .content-scroll {
-    background-color: #2d2d2d;
-  }
-
-  .content-section {
-    .section-title {
-      color: #ffffff;
-      border-bottom-color: #0056b3;
-    }
-
-    .section-content {
-      .paragraph {
-        color: #adb5bd;
-      }
-    }
-  }
-
-  .contact-info {
-    background-color: #404040;
-    border-color: #4a4a4a;
-
-    .contact-title {
-      color: #ffffff;
-    }
-
-    .contact-text {
-      color: #adb5bd;
-    }
+    page-break-inside: avoid;
+    margin-bottom: $spacing-24; // 24pt
   }
 }

@@ -259,6 +259,7 @@ export * from './account'
 export * from './payment'
 export * from './notification'
 export * from './system'
+export * from './autoLogin'
 
 // 自动注册所有mock路由
 ;(async () => {
@@ -286,6 +287,10 @@ export * from './system'
     } else {
       console.log('[Mock] ✅ All critical routes tested successfully')
     }
+
+    // 初始化mock环境下的自动登录
+    const { MockAutoLogin } = await import('./autoLogin')
+    await MockAutoLogin.initialize()
     
   } catch (e) {
     console.error('[Mock] ❌ Failed to auto-register routes:', e)

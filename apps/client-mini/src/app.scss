@@ -1,14 +1,28 @@
-// 全局样式文件 - 优化后，移除重复定义，统一使用变量系统
+// iOS 设计系统全局样式 - 严格遵循 Apple Human Interface Guidelines
 
-// 导入核心样式系统
+// 导入 iOS 设计系统
 @use './styles/variables.scss' as *;
-
-// 导入全局样式系统
+@use './styles/ios-design-system.scss' as *;
 @use './styles/global.scss' as *;
 
-// 应用级容器样式 - 使用变量系统
+// iOS 应用级容器样式
 .container {
-  background-color: $bg-secondary;
+  background-color: var(--ios-system-grouped-background);
   min-height: 100vh;
-  padding: 0 $page-padding;
+  padding: 0 $page-padding; // 16pt (32rpx) iOS 标准页面边距
+}
+
+// iOS 页面基础样式
+.page {
+  @extend .ios-page;
+}
+
+// iOS 内容区域
+.content {
+  @extend .ios-content;
+}
+
+// iOS 分组区域
+.section {
+  @extend .ios-section;
 }

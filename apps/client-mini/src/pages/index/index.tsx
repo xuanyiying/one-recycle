@@ -3,6 +3,7 @@ import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { getBanners, getArticles } from '@/services/system'
 import { getAllCategories } from '@/services/category'
+import { getCategoryIcon, getCategoryGradient } from '@/config/categoryConfig'
 import './index.scss'
 import { Banner, Article } from '@/types'
 import { Category } from '@/types/category'
@@ -113,6 +114,8 @@ export default function Index() {
 
     return null
   }
+
+
 
   const initPageData = async () => {
     try {
@@ -254,8 +257,13 @@ export default function Index() {
               size={'small'}
               onClick={() => handleCategoryClick(item.name)}
             >
-            <IconFont className='category-icon' name={item?.icon || 'book'} size='24' color='#636e72'/>
-            <Text className='category-name'>{item.name}</Text>
+              <View 
+                className='category-icon' 
+                style={{ background: getCategoryGradient(item.name) }}
+              >
+                <IconFont name={getCategoryIcon(item.name)} size='24' color='white'/>
+              </View>
+              <Text className='category-name'>{item.name}</Text>
             </Button>
           ))}
         </View>

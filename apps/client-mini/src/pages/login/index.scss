@@ -1,566 +1,206 @@
 @use '../../styles/variables.scss' as *;
+@use '../../styles/ios-design-system.scss' as *;
 
-// 页面基础样式 - 移除重复定义，page 样式已在 global.scss 中统一定义
+// ==================== iOS 登录页面样式 ====================
+// 严格遵循 Apple Human Interface Guidelines
 
-// 登录页面样式（优化后，统一使用 rpx 单位）
 .login-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 750rpx;  // 使用 rpx 替代 vw
-  height: 100vh;  // 保持 vh 确保全屏高度
-  background: linear-gradient(180deg, $bg-secondary 0%, #ffffff 100%);
+  min-height: 100vh;
+  background-color: var(--ios-system-background);
   display: flex;
   flex-direction: column;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  animation: fadeInUp 0.6s ease-out;
-  padding: 0;
-  box-sizing: border-box;
+  
+  // iOS 安全区域适配
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
+}
 
-  // 背景装饰
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(64, 224, 208, 0.05) 0%, transparent 70%);
-    animation: float 6s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  // 确保内容在背景装饰之上
-  > .login-header,
-  > .main-content {
-    position: relative;
-    z-index: 1;
+// ==================== 加载状态 ====================
+.loading-container {
+  @include flex-center;
+  min-height: 100vh;
+  background-color: var(--ios-system-background);
+  
+  .loading-text {
+    @extend .ios-body;
+    color: var(--ios-secondary-label);
   }
 }
 
-// 页面入场动画
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// 浮动动画
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-  }
-}
-
-// 下滑入场动画
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// 旋转动画
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-// 上滑入场动画
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// 抖动动画
-@keyframes shake {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-4px);
-  }
-
-  75% {
-    transform: translateX(4px);
-  }
-}
-
-// 登录头部（优化后，减少 padding，增大 logo 和字体）
+// ==================== iOS 登录页头部 ====================
 .login-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60rpx 48rpx 40rpx; // 使用 rpx，适当减少 padding
+  padding: $spacing-40 $page-padding $spacing-32; // 40pt 16pt 32pt
   width: 100%;
-  flex-shrink: 0; // 防止头部被压缩
+  flex-shrink: 0;
 
   .logo {
-    width: 200rpx;  // 增大 logo 尺寸
-    height: 200rpx;
-    margin-bottom: $spacing-base;
-    border-radius: $border-radius-lg;
+    width: 160rpx; // 80pt - iOS 应用图标大小
+    height: 160rpx; // 80pt
+    margin-bottom: $spacing-24; // 24pt
+    border-radius: 36rpx; // 18pt - iOS 应用图标圆角
     overflow: hidden;
-    box-shadow: $box-shadow-lg;
-    background: white;
+    background: var(--ios-secondary-system-background);
     display: flex;
     align-items: center;
     justify-content: center;
 
     .logo-image {
-      width: 160rpx;  // 相应增大图片尺寸
-      height: 160rpx;
+      width: 128rpx; // 64pt
+      height: 128rpx; // 64pt
     }
-  }
-
-  .app-name {
-    font-size: $font-size-title;
-    font-weight: $font-weight-bold;
-    color: $text-color;
-    margin-bottom: $spacing-xs;
-    letter-spacing: 2rpx;  // 使用 rpx
   }
 
   .welcome-text {
-    font-size: $font-size-lg;  // 增大欢迎文字
-    color: $text-secondary;
-    font-weight: $font-weight-normal;
-  }
-
-  // 响应式调整（使用新的断点）
-  @media screen and (max-width: $breakpoint-md) {
-    padding: 50rpx 40rpx 32rpx;
-  }
-
-  @media screen and (max-width: $breakpoint-sm) {
-    padding: 40rpx 32rpx 24rpx;
-
-    .logo {
-      width: 180rpx;
-      height: 180rpx;
-
-      .logo-image {
-        width: 140rpx;
-        height: 140rpx;
-      }
-    }
-
-    .app-name {
-      font-size: $font-size-xl;
-    }
-
-    .welcome-text {
-      font-size: $font-size-base;
-    }
+    @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+    text-align: center;
+    margin-top: $spacing-16; // 16pt
   }
 }
 
-// 主要内容区域（优化后，减少 padding，改善布局）
+// ==================== 主要内容区域 ====================
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 48rpx 60rpx; // 使用 rpx，减少左右和底部 padding
+  padding: 0 $page-padding $spacing-32; // 0 16pt 32pt
   width: 100%;
   min-height: 0;
-  justify-content: flex-start; // 改为顶部对齐，减少上方留白
-
-  // 响应式调整（使用新的断点）
-  @media screen and (max-width: $breakpoint-md) {
-    padding: 0 40rpx 50rpx;
-  }
-
-  @media screen and (max-width: $breakpoint-sm) {
-    padding: 0 32rpx 40rpx;
-  }
 }
 
-// 手机号输入区域（优化后，使用 rpx 单位，增大尺寸）
-.phone-input-section {
-  margin-bottom: 48rpx;  // 使用 rpx
-  width: 100%;
-  max-width: 600rpx;     // 限制最大宽度
-
-  .input-group {
-    position: relative;
-    background: #ffffff;
-    border-radius: 24rpx;  // 使用 rpx
-    border: 4rpx solid #f0f0f0;  // 使用 rpx
-    transition: all 0.3s ease;
-    overflow: hidden;
-
-    &:focus-within {
-      border-color: #40e0d0;
-      box-shadow: 0 0 0 8rpx rgba(64, 224, 208, 0.1);  // 使用 rpx
-    }
-
-    .phone-input {
-      width: 100%;
-      height: 88rpx;       // 增大高度，使用 rpx
-      padding: 0 32rpx;    // 使用 rpx
-      border: none;
-      outline: none;
-      font-size: $font-size-lg;  // 使用变量，更大字体
-      color: #333333;
-      background: transparent;
-
-      &::placeholder {
-        color: #999999;
-        font-size: $font-size-base;  // 使用变量
-      }
-    }
-  }
-
-  // 响应式调整 - 统一断点，保持更好的可用性
-  @media screen and (max-width: $breakpoint-md) {
-    .input-group {
-      .phone-input {
-        height: 50px;
-        font-size: 16px;
-        padding: 0 15px;
-
-        &::placeholder {
-          font-size: 15px;
-        }
-      }
-    }
-  }
-
-  @media screen and (max-width: $breakpoint-sm) {
-    .input-group {
-      .phone-input {
-        height: 48px;
-        font-size: 16px; // 保持16px以确保iOS不缩放
-        padding: 0 14px;
-
-        &::placeholder {
-          font-size: 15px; // 增大占位符字体
-        }
-      }
-    }
-  }
-}
-
-// 头像区域（优化后，增大尺寸，使用 rpx）
+// ==================== 头像区域 ====================
 .avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 40rpx; // 使用 rpx，适当增加间距
-  animation: slideInDown 0.8s ease-out 0.2s both;
+  margin-bottom: $spacing-32; // 32pt
+  width: 100%;
 
   .avatar-container {
-    width: 160rpx;        // 增大头像尺寸，使用 rpx
-    height: 160rpx;
+    width: 160rpx; // 80pt
+    height: 160rpx; // 80pt
     border-radius: 50%;
     overflow: hidden;
-    margin-bottom: 24rpx; // 使用 rpx
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-    box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.1);  // 使用 rpx
-
-    &:hover {
-      transform: scale(1.05) translateY(-2px);
-      box-shadow: 0 8px 30px rgba(64, 224, 208, 0.3);
-    }
+    margin-bottom: $spacing-12; // 12pt
+    background: var(--ios-secondary-system-background);
+    border: 4rpx solid var(--ios-separator); // 2pt 边框
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 
     &:active {
       transform: scale(0.95);
-    }
-
-    // 头像边框动画
-    &::after {
-      content: '';
-      position: absolute;
-      top: -3px;
-      left: -3px;
-      right: -3px;
-      bottom: -3px;
-      border-radius: 50%;
-      background: linear-gradient(45deg, #40e0d0, #36d1c1, #40e0d0);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: -1;
-    }
-
-    &:hover::after {
-      opacity: 1;
-      animation: rotate 2s linear infinite;
+      opacity: 0.8;
     }
 
     .user-avatar {
       width: 100%;
       height: 100%;
-      border-radius: 50%;
     }
 
     .default-avatar {
       width: 100%;
       height: 100%;
-      background: #f5f5f5;
-      border: 2px dashed #d9d9d9;
-      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.3s ease;
-
-      &:hover {
-        border-color: #40e0d0;
-        background: #f0fffe;
-      }
+      background: var(--ios-tertiary-system-background);
 
       .avatar-icon {
-        width: 40px;
-        height: 40px;
+        width: 80rpx; // 40pt
+        height: 80rpx; // 40pt
         opacity: 0.6;
       }
     }
   }
 
   .avatar-tip {
-    font-size: $font-size-base;  // 使用变量，增大字体
-    color: #999999;
-    font-weight: 400;
-  }
-
-  // 响应式调整 - 统一断点系统（使用 rpx）
-  @media screen and (max-width: $breakpoint-md) {
-    margin-bottom: 32rpx;
-
-    .avatar-container {
-      width: 140rpx;
-      height: 140rpx;
-    }
-  }
-
-  @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 24rpx; // 小屏幕进一步减少边距
-
-    .avatar-container {
-      width: 120rpx;
-      height: 120rpx;
-
-      .default-avatar .avatar-icon {
-        width: 60rpx;
-        height: 60rpx;
-      }
-    }
-
-    .avatar-tip {
-      font-size: $font-size-sm;
-    }
-  }
-}
-
-// 昵称输入区域（优化后，使用 rpx，增大尺寸）
-.nickname-section {
-  width: 100%;
-  max-width: 600rpx;    // 使用 rpx，增大最大宽度
-  margin-bottom: 40rpx; // 使用 rpx，适当增加间距
-  animation: slideInUp 0.8s ease-out 0.4s both;
-
-  .input-wrapper {
-    position: relative;
-    width: 100%;
-  }
-
-  .nickname-input {
-    width: 100%;
-    height: 88rpx;        // 增大高度，使用 rpx
-    background: #ffffff;
-    border: 2rpx solid #e6e6e6;  // 使用 rpx
-    border-radius: 24rpx; // 使用 rpx
-    padding: 0 32rpx;     // 使用 rpx
-    font-size: $font-size-lg;  // 使用变量，更大字体
-    color: #333333;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-sizing: border-box;
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);  // 使用 rpx
-
-    &::placeholder {
-      color: #cccccc;
-      font-size: $font-size-base;  // 使用变量
-      transition: all 0.3s ease;
-    }
-
-    &:focus {
-      border-color: #40e0d0;
-      box-shadow: 0 0 0 3px rgba(64, 224, 208, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
-      outline: none;
-      transform: translateY(-1px);
-
-      &::placeholder {
-        color: #b3b3b3;
-        transform: translateX(4px);
-      }
-    }
-
-    &:hover:not(:focus) {
-      border-color: #d0d0d0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    }
-
-    &.error {
-      border-color: #ff4757;
-      box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
-      animation: shake 0.5s ease-in-out;
-    }
-  }
-
-  .error-message {
-    margin-top: 8px;
-    padding-left: 4px;
-
-    text {
-      font-size: 12px;
-      color: #ff4757;
-      font-weight: 400;
-    }
-  }
-
-  // 响应式调整 - 统一断点系统（使用 rpx）
-  @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 32rpx; // 小屏幕减少边距
-
-    .nickname-input {
-      height: 80rpx;
-      font-size: $font-size-base; // 提高可读性
-
-      &::placeholder {
-        font-size: $font-size-sm;
-      }
-    }
-  }
-}
-
-// 授权说明区域（优化后，使用 rpx，增大字体）
-.auth-description {
-  text-align: center;
-  margin-bottom: 32rpx; // 使用 rpx
-  max-width: 520rpx;    // 使用 rpx，增大最大宽度
-
-  .description-title {
-    font-size: $font-size-base;  // 使用变量，更大字体
-    color: #333333;
-    font-weight: 500;
-    margin-bottom: 16rpx;      // 使用 rpx
-    display: block;
-  }
-
-  .description-content {
-    font-size: $font-size-sm;  // 使用变量，更大字体
-    color: #666666;
-    line-height: 1.5;
-    font-weight: 400;
-  }
-
-  // 响应式调整 - 统一断点系统（使用 rpx）
-  @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 24rpx; // 小屏幕减少边距
-
-    .description-title {
-      font-size: $font-size-base; // 提高可读性
-    }
-
-    .description-content {
-      font-size: $font-size-sm; // 提高可读性
-    }
-  }
-}
-
-// 提交错误信息
-.submit-error {
-  width: 100%;
-  max-width: 320px;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #fff5f5;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-
-  .error-text {
-    font-size: 14px;
-    color: #dc2626;
+    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    color: var(--ios-secondary-label);
     text-align: center;
   }
 }
 
-// 操作按钮区域（优化后，使用 rpx，增大尺寸）
+// ==================== 昵称输入区域 ====================
+.nickname-section {
+  width: 100%;
+  margin-bottom: $spacing-24; // 24pt
+
+  .input-wrapper {
+    width: 100%;
+    
+    .nickname-input {
+      @extend .ios-input; // 使用 iOS 输入框样式
+      width: 100%;
+      
+      &.error {
+        border-color: #FF3B30; // iOS 系统红色
+        animation: ios-shake 0.3s ease-in-out;
+      }
+    }
+  }
+
+  .error-message {
+    margin-top: $spacing-8; // 8pt
+    padding: 0 $spacing-4; // 0 4pt
+    
+    text {
+      @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+      color: #FF3B30; // iOS 系统红色
+    }
+  }
+}
+
+// ==================== 授权说明区域 ====================
+.auth-description {
+  text-align: center;
+  margin-bottom: $spacing-24; // 24pt
+  width: 100%;
+  max-width: 520rpx;
+
+  .description-title {
+    @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+    margin-bottom: $spacing-8; // 8pt
+    display: block;
+  }
+
+  .description-content {
+    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    color: var(--ios-secondary-label);
+    line-height: $line-height-relaxed;
+  }
+}
+
+// ==================== 提交错误信息 ====================
+.submit-error {
+  width: 100%;
+  margin-bottom: $spacing-16; // 16pt
+  padding: $spacing-12 $spacing-16; // 12pt 16pt
+  background: rgba(255, 59, 48, 0.1); // iOS 红色背景
+  border: 2rpx solid rgba(255, 59, 48, 0.3); // 1pt 边框
+  border-radius: $border-radius-sm; // 8pt 圆角
+
+  .error-text {
+    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    color: #FF3B30; // iOS 系统红色
+    text-align: center;
+  }
+}
+
+// ==================== 操作按钮区域 ====================
 .action-buttons {
   width: 100%;
-  max-width: 600rpx;    // 使用 rpx，增大最大宽度
-  margin-bottom: 32rpx; // 使用 rpx
-  animation: slideInUp 0.8s ease-out 0.6s both;
+  margin-bottom: $spacing-24; // 24pt
 
   .authorize-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    @extend .ios-button-primary; // 使用 iOS 主按钮样式
     width: 100%;
-    height: 88rpx;        // 增大高度，使用 rpx
-    background: linear-gradient(135deg, #40e0d0 0%, #36d1c1 100%);
-    border-radius: 44rpx; // 使用 rpx
-    font-size: $font-size-lg;  // 使用变量，更大字体
-    font-weight: $font-weight-semibold;
-    margin-bottom: 24rpx; // 使用 rpx
-    box-shadow: 0 8rpx 32rpx rgba(64, 224, 208, 0.3);  // 使用 rpx
-    position: relative;
-    overflow: hidden;
-    border: none;
-    color: white;
-    cursor: pointer;
-    transition: all $transition-base;
-
-    &:hover {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 8px 25px rgba(64, 224, 208, 0.4);
-      background: linear-gradient(135deg, #36d1c1 0%, #2bc4b4 100%);
-    }
-
-    &:active {
-      transform: translateY(-1px) scale(0.98);
-      transition: all 0.1s ease;
-    }
-
+    margin-bottom: $spacing-16; // 16pt
+    
     &.loading {
       position: relative;
       color: transparent !important;
@@ -570,452 +210,177 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 20rpx;
-        height: 20rpx;
-        margin: -10rpx 0 0 -10rpx;
-        border: 2rpx solid transparent;
+        width: 40rpx; // 20pt
+        height: 40rpx; // 20pt
+        margin: -20rpx 0 0 -20rpx;
+        border: 4rpx solid transparent;
         border-top-color: white;
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
     }
-
-    // 按钮波纹效果
-    &::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-
-    &:active::before {
-      width: 300px;
-      height: 300px;
-    }
   }
 
   .skip-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    @extend .ios-button-text; // 使用 iOS 文本按钮样式
     width: 100%;
-    height: 80rpx;        // 增大高度，使用 rpx
-    border-radius: 40rpx; // 使用 rpx
-    font-size: $font-size-lg;  // 使用变量，更大字体
-    font-weight: $font-weight-normal;
-    color: $text-secondary;
-    border: 2rpx solid $border-color;
-    background: transparent;
-    cursor: pointer;
-    transition: all $transition-base;
-
-    &:hover {
-      border-color: $border-dark;
-      color: $text-color;
-    }
-
-    &:active {
-      background: $bg-secondary;
-    }
-  }
-
-  // 响应式调整 - 统一断点，保持更好的可用性（使用 rpx）
-  @media screen and (max-width: $breakpoint-md) {
-    margin-bottom: 28rpx;
-
-    .authorize-btn {
-      height: 80rpx;
-      font-size: $font-size-base;
-      margin-bottom: 20rpx;
-    }
-
-    .skip-btn {
-      height: 72rpx;
-      font-size: $font-size-base;
-    }
-  }
-
-  @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 24rpx; // 进一步减少小屏幕边距
-
-    .authorize-btn {
-      height: 80rpx;
-      font-size: $font-size-base; // 保持合适大小确保可读性
-      margin-bottom: 20rpx; // 减少按钮间距
-    }
-
-    .skip-btn {
-      height: 72rpx;
-      font-size: $font-size-base; // 保持合适大小确保可读性
-    }
   }
 }
 
-// 用户协议（优化后，使用 rpx，增大字体）
+// ==================== 用户协议区域 ====================
 .agreement {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin-bottom: 0; // 移除底部边距，因为这是最后一个元素
-  gap: 8rpx;        // 使用 rpx
+  gap: $spacing-4; // 4pt
 
   .agreement-text {
-    font-size: $font-size-base;  // 使用变量，更大字体
-    color: #999999;
-    line-height: 1.4;
+    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    color: var(--ios-secondary-label);
+    line-height: $line-height-relaxed;
   }
 
   .link-container {
     display: inline-block;
-    padding: 4rpx 8rpx;  // 使用 rpx
-    border-radius: 8rpx; // 使用 rpx
+    padding: $spacing-2 $spacing-4; // 2pt 4pt
+    border-radius: $border-radius-xs; // 4pt
     transition: background-color 0.2s ease;
+    background: transparent;
+    border: none;
 
     &:active {
-      background-color: rgba(64, 224, 208, 0.1);
+      background-color: rgba(0, 122, 255, 0.1); // iOS 蓝色背景
     }
 
     .link {
-      font-size: $font-size-base;  // 使用变量，更大字体
-      color: #40e0d0;
+      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      color: var(--ios-blue); // iOS 系统蓝色
       text-decoration: underline;
-      cursor: pointer;
-      line-height: 1.4;
-
-      &:hover {
-        color: #36d1c1;
-      }
-    }
-  }
-
-  // 响应式调整 - 统一断点，保持更好的可读性（使用 rpx）
-  @media screen and (max-width: $breakpoint-sm) {
-    margin-bottom: 40rpx;
-
-    .agreement-text {
-      font-size: $font-size-sm; // 保持较大字体确保可读性
-    }
-
-    .link-container {
-      .link {
-        font-size: $font-size-sm; // 保持较大字体确保可读性
-      }
+      line-height: $line-height-relaxed;
     }
   }
 }
 
-// 头像选择器遮罩层
+// ==================== 头像选择器 ====================
 .avatar-picker-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4); // iOS 遮罩颜色
   z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(4px);
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      backdrop-filter: blur(0px);
-    }
-
-    to {
-      opacity: 1;
-      backdrop-filter: blur(4px);
-    }
-  }
+  animation: ios-fade-in 0.3s ease-out;
 }
 
-// 头像选择器模态框
 .avatar-picker-modal {
-  width: 100%;  // Use percentage instead of vw
-  max-width: none;
-  background: #ffffff;
-  border-radius: 20px 20px 0 0;
-  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  background: var(--ios-secondary-system-grouped-background);
+  border-radius: $border-radius-lg $border-radius-lg 0 0; // 20pt 顶部圆角
+  animation: ios-slide-in-up 0.3s ease-out;
   overflow: hidden;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
+  @include ios-safe-area-bottom; // 适配安全区域
 
   .avatar-picker-header {
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid #f0f0f0;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-20 $spacing-16; // 20pt 16pt
+    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+    background: transparent;
+    border: none;
+    width: 100%;
+
+    &:active {
+      background: var(--ios-tertiary-system-grouped-background);
+    }
 
     .picker-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #333333;
+      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      flex: 1;
+    }
+
+    .option-icon {
+      width: 48rpx; // 24pt
+      height: 48rpx; // 24pt
+      margin-left: $spacing-12; // 12pt
     }
   }
 
-  .avatar-picker-content {
-    padding: 24px;
+  .avatar-option {
+    display: flex;
+    align-items: center;
+    padding: $spacing-16; // 16pt
+    background: transparent;
+    border: none;
+    width: 100%;
+    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
-    .avatar-option {
-      display: flex;
-      align-items: center;
-      padding: 16px 0;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-radius: 12px;
+    &:active {
+      background: var(--ios-tertiary-system-grouped-background);
+    }
 
-      &:hover {
-        background: #f8f9fa;
-      }
+    &:last-child {
+      border-bottom: none;
+    }
 
-      &:active {
-        background: #f0f1f2;
-        transform: scale(0.98);
-      }
+    .option-icon {
+      width: 48rpx; // 24pt
+      height: 48rpx; // 24pt
+      margin-right: $spacing-12; // 12pt
+    }
 
-      .option-icon {
-        width: 32px;
-        height: 32px;
-        margin-right: 16px;
-        border-radius: 8px;
-      }
-
-      .option-text {
-        font-size: 16px;
-        color: #333333;
-        font-weight: 400;
-      }
+    .option-text {
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      flex: 1;
+      text-align: left;
     }
   }
 
   .avatar-picker-footer {
-    padding: 16px 24px 32px;
+    padding: $spacing-12 $spacing-16 $spacing-20; // 12pt 16pt 20pt
 
     .cancel-btn {
+      @extend .ios-button-secondary; // 使用 iOS 次要按钮样式
       width: 100%;
-      height: 48px;
-      background: #f5f5f5;
-      border: none;
-      border-radius: 24px;
-      font-size: 16px;
-      font-weight: 400;
-      color: #666666;
-      transition: all 0.3s ease;
-
-      // 确保文字完全居中
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      line-height: 1;
-
-      &:hover {
-        background: #eeeeee;
-      }
-
-      &:active {
-        background: #e8e8e8;
-      }
-    }
-  }
-
-  // 响应式调整（使用新的断点和 rpx）
-  @media screen and (max-width: $breakpoint-sm) {
-    .avatar-picker-header {
-      padding: 32rpx 40rpx 24rpx;
-
-      .picker-title {
-        font-size: $font-size-lg;
-      }
-    }
-
-    .avatar-picker-content {
-      padding: 40rpx;
-
-      .avatar-option {
-        padding: 24rpx 0;
-
-        .option-icon {
-          width: 56rpx;
-          height: 56rpx;
-          margin-right: 24rpx;
-        }
-
-        .option-text {
-          font-size: $font-size-base;
-        }
-      }
-    }
-
-    .avatar-picker-footer {
-      padding: 24rpx 40rpx 48rpx;
-
-      .cancel-btn {
-        height: 80rpx;
-        font-size: $font-size-base;
-      }
     }
   }
 }
 
-// 移除重复的加载容器样式 - 已在 global.scss 中定义为 .loading
-
-// 加载状态动画
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
+// ==================== iOS 动画 ====================
+@keyframes ios-slide-in-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
   }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-// 按钮点击反馈动画
-@keyframes buttonPress {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(0.95);
-  }
-
-  100% {
-    transform: scale(1);
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-// 错误抖动动画
-@keyframes shake {
-
-  0%,
-  100% {
+@keyframes ios-shake {
+  0%, 100% {
     transform: translateX(0);
   }
-
   25% {
-    transform: translateX(-5px);
+    transform: translateX(-8rpx); // 4pt
   }
-
   75% {
-    transform: translateX(5px);
+    transform: translateX(8rpx); // 4pt
   }
 }
 
-// 输入框错误状态动画
-.nickname-input.error {
-  animation: shake 0.5s ease-in-out;
-}
-
-// 深色模式适配
-@media (prefers-color-scheme: dark) {
-  .login-container {
-    background: linear-gradient(180deg, #1a1a1a 0%, #000000 100%);
-  }
-
-  .login-header {
-    .app-name {
-      color: #ffffff;
-    }
-
-    .welcome-text {
-      color: #cccccc;
-    }
-  }
-
-  .nickname-input {
-    background: #2a2a2a;
-    border-color: #404040;
-    color: #ffffff;
-
-    &::placeholder {
-      color: #666666;
-    }
-
-    &:focus {
-      border-color: #40e0d0;
-    }
-  }
-
-  .auth-description {
-    .description-title {
-      color: #ffffff;
-    }
-
-    .description-content {
-      color: #cccccc;
-    }
-  }
-
-  .skip-btn {
-    border-color: #404040;
-    color: #cccccc;
-
-    &:hover {
-      border-color: #666666;
-      color: #ffffff;
-    }
-  }
-
-  .agreement-text {
-    color: #666666;
-  }
-
-  .avatar-picker-modal {
-    background: #2a2a2a;
-
-    .avatar-picker-header {
-      border-bottom-color: #404040;
-
-      .picker-title {
-        color: #ffffff;
-      }
-    }
-
-    .avatar-option {
-      &:hover {
-        background: #3a3a3a;
-      }
-
-      .option-text {
-        color: #ffffff;
-      }
-    }
-
-    .cancel-btn {
-      background: #404040;
-      color: #cccccc;
-
-      &:hover {
-        background: #4a4a4a;
-      }
-    }
-  }
-}
-// Spin animation for loading state
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
 }

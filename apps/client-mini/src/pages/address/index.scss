@@ -1,91 +1,334 @@
 @use '../../styles/variables.scss' as *;
+@use '../../styles/ios-design-system.scss' as *;
 
-// 地址页面样式
+// ==================== iOS 地址管理页面样式 ====================
+// 严格遵循 Apple Human Interface Guidelines
+
 .address-page {
-  padding-top: $spacing-sm;
-  padding-bottom: $spacing-sm;
-  background-color: $bg-secondary;
   min-height: 100vh;
+  background-color: var(--ios-system-grouped-background);
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
+  padding: $spacing-20 0; // 20pt 0
 }
 
-.address-list {
-  padding-left: $page-padding;
-  padding-right: $page-padding;
-  padding-bottom: $spacing-sm;
-}
+.page-header {
+  @extend .ios-navigation-bar;
+  background-color: var(--ios-system-background);
+  padding: $spacing-16 $page-padding; // 16pt
+  border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
-.address-item {
-  position: relative;
-  background-color: white;
-  border-radius: $border-radius-base;
-  padding-left: $spacing-sm; padding-right: $spacing-sm;
-  padding-top: $spacing-sm; padding-bottom: $spacing-sm;
-  margin-bottom: $spacing-sm;
-  box-shadow: $box-shadow-sm;
-}
+  .header-title {
+    @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+    font-weight: $font-weight-bold;
+    text-align: center;
+  }
 
-.default-tag {
-  position: absolute;
-  top: $spacing-xs;
-  left: $spacing-xs;
-  background-color: #00B894;
-  color: white;
-  font-size: $font-size-xs;
-  padding-left: $spacing-xs; padding-right: $spacing-xs;
-  padding-top: $spacing-xs; padding-bottom: $spacing-xs;
-  border-radius: $border-radius-sm;
-}
-
-.address-info {
-  margin-bottom: $spacing-sm;
-}
-
-.address-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: $spacing-xs;
-}
-
-.consignee {
-  font-size: $font-size-base;
-  font-weight: $font-weight-medium;
-  color: $text-color;
-}
-
-.mobile {
-  font-size: $font-size-sm;
-  color: $text-secondary;
-}
-
-.address-detail {
-  font-size: $font-size-sm;
-  color: $text-secondary;
-  line-height: 1.5;
-}
-
-.address-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.action-btn {
-  margin-left: $spacing-xs;
-  background-color: $bg-secondary !important;
-  border: 1rpx solid $border-color !important;
-  font-size: $font-size-xs;
-  padding-left: $spacing-xs; padding-right: $spacing-xs;
-  height: 56rpx;
-  line-height: 56rpx;
-
-  &.delete-btn {
-    border-color: #ff7675 !important;
-    color: #ff7675 !important;
+  .add-btn {
+    @extend .ios-button-text;
+    position: absolute;
+    right: $page-padding; // 16pt
+    top: 50%;
+    transform: translateY(-50%);
+    
+    text {
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      color: var(--ios-blue);
+    }
   }
 }
 
-.add-address-btn {
-  width: 90%;
-  margin: 0 auto;
-  background-color: #00B894 !important;
-  border-color: #00B894 !important;
+.address-list {
+  padding: 0 $page-padding; // 0 16pt
+
+  .empty-state {
+    @include flex-center;
+    flex-direction: column;
+    padding: $spacing-40; // 40pt
+    text-align: center;
+
+    .empty-icon {
+      font-size: 160rpx; // 80pt
+      color: var(--ios-quaternary-label);
+      margin-bottom: $spacing-24; // 24pt
+    }
+
+    .empty-title {
+      @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+      font-weight: $font-weight-semibold;
+      margin-bottom: $spacing-8; // 8pt
+    }
+
+    .empty-desc {
+      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      color: var(--ios-secondary-label);
+      line-height: $line-height-relaxed;
+      margin-bottom: $spacing-24; // 24pt
+    }
+
+    .add-first-btn {
+      @extend .ios-button-primary;
+      padding: 0 $spacing-32; // 0 32pt
+    }
+  }
+}
+
+.address-item {
+  @extend .ios-card;
+  position: relative;
+  margin-bottom: $spacing-16; // 16pt
+  transition: all 0.2s ease;
+
+  &:active {
+    background-color: var(--ios-tertiary-system-grouped-background);
+    transform: scale(0.98);
+  }
+
+  &.default-address {
+    border: 4rpx solid var(--ios-blue); // 2pt 蓝色边框
+    background-color: rgba(0, 122, 255, 0.05);
+  }
+
+  .default-tag {
+    position: absolute;
+    top: $spacing-12; // 12pt
+    right: $spacing-16; // 16pt
+    background-color: var(--ios-blue);
+    color: white;
+    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-weight: $font-weight-medium;
+    padding: $spacing-4 $spacing-8; // 4pt 8pt
+    border-radius: $border-radius-pill; // 胶囊形
+  }
+
+  .address-content {
+    .address-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: $spacing-12; // 12pt
+
+      .user-info {
+        flex: 1;
+
+        .consignee {
+          @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+          font-weight: $font-weight-semibold;
+          margin-bottom: $spacing-4; // 4pt
+        }
+
+        .mobile {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-secondary-label);
+          font-family: $font-family-number; // 使用数字字体
+        }
+      }
+    }
+
+    .address-detail {
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      color: var(--ios-label);
+      line-height: $line-height-relaxed;
+      margin-bottom: $spacing-16; // 16pt
+      padding-right: 120rpx; // 为默认标签留空间
+    }
+
+    .address-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: $spacing-12; // 12pt
+      padding-top: $spacing-12; // 12pt
+      border-top: 2rpx solid var(--ios-separator); // 1pt 分隔线
+
+      .action-btn {
+        padding: $spacing-8 $spacing-16; // 8pt 16pt
+        border-radius: $border-radius-base; // 12pt
+        font-size: $font-size-body; // iOS Body (34rpx)
+        font-weight: $font-weight-medium;
+        transition: all 0.2s ease;
+        border: 2rpx solid var(--ios-separator); // 1pt 边框
+        background-color: var(--ios-secondary-system-background);
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        &.edit-btn {
+          color: var(--ios-blue);
+          border-color: var(--ios-blue);
+
+          &:active {
+            background-color: rgba(0, 122, 255, 0.1);
+          }
+        }
+
+        &.delete-btn {
+          color: #FF3B30; // iOS 红色
+          border-color: #FF3B30;
+
+          &:active {
+            background-color: rgba(255, 59, 48, 0.1);
+          }
+        }
+
+        &.set-default-btn {
+          color: var(--ios-label);
+
+          &:active {
+            background-color: var(--ios-tertiary-system-background);
+          }
+        }
+      }
+    }
+  }
+}
+
+.add-address-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: $spacing-16 $page-padding; // 16pt
+  background-color: var(--ios-system-background);
+  border-top: 2rpx solid var(--ios-separator); // 1pt 顶部边框
+  @include ios-safe-area-bottom;
+
+  .add-address-btn {
+    @extend .ios-button-primary;
+    width: 100%;
+  }
+}
+
+// ==================== 地址选择页面样式 ====================
+.address-select-page {
+  min-height: 100vh;
+  background-color: var(--ios-system-grouped-background);
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
+
+  .select-header {
+    @extend .ios-navigation-bar;
+    background-color: var(--ios-system-background);
+    padding: $spacing-16 $page-padding; // 16pt
+    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .back-btn {
+        @extend .ios-button-text;
+        padding: $spacing-8; // 8pt
+        margin-left: -$spacing-8; // -8pt 扩大触摸区域
+        
+        text {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-blue);
+        }
+      }
+
+      .header-title {
+        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        font-weight: $font-weight-semibold;
+      }
+
+      .confirm-btn {
+        @extend .ios-button-text;
+        padding: $spacing-8; // 8pt
+        margin-right: -$spacing-8; // -8pt 扩大触摸区域
+        
+        text {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-blue);
+        }
+
+        &.disabled {
+          opacity: 0.3;
+          pointer-events: none;
+        }
+      }
+    }
+  }
+
+  .select-list {
+    padding: $spacing-16 $page-padding; // 16pt
+
+    .select-item {
+      display: flex;
+      align-items: center;
+      padding: $spacing-16; // 16pt
+      background-color: var(--ios-secondary-system-grouped-background);
+      border-radius: $card-radius; // 12pt
+      margin-bottom: $spacing-12; // 12pt
+      transition: all 0.2s ease;
+
+      &:active {
+        background-color: var(--ios-tertiary-system-grouped-background);
+      }
+
+      &.selected {
+        border: 4rpx solid var(--ios-blue); // 2pt 蓝色边框
+        background-color: rgba(0, 122, 255, 0.1);
+      }
+
+      .radio-icon {
+        width: 48rpx; // 24pt
+        height: 48rpx; // 24pt
+        border-radius: 50%;
+        border: 4rpx solid var(--ios-separator); // 2pt 边框
+        margin-right: $spacing-12; // 12pt
+        @include flex-center;
+        transition: all 0.2s ease;
+
+        &.selected {
+          border-color: var(--ios-blue);
+          background-color: var(--ios-blue);
+
+          &::after {
+            content: '';
+            width: 24rpx; // 12pt
+            height: 24rpx; // 12pt
+            border-radius: 50%;
+            background-color: white;
+          }
+        }
+      }
+
+      .address-info {
+        flex: 1;
+
+        .address-name {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-weight: $font-weight-medium;
+          margin-bottom: $spacing-4; // 4pt
+        }
+
+        .address-detail {
+          @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          color: var(--ios-secondary-label);
+          line-height: $line-height-relaxed;
+        }
+      }
+    }
+  }
+}
+
+// ==================== 响应式适配 ====================
+@include mobile-standard {
+  .address-page {
+    .address-item {
+      .address-content {
+        .address-actions {
+          flex-direction: column;
+          gap: $spacing-8; // 8pt
+
+          .action-btn {
+            width: 100%;
+            text-align: center;
+          }
+        }
+      }
+    }
+  }
 }

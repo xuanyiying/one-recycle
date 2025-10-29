@@ -1,199 +1,258 @@
 @use '../../styles/variables.scss' as *;
+@use '../../styles/ios-design-system.scss' as *;
+
+// ==================== iOS 回收页面样式 ====================
+// 严格遵循 Apple Human Interface Guidelines
 
 .recycle-form-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, $bg-secondary 0%, #c3cfe2 100%);
-  padding-bottom: 120rpx;
+  background-color: var(--ios-system-grouped-background);
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
+  padding-bottom: 120rpx; // 为底部导航留空间
 
+  // iOS 页面头部
   .page-header {
-    background: white;
-    padding-left: $page-padding; padding-right: $page-padding;
-    padding-top: $spacing-xl;
-    padding-bottom: $spacing-lg;
+    @extend .ios-navigation-bar;
+    background-color: var(--ios-system-background);
+    padding: $spacing-20 $page-padding; // 20pt 16pt
     text-align: center;
-    box-shadow: $box-shadow-base;
+    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
     .page-title {
-      font-size: $font-size-display;
-      font-weight: $font-weight-semibold;
-      color: $text-color;
-      margin-bottom: $spacing-xs;
-      display: block;
+      @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-8; // 8pt
     }
 
     .page-subtitle {
-      font-size: $font-size-lg;
-      color: $text-secondary;
-      display: block;
+      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      color: var(--ios-secondary-label);
     }
   }
 
   .form-container {
-    padding-left: $page-padding; padding-right: $page-padding;
+    padding: 0 $page-padding; // 0 16pt
   }
 
+  // iOS 表单区块
   .form-section {
-    background: white;
-    border-radius: $border-radius-lg;
-    padding-left: $page-padding; padding-right: $page-padding;
-    margin-bottom: $spacing-lg;
-    box-shadow: $box-shadow-lg;
+    @extend .ios-card;
+    margin-bottom: $spacing-20; // 20pt
 
-    // 京东快递部分
+    // 京东快递特殊区块
     &.jd-express-section {
-      padding-top: $spacing-lg;
-      padding-bottom: $spacing-lg;
+      padding: $spacing-20; // 20pt
 
       .jd-express-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: $spacing-md;
+        margin-bottom: $spacing-16; // 16pt
 
         .jd-express-left {
           display: flex;
           align-items: center;
 
           .section-title {
+            @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+            font-weight: $font-weight-semibold;
             margin-bottom: 0;
-            font-weight: $font-weight-medium;
-            color: $text-color;
           }
+        }
+
+        .jd-logo {
+          width: 80rpx; // 40pt
+          height: 48rpx; // 24pt
         }
       }
 
       .jd-express-details {
-        margin-top: $spacing-md;
-        padding: $spacing-md;
-        background: #FFF7F0;
-        border-radius: $border-radius-base;
-        border-left: 4px solid #E32B2B;
+        margin-top: $spacing-16; // 16pt
+        padding: $spacing-16; // 16pt
+        background-color: rgba(255, 149, 0, 0.1); // iOS 橙色背景
+        border-radius: $border-radius-base; // 12pt
+        border-left: 8rpx solid #FF9500; // 4pt iOS 橙色边框
 
         .detail-text {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-label);
+          line-height: $line-height-relaxed;
+          margin-bottom: $spacing-8; // 8pt
           display: block;
-          font-size: $font-size-base;
-          color: $text-secondary;
-          line-height: 1.8;
-          margin-bottom: $spacing-xs;
         }
 
         .note-text {
-          display: block;
-          font-size: $font-size-sm;
-          color: #E32B2B;
-          margin-top: $spacing-sm;
+          @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          color: #FF9500; // iOS 橙色
+          margin-top: $spacing-12; // 12pt
           font-weight: $font-weight-medium;
+          display: block;
         }
       }
     }
 
     .section-title {
-      font-size: $font-size-title;
+      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
-      color: $text-color;
-      margin-bottom: $spacing-xs;
+      margin-bottom: $spacing-8; // 8pt
       display: block;
     }
 
     .section-desc {
-      font-size: $font-size-base;
-      color: $text-disabled;
-      margin-bottom: $spacing-lg;
+      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      color: var(--ios-secondary-label);
+      margin-bottom: $spacing-16; // 16pt
+      line-height: $line-height-relaxed;
       display: block;
     }
+  }
 
-    // 选择器样式
-    .picker-item,
-    .address-selector,
-    .time-selector {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 24px 0;
-      border-bottom: 2px solid #f0f0f0;
-      min-height: 48px;
+  // 分类选择区域
+  .category-section {
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: $spacing-12; // 12pt
 
-      .selected {
-        color: #1a1a1a;
-        font-size: 30px;
-      }
+      .category-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: $spacing-16; // 16pt
+        background-color: var(--ios-secondary-system-background);
+        border-radius: $border-radius-base; // 12pt
+        border: 4rpx solid transparent; // 2pt 透明边框
+        transition: all 0.2s ease;
 
-      .placeholder {
-        color: #999;
-        font-size: 30px;
-      }
+        &:active {
+          transform: scale(0.95);
+          background-color: var(--ios-tertiary-system-background);
+        }
 
-      .arrow {
-        color: #999;
-        font-size: 24px;
-      }
-    }
+        &.selected {
+          border-color: var(--ios-blue);
+          background-color: rgba(0, 122, 255, 0.1);
+        }
 
-    // 文本输入框
-    .textarea-input {
-      width: 100%;
-      min-height: 120px;
-      padding: 24px;
-      border: 2px solid #f0f0f0;
-      border-radius: 12px;
-      font-size: 30px;
-      line-height: 1.5;
-      background: #fafafa;
-      margin-bottom: 8px;
+        .category-icon {
+          width: 80rpx; // 40pt
+          height: 80rpx; // 40pt
+          margin-bottom: $spacing-8; // 8pt
+          background-color: var(--ios-blue);
+          border-radius: $border-radius-base; // 12pt
+          @include flex-center;
 
-      &:focus {
-        border-color: #00c896;
-        background: #fff;
-      }
-    }
+          image {
+            width: 48rpx; // 24pt
+            height: 48rpx; // 24pt
+          }
+        }
 
-    .char-count {
-      font-size: 24px;
-      color: #999;
-      text-align: right;
-      display: block;
-    }
-
-    // 重量输入
-    .weight-input-container {
-      display: flex;
-      align-items: center;
-      border: 2px solid #f0f0f0;
-      border-radius: 12px;
-      padding: 0 24px;
-      background: #fafafa;
-
-      &:focus-within {
-        border-color: #00c896;
-        background: #fff;
-      }
-
-      .weight-input {
-        flex: 1;
-        padding: 24px 0;
-        font-size: 30px;
-        background: transparent;
-      }
-
-      .weight-unit {
-        font-size: 30px;
-        color: #666;
-        margin-left: 16px;
+        .category-name {
+          @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+          text-align: center;
+          font-weight: $font-weight-medium;
+        }
       }
     }
+  }
 
-    // 图片上传
-    .image-upload-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
+  // 物品详情区域
+  .item-details-section {
+    .form-group {
+      margin-bottom: $spacing-20; // 20pt
 
-      .image-item {
-        position: relative;
-        width: 160px;
-        height: 160px;
-        border-radius: 12px;
+      .form-label {
+        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        font-weight: $font-weight-medium;
+        margin-bottom: $spacing-8; // 8pt
+        display: block;
+      }
+
+      .form-input {
+        @extend .ios-input;
+        width: 100%;
+      }
+
+      .form-textarea {
+        @extend .ios-input;
+        width: 100%;
+        min-height: 200rpx; // 100pt
+        padding: $spacing-12; // 12pt
+        resize: none;
+      }
+
+      .weight-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-8; // 8pt
+
+        .weight-option {
+          flex: 1;
+          min-width: 120rpx; // 60pt
+          padding: $spacing-12 $spacing-16; // 12pt 16pt
+          background-color: var(--ios-secondary-system-background);
+          border: 4rpx solid transparent; // 2pt 透明边框
+          border-radius: $border-radius-base; // 12pt
+          text-align: center;
+          transition: all 0.2s ease;
+
+          &:active {
+            transform: scale(0.95);
+          }
+
+          &.selected {
+            border-color: var(--ios-blue);
+            background-color: rgba(0, 122, 255, 0.1);
+          }
+
+          text {
+            @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+            font-weight: $font-weight-medium;
+          }
+        }
+      }
+    }
+  }
+
+  // 图片上传区域
+  .photo-upload-section {
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: $spacing-12; // 12pt
+
+      .upload-item {
+        aspect-ratio: 1;
+        border-radius: $border-radius-base; // 12pt
         overflow: hidden;
+        position: relative;
+        background-color: var(--ios-secondary-system-background);
+        border: 4rpx dashed var(--ios-separator); // 2pt 虚线边框
+
+        &.has-image {
+          border-style: solid;
+          border-color: var(--ios-blue);
+        }
+
+        .upload-placeholder {
+          @include flex-center;
+          height: 100%;
+          flex-direction: column;
+
+          .upload-icon {
+            font-size: 80rpx; // 40pt
+            color: var(--ios-tertiary-label);
+            margin-bottom: $spacing-8; // 8pt
+          }
+
+          .upload-text {
+            @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+            color: var(--ios-secondary-label);
+            text-align: center;
+          }
+        }
 
         .uploaded-image {
           width: 100%;
@@ -201,180 +260,165 @@
           object-fit: cover;
         }
 
-        .remove-btn {
+        .delete-btn {
           position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 32px;
-          height: 32px;
-          background: rgba(0, 0, 0, 0.6);
+          top: $spacing-4; // 4pt
+          right: $spacing-4; // 4pt
+          width: 48rpx; // 24pt
+          height: 48rpx; // 24pt
+          background-color: rgba(255, 59, 48, 0.8);
           border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          @include flex-center;
+          color: white;
+          font-size: 32rpx; // 16pt
 
-          .remove-icon {
-            color: #fff;
-            font-size: 20px;
-            font-weight: bold;
+          &:active {
+            background-color: #FF3B30;
           }
         }
-      }
-
-      .add-image-btn {
-        width: 160px;
-        height: 160px;
-        border: 2px dashed #ddd;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #fafafa;
-
-        &:active {
-          background: #f0f0f0;
-        }
-
-        .add-icon {
-          font-size: 48px;
-          color: #999;
-          margin-bottom: 8px;
-        }
-
-        .add-text {
-          font-size: 24px;
-          color: #999;
-        }
-      }
-    }
-
-    // 手机号输入
-    .phone-input {
-      width: 100%;
-      padding: 24px;
-      border: 2px solid #f0f0f0;
-      border-radius: 12px;
-      font-size: 30px;
-      background: #fafafa;
-
-      &:focus {
-        border-color: #00c896;
-        background: #fff;
       }
     }
   }
 
-  // 底部提交按钮
-  .submit-container {
+  // 地址选择区域
+  .address-section {
+    .address-selector {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: $spacing-16; // 16pt
+      background-color: var(--ios-secondary-system-background);
+      border-radius: $border-radius-base; // 12pt
+      border: 4rpx solid var(--ios-separator); // 2pt 边框
+      transition: all 0.2s ease;
+
+      &:active {
+        background-color: var(--ios-tertiary-system-background);
+        border-color: var(--ios-blue);
+      }
+
+      .address-content {
+        flex: 1;
+
+        .address-name {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-weight: $font-weight-medium;
+          margin-bottom: $spacing-4; // 4pt
+        }
+
+        .address-detail {
+          @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          color: var(--ios-secondary-label);
+          line-height: $line-height-relaxed;
+        }
+
+        .address-placeholder {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-tertiary-label);
+        }
+      }
+
+      .address-arrow {
+        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        color: var(--ios-tertiary-label);
+        margin-left: $spacing-8; // 8pt
+      }
+    }
+  }
+
+  // 时间选择区域
+  .time-section {
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-12; // 12pt
+
+      .time-slot {
+        padding: $spacing-16; // 16pt
+        background-color: var(--ios-secondary-system-background);
+        border: 4rpx solid transparent; // 2pt 透明边框
+        border-radius: $border-radius-base; // 12pt
+        text-align: center;
+        transition: all 0.2s ease;
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        &.selected {
+          border-color: var(--ios-blue);
+          background-color: rgba(0, 122, 255, 0.1);
+        }
+
+        &.disabled {
+          opacity: 0.3;
+          pointer-events: none;
+        }
+
+        .time-text {
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-weight: $font-weight-medium;
+          margin-bottom: $spacing-4; // 4pt
+        }
+
+        .time-desc {
+          @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+          color: var(--ios-secondary-label);
+        }
+      }
+    }
+  }
+
+  // 提交按钮区域
+  .submit-section {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 24px 32px;
-    background: #fff;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-    z-index: 100;
+    padding: $spacing-16 $page-padding; // 16pt
+    background-color: var(--ios-system-background);
+    border-top: 2rpx solid var(--ios-separator); // 1pt 顶部边框
+    @include ios-safe-area-bottom;
 
     .submit-btn {
+      @extend .ios-button-primary;
       width: 100%;
-      height: 88px;
-      background: linear-gradient(135deg, #00c896 0%, #00b386 100%);
-      color: #fff;
-      font-size: 32px;
-      font-weight: 600;
-      border-radius: 44px;
-      border: none;
-      box-shadow: 0 8px 24px rgba(0, 200, 150, 0.3);
-      transition: all 0.3s ease;
 
-      &:active {
-        transform: translateY(2px);
-        box-shadow: 0 4px 12px rgba(0, 200, 150, 0.3);
+      &.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+      }
+    }
+
+    .price-estimate {
+      text-align: center;
+      margin-bottom: $spacing-12; // 12pt
+
+      .estimate-text {
+        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        color: var(--ios-secondary-label);
+        margin-bottom: $spacing-4; // 4pt
       }
 
-      &.button-loading {
-        background: #ccc;
-        box-shadow: none;
+      .estimate-price {
+        @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+        font-weight: $font-weight-bold;
+        color: var(--ios-blue);
       }
     }
   }
 }
 
-// 响应式适配（使用新断点和 rpx）
+// ==================== 响应式适配 ====================
 @include mobile-standard {
   .recycle-form-page {
-    .form-container {
-      padding: 48rpx;  // 使用 rpx
+    .category-section .category-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-8; // 8pt
     }
-
-    .form-section {
-      padding: 48rpx;  // 使用 rpx
-
-      .section-title {
-        font-size: 60rpx;  // 使用 rpx
-      }
-
-      .section-desc {
-        font-size: 48rpx;  // 使用 rpx
-      }
-
-      .picker-item,
-      .address-selector,
-      .time-selector {
-        .selected,
-        .placeholder {
-          font-size: 56rpx;  // 使用 rpx
-        }
-      }
-
-      .textarea-input,
-      .weight-input,
-      .phone-input {
-        font-size: 56rpx;  // 使用 rpx
-      }
-
-      .image-upload-container {
-        .image-item,
-        .add-image-btn {
-          width: 280rpx;  // 使用 rpx
-          height: 280rpx;  // 使用 rpx
-        }
-      }
-    }
-
-    .submit-container {
-      padding: 40rpx 48rpx;  // 使用 rpx
-
-      .submit-btn {
-        height: 160rpx;  // 使用 rpx
-        font-size: 60rpx;  // 使用 rpx
-      }
+    
+    .photo-upload-section .upload-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 }
-
-// 加载动画
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.form-section {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.form-section:nth-child(1) { animation-delay: 0.1s; }
-.form-section:nth-child(2) { animation-delay: 0.2s; }
-.form-section:nth-child(3) { animation-delay: 0.3s; }
-.form-section:nth-child(4) { animation-delay: 0.4s; }
-.form-section:nth-child(5) { animation-delay: 0.5s; }
-.form-section:nth-child(6) { animation-delay: 0.6s; }
-.form-section:nth-child(7) { animation-delay: 0.7s; }
-.form-section:nth-child(8) { animation-delay: 0.8s; }

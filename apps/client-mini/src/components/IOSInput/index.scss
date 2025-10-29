@@ -1,0 +1,41 @@
+@use '../../styles/ios-design-system.scss' as *;
+
+.ios-input-component {
+  @extend .ios-input;
+  
+  &.ios-input-search {
+    border-radius: $border-radius-pill; // 胶囊形搜索框
+    padding-left: $spacing-20; // 20pt 为搜索图标留空间
+  }
+  
+  &.ios-input-number {
+    font-family: $font-family-number; // 使用数字字体
+    text-align: right; // 数字右对齐
+  }
+  
+  &.ios-input-error {
+    border-color: #FF3B30; // iOS 红色
+    background-color: rgba(255, 59, 48, 0.05);
+    animation: ios-shake 0.3s ease-in-out;
+  }
+}
+
+.ios-input-error-message {
+  @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+  color: #FF3B30; // iOS 红色
+  margin-top: $spacing-4; // 4pt
+  display: block;
+  line-height: $line-height-relaxed;
+}
+
+@keyframes ios-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8rpx); // 4pt
+  }
+  75% {
+    transform: translateX(8rpx); // 4pt
+  }
+}
