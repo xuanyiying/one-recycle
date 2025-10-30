@@ -70,7 +70,21 @@
     
     --ios-separator: rgba(84, 84, 88, 0.65);
     --ios-opaque-separator: #38383A;
+
+    // 深色模式下的渐变色调整
+    --ios-gradient-blue: linear-gradient(135deg, #0A84FF 0%, #64D2FF 100%);
+    --ios-gradient-orange: linear-gradient(135deg, #FF9F0A 0%, #FFCC02 100%);
+    --ios-gradient-green: linear-gradient(135deg, #30D158 0%, #32D74B 100%);
+    --ios-gradient-purple: linear-gradient(135deg, #BF5AF2 0%, #DA8FFF 100%);
   }
+}
+
+// 浅色模式渐变色
+:root {
+  --ios-gradient-blue: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+  --ios-gradient-orange: linear-gradient(135deg, #FF9500 0%, #FFCC02 100%);
+  --ios-gradient-green: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  --ios-gradient-purple: linear-gradient(135deg, #AF52DE 0%, #BF5AF2 100%);
 }
 
 // ==================== iOS 文本样式 ====================
@@ -492,6 +506,67 @@
 .ios-safe-area-bottom {
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+// iOS 响应式工具类
+.ios-responsive-text {
+  // 基础字体大小
+  font-size: $font-size-body;
+  
+  // 小屏幕适配
+  @media (max-width: 375px) {
+    font-size: $font-size-callout;
+  }
+  
+  // 大屏幕适配
+  @media (min-width: 430px) {
+    font-size: $font-size-headline;
+  }
+}
+
+.ios-responsive-spacing {
+  // 基础间距
+  padding: $spacing-16;
+  
+  // 小屏幕适配
+  @media (max-width: 375px) {
+    padding: $spacing-12;
+  }
+  
+  // 大屏幕适配
+  @media (min-width: 430px) {
+    padding: $spacing-24;
+  }
+}
+
+// iOS 触摸反馈工具类
+.ios-touch-feedback {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  
+  // 减少动画模式支持
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    
+    &:active {
+      transform: none;
+      opacity: 0.7;
+    }
+  }
+}
+
+// iOS 卡片阴影工具类
+.ios-card-shadow {
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.1);
+  
+  @media (prefers-color-scheme: dark) {
+    box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.3);
+  }
 }
 
 // ==================== iOS 安全区域混合器 ====================

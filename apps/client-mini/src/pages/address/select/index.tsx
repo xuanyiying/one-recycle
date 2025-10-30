@@ -1,40 +1,54 @@
-import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Input, ScrollView } from '@tarojs/components'
+import { useState, useEffect } from 'react'
+import { View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { getCities } from '@/services/system'
-import { getUserAddresses } from '@/services/user'
 import { useAuth } from '@/hooks/useAuth'
 import AuthGuard from '@/components/AuthGuard'
-import { Address } from '@/types'
+import { Address } from '@nutui/nutui-biz'
+import { 
+  provinceData, 
+  cityData, 
+  countryData, 
+  townData,
+  getUserAddressList,
+  setDefaultAddress,
+  UserAddress,
+  RegionData,
+  initDefaultAddresses
+} from '@/utils/addressData'
 import './index.scss'
-import { Button } from '@nutui/nutui-react-taro'
-
-interface City {
-  id: string
-  name: string
-  districts: District[]
-}
-
-interface District {
-  id: string
-  name: string
-}
 
 export default function AddressSelect() {
   const { user } = useAuth()
-  const [addresses, setAddresses] = useState<Address[]>([])
-  const [cities, setCities] = useState<City[]>([])
-  const [selectedCity, setSelectedCity] = useState<City | null>(null)
-  const [selectedDistrict, setSelectedDistrict] = useState<District | null>(null)
-  const [detailAddress, setDetailAddress] = useState('')
-  const [contactName, setContactName] = useState('')
-  const [contactPhone, setContactPhone] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [visible, setVisible] = useState(true)
+  const [existAddresses, setExistAddresses] = useState<UserAddress[]>([])
+  const [selectedRegion, setSelectedRegion] = useState<(string | number)[]>([])
   const [loading, setLoading] = useState(false)
 
-  // 生成完整地址的辅助函数
-  const getFullAddress = (address: Address): string => {
-    return `${address.province}${address.city}${address.district}${address.detail}`
+  // 获取当前选中城市的区县数据
+  const getCurrentCityData = (): RegionData[] => {
+    if (selectedRegion.length >= 2) {
+      const cityId = selectedRegion[1]
+      return countryData[cityId as string] || []
+    }
+    return []
+  }
+
+  // 获取当前选中区县的街道数据
+  const getCurrentCountryData = (): RegionData[] => {
+    if (selectedRegion.length >= 3) {
+      const countryId = selectedRegion[2]
+      return townData[countryId as string] || []
+    }
+    return []
+  }
+
+  // 获取当前选中省份的城市数据
+  const getCurrentProvinceData = (): RegionData[] => {
+    if (selectedRegion.length >= 1) {
+      const provinceId = selectedRegion[0]
+      return cityData[provinceId as string] || []
+    }
+    return []
   }
 
   useEffect(() => {
@@ -43,285 +57,123 @@ export default function AddressSelect() {
 
   const initData = async () => {
     try {
-      // 获取城市数据
-      const citiesResult = await getCities()
-      if (citiesResult.success && citiesResult.data) {
-        setCities(citiesResult.data)
-      }
-
-      // 获取用户地址
-      if (user?.id) {
-        const addressResult = await getUserAddresses(user.id.toString())
-        if (addressResult.success && addressResult.data) {
-          setAddresses(addressResult.data)
-        }
-      }
+      setLoading(true)
+      // 初始化默认地址数据
+      initDefaultAddresses()
+      // 获取用户地址列表
+      const addresses = getUserAddressList()
+      setExistAddresses(addresses)
     } catch (error) {
-      console.error('初始化数据失败:', error)
+      console.error('初始化地址数据失败:', error)
       Taro.showToast({
-        title: '数据加载失败',
-        icon: 'none'
+        title: '加载地址失败',
+        icon: 'error'
       })
+    } finally {
+      setLoading(false)
     }
   }
 
-  // 选择地址
-  const handleSelectAddress = useCallback((address: Address) => {
-    Taro.eventCenter.trigger('addressSelected', address)
-    Taro.navigateBack()
-  }, [])
-
-  // 选择城市
-  const handleSelectCity = useCallback((city: City) => {
-    setSelectedCity(city)
-    setSelectedDistrict(null)
-  }, [])
-
-  // 选择区域
-  const handleSelectDistrict = useCallback((district: District) => {
-    setSelectedDistrict(district)
-  }, [])
-
-  // 添加新地址
-  const handleAddAddress = useCallback(() => {
-    if (!selectedCity || !selectedDistrict) {
-      Taro.showToast({
-        title: '请选择城市和区域',
-        icon: 'none'
-      })
-      return
-    }
-
-    if (!detailAddress.trim()) {
-      Taro.showToast({
-        title: '请填写详细地址',
-        icon: 'none'
-      })
-      return
-    }
-
-    if (!contactName.trim()) {
-      Taro.showToast({
-        title: '请填写联系人姓名',
-        icon: 'none'
-      })
-      return
-    }
-
-    if (!contactPhone.trim()) {
-      Taro.showToast({
-        title: '请填写联系电话',
-        icon: 'none'
-      })
-      return
-    }
-
-    // 验证手机号
-    const phoneRegex = /^1[3-9]\d{9}$/
-    if (!phoneRegex.test(contactPhone)) {
-      Taro.showToast({
-        title: '请填写正确的手机号',
-        icon: 'none'
-      })
-      return
-    }
-
-    setLoading(true)
-
-    // 模拟保存地址
-    setTimeout(() => {
-      const newAddress: Address = {
-        id: Date.now(),
-        name: contactName,
-        phone: contactPhone,
-        province: selectedCity?.name || '',
-        city: selectedCity?.name || '',
-        district: selectedDistrict?.name || '',
-        detail: detailAddress,
-        isDefault: addresses.length === 0,
-        tag: '家'
-      }
-
-      setAddresses(prev => [newAddress, ...prev])
-      setLoading(false)
-      setShowAddForm(false)
-      
-      // 重置表单
-      setSelectedCity(null)
-      setSelectedDistrict(null)
-      setDetailAddress('')
-      setContactName('')
-      setContactPhone('')
-
-      Taro.showToast({
-        title: '地址添加成功',
-        icon: 'success'
-      })
-
-      // 自动选择新添加的地址
-      setTimeout(() => {
-        handleSelectAddress(newAddress)
-      }, 1500)
-    }, 1000)
-  }, [selectedCity, selectedDistrict, detailAddress, contactName, contactPhone, addresses.length, handleSelectAddress])
-
-  // 删除地址
-  const handleDeleteAddress = useCallback((addressId: number, e: any) => {
-    e.stopPropagation()
+  // 处理地址选择
+  const handleAddressSelected = (prevExistAdd: UserAddress, item: UserAddress, copyExistAdd: UserAddress[]) => {
+    console.log('选择地址:', item)
+    // 设置为默认地址
+    setDefaultAddress(item.id)
+    // 更新本地状态
+    setExistAddresses(copyExistAdd)
     
-    Taro.showModal({
-      title: '确认删除',
-      content: '确定要删除这个地址吗？',
-      success: (res) => {
-        if (res.confirm) {
-          setAddresses(prev => prev.filter(addr => addr.id !== addressId))
-          Taro.showToast({
-            title: '删除成功',
-            icon: 'success'
-          })
-        }
-      }
-    })
-  }, [])
+    // 返回上一页并传递选中的地址
+    const pages = Taro.getCurrentPages()
+    const prevPage = pages[pages.length - 2]
+    if (prevPage) {
+      // 通过事件总线或者页面参数传递地址信息
+      Taro.eventCenter.trigger('addressSelected', item)
+    }
+    
+    Taro.navigateBack()
+  }
+
+  // 处理地址弹窗关闭
+  const handleAddressClose = (cal: any) => {
+    console.log('地址选择关闭:', cal)
+    if (cal.type === 'exist') {
+      // 选择了已有地址
+      const selectedAddress = cal.data as UserAddress
+      handleAddressSelected(selectedAddress, selectedAddress, existAddresses)
+    } else if (cal.type === 'custom') {
+      // 选择了自定义地址，跳转到地址编辑页面
+      const addressData = cal.data
+      Taro.navigateTo({
+        url: `/pages/address/edit/index?addressData=${encodeURIComponent(JSON.stringify(addressData))}`
+      })
+    }
+    setVisible(false)
+  }
+
+  // 处理遮罩关闭
+  const handleMaskClose = () => {
+    setVisible(false)
+    Taro.navigateBack()
+  }
+
+  // 处理模块切换
+  const handleSwitchModule = (cal: { type: string }) => {
+    console.log('切换模块:', cal.type)
+  }
+
+  // 处理地址变化
+  const handleAddressChange = (cal: any) => {
+    console.log('地址变化:', cal)
+    const { next, value } = cal
+    
+    // 更新选中的区域
+    if (next === 'city') {
+      setSelectedRegion([value.id])
+    } else if (next === 'country') {
+      setSelectedRegion(prev => [prev[0], value.id])
+    } else if (next === 'town') {
+      setSelectedRegion(prev => [prev[0], prev[1], value.id])
+    }
+  }
+
+  // 处理地址项点击
+  const handleClickItem = async (cal: any, resolve: (value: boolean | PromiseLike<boolean>) => void) => {
+    console.log('点击地址项:', cal)
+    // 这里可以添加异步验证逻辑
+    resolve(true)
+  }
+
+  // 处理标签页切换
+  const handleTabChecked = (type: string) => {
+    console.log('标签页切换:', type)
+  }
 
   return (
     <AuthGuard>
       <View className='address-select-page'>
-      {/* 页面标题 */}
-      <View className='page-header'>
-        <Text className='page-title'>选择地址</Text>
-      </View>
-
-      <ScrollView className='content-container' scrollY>
-        {/* 已保存的地址列表 */}
-        {addresses.length > 0 && (
-          <View className='address-section'>
-            <Text className='section-title'>已保存的地址</Text>
-            {addresses.map(address => (
-              <Button
-                key={address.id} 
-                className='address-item'
-                block
-                onClick={() => handleSelectAddress(address)}
-              >
-                <View className='address-info'>
-                  <View className='address-header'>
-                    <Text className='contact-name'>{address.name}</Text>
-                    {address.isDefault && (
-                      <Text className='default-tag'>默认</Text>
-                    )}
-                  </View>
-                  <Text className='address-text'>{getFullAddress(address)}</Text>
-                </View>
-                <Button
-                  className='delete-btn'
-                  size="small"
-                  onClick={(e) => handleDeleteAddress(address.id, e)}
-                >
-                  <Text className='delete-icon'>×</Text>
-                </Button>
-              </Button>
-            ))}
-          </View>
-        )}
-
-        {/* 添加新地址 */}
-        <View className='add-address-section'>
-          <View className='section-header'>
-            <Text className='section-title'>添加新地址</Text>
-            <Button 
-              className='toggle-btn'
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
-              {showAddForm ? '收起' : '展开'}
-            </Button>
-          </View>
-
-          {showAddForm && (
-            <View className='add-form'>
-              {/* 城市选择 */}
-              <View className='form-item'>
-                <Text className='form-label'>选择城市</Text>
-                <ScrollView className='city-list' scrollX>
-                  {cities.map(city => (
-                    <Button
-                      key={city.id}
-                      className={`city-item ${selectedCity?.id === city.id ? 'selected' : ''}`}
-                      size="small"
-                      onClick={() => handleSelectCity(city)}
-                    >
-                      <Text className='city-name'>{city.name}</Text>
-                    </Button>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* 区域选择 */}
-              {selectedCity && (
-                <View className='form-item'>
-                  <Text className='form-label'>选择区域</Text>
-                  <View className='district-grid'>
-                    {selectedCity.districts.map(district => (
-                      <Button
-                        key={district.id}
-                        className={`district-item ${selectedDistrict?.id === district.id ? 'selected' : ''}`}
-                        size="small"
-                        onClick={() => handleSelectDistrict(district)}
-                      >
-                        <Text className='district-name'>{district.name}</Text>
-                      </Button>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* 详细地址 */}
-              <View className='form-item'>
-                <Text className='form-label'>详细地址</Text>
-                <Input
-                  className='address-input'
-                  placeholder='请输入详细地址（街道、门牌号等）'
-                  value={detailAddress}
-                  onInput={(e) => setDetailAddress(e.detail.value)}
-                />
-              </View>
-
-              {/* 联系人信息 */}
-              <View className='form-item'>
-                <Text className='form-label'>联系人姓名</Text>
-                <Input
-                  className='contact-input'
-                  placeholder='请输入联系人姓名'
-                  value={contactName}
-                  onInput={(e) => setContactName(e.detail.value)}
-                />
-              </View>
-
-              <View className='form-item'>
-                <Text className='form-label'>联系电话</Text>
-                <Input
-                  className='contact-input'
-                  type='number'
-                  placeholder='请输入联系电话'
-                  value={contactPhone}
-                  onInput={(e) => setContactPhone(e.detail.value)}
-                  maxlength={11}
-                />
-              </View>
-
-              {/* 保存按钮 */}
-              <Button 
-                className='save-btn'
-                onClick={handleAddAddress}
-                loading={loading}
-                disabled={loading}
-              >
-                {loading ? '保存中...' : '保存地址'}
-              </Button>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+        <Address
+          modelValue={visible}
+          modelSelect={selectedRegion}
+          type='exist'
+          isShowCustomAddress={true}
+          existAddress={existAddresses}
+          loading={loading}
+          customAddressTitle='选择收货地址'
+          existAddressTitle='配送至'
+          customAndExistTitle='选择地址'
+          height='100vh'
+          province={provinceData}
+          city={getCurrentProvinceData()}
+          country={getCurrentCityData()}
+          town={getCurrentCountryData()}
+          onSelected={handleAddressSelected}
+          onClose={handleAddressClose}
+          onCloseMask={handleMaskClose}
+          onSwitchModule={handleSwitchModule}
+          onChange={handleAddressChange}
+          onClickItem={handleClickItem}
+          onTabChecked={handleTabChecked}
+        />
       </View>
     </AuthGuard>
   )

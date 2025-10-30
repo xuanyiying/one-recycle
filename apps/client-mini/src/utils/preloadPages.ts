@@ -13,7 +13,7 @@ export function preloadCriticalPages() {
   // Preload order-related pages (high priority)
   preloadComponents([
     () => import('../pages/order/detail/index'),
-    () => import('../pages/order/list/index'),
+    () => import('../pages/order/index'),
   ]);
 }
 
@@ -25,7 +25,7 @@ export function preloadRelatedPages(currentPage: string) {
     // From home page, preload recycle and order pages
     '/pages/index/index': [
       () => import('../pages/recycle/index'),
-      () => import('../pages/order/list/index'),
+      () => import('../pages/order/index'),
       () => import('../pages/category/index'),
     ],
     
@@ -36,7 +36,7 @@ export function preloadRelatedPages(currentPage: string) {
     ],
     
     // From order list, preload order detail
-    '/pages/order/list/index': [
+    '/pages/order/index': [
       () => import('../pages/order/detail/index'),
     ],
     

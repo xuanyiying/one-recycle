@@ -7,11 +7,13 @@ import { getCategoryIcon, getCategoryGradient } from '@/config/categoryConfig'
 import './index.scss'
 import { Banner, Article } from '@/types'
 import { Category } from '@/types/category'
-import { Button, SearchBar } from '@nutui/nutui-react-taro'
-import { IconFont } from '@nutui/icons-react-taro'
+import { Button, Divider, SearchBar } from '@nutui/nutui-react-taro'
+import { IconFont, Photograph, Scan } from '@nutui/icons-react-taro'
+
+
 
 export default function Index() {
-  const [currentCity, setCurrentCity] = useState('深圳')
+  const [currentCity, setCurrentCity] = useState('北京')
   const [searchValue, setSearchValue] = useState('')
   const [banners, setBanners] = useState<Banner[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -29,7 +31,7 @@ export default function Index() {
     try {
       // 获取用户位置授权
       const authResult = await Taro.getSetting()
-      
+
       if (!authResult.authSetting['scope.userLocation']) {
         // 请求位置权限
         const authorizeResult = await Taro.authorize({
@@ -39,7 +41,7 @@ export default function Index() {
           console.log('用户拒绝位置授权，使用默认城市')
           return null
         })
-        
+
         if (!authorizeResult) {
           return
         }
@@ -52,7 +54,7 @@ export default function Index() {
 
       // 逆地理编码获取城市信息
       const cityResult = await getCityFromLocation(locationResult.latitude, locationResult.longitude)
-      
+
       if (cityResult) {
         setCurrentCity(cityResult)
       }
@@ -67,20 +69,20 @@ export default function Index() {
     try {
       // 这里可以调用第三方地理编码服务，比如腾讯地图、高德地图等
       // 为了演示，这里使用一个简化的实现
-      
+
       // 可以根据实际需求接入真实的地理编码API
       // 例如：腾讯地图逆地理编码API
       const response = await fetch(
         `https://apis.map.qq.com/ws/geocoder/v1/?location=${latitude},${longitude}&key=YOUR_API_KEY&get_poi=0`
       ).catch(() => null)
-      
+
       if (response && response.ok) {
         const data = await response.json()
         if (data.status === 0 && data.result?.address_component?.city) {
           return data.result.address_component.city.replace('市', '')
         }
       }
-      
+
       // 如果API调用失败，可以根据经纬度范围简单判断主要城市
       return getCityByCoordinates(latitude, longitude)
     } catch (error) {
@@ -121,29 +123,29 @@ export default function Index() {
     try {
       setLoading(true)
       console.log('🚀 开始初始化页面数据...')
-      
+
       const [bannersResult, categoriesResult, articlesResult] = await Promise.all([
         getBanners(),
         getAllCategories(),
         getArticles()
       ])
-      
+
       console.log('📊 API调用结果:')
       console.log('- Banners:', bannersResult)
       console.log('- Categories:', categoriesResult)
       console.log('- Articles:', articlesResult)
-      
+
       if (bannersResult.success) {
         setBanners(bannersResult.data || [])
         console.log('✅ Banners数据设置成功，数量:', bannersResult.data?.length || 0)
       } else {
         console.log('❌ Banners数据获取失败')
       }
-      
+
       // getAllCategories直接返回数组
       setCategories(categoriesResult || [])
       console.log('✅ Categories数据设置成功，数量:', categoriesResult?.length || 0)
-      
+
       if (articlesResult.success) {
         setArticles(articlesResult.data || [])
         console.log('✅ Articles数据设置成功，数量:', articlesResult.data?.length || 0)
@@ -163,18 +165,15 @@ export default function Index() {
   }
 
   // 处理搜索
-  const handleSearch = useCallback(() => {
-    if (!searchValue.trim()) {
+  const handleSearch = useCallback((keyword: string) => {
+    if (!keyword.trim()) {
       Taro.showToast({
         title: '请输入搜索内容',
         icon: 'none'
       })
       return
     }
-    
-    Taro.navigateTo({
-      url: `/pages/search/index?keyword=${encodeURIComponent(searchValue)}`
-    })
+
   }, [searchValue])
 
   // 处理城市选择
@@ -232,17 +231,25 @@ export default function Index() {
             <Text className='city-arrow'>▼</Text>
           </Button>
         </View>
-        
+
         {/* 搜索框 */}
         <View className='search-container'>
           <SearchBar
-            className='search-bar'
-            placeholder='搜索回收品类'
+            leftIn={<Scan />}
+            placeholder="搜索回收品类"
             value={searchValue}
-            onChange={(val) => setSearchValue(val)}
+            onChange={setSearchValue}
             onSearch={handleSearch}
-            shape='round'
+            onClear={() => setSearchValue('')}
             clearable
+            shape='round' 
+            rightIn={
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Photograph color="#888B94" onClick={() => handleSearch(searchValue)} />
+                <Divider direction="vertical" />
+                <IconFont name="search" color="$primary-color" size="24" />
+              </div>
+            }
           />
         </View>
       </View>
@@ -257,11 +264,11 @@ export default function Index() {
               size={'small'}
               onClick={() => handleCategoryClick(item.name)}
             >
-              <View 
-                className='category-icon' 
+              <View
+                className='category-icon'
                 style={{ background: getCategoryGradient(item.name) }}
               >
-                <IconFont name={getCategoryIcon(item.name)} size='24' color='white'/>
+                <IconFont name={getCategoryIcon(item.name)} size='24' color='white' />
               </View>
               <Text className='category-name'>{item.name}</Text>
             </Button>

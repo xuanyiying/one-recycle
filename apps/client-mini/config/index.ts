@@ -109,6 +109,67 @@ const config = {
           generateScopedName: '[name]__[local]___[hash:base64:5]'
         }
       }
+    },
+    // 添加 webpack 优化配置来减少 bundle 大小
+    webpackChain(chain: any) {
+      // 配置代码分割优化
+      chain.optimization.splitChunks({
+        chunks: 'all',
+        cacheGroups: {
+          // 分离 React 相关库
+          react: {
+            name: 'react-vendors',
+            test: /[\\/]node_modules[\\/](react|react-dom|react-refresh)[\\/]/,
+            priority: 20,
+            chunks: 'all',
+            reuseExistingChunk: true
+          },
+          // 分离 Taro 相关库
+          taro: {
+            name: 'taro-vendors',
+            test: /[\\/]node_modules[\\/]@tarojs[\\/]/,
+            priority: 15,
+            chunks: 'all',
+            reuseExistingChunk: true
+          },
+          // 分离 NutUI 相关库
+          nutui: {
+            name: 'nutui-vendors',
+            test: /[\\/]node_modules[\\/]@nutui[\\/]/,
+            priority: 15,
+            chunks: 'all',
+            reuseExistingChunk: true
+          },
+          // 分离其他第三方库
+          vendors: {
+            name: 'vendors',
+            test: /[\\/]node_modules[\\/]/,
+            priority: 10,
+            chunks: 'all',
+            minSize: 30000,
+            maxSize: 200000, // 限制单个 chunk 最大 200KB
+            reuseExistingChunk: true
+          },
+          // 分离公共代码
+          common: {
+            name: 'common',
+            minChunks: 2,
+            priority: 5,
+            chunks: 'all',
+            reuseExistingChunk: true
+          }
+        }
+      })
+
+      // 设置性能预算，提高警告阈值
+      chain.performance
+        .maxAssetSize(300000) // 300KB
+        .maxEntrypointSize(300000) // 300KB
+        .hints('warning')
+
+      // 启用 Tree Shaking
+      chain.optimization.usedExports(true)
+      chain.optimization.sideEffects(false)
     }
   }
 }

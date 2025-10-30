@@ -1,106 +1,171 @@
-import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Image } from '@tarojs/components'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { View, Text } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { Button, Divider } from '@nutui/nutui-react-taro'
+
 import { IconFont } from '@nutui/icons-react-taro'
 import { useAppContext } from '@/store'
-import { getUserOrders } from '@/services/order'
 import { getUserInfo } from '@/services/user'
 import accountService from '@/services/account'
-import { Order } from '@/types'
 import type { Account } from '@/types/account'
 import AuthGuard from '@/components/AuthGuard'
+import { useResponsive } from '@/hooks/useResponsive'
 import './index.scss'
+import { Avatar } from '@nutui/nutui-react-taro'
 
+// TypeScript interfaces for component state
 interface UserInfo {
     avatarUrl: string
     nickName: string
     mobile: string
 }
 
-interface Stats {
+interface AccountStats {
     totalOrders: number
     totalAmount: number
     savedCarbon: number
 }
 
-export default function Profile() {
+interface LoadingState {
+    isLoading: boolean
+    error: string | null
+    retryCount: number
+}
+
+export default function Profile(): JSX.Element {
     const [userInfo, setUserInfo] = useState<UserInfo>({
         avatarUrl: '',
         nickName: '',
         mobile: ''
     })
-    const [stats, setStats] = useState<Stats>({
+    const [stats, setStats] = useState<AccountStats>({
         totalOrders: 0,
         totalAmount: 0,
         savedCarbon: 0
     })
-    const [orders, setOrders] = useState<Order[]>([])
     const [account, setAccount] = useState<Account | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [showOrderList, setShowOrderList] = useState(false)
+    const [loadingState, setLoadingState] = useState<LoadingState>({
+        isLoading: true,
+        error: null,
+        retryCount: 0
+    })
     
     const { state, dispatch } = useAppContext()
+    const screenSize = useResponsive()
 
-    const loadUserProfile = useCallback(async () => {
+    // Memoized computed values for performance optimization
+    const formattedStats = useMemo(() => ({
+        totalOrders: stats.totalOrders,
+        totalAmount: stats.totalAmount.toFixed(2),
+        savedCarbon: stats.savedCarbon.toFixed(1),
+        availableBalance: account ? accountService.formatAmount(account.availableBalance) : '¥0.00'
+    }), [stats.totalOrders, stats.totalAmount, stats.savedCarbon, account?.availableBalance])
+
+    const hasError = loadingState.error !== null
+    const isLoading = loadingState.isLoading
+    const canRetry = loadingState.retryCount < 3
+
+    const loadUserProfile = useCallback(async (isRetry = false) => {
         try {
-            setLoading(true)
-            if (state.user?.id) {
-                // 获取用户信息
-                const userInfoResult = await getUserInfo(state.user.id)
-                
-                // 获取账户信息（新的积分账户）
-                const accountData = await accountService.getMyAccount()
-                
-                // 获取账户统计
-                const statsData = await accountService.getMyStats()
-                
-                // 获取订单列表
-                const ordersResult = await getUserOrders(state.user.id)
-                
-                // 获取订单统计数据（基于实际订单计算）
-                let totalOrders = statsData.totalOrders || 0
-                let totalAmount = statsData.totalIncome || 0
-                if (ordersResult.success && ordersResult.data) {
-                    setOrders(ordersResult.data.items)
-                }
+            setLoadingState(prev => ({
+                ...prev,
+                isLoading: true,
+                error: null,
+                retryCount: isRetry ? prev.retryCount + 1 : 0
+            }))
 
-                if (userInfoResult.success && userInfoResult.data) {
-                    setUserInfo({
-                        avatarUrl: userInfoResult.data.avatar || '',
-                        nickName: userInfoResult.data.nickname || '未设置昵称',
-                        mobile: userInfoResult.data.phone || '未绑定手机'
-                    })
-                }
+            if (!state.user?.id) {
+                setLoadingState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    error: '用户未登录'
+                }))
+                return
+            }
 
-                setAccount(accountData)
+            // 并行请求优化性能
+            const [userInfoResult, accountData, statsData] = await Promise.allSettled([
+                getUserInfo(state.user.id),
+                accountService.getMyAccount(),
+                accountService.getMyStats()
+            ])
 
+            // 处理用户信息
+            if (userInfoResult.status === 'fulfilled' && userInfoResult.value.success && userInfoResult.value.data) {
+                setUserInfo({
+                    avatarUrl: userInfoResult.value.data.avatar || '',
+                    nickName: userInfoResult.value.data.nickname || '未设置昵称',
+                    mobile: userInfoResult.value.data.phone || '未绑定手机'
+                })
+            } else {
+                console.warn('获取用户信息失败:', userInfoResult.status === 'rejected' ? userInfoResult.reason : '数据格式错误')
+            }
+
+            // 处理账户信息
+            if (accountData.status === 'fulfilled') {
+                setAccount(accountData.value)
+            } else {
+                console.warn('获取账户信息失败:', accountData.reason)
+            }
+
+            // 处理统计信息
+            if (statsData.status === 'fulfilled') {
+                const totalOrders = statsData.value.totalOrders || 0
+                const totalAmount = statsData.value.totalIncome || 0
+                
                 setStats({
                     totalOrders,
                     totalAmount,
                     savedCarbon: totalAmount * 0.02 // 假设每元收益减碳0.02kg
                 })
-                
-                setLoading(false)
             } else {
-                setLoading(false)
+                console.warn('获取统计信息失败:', statsData.reason)
             }
+
+            setLoadingState(prev => ({
+                ...prev,
+                isLoading: false,
+                error: null
+            }))
+
         } catch (error) {
             console.error('加载用户资料失败:', error)
-            Taro.showToast({
-                title: '加载失败',
-                icon: 'none'
-            })
-            setLoading(false)
+            const errorMessage = error instanceof Error ? error.message : '网络连接失败，请检查网络后重试'
+            
+            setLoadingState(prev => ({
+                ...prev,
+                isLoading: false,
+                error: errorMessage
+            }))
+
+            // 只在非重试情况下显示错误提示
+            if (!isRetry) {
+                Taro.showToast({
+                    title: '加载失败',
+                    icon: 'none',
+                    duration: 2000
+                })
+            }
         }
     }, [state.user?.id])
 
-    // 下拉刷新
-    usePullDownRefresh(() => {
+    // 重试加载函数
+    const retryLoad = useCallback(() => {
+        if (canRetry) {
+            loadUserProfile(true)
+        } else {
+            Taro.showToast({
+                title: '重试次数过多，请稍后再试',
+                icon: 'none'
+            })
+        }
+    }, [loadUserProfile, canRetry])
+
+    // 下拉刷新 - 使用原生Taro实现
+    usePullDownRefresh(useCallback(() => {
         loadUserProfile().finally(() => {
             Taro.stopPullDownRefresh()
         })
-    })
+    }, [loadUserProfile]))
 
     useEffect(() => {
         loadUserProfile()
@@ -118,10 +183,6 @@ export default function Profile() {
         })
     }, [])
 
-    const onInvoiceManage = useCallback(() => {
-        console.log('发票管理')
-    }, [])
-
     const onContactService = useCallback(() => {
         console.log('联系客服')
     }, [])
@@ -133,17 +194,34 @@ export default function Profile() {
     }, [])
 
     const handleViewOrders = useCallback(() => {
-        setShowOrderList(true)
+        Taro.navigateTo({
+            url: '/pages/order/list'
+        })
     }, [])
 
     const handleViewBalance = useCallback(() => {
-        if (!account) return
-        Taro.showModal({
-            title: '账户余额',
-            content: `可用余额：${accountService.formatAmount(account.availableBalance)}\n冻结余额：${accountService.formatAmount(account.frozenBalance)}\n累计收益：${accountService.formatAmount(account.totalIncome)}\n累计提现：${accountService.formatAmount(account.totalWithdrawal)}`,
-            showCancel: false,
-            confirmText: '确定'
-        })
+        if (!account) {
+            Taro.showToast({
+                title: '账户信息加载中',
+                icon: 'none'
+            })
+            return
+        }
+        
+        try {
+            Taro.showModal({
+                title: '账户余额',
+                content: `可用余额：${accountService.formatAmount(account.availableBalance)}\n冻结余额：${accountService.formatAmount(account.frozenBalance)}\n累计收益：${accountService.formatAmount(account.totalIncome)}\n累计提现：${accountService.formatAmount(account.totalWithdrawal)}`,
+                showCancel: false,
+                confirmText: '确定'
+            })
+        } catch (error) {
+            console.error('显示余额详情失败:', error)
+            Taro.showToast({
+                title: '操作失败',
+                icon: 'none'
+            })
+        }
     }, [account])
 
     const handleWithdraw = useCallback(() => {
@@ -162,179 +240,189 @@ export default function Profile() {
         Taro.showModal({
             title: '确认退出',
             content: '确定要退出登录吗？',
+            confirmText: '退出',
+            confirmColor: '#FF3B30', // iOS 红色用于破坏性操作
+            cancelText: '取消',
+            cancelColor: '#007AFF', // iOS 蓝色
             success: (res) => {
                 if (res.confirm) {
-                    dispatch({ type: 'LOGOUT' })
-                    Taro.reLaunch({
-                        url: '/pages/login/index'
-                    })
+                    try {
+                        dispatch({ type: 'LOGOUT' })
+                        Taro.reLaunch({
+                            url: '/pages/login/index'
+                        })
+                    } catch (error) {
+                        console.error('退出登录失败:', error)
+                        Taro.showToast({
+                            title: '退出失败，请重试',
+                            icon: 'none',
+                            duration: 2000
+                        })
+                    }
                 }
+            },
+            fail: (error) => {
+                console.error('显示退出确认弹窗失败:', error)
+                Taro.showToast({
+                    title: '操作失败',
+                    icon: 'none'
+                })
             }
         })
     }, [dispatch])
 
-    if (loading) {
-        return (
-            <View className='profile-page'>
-                <Text>加载中...</Text>
+    // iOS标准加载状态组件
+    const LoadingComponent = useMemo(() => (
+        <View className='profile-page'>
+            <View className='loading-container'>
+                <IconFont className='loading-spinner' name='loading' size='24' color='var(--ios-blue)'></IconFont>
+                <Text className='loading-text'>加载中...</Text>
             </View>
-        )
+        </View>
+    ), [])
+
+    // 错误状态组件
+    const ErrorComponent = useMemo(() => (
+        <View className='profile-page'>
+            <View className='error-container'>
+                <IconFont name='warning' size='48' color='var(--ios-gray)'></IconFont>
+                <Text className='error-title'>加载失败</Text>
+                <Text className='error-message'>{loadingState.error}</Text>
+                {canRetry && (
+                    <View className='error-actions'>
+                        <View className='ios-button-primary retry-btn' onClick={retryLoad}>
+                            <Text>重试 ({3 - loadingState.retryCount})</Text>
+                        </View>
+                    </View>
+                )}
+            </View>
+        </View>
+    ), [loadingState.error, canRetry, retryLoad, loadingState.retryCount])
+
+    if (isLoading) {
+        return LoadingComponent
+    }
+
+    if (hasError) {
+        return ErrorComponent
     }
 
     return (
         <AuthGuard>
             <View className='profile-page'>
             {/* 用户信息卡片 */}
-            <View className='user-section'>
+            <View className={`user-section ${screenSize.screenType}`}>
                 <View className='user-info'>
-                    <Image
-                        className='user-avatar'
-                        src={userInfo.avatarUrl || 'https://example.com/avatar.jpg'}
-                        mode='aspectFill'
-                    />
-                    <View className='user-details'>
-                        <Text className='user-nickname'>{userInfo.nickName}</Text>
-                        <Text className='user-level'>普通用户</Text>
-                        <Text className='user-phone'>{userInfo.mobile}</Text>
+                    <View className='user-avatar-container' onClick={onEditProfile}>
+                        <Avatar
+                            className='user-avatar'
+                            src={userInfo.avatarUrl || ''}
+                            shape='round'
+                        />
                     </View>
-                    <Button
-                        className='edit-btn'
-                        size='mini'
-                        onClick={onEditProfile}
-                    >
-                        编辑
-                    </Button>
+                    <View className='user-details'>
+                        <Text className='user-nickname'>{userInfo.nickName || '未设置昵称'}</Text>
+                        <Text className='user-phone'>{userInfo.mobile || '未绑定手机'}</Text>
+                    </View>
                 </View>
             </View>
 
             {/* 统计信息 */}
-            <View className='user-section'>
+            <View className={`user-section ${screenSize.screenType}`}>
                 <View className='stats-section'>
                     <View className='stats-grid'>
-                        <Button className='stat-item' onClick={handleViewOrders}>
-                            <IconFont name='file' size='24' color='#00B894'></IconFont>
-                            <Text className='stat-value'>{stats.totalOrders}</Text>
+                        <View className='stat-item stat-orders' onClick={handleViewOrders}>
+                            <IconFont name='file' size='24' color='white'></IconFont>
+                            <Text className='stat-value'>{formattedStats.totalOrders}</Text>
                             <Text className='stat-label'>累计订单</Text>
-                        </Button>
-                        <Button className='stat-item'  onClick={handleViewBalance}>
-                            <IconFont name='money' size='24' color='#00B894'></IconFont>
-                            <Text className='stat-value'>¥{stats.totalAmount.toFixed(2)}</Text>
+                        </View>
+                        <View className='stat-item stat-earnings' onClick={handleViewBalance}>
+                            <IconFont name='money' size='24' color='white'></IconFont>
+                            <Text className='stat-value'>¥{formattedStats.totalAmount}</Text>
                             <Text className='stat-label'>累计收益</Text>
-                        </Button>
-                        <View className='stat-item'>
-                            <IconFont name='cloud' size='24' color='#00B894'></IconFont>
-                            <Text className='stat-value'>{stats.savedCarbon.toFixed(1)}kg</Text>
+                        </View>
+                        <View className='stat-item stat-carbon'>
+                            <IconFont name='cloud' size='24' color='white'></IconFont>
+                            <Text className='stat-value'>{formattedStats.savedCarbon}kg</Text>
                             <Text className='stat-label'>减碳贡献</Text>
                         </View>
-                        <Button className='stat-item' onClick={handleViewBalance}>
-                            <IconFont name='wallet' size='24' color='#00B894'></IconFont>
-                            <Text className='stat-value'>
-                                {account ? accountService.formatAmount(account.availableBalance) : '¥0.00'}
-                            </Text>
+                        <View className='stat-item stat-balance' onClick={handleViewBalance}>
+                            <IconFont name='wallet' size='24' color='white'></IconFont>
+                            <Text className='stat-value'>{formattedStats.availableBalance}</Text>
                             <Text className='stat-label'>可用余额</Text>
-                        </Button>
+                        </View>
                     </View>
-                    {/* 余额操作按钮 */}
-                    {account && (
-                        <View className='balance-actions'>
-                            <Button className='action-btn' size='mini' onClick={handleWithdraw}>
-                                提现
-                            </Button>
-                            <Button className='action-btn' size='mini' onClick={handleTransactions}>
-                                明细
-                            </Button>
-                        </View>
-                    )}
-                    {account && account.frozenBalance > 0 && (
-                        <View className='frozen-tip'>
-                            <Text className='frozen-text'>
-                                冻结金额：{accountService.formatAmount(account.frozenBalance)}
-                            </Text>
-                        </View>
-                    )}
                 </View>
             </View>
 
-            {/* 订单列表弹窗 */}
-            {showOrderList && (
-                <View className='order-list-modal'>
-                    <View className='modal-header'>
-                        <Text className='modal-title'>我的订单</Text>
-                        <Button 
-                            className='close-btn' 
-                            size='mini'
-                            onClick={() => setShowOrderList(false)}
-                        >
-                            关闭
-                        </Button>
+            {/* 账户余额和操作 */}
+            {account && (
+                <View className={`balance-section ${screenSize.screenType}`}>
+                    <View className='balance-header'>
+                        <Text className='balance-title'>账户余额</Text>
+                        <IconFont name='wallet' size='24' color='white'></IconFont>
                     </View>
-                    <View className='order-list'>
-                        {orders.map(order => (
-                            <View key={order.id} className='order-item'>
-                                <View className='order-header'>
-                                    <Text className='order-number'>{order.id}</Text>
-                                    <Text className={`order-status status-${order.status}`}>
-                                        {order.statusText}
-                                    </Text>
-                                </View>
-                                <Text className='order-desc'>{order.categoryName} - {order.items.join(', ')}</Text>
-                                <View className='order-footer'>
-                                    <Text className='order-time'>{order.createTime}</Text>
-                                    <Text className='order-price'>
-                                        ¥{(order.actualPrice || order.estimatedPrice).toFixed(2)}
-                                    </Text>
-                                </View>
-                            </View>
-                        ))}
-                        {orders.length === 0 && (
-                            <View className='empty-orders'>
-                                <Text>暂无订单</Text>
-                            </View>
-                        )}
+                    <Text className='balance-amount'>
+                        {accountService.formatAmount(account.availableBalance)}
+                    </Text>
+                    <Text className='balance-desc'>可用余额</Text>
+                    <View className='balance-actions'>
+                        <View className='balance-btn' onClick={handleWithdraw}>
+                            <Text>提现</Text>
+                        </View>
+                        <View className='balance-btn' onClick={handleTransactions}>
+                            <Text>交易明细</Text>
+                        </View>
                     </View>
+                    {account.frozenBalance > 0 && (
+                        <View className='frozen-warning'>
+                            <IconFont name='warning' size='16' color='#FF9500'></IconFont>
+                            <Text className='frozen-text'>
+                                冻结余额：{accountService.formatAmount(account.frozenBalance)}
+                            </Text>
+                        </View>
+                    )}
                 </View>
             )}
-            <Divider/>
+
             {/* 功能菜单 */}
-            <View className='menu-section'>
-                <Button className='menu-item' onClick={onAddressManage} block>
+            <View className={`menu-section ${screenSize.screenType}`}>
+                <View className='menu-item' onClick={onAddressManage}>
                     <View className='menu-content'>
-                        <IconFont name='location' size='18' color='#636e72' className='menu-icon'></IconFont>
-                        <Text className='menu-title'>收货地址</Text>
+                        <View className='menu-icon'>
+                            <IconFont name='location' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                        </View>
+                        <Text className='menu-title'>地址管理</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </Button>
+                </View>
 
-                <Button className='menu-item' onClick={onInvoiceManage} block>
+                <View className='menu-item' onClick={onContactService}>
                     <View className='menu-content'>
-                        <IconFont name='credit-card' size='18' color='#636e72' className='menu-icon'></IconFont>
-                        <Text className='menu-title'>发票管理</Text>
-                    </View>
-                    <Text className='menu-arrow'>›</Text>
-                </Button>
-
-                <Button className='menu-item' onClick={onContactService} block>
-                    <View className='menu-content'>
-                        <IconFont name='phone' size='18' color='#636e72' className='menu-icon'></IconFont>
+                        <View className='menu-icon'>
+                            <IconFont name='phone' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                        </View>
                         <Text className='menu-title'>联系客服</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </Button>
+                </View>
 
-                <Button className='menu-item' onClick={onSettings} block>
+                <View className='menu-item' onClick={onSettings}>
                     <View className='menu-content'>
-                        <IconFont name='settings' size='18' color='#636e72' className='menu-icon'></IconFont>
+                        <View className='menu-icon'>
+                            <IconFont name='settings' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                        </View>
                         <Text className='menu-title'>设置</Text>
                     </View>
                     <Text className='menu-arrow'>›</Text>
-                </Button>
+                </View>
             </View>
 
             {/* 退出登录 */}
-            <View className='logout-section'>
-                <Button className='logout-btn' onClick={handleLogout}>
-                    退出登录
-                </Button>
+            <View className={`logout-section ${screenSize.screenType}`}>
+                <View className='logout-btn' onClick={handleLogout}>
+                    <Text>退出登录</Text>
+                </View>
             </View>
         </View>
         </AuthGuard>

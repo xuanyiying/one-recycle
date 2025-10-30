@@ -1,5 +1,5 @@
 @use '../../styles/variables.scss' as *;
-@use '../../styles/ios-design-system.scss' as *;
+@use '../../styles/ios.scss' as *;
 
 // iOS Home Page Styles
 // Following Apple Human Interface Guidelines
@@ -170,7 +170,7 @@
   }
 
   .search-container {
-    padding: 0 $page-padding $spacing-16; // 0 16pt 16pt
+    padding: 0 $page-padding; // 0 16pt 16pt
 
     .search-bar {
       background-color: rgba(255, 255, 255, 0.15);
@@ -195,65 +195,6 @@
 
       .nut-searchbar-clear-icon {
         color: rgba(255, 255, 255, 0.8);
-      }
-    }
-  }
-}
-
-// ==================== 快速操作区域 ====================
-.quick-actions {
-  padding: $spacing-20 $page-padding; // 20pt 16pt
-  background-color: var(--ios-system-background);
-  margin-top: -$spacing-16; // -16pt 重叠效果
-  border-radius: $border-radius-lg $border-radius-lg 0 0; // 20pt 顶部圆角
-
-  .section-title {
-    @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
-    font-weight: $font-weight-semibold;
-    margin-bottom: $spacing-16; // 16pt
-    text-align: center;
-  }
-
-  .actions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: $spacing-16; // 16pt
-
-    .action-item {
-      @extend .ios-card;
-      padding: $spacing-20; // 20pt
-      text-align: center;
-      transition: all 0.2s ease;
-
-      &:active {
-        transform: scale(0.95);
-        background-color: var(--ios-tertiary-system-grouped-background);
-      }
-
-      .action-icon {
-        width: 96rpx; // 48pt
-        height: 96rpx; // 48pt
-        margin: 0 auto $spacing-12; // 0 auto 12pt
-        background-color: var(--ios-blue);
-        border-radius: 50%;
-        @include flex-center;
-        
-        image {
-          width: 48rpx; // 24pt
-          height: 48rpx; // 24pt
-        }
-      }
-
-      .action-title {
-        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
-        font-weight: $font-weight-semibold;
-        margin-bottom: $spacing-4; // 4pt
-      }
-
-      .action-desc {
-        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-        color: var(--ios-secondary-label);
-        line-height: $line-height-relaxed;
       }
     }
   }
@@ -417,17 +358,17 @@
 
 // ==================== 环保资讯板块 ====================
 .article-section {
-  padding: $spacing-32 $page-padding $spacing-24; // 32pt 16pt 24pt 增加顶部间距
+  padding: $spacing-24 $page-padding; // 24pt 16pt 减少顶部间距
   background-color: var(--ios-system-background);
-  margin-top: $spacing-16; // 16pt 与上方内容分离
+  margin-top: $spacing-12; // 12pt 减少与上方内容的间距
 
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: $spacing-24; // 24pt 增加底部间距
-    padding-bottom: $spacing-16; // 16pt 增加内边距
-    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+    margin-bottom: $spacing-20; // 20pt 减少底部间距
+    padding-bottom: 0; // 移除内边距
+    // 移除边框
     position: relative;
 
     .section-title {
@@ -471,29 +412,29 @@
   .article-list {
     display: flex;
     flex-direction: column;
-    gap: $spacing-20; // 20pt 增加卡片间距
+    gap: $spacing-16; // 16pt 减少卡片间距
 
     .article-card {
-      @extend .ios-card;
-      padding: 0;
+      display: flex;
+      align-items: flex-start;
+      padding: $spacing-16; // 16pt 统一内边距
       overflow: hidden;
-      transition: all 0.3s ease; // 增加动画时长
+      transition: all 0.2s ease;
       background-color: var(--ios-secondary-system-grouped-background);
-      border: none;
-      border-radius: $border-radius-lg; // 16pt 更大圆角
-      box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.04); // 添加轻微阴影
+      border: none; // 确保无边框
+      border-radius: $border-radius-base; // 12pt 减少圆角
+      // 移除阴影以简化视觉效果
 
       &:active {
-        transform: scale(0.98);
+        transform: scale(0.99);
         background-color: var(--ios-tertiary-system-grouped-background);
-        box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.08); // 按下时增强阴影
       }
 
       .article-image {
-        width: 140rpx; // 70pt 稍微缩小图片
-        height: 100rpx; // 50pt
-        border-radius: $border-radius-base; // 12pt
-        margin-right: $spacing-16; // 16pt
+        width: 120rpx; // 60pt 进一步缩小图片
+        height: 90rpx; // 45pt
+        border-radius: $border-radius-sm; // 8pt 减少圆角
+        margin-right: $spacing-12; // 12pt 减少间距
         background-color: var(--ios-tertiary-system-background);
         flex-shrink: 0;
         object-fit: cover;
@@ -503,32 +444,32 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        min-height: 100rpx; // 50pt 调整最小高度
-        padding: $spacing-16; // 16pt 统一内边距
+        justify-content: flex-start;
+        min-height: 90rpx; // 45pt 调整最小高度
+        // 移除内边距，因为父容器已有
 
         .article-title {
-          @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+          @extend .ios-body; // 使用 iOS Body 样式 (34rpx) 稍大一些
           font-weight: $font-weight-semibold;
           color: var(--ios-label);
-          line-height: $line-height-normal;
-          margin-bottom: $spacing-8; // 8pt
+          line-height: 1.3;
+          margin-bottom: $spacing-4; // 4pt 减少间距
           display: -webkit-box;
           -webkit-line-clamp: 2;
-          line-clamp: 2; // 添加标准属性
+          line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
         .article-summary {
-          @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          @extend .ios-caption1; // 使用 iOS Caption1 样式 (24rpx) 更小一些
           color: var(--ios-secondary-label);
-          line-height: $line-height-relaxed;
-          margin-bottom: $spacing-12; // 12pt
+          line-height: 1.4;
+          margin-bottom: $spacing-8; // 8pt 减少间距
           display: -webkit-box;
           -webkit-line-clamp: 2;
-          line-clamp: 2; // 添加标准属性
+          line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;

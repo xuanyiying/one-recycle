@@ -5,7 +5,7 @@ export default {
         'pages/category/index',
         'pages/recycle/index',
         'pages/address/select/index',
-        'pages/order/list/index',
+        'pages/order/index',
         'pages/order/confirm/index',
         'pages/order/detail/index',
         'pages/pricing/index',
@@ -19,7 +19,6 @@ export default {
         'pages/withdrawal/list/index',
         'pages/withdrawal/detail/index',
         'pages/transaction/list/index',
-        'pages/test-auth/index',
     ],
     window: {
         backgroundTextStyle: 'light',
@@ -47,7 +46,7 @@ export default {
                 selectedIconPath: 'assets/icons/recycle-active.png'
             },
             {
-                pagePath: 'pages/order/list/index',
+                pagePath: 'pages/order/index',
                 text: '订单',
                 iconPath: 'assets/icons/order.png',
                 selectedIconPath: 'assets/icons/order-active.png'

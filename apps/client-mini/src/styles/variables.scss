@@ -44,16 +44,16 @@ $font-family-number: 'SF Mono', 'SF Pro Display', -apple-system, BlinkMacSystemF
 
 // iOS 标准字体大小 - 严格按照 Apple Human Interface Guidelines
 // 所有尺寸已转换为 rpx 单位确保多设备适配
-$font-size-caption2: 22rpx;    // 11pt - iOS Caption 2 (最小辅助文字)
-$font-size-caption1: 24rpx;    // 12pt - iOS Caption 1 (辅助信息、标签)
-$font-size-footnote: 26rpx;    // 13pt - iOS Footnote (次要文本、说明文字)
+$font-size-caption2: 22rpx; // 11pt - iOS Caption 2 (最小辅助文字)
+$font-size-caption1: 24rpx; // 12pt - iOS Caption 1 (辅助信息、标签)
+$font-size-footnote: 26rpx; // 13pt - iOS Footnote (次要文本、说明文字)
 $font-size-subheadline: 30rpx; // 15pt - iOS Subheadline (副标题)
-$font-size-callout: 32rpx;     // 16pt - iOS Callout (强调文本)
-$font-size-body: 34rpx;        // 17pt - iOS Body (正文、基础文本)
-$font-size-headline: 36rpx;    // 18pt - iOS Headline (小标题)
-$font-size-title3: 40rpx;      // 20pt - iOS Title 3 (三级标题)
-$font-size-title2: 44rpx;      // 22pt - iOS Title 2 (二级标题)
-$font-size-title1: 56rpx;      // 28pt - iOS Title 1 (一级标题)
+$font-size-callout: 32rpx; // 16pt - iOS Callout (强调文本)
+$font-size-body: 34rpx; // 17pt - iOS Body (正文、基础文本)
+$font-size-headline: 36rpx; // 18pt - iOS Headline (小标题)
+$font-size-title3: 40rpx; // 20pt - iOS Title 3 (三级标题)
+$font-size-title2: 44rpx; // 22pt - iOS Title 2 (二级标题)
+$font-size-title1: 56rpx; // 28pt - iOS Title 1 (一级标题)
 $font-size-large-title: 68rpx; // 34pt - iOS Large Title (页面主标题)
 
 // 兼容性别名 - 保持向后兼容
@@ -69,29 +69,29 @@ $font-size-display: $font-size-large-title;
 
 // iOS 字体权重 - 遵循 SF Pro 字体权重规范
 $font-weight-ultralight: 100; // iOS Ultralight
-$font-weight-thin: 200;       // iOS Thin
-$font-weight-light: 300;      // iOS Light
-$font-weight-regular: 400;    // iOS Regular (默认)
-$font-weight-medium: 500;     // iOS Medium
-$font-weight-semibold: 600;   // iOS Semibold
-$font-weight-bold: 700;       // iOS Bold
-$font-weight-heavy: 800;      // iOS Heavy
-$font-weight-black: 900;      // iOS Black
+$font-weight-thin: 200; // iOS Thin
+$font-weight-light: 300; // iOS Light
+$font-weight-regular: 400; // iOS Regular (默认)
+$font-weight-medium: 500; // iOS Medium
+$font-weight-semibold: 600; // iOS Semibold
+$font-weight-bold: 700; // iOS Bold
+$font-weight-heavy: 800; // iOS Heavy
+$font-weight-black: 900; // iOS Black
 
 // 兼容性别名
 $font-weight-normal: $font-weight-regular;
 
 // iOS 行高规范 - 基于 Apple 设计指南
-$line-height-tight: 1.08;    // iOS 紧凑行高 (Large Title)
-$line-height-normal: 1.176;  // iOS 标准行高 (Body Text)
+$line-height-tight: 1.08; // iOS 紧凑行高 (Large Title)
+$line-height-normal: 1.176; // iOS 标准行高 (Body Text)
 $line-height-relaxed: 1.294; // iOS 舒适行高 (长文本阅读)
-$line-height-loose: 1.5;     // iOS 宽松行高 (特殊场景)
+$line-height-loose: 1.5; // iOS 宽松行高 (特殊场景)
 
 // ==================== iOS 间距规范 ====================
 // iOS 标准间距 - 严格遵循 Apple 8pt 网格系统，转换为 rpx
-$spacing-2: 4rpx;   // 2pt - 最小间距
-$spacing-4: 8rpx;   // 4pt - 极小间距
-$spacing-8: 16rpx;  // 8pt - iOS 基础间距单位
+$spacing-2: 4rpx; // 2pt - 最小间距
+$spacing-4: 8rpx; // 4pt - 极小间距
+$spacing-8: 16rpx; // 8pt - iOS 基础间距单位
 $spacing-12: 24rpx; // 12pt - 小间距
 $spacing-16: 32rpx; // 16pt - iOS 标准页面边距
 $spacing-20: 40rpx; // 20pt - 中等间距
@@ -109,47 +109,47 @@ $spacing-xl: $spacing-32;
 $spacing-xxl: $spacing-40;
 
 // iOS 页面级间距规范
-$page-padding: $spacing-16;     // 16pt - iOS 标准页面左右边距
-$section-margin: $spacing-20;   // 20pt - iOS 分组列表间距
-$card-padding: $spacing-16;     // 16pt - iOS 卡片内边距
+$page-padding: $spacing-16; // 16pt - iOS 标准页面左右边距
+$section-margin: $spacing-20; // 20pt - iOS 分组列表间距
+$card-padding: $spacing-16; // 16pt - iOS 卡片内边距
 $list-item-padding: $spacing-16; // 16pt - iOS 列表项内边距
-$group-spacing: $spacing-20;    // 20pt - iOS 分组间距
+$group-spacing: $spacing-20; // 20pt - iOS 分组间距
 
 // ==================== iOS 触摸目标规范 ====================
 // iOS Human Interface Guidelines 触摸目标标准，转换为 rpx
-$touch-target-min: 88rpx;        // 44pt - iOS 最小触摸目标
+$touch-target-min: 88rpx; // 44pt - iOS 最小触摸目标
 $touch-target-recommended: 96rpx; // 48pt - iOS 推荐触摸目标
 $touch-target-comfortable: 104rpx; // 52pt - iOS 舒适触摸目标
 
 // iOS 按钮高度标准 - 严格遵循 Apple 设计规范
-$button-height-sm: 60rpx;   // 30pt - iOS 小按钮 (紧凑场景)
-$button-height-md: 88rpx;   // 44pt - iOS 标准按钮高度
-$button-height-lg: 100rpx;  // 50pt - iOS 大按钮 (主要操作)
-$button-height-xl: 112rpx;  // 56pt - iOS 超大按钮 (特殊场景)
+$button-height-sm: 60rpx; // 30pt - iOS 小按钮 (紧凑场景)
+$button-height-md: 88rpx; // 44pt - iOS 标准按钮高度
+$button-height-lg: 100rpx; // 50pt - iOS 大按钮 (主要操作)
+$button-height-xl: 112rpx; // 56pt - iOS 超大按钮 (特殊场景)
 
 // iOS 控件高度标准
-$input-height: 88rpx;       // 44pt - iOS 输入框标准高度
-$cell-height-sm: 88rpx;     // 44pt - iOS 紧凑列表项高度
-$cell-height-md: 112rpx;    // 56pt - iOS 标准列表项高度
-$cell-height-lg: 136rpx;    // 68pt - iOS 大列表项高度
+$input-height: 88rpx; // 44pt - iOS 输入框标准高度
+$cell-height-sm: 88rpx; // 44pt - iOS 紧凑列表项高度
+$cell-height-md: 112rpx; // 56pt - iOS 标准列表项高度
+$cell-height-lg: 136rpx; // 68pt - iOS 大列表项高度
 
 // ==================== iOS 圆角规范 ====================
 // iOS 标准圆角半径 - 严格遵循 Apple 设计规范，转换为 rpx
-$border-radius-none: 0;      // 无圆角
-$border-radius-xs: 8rpx;     // 4pt - iOS 最小圆角 (小标签)
-$border-radius-sm: 16rpx;    // 8pt - iOS 小圆角 (按钮、输入框)
-$border-radius-base: 24rpx;  // 12pt - iOS 标准圆角 (卡片、面板)
-$border-radius-md: 32rpx;    // 16pt - iOS 中等圆角 (大卡片)
-$border-radius-lg: 40rpx;    // 20pt - iOS 大圆角 (弹窗)
-$border-radius-xl: 56rpx;    // 28pt - iOS 超大圆角 (特殊组件)
-$border-radius-round: 50%;   // 圆形 - 头像、图标
+$border-radius-none: 0; // 无圆角
+$border-radius-xs: 8rpx; // 4pt - iOS 最小圆角 (小标签)
+$border-radius-sm: 16rpx; // 8pt - iOS 小圆角 (按钮、输入框)
+$border-radius-base: 24rpx; // 12pt - iOS 标准圆角 (卡片、面板)
+$border-radius-md: 32rpx; // 16pt - iOS 中等圆角 (大卡片)
+$border-radius-lg: 40rpx; // 20pt - iOS 大圆角 (弹窗)
+$border-radius-xl: 56rpx; // 28pt - iOS 超大圆角 (特殊组件)
+$border-radius-round: 50%; // 圆形 - 头像、图标
 $border-radius-pill: 999rpx; // 胶囊形 - 标签、徽章
 
 // iOS 特定组件圆角
-$button-radius: $border-radius-sm;    // 8pt - iOS 按钮标准圆角
-$input-radius: $border-radius-sm;     // 8pt - iOS 输入框圆角
-$card-radius: $border-radius-base;    // 12pt - iOS 卡片圆角
-$modal-radius: $border-radius-lg;     // 20pt - iOS 弹窗圆角
+$button-radius: $border-radius-sm; // 8pt - iOS 按钮标准圆角
+$input-radius: $border-radius-sm; // 8pt - iOS 输入框圆角
+$card-radius: $border-radius-base; // 12pt - iOS 卡片圆角
+$modal-radius: $border-radius-lg; // 20pt - iOS 弹窗圆角
 
 // 阴影
 $box-shadow-sm: 0 2px 8px $shadow-light;

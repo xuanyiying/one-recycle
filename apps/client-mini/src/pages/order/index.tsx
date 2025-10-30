@@ -135,11 +135,6 @@ const OrderListPage: React.FC = () => {
   return (
     <AuthGuard>
       <View className="order-list-page">
-      {/* 页面头部 */}
-      <View className="page-header">
-        <Text className="page-title">我的订单</Text>
-      </View>
-
       {/* 状态筛选标签 */}
       <View className="tab-container">
         <View className="tab-list">

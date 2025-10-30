@@ -1,5 +1,5 @@
 @use '../../styles/variables.scss' as *;
-@use '../../styles/ios-design-system.scss' as *;
+@use '../../styles/ios.scss' as *;
 
 // ==================== iOS 个人中心页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -9,6 +9,12 @@
   background-color: var(--ios-system-grouped-background);
   @include ios-safe-area-top;
   @include ios-safe-area-bottom;
+
+  // 确保在所有设备上的安全区域适配
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 
   .content-container {
     min-height: 100vh;
@@ -26,15 +32,42 @@
       margin-bottom: $spacing-20; // 20pt
       min-height: 160rpx; // 80pt 确保足够高度
 
-      .user-avatar {
+      .user-avatar-container {
+        position: relative;
         width: 140rpx; // 70pt 稍微缩小头像
         height: 140rpx; // 70pt
-        border-radius: 50%;
         margin-right: $spacing-20; // 20pt 增加间距
-        object-fit: cover;
-        border: 4rpx solid var(--ios-separator); // 2pt 边框
-        background-color: var(--ios-secondary-system-background);
         flex-shrink: 0; // 防止头像被压缩
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        .user-avatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 4rpx solid var(--ios-separator); // 2pt 边框
+          background-color: var(--ios-secondary-system-background);
+        }
+
+        .avatar-edit-overlay {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 48rpx; // 24pt
+          height: 48rpx; // 24pt
+          background-color: var(--ios-blue);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 4rpx solid var(--ios-secondary-system-grouped-background); // 2pt 白色边框
+          box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1); // 2pt 8pt 阴影
+        }
       }
 
       .user-details {
@@ -76,18 +109,7 @@
         }
       }
 
-      .edit-btn {
-        @extend .ios-button-secondary;
-        padding: $spacing-8 $spacing-16; // 8pt 16pt 增加水平内边距
-        min-height: 64rpx; // 32pt 确保足够的触摸目标
-        align-self: flex-start; // 顶部对齐
-        margin-top: $spacing-8; // 8pt 顶部间距
-        flex-shrink: 0; // 防止按钮被压缩
-        
-        text {
-          @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-        }
-      }
+
     }
 
     // 统计数据区域
@@ -95,7 +117,7 @@
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: $spacing-20; // 20pt 增加间距
+        gap: $spacing-16; // 16pt 统一间距
 
         .stat-item {
           display: flex;
@@ -103,36 +125,108 @@
           align-items: center;
           justify-content: center; // 垂直居中
           text-align: center;
-          padding: $spacing-20; // 20pt 增加内边距
-          background-color: var(--ios-secondary-system-background);
-          border-radius: $border-radius-lg; // 16pt 更大圆角
-          min-height: 120rpx; // 60pt 确保足够高度
+          padding: $spacing-20; // 20pt 统一内边距
+          border-radius: $border-radius-lg; // 16pt 统一圆角
+          min-height: 140rpx; // 70pt 增加高度保持一致
           transition: all 0.2s ease;
           border: none;
+          position: relative; // 为图标定位做准备
+          cursor: pointer;
 
           &:active {
             transform: scale(0.95);
-            background-color: var(--ios-tertiary-system-background);
+          }
+
+          // 差异化背景色 - 使用具体渐变色确保显示正确
+          &.stat-orders {
+            background: linear-gradient(135deg, #FF9500 0%, #FFCC02 100%);
+            color: white !important;
+
+            .nut-icon,
+            .stat-value,
+            .stat-label {
+              color: white !important;
+            }
+
+            &:active {
+              opacity: 0.8;
+              transform: scale(0.95);
+            }
+          }
+
+          &.stat-earnings {
+            background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+            color: white !important;
+
+            .nut-icon,
+            .stat-value,
+            .stat-label {
+              color: white !important;
+            }
+
+            &:active {
+              opacity: 0.8;
+              transform: scale(0.95);
+            }
+          }
+
+          &.stat-carbon {
+            background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+            color: white !important;
+
+            .nut-icon,
+            .stat-value,
+            .stat-label {
+              color: white !important;
+            }
+
+            &:active {
+              opacity: 0.8;
+              transform: scale(0.95);
+            }
+          }
+
+          &.stat-balance {
+            background: linear-gradient(135deg, #AF52DE 0%, #BF5AF2 100%);
+            color: white !important;
+
+            .nut-icon,
+            .stat-value,
+            .stat-label {
+              color: white !important;
+            }
+
+            &:active {
+              opacity: 0.8;
+              transform: scale(0.95);
+            }
+          }
+
+          // 统一图标样式
+          .nut-icon {
+            margin-bottom: $spacing-8; // 8pt 图标与数值间距
+            font-size: 48rpx; // 24pt 统一图标大小
+            color: white !important; // 强制白色，确保不被覆盖
           }
 
           .stat-value {
-            @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx) 稍小一些
+            @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
             font-weight: $font-weight-bold;
-            color: var(--ios-blue);
-            margin-bottom: $spacing-8; // 8pt 增加间距
+            margin-bottom: $spacing-8; // 8pt 统一间距
             line-height: $line-height-tight;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             max-width: 100%;
+            color: white !important; // 强制白色，确保不被覆盖
           }
 
           .stat-label {
             @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-            color: var(--ios-secondary-label);
             line-height: $line-height-normal;
             text-align: center;
             word-wrap: break-word;
+            color: rgba(255, 255, 255, 0.8) !important; // 强制白色透明度，确保不被覆盖
           }
         }
       }
@@ -142,89 +236,77 @@
   // ==================== 功能菜单区域 ====================
   .menu-section {
     @extend .ios-list;
+    margin-bottom: $spacing-20; // 20pt
 
     .menu-item {
       @extend .ios-list-item;
-      padding: $spacing-20 $spacing-16; // 20pt 16pt 增加垂直内边距
+      padding: $spacing-16; // 16pt 统一内边距
       transition: all 0.2s ease;
-      min-height: 112rpx; // 56pt 确保足够高度
+      min-height: 112rpx; // 56pt iOS 标准列表项高度
       border: none;
       background-color: var(--ios-secondary-system-grouped-background);
-      margin-bottom: $spacing-2; // 2pt 菜单项间距
-      border-radius: $border-radius-base; // 12pt
+      margin-bottom: 2rpx; // 1pt 分隔线效果
+      border-radius: 0; // iOS 列表项不使用圆角
+      display: flex;
+      align-items: center;
+
+      &:first-child {
+        border-top-left-radius: $border-radius-lg; // 16pt
+        border-top-right-radius: $border-radius-lg; // 16pt
+      }
+
+      &:last-child {
+        border-bottom-left-radius: $border-radius-lg; // 16pt
+        border-bottom-right-radius: $border-radius-lg; // 16pt
+        margin-bottom: 0;
+      }
 
       &:active {
         background-color: var(--ios-tertiary-system-grouped-background);
-        transform: scale(0.98);
       }
 
       .menu-content {
         display: flex;
         align-items: center;
         width: 100%;
-        min-height: 72rpx; // 36pt
+        flex: 1;
 
         .menu-icon {
-          width: 64rpx; // 32pt 增大图标
-          height: 64rpx; // 32pt
-          margin-right: $spacing-16; // 16pt 增加间距
-          background-color: var(--ios-blue);
-          border-radius: $border-radius-base; // 12pt 更大圆角
-          @include flex-center;
-          flex-shrink: 0; // 防止图标被压缩
+          width: 36rpx; // 18pt iOS 标准图标大小
+          height: 36rpx; // 18pt
+          margin-right: $spacing-16; // 16pt
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
 
-          image {
-            width: 32rpx; // 16pt
-            height: 32rpx; // 16pt
+          .nut-icon {
+            font-size: 36rpx; // 18pt
+            color: var(--ios-tertiary-label);
+            line-height: 1;
           }
-
-          // 不同图标的背景色
-          &.orders { background-color: #FF9500; } // iOS 橙色
-          &.address { background-color: #34C759; } // iOS 绿色
-          &.settings { background-color: #8E8E93; } // iOS 灰色
-          &.help { background-color: #5AC8FA; } // iOS 浅蓝色
-          &.about { background-color: #AF52DE; } // iOS 紫色
         }
 
         .menu-title {
           @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
           flex: 1;
-          line-height: $line-height-normal;
+          color: var(--ios-label);
+          font-weight: $font-weight-medium;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          color: var(--ios-label);
-          font-weight: $font-weight-medium;
         }
+      }
 
-        .menu-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: $spacing-4 $spacing-8; // 4pt 8pt
-          border-radius: $border-radius-pill; // 胶囊形
-          font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
-          font-weight: $font-weight-medium;
-          background-color: #FF3B30; // iOS 红色
-          color: white;
-          margin-right: $spacing-12; // 12pt 增加间距
-          min-width: 40rpx; // 20pt
-          height: 40rpx; // 20pt
-          @include flex-center;
-          flex-shrink: 0; // 防止徽章被压缩
-          
-          text {
-            @extend .ios-caption2; // 使用 iOS Caption 2 样式 (22rpx)
-            font-weight: $font-weight-medium;
-          }
-        }
-
-        .menu-arrow {
-          @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx) 更大的箭头
-          color: var(--ios-tertiary-label);
-          flex-shrink: 0; // 防止箭头被压缩
-          width: 32rpx; // 16pt 固定宽度
-          text-align: center;
-        }
+      .menu-arrow {
+        @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+        color: var(--ios-tertiary-label);
+        flex-shrink: 0;
+        width: 32rpx; // 16pt
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
       }
     }
   }
@@ -233,8 +315,19 @@
   .balance-section {
     @extend .ios-card;
     margin-bottom: $spacing-20; // 20pt
-    background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
-    color: white;
+    background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+
+    // 强制所有子元素使用白色文字
+    * {
+      color: white !important;
+    }
+
+    .nut-icon {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
 
     .balance-header {
       display: flex;
@@ -245,40 +338,45 @@
       .balance-title {
         @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
         font-weight: $font-weight-semibold;
-        color: white;
+        color: white !important; // 强制白色，确保不被覆盖
       }
 
-      .balance-icon {
-        width: 48rpx; // 24pt
-        height: 48rpx; // 24pt
+      .nut-icon {
+        font-size: 48rpx; // 24pt
+        color: rgba(255, 255, 255, 0.8) !important; // 强制白色透明度，确保不被覆盖
       }
     }
 
     .balance-amount {
       @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
       font-weight: $font-weight-bold;
-      color: white;
+      color: white !important; // 强制白色，确保不被覆盖
       margin-bottom: $spacing-8; // 8pt
+      line-height: $line-height-tight;
     }
 
     .balance-desc {
       @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: rgba(255, 255, 255, 0.8);
-      margin-bottom: $spacing-16; // 16pt
+      color: rgba(255, 255, 255, 0.8) !important; // 强制白色透明度，确保不被覆盖
+      margin-bottom: $spacing-20; // 20pt
     }
 
     .balance-actions {
       display: flex;
-      gap: $spacing-12; // 12pt
+      gap: $spacing-16; // 16pt
 
       .balance-btn {
         flex: 1;
-        padding: $spacing-12; // 12pt
+        padding: $spacing-16; // 16pt
         background: rgba(255, 255, 255, 0.2);
-        border: 2rpx solid rgba(255, 255, 255, 0.3); // 1pt 边框
-        border-radius: $border-radius-base; // 12pt
+        border: 2rpx solid rgba(255, 255, 255, 0.3); // 1pt
+        border-radius: $border-radius-lg; // 16pt
         text-align: center;
         transition: all 0.2s ease;
+        min-height: 88rpx; // 44pt iOS 标准触摸目标
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         &:active {
           background: rgba(255, 255, 255, 0.3);
@@ -287,9 +385,32 @@
 
         text {
           @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
-          color: white;
+          color: white !important; // 强制白色，确保不被覆盖
           font-weight: $font-weight-medium;
         }
+      }
+    }
+
+    .frozen-warning {
+      display: flex;
+      align-items: center;
+      margin-top: $spacing-16; // 16pt
+      padding: $spacing-12 $spacing-16; // 12pt 16pt
+      background: rgba(255, 149, 0, 0.2); // iOS 橙色警告背景
+      border-radius: $border-radius-md; // 12pt
+      border: 2rpx solid rgba(255, 149, 0, 0.3); // 1pt
+
+      .nut-icon {
+        font-size: 32rpx; // 16pt
+        color: #FF9500; // iOS 橙色
+        margin-right: $spacing-8; // 8pt
+      }
+
+      .frozen-text {
+        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        color: white;
+        font-weight: $font-weight-medium;
+        flex: 1;
       }
     }
   }
@@ -313,7 +434,7 @@
       .view-all-btn {
         @extend .ios-button-text;
         padding: $spacing-8; // 8pt
-        
+
         text {
           @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
           color: var(--ios-blue);
@@ -367,12 +488,12 @@
           border-radius: $border-radius-pill; // 胶囊形
           font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
           font-weight: $font-weight-medium;
-          
+
           &.pending {
             background-color: rgba(255, 149, 0, 0.15);
             color: #FF9500;
           }
-          
+
           &.completed {
             background-color: rgba(52, 199, 89, 0.15);
             color: #34C759;
@@ -402,12 +523,177 @@
 
   // ==================== 退出登录区域 ====================
   .logout-section {
-    margin-top: $spacing-32; // 32pt
+    margin-top: $spacing-32; // 32pt 视觉分离
 
     .logout-btn {
       @extend .ios-button-destructive;
       width: 100%;
+      min-height: 96rpx; // 48pt iOS 标准按钮高度
+      border-radius: $border-radius-lg; // 16pt
+      font-weight: $font-weight-medium;
+      background-color: #FF3B30; // iOS 红色用于破坏性操作
+      border: none;
+      color: white;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:active {
+        background-color: #D70015; // 按下时的深红色
+        transform: scale(0.98);
+      }
+
+      text {
+        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        font-weight: $font-weight-medium;
+        color: white;
+      }
     }
+  }
+}
+
+// ==================== 加载和错误状态 ====================
+.loading-container,
+.error-container {
+  @include flex-center;
+  flex-direction: column;
+  min-height: 60vh;
+  padding: $spacing-32; // 32pt
+
+  .loading-spinner {
+    animation: ios-loading-spin 1s linear infinite;
+    margin-bottom: $spacing-16; // 16pt
+  }
+
+  .loading-text {
+    @extend .ios-footnote;
+    color: var(--ios-secondary-label);
+    text-align: center;
+  }
+
+  .error-title {
+    @extend .ios-headline;
+    font-weight: $font-weight-semibold;
+    color: var(--ios-label);
+    margin-bottom: $spacing-8; // 8pt
+    text-align: center;
+  }
+
+  .error-message {
+    @extend .ios-footnote;
+    color: var(--ios-secondary-label);
+    text-align: center;
+    margin-bottom: $spacing-24; // 24pt
+    line-height: $line-height-relaxed;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: $spacing-16; // 16pt
+
+    .retry-btn {
+      min-width: 160rpx; // 80pt
+      padding: $spacing-12 $spacing-20; // 12pt 20pt
+
+      text {
+        @extend .ios-callout;
+        font-weight: $font-weight-medium;
+        color: white;
+      }
+    }
+  }
+}
+
+// iOS 加载动画
+@keyframes ios-loading-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// ==================== 深色模式适配 ====================
+@media (prefers-color-scheme: dark) {
+
+  // 确保深色模式下的渐变色正确显示
+  .stats-section .stats-grid {
+    .stat-item {
+      &.stat-orders {
+        background: linear-gradient(135deg, #FF9F0A 0%, #FFCC02 100%);
+      }
+
+      &.stat-earnings {
+        background: linear-gradient(135deg, #30D158 0%, #32D74B 100%);
+      }
+
+      &.stat-carbon {
+        background: linear-gradient(135deg, #0A84FF 0%, #64D2FF 100%);
+      }
+
+      &.stat-balance {
+        background: linear-gradient(135deg, #BF5AF2 0%, #DA8FFF 100%);
+      }
+    }
+  }
+
+  .balance-section {
+    background: linear-gradient(135deg, #0A84FF 0%, #64D2FF 100%);
+  }
+
+  // 深色模式下的阴影调整
+  .user-section,
+  .balance-section,
+  .menu-section {
+    box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.3); // 1pt 8pt 更明显的阴影
+  }
+
+  // 深色模式下的分隔线
+  .menu-section .menu-item {
+    border-bottom-color: var(--ios-separator);
+
+    &:not(:last-child) {
+      border-bottom: 1rpx solid var(--ios-separator);
+    }
+  }
+}
+
+// ==================== 无障碍访问支持 ====================
+// 高对比度模式支持
+@media (prefers-contrast: high) {
+  .stats-section .stats-grid .stat-item {
+    border: 2rpx solid var(--ios-label); // 1pt 边框增强对比度
+  }
+
+  .balance-section {
+    border: 2rpx solid var(--ios-blue); // 1pt
+  }
+
+  .menu-section .menu-item {
+    border: 1rpx solid var(--ios-separator);
+  }
+}
+
+// 减少动画模式支持
+@media (prefers-reduced-motion: reduce) {
+
+  .stat-item,
+  .balance-btn,
+  .menu-item,
+  .logout-btn {
+    transition: none;
+
+    &:active {
+      transform: none;
+      opacity: 0.7; // 仅使用透明度反馈
+    }
+  }
+
+  .loading-spinner {
+    animation: none; // 禁用旋转动画
   }
 }
 
@@ -417,62 +703,234 @@
 @include mobile-small {
   .profile-page {
     padding: $spacing-16 $spacing-12; // 16pt 12pt
-    
+  }
+}
+
+// ==================== 响应式类名支持 ====================
+// 动态响应式类名，通过 useResponsive hook 控制
+.profile-page {
+
+  // 小屏幕适配 (≤375pt)
+  .user-section.small,
+  .balance-section.small,
+  .menu-section.small,
+  .logout-section.small {
+    .user-info {
+      flex-direction: column; // 垂直布局
+      align-items: center;
+      text-align: center;
+
+      .user-avatar-container {
+        width: 120rpx; // 60pt
+        height: 120rpx; // 60pt
+        margin-right: 0;
+        margin-bottom: $spacing-16; // 16pt
+      }
+
+      .user-details {
+        min-height: auto;
+        padding-top: 0;
+        align-items: center;
+
+        .user-nickname,
+        .user-phone {
+          text-align: center;
+        }
+      }
+    }
+
+    .stats-section .stats-grid {
+      gap: $spacing-12; // 12pt
+
+      .stat-item {
+        padding: $spacing-16; // 16pt
+        min-height: 100rpx; // 50pt
+
+        .stat-value {
+          font-size: $font-size-title3; // 40rpx
+        }
+      }
+    }
+
+    .balance-section {
+      .balance-amount {
+        font-size: $font-size-title1; // 56rpx 在小屏幕上稍小
+      }
+
+      .balance-actions {
+        gap: $spacing-12; // 12pt
+
+        .balance-btn {
+          padding: $spacing-12; // 12pt
+          min-height: 72rpx; // 36pt
+
+          text {
+            font-size: $font-size-footnote; // 26rpx
+          }
+        }
+      }
+    }
+  }
+
+  .menu-section.small .menu-item {
+    padding: $spacing-16; // 16pt
+    min-height: 96rpx; // 48pt
+
+    .menu-content {
+      .menu-icon {
+        width: 56rpx; // 28pt
+        height: 56rpx; // 28pt
+        margin-right: $spacing-12; // 12pt
+      }
+
+      .menu-title {
+        font-size: $font-size-callout; // 32rpx
+      }
+    }
+  }
+
+  // 大屏幕适配 (>414pt)
+  .user-section.large,
+  .balance-section.large,
+  .menu-section.large,
+  .logout-section.large {
+    .user-info {
+      .user-avatar-container {
+        width: 160rpx; // 80pt
+        height: 160rpx; // 80pt
+      }
+
+      .user-details {
+        min-height: 160rpx; // 80pt
+      }
+    }
+
+    .balance-section {
+      .balance-actions {
+        gap: $spacing-20; // 20pt
+
+        .balance-btn {
+          padding: $spacing-20; // 20pt
+          min-height: 96rpx; // 48pt
+        }
+      }
+    }
+
+    .stats-section .stats-grid {
+      gap: $spacing-24; // 24pt
+
+      .stat-item {
+        padding: $spacing-24; // 24pt
+        min-height: 140rpx; // 70pt
+      }
+    }
+  }
+
+  .menu-section.large .menu-item {
+    padding: $spacing-24 $spacing-20; // 24pt 20pt
+    min-height: 128rpx; // 64pt
+
+    .menu-content {
+      .menu-icon {
+        width: 72rpx; // 36pt
+        height: 72rpx; // 36pt
+        margin-right: $spacing-20; // 20pt
+      }
+    }
+  }
+}
+
+// ==================== 媒体查询响应式设计 ====================
+// 小屏幕设备 (≤375px) - iPhone SE, iPhone 12 mini
+@include mobile-small {
+  .profile-page {
+    .content-container {
+      padding: $spacing-16 $spacing-12; // 16pt 12pt 减少边距
+    }
+
     .user-section {
       .user-info {
         flex-direction: column; // 垂直布局
         align-items: center;
         text-align: center;
-        
-        .user-avatar {
+        min-height: auto;
+
+        .user-avatar-container {
           width: 120rpx; // 60pt
           height: 120rpx; // 60pt
           margin-right: 0;
           margin-bottom: $spacing-16; // 16pt
         }
-        
+
         .user-details {
           min-height: auto;
           padding-top: 0;
           align-items: center;
-          
+
           .user-nickname,
+          .user-level,
           .user-phone {
             text-align: center;
           }
         }
-        
-        .edit-btn {
-          margin-top: $spacing-12; // 12pt
-          align-self: center;
-        }
       }
 
       .stats-section .stats-grid {
-        gap: $spacing-12; // 12pt
-        
+        gap: $spacing-12; // 12pt 减少间距
+
         .stat-item {
           padding: $spacing-16; // 16pt
-          min-height: 100rpx; // 50pt
-          
+          min-height: 120rpx; // 60pt 减少高度
+
+          .nut-icon {
+            font-size: 40rpx; // 20pt 减小图标
+          }
+
           .stat-value {
             font-size: $font-size-title3; // 40rpx
+          }
+
+          .stat-label {
+            font-size: $font-size-caption1; // 24rpx
           }
         }
       }
     }
-    
+
+    .balance-section {
+      .balance-amount {
+        font-size: $font-size-title1; // 56rpx 适当缩小
+      }
+
+      .balance-actions {
+        gap: $spacing-12; // 12pt
+
+        .balance-btn {
+          padding: $spacing-12; // 12pt
+          min-height: 72rpx; // 36pt
+
+          text {
+            font-size: $font-size-footnote; // 26rpx
+          }
+        }
+      }
+    }
+
     .menu-section .menu-item {
-      padding: $spacing-16; // 16pt
+      padding: $spacing-12 $spacing-16; // 12pt 16pt
       min-height: 96rpx; // 48pt
-      
+
       .menu-content {
         .menu-icon {
-          width: 56rpx; // 28pt
-          height: 56rpx; // 28pt
+          width: 32rpx; // 16pt
+          height: 32rpx; // 16pt
           margin-right: $spacing-12; // 12pt
+
+          .nut-icon {
+            font-size: 32rpx; // 16pt
+          }
         }
-        
+
         .menu-title {
           font-size: $font-size-callout; // 32rpx
         }
@@ -481,58 +939,191 @@
   }
 }
 
-// 标准屏幕设备优化
+// 标准屏幕设备 (375px - 414px) - iPhone 12, iPhone 13
 @include mobile-standard {
   .profile-page {
+    .content-container {
+      padding: $spacing-20 $spacing-16; // 20pt 16pt 标准边距
+    }
+
     .user-section {
       .user-info {
-        .user-avatar {
-          width: 120rpx; // 60pt
-          height: 120rpx; // 60pt
+        .user-avatar-container {
+          width: 140rpx; // 70pt 标准尺寸
+          height: 140rpx; // 70pt
+        }
+
+        .user-details {
+          min-height: 140rpx; // 70pt 与头像对齐
         }
       }
 
       .stats-section .stats-grid {
+        gap: $spacing-16; // 16pt 标准间距
+
+        .stat-item {
+          padding: $spacing-20; // 20pt
+          min-height: 140rpx; // 70pt
+
+          .nut-icon {
+            font-size: 48rpx; // 24pt
+          }
+        }
+      }
+    }
+
+    .balance-section {
+      .balance-actions {
         gap: $spacing-16; // 16pt
+
+        .balance-btn {
+          padding: $spacing-16; // 16pt
+          min-height: 88rpx; // 44pt
+        }
+      }
+    }
+
+    .menu-section .menu-item {
+      padding: $spacing-16; // 16pt
+      min-height: 112rpx; // 56pt 标准列表项高度
+
+      .menu-content {
+        .menu-icon {
+          width: 36rpx; // 18pt
+          height: 36rpx; // 18pt
+
+          .nut-icon {
+            font-size: 36rpx; // 18pt
+          }
+        }
       }
     }
   }
 }
 
-// 大屏幕设备优化
+// 大屏幕设备 (>414px) - iPhone 12 Pro Max, iPhone 14 Pro Max, iPad
 @include mobile-large {
   .profile-page {
+    .content-container {
+      padding: $spacing-24 $spacing-20; // 24pt 20pt 更宽松的边距
+      max-width: 800rpx; // 400pt 限制最大宽度，避免过宽
+      margin: 0 auto; // 居中显示
+    }
+
     .user-section {
       .user-info {
-        .user-avatar {
-          width: 160rpx; // 80pt
+        .user-avatar-container {
+          width: 160rpx; // 80pt 更大头像
           height: 160rpx; // 80pt
         }
-        
+
         .user-details {
-          min-height: 160rpx; // 80pt
+          min-height: 160rpx; // 80pt 与头像对齐
+          padding-left: $spacing-8; // 8pt 增加间距
+
+          .user-nickname {
+            font-size: $font-size-title1; // 56rpx 更大字体
+          }
+
+          .user-level {
+            font-size: $font-size-headline; // 36rpx
+          }
+
+          .user-phone {
+            font-size: $font-size-callout; // 32rpx
+          }
         }
       }
 
       .stats-section .stats-grid {
-        gap: $spacing-24; // 24pt
-        
+        gap: $spacing-24; // 24pt 更大间距
+
         .stat-item {
           padding: $spacing-24; // 24pt
-          min-height: 140rpx; // 70pt
+          min-height: 160rpx; // 80pt 更高卡片
+
+          .nut-icon {
+            font-size: 56rpx; // 28pt 更大图标
+            margin-bottom: $spacing-12; // 12pt
+          }
+
+          .stat-value {
+            font-size: $font-size-title1; // 56rpx 更大数值
+          }
+
+          .stat-label {
+            font-size: $font-size-callout; // 32rpx
+          }
         }
       }
     }
-    
+
+    .balance-section {
+      .balance-header {
+        margin-bottom: $spacing-20; // 20pt
+
+        .balance-title {
+          font-size: $font-size-title2; // 44rpx
+        }
+
+        .nut-icon {
+          font-size: 56rpx; // 28pt
+        }
+      }
+
+      .balance-amount {
+        font-size: 80rpx; // 40pt 更大金额显示
+        margin-bottom: $spacing-12; // 12pt
+      }
+
+      .balance-actions {
+        gap: $spacing-20; // 20pt
+
+        .balance-btn {
+          padding: $spacing-20; // 20pt
+          min-height: 96rpx; // 48pt
+
+          text {
+            font-size: $font-size-headline; // 36rpx
+          }
+        }
+      }
+    }
+
     .menu-section .menu-item {
-      padding: $spacing-24 $spacing-20; // 24pt 20pt
-      min-height: 128rpx; // 64pt
-      
+      padding: $spacing-20 $spacing-24; // 20pt 24pt
+      min-height: 128rpx; // 64pt 更高列表项
+
       .menu-content {
         .menu-icon {
-          width: 72rpx; // 36pt
-          height: 72rpx; // 36pt
+          width: 48rpx; // 24pt
+          height: 48rpx; // 24pt
           margin-right: $spacing-20; // 20pt
+
+          .nut-icon {
+            font-size: 48rpx; // 24pt
+          }
+        }
+
+        .menu-title {
+          font-size: $font-size-headline; // 36rpx
+        }
+      }
+
+      .menu-arrow {
+        font-size: $font-size-title2; // 44rpx
+      }
+    }
+
+    .logout-section {
+      margin-top: $spacing-40; // 40pt 更大分离
+
+      .logout-btn {
+        min-height: 112rpx; // 56pt 更高按钮
+        border-radius: $border-radius-lg; // 16pt
+
+        text {
+          font-size: $font-size-headline; // 36rpx
         }
       }
     }

@@ -1,8 +1,8 @@
-@use '../../styles/ios-design-system.scss' as *;
+@use '../../styles/ios.scss' as *;
 
 // iOS 按钮组件样式
 // 继承 iOS 设计系统中的按钮样式，无需额外定义
-// 所有样式已在 ios-design-system.scss 中定义
+// 所有样式已在 ios.scss 中定义
 
 .ios-button {
   // 基础样式已在设计系统中定义

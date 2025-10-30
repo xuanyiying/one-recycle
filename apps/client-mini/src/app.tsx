@@ -1,14 +1,17 @@
-import { Component, PropsWithChildren } from 'react'
+import { Component, PropsWithChildren, lazy, Suspense } from 'react'
 import { AppProvider } from './store'
 import { setupNavigationPreload, preloadCriticalPages } from './utils/preloadPages'
 import { performanceMonitor } from './utils/performanceMonitor'
 import networkStatusManager from './utils/networkStatus'
-import OfflineIndicator from './components/OfflineIndicator'
 import './styles/global.scss' // 引入全局样式
 import './app.scss'
 
 // 导入mock系统以确保路由被正确注册
 import './mock'
+
+// Lazy load non-critical components
+const OfflineIndicator = lazy(() => import('./components/OfflineIndicator'))
+const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'))
 
 class App extends Component<PropsWithChildren> {
     private performanceInterval?: ReturnType<typeof setInterval>;
@@ -49,7 +52,12 @@ class App extends Component<PropsWithChildren> {
     render() {
         return (
             <AppProvider>
-                <OfflineIndicator />
+                <Suspense fallback={<div>Loading...</div>}>
+                    <OfflineIndicator />
+                    {process.env.NODE_ENV === 'development' && (
+                        <PerformanceDashboard />
+                    )}
+                </Suspense>
                 {this.props.children}
             </AppProvider>
         )

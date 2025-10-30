@@ -1,5 +1,5 @@
-@use '../../../styles/variables.scss' as *;
-@use '../../../styles/ios-design-system.scss' as *;
+@use '../../styles/variables.scss' as *;
+@use '../../styles/ios.scss' as *;
 
 // ==================== iOS 订单列表页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -43,11 +43,6 @@
     padding: $spacing-20 $page-padding; // 20pt 16pt
     text-align: center;
     border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
-
-    .page-title {
-      @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
-      font-weight: $font-weight-bold;
-    }
   }
 
   // iOS 标签栏容器

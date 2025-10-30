@@ -1,5 +1,5 @@
 @use '../../styles/variables.scss' as *;
-@use '../../styles/ios-design-system.scss' as *;
+@use '../../styles/ios.scss' as *;
 
 // ==================== iOS 回收页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -13,16 +13,26 @@
 
   // iOS 页面头部
   .page-header {
-    @extend .ios-navigation-bar;
     background-color: var(--ios-system-background);
-    padding: $spacing-20 $page-padding; // 20pt 16pt
+    padding-top: constant(safe-area-inset-top);
+    padding-top: env(safe-area-inset-top);
+    padding-left: $page-padding;
+    padding-right: $page-padding;
+    padding-bottom: $spacing-20;
     text-align: center;
     border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    
+    // 确保在状态栏下方有足够的间距
+    margin-top: $spacing-20;
 
     .page-title {
       @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
       font-weight: $font-weight-bold;
       margin-bottom: $spacing-8; // 8pt
+      color: var(--ios-label);
     }
 
     .page-subtitle {
@@ -32,7 +42,8 @@
   }
 
   .form-container {
-    padding: 0 $page-padding; // 0 16pt
+    padding: $spacing-20 $page-padding 0; // 为固定头部留出空间
+    margin-top: $spacing-16; // 增加与头部的间距
   }
 
   // iOS 表单区块

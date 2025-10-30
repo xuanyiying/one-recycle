@@ -279,7 +279,7 @@ export default {
     list: [
       { pagePath: 'pages/index/index', text: '首页' },
       { pagePath: 'pages/recycle/index', text: '回收' },  // 修改
-      { pagePath: 'pages/order/list/index', text: '订单' },
+      { pagePath: 'pages/order/index', text: '订单' },
       { pagePath: 'pages/profile/index', text: '我的' }
     ]
   }

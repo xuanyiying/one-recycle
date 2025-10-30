@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { View, Text, Input, Textarea, Button, Switch } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useAuth } from '../../hooks/useAuth'
@@ -6,13 +6,15 @@ import { IconFont } from '@nutui/icons-react-taro'
 
 import { getAllCategories } from '../../services/category'
 import { createOrder } from '../../services/order'
-import CategorySelector from '../../components/CategorySelector'
-import ImageUploader from '../../components/ImageUploader'
-import AddressSelector from '../../components/AddressSelector'
-import TimeSelector from '../../components/TimeSelector'
-import PriceEstimator from '../../components/PriceEstimator'
-import AuthGuard from '../../components/AuthGuard'
 import './index.scss'
+
+// Lazy load heavy components to reduce initial bundle size
+const CategorySelector = lazy(() => import('../../components/CategorySelector'))
+const ImageUploader = lazy(() => import('../../components/ImageUploader'))
+const AddressSelector = lazy(() => import('../../components/AddressSelector'))
+const TimeSelector = lazy(() => import('../../components/TimeSelector'))
+const PriceEstimator = lazy(() => import('../../components/PriceEstimator'))
+const AuthGuard = lazy(() => import('../../components/AuthGuard'))
 
 interface FormData {
   category: string
@@ -47,6 +49,20 @@ export default function RecycleForm() {
   // 初始化数据
   useEffect(() => {
     initPageData()
+    
+    // 监听从首页传递的分类选择事件
+    const handleCategorySelected = (categoryName: string) => {
+      setFormData(prev => ({
+        ...prev,
+        category: categoryName
+      }))
+    }
+    
+    Taro.eventCenter.on('categorySelected', handleCategorySelected)
+    
+    return () => {
+      Taro.eventCenter.off('categorySelected', handleCategorySelected)
+    }
   }, [])
 
   // 从路由参数获取预选分类、重量、估价等信息
@@ -223,25 +239,23 @@ export default function RecycleForm() {
   }, [formData, validateForm, requireAuth, categories, isLoggedIn])
 
   return (
-    <AuthGuard>
-      <View className='recycle-form-page'>
-      {/* 页面标题 */}
-      <View className='page-header'>
-        <Text className='page-title'>回收物信息</Text>
-        <Text className='page-subtitle'>请详细填写回收物品信息</Text>
-      </View>
+    <Suspense fallback={<View className="loading">加载中...</View>}>
+      <AuthGuard>
+        <View className='recycle-form-page'>
 
-      <View className='form-container'>
-        {/* 分类选择 */}
-        <View className='form-section'>
-          <CategorySelector
-            categories={categories}
-            value={formData.category}
-            onChange={(category) => handleInputChange('category', category)}
-            placeholder='请选择回收分类'
-            required={true}
-          />
-        </View>
+        <View className='form-container'>
+          {/* 分类选择 */}
+          <View className='form-section'>
+            <Suspense fallback={<View className="component-loading">加载分类选择器...</View>}>
+              <CategorySelector
+                categories={categories}
+                value={formData.category}
+                onChange={(category) => handleInputChange('category', category)}
+                placeholder='请选择回收分类'
+                required={true}
+              />
+            </Suspense>
+          </View>
 
         {/* 物品描述 */}
         <View className='form-section'>
@@ -356,18 +370,19 @@ export default function RecycleForm() {
         </View>
       </View>
 
-      {/* 底部提交按钮 */}
-      <View className='submit-container'>
-        <Button 
-          className='submit-btn' 
-          onClick={handleSubmit}
-          loading={loading}
-          disabled={loading}
-        >
-          {loading ? '提交中...' : '提交回收申请'}
-        </Button>
-      </View>
-      </View>
-    </AuthGuard>
+        {/* 底部提交按钮 */}
+        <View className='submit-container'>
+          <Button 
+            className='submit-btn' 
+            onClick={handleSubmit}
+            loading={loading}
+            disabled={loading}
+          >
+            {loading ? '提交中...' : '提交回收申请'}
+          </Button>
+        </View>
+        </View>
+      </AuthGuard>
+    </Suspense>
   )
 }
