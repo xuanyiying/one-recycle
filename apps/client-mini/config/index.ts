@@ -1,6 +1,6 @@
-const path = require('path')
+import * as path from 'path';
 
-const config = {
+const config = {    
   projectName: 'client-mini',
   date: '2025-10-24',
   designWidth: 375,
