@@ -1,6 +1,6 @@
 // 地址管理服务
 import Taro from '@tarojs/taro'
-import { get, post, put, del } from '../utils/request'
+import { get, post, put } from '../utils/request'
 import { AuthService } from './authService'
 
 // 地址数据接口

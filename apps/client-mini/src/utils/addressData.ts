@@ -7,37 +7,10 @@ export interface RegionData {
   [key: string]: any
 }
 
-export interface SelectedRegionObj {
-  province: RegionData
-  city: RegionData
-  country: RegionData
-  town: RegionData
-}
-
 // 导入中国行政区域数据
 import chinaRegionsData from '@/data/chinaRegions.json'
 
 // 定义区域数据接口
-interface Province {
-  id: string
-  name: string
-  code: string
-  cities: City[]
-}
-
-interface City {
-  id: string
-  name: string
-  code: string
-  districts: District[]
-}
-
-interface District {
-  id: string
-  name: string
-  code: string
-}
-
 // 从JSON数据中提取省份数据
 export const provinceData: RegionData[] = chinaRegionsData.provinces.map(province => ({
   name: province.name,
@@ -223,115 +196,10 @@ export const setDefaultAddress = (id: string | number): void => {
 }
 
 // 获取默认地址
-export const getDefaultAddress = (): UserAddress | null => {
-  const addressList = getUserAddressList()
-  return addressList.find(addr => addr.selectedAddress) || null
-}
-
 // 根据ID获取地址
 export const getUserAddressById = (id: string | number): UserAddress | null => {
   const addressList = getUserAddressList()
   return addressList.find(addr => addr.id === id) || null
-}
-
-// 根据选中的区域获取完整地址字符串
-export const getFullAddressString = (selectedRegion: SelectedRegionObj): string => {
-  const { province, city, country, town } = selectedRegion
-  const parts = [province?.name, city?.name, country?.name, town?.name].filter(Boolean)
-  return parts.join('')
-}
-
-// 搜索省份
-export const searchProvinces = (keyword: string): RegionData[] => {
-  if (!keyword.trim()) return provinceData
-  
-  return provinceData.filter(province => 
-    province.name?.includes(keyword.trim())
-  )
-}
-
-// 搜索城市
-export const searchCities = (provinceId: string, keyword: string): RegionData[] => {
-  const cities = cityData[provinceId] || []
-  if (!keyword.trim()) return cities
-  
-  return cities.filter(city => 
-    city.name?.includes(keyword.trim())
-  )
-}
-
-// 搜索区县
-export const searchCountries = (cityId: string, keyword: string): RegionData[] => {
-  const countries = countryData[cityId] || []
-  if (!keyword.trim()) return countries
-  
-  return countries.filter(country => 
-    country.name?.includes(keyword.trim())
-  )
-}
-
-// 搜索街道
-export const searchTowns = (countryId: string, keyword: string): RegionData[] => {
-  const towns = townData[countryId] || []
-  if (!keyword.trim()) return towns
-  
-  return towns.filter(town => 
-    town.name?.includes(keyword.trim())
-  )
-}
-
-// 全局搜索地址（跨级别搜索）
-export const globalSearchAddress = (keyword: string): {
-  provinces: RegionData[]
-  cities: { province: RegionData, cities: RegionData[] }[]
-  countries: { province: RegionData, city: RegionData, countries: RegionData[] }[]
-} => {
-  if (!keyword.trim()) {
-    return { provinces: [], cities: [], countries: [] }
-  }
-
-  const searchKeyword = keyword.trim()
-  const result = {
-    provinces: [] as RegionData[],
-    cities: [] as { province: RegionData, cities: RegionData[] }[],
-    countries: [] as { province: RegionData, city: RegionData, countries: RegionData[] }[]
-  }
-
-  // 搜索省份
-  result.provinces = provinceData.filter(province => 
-    province.name?.includes(searchKeyword)
-  )
-
-  // 搜索城市
-  chinaRegionsData.provinces.forEach(province => {
-    const matchedCities = province.cities.filter(city => 
-      city.name.includes(searchKeyword)
-    )
-    if (matchedCities.length > 0) {
-      result.cities.push({
-        province: { name: province.name, id: province.id },
-        cities: matchedCities.map(city => ({ name: city.name, id: city.id }))
-      })
-    }
-  })
-
-  // 搜索区县
-  chinaRegionsData.provinces.forEach(province => {
-    province.cities.forEach(city => {
-      const matchedCountries = city.districts.filter(district => 
-        district.name.includes(searchKeyword)
-      )
-      if (matchedCountries.length > 0) {
-        result.countries.push({
-          province: { name: province.name, id: province.id },
-          city: { name: city.name, id: city.id },
-          countries: matchedCountries.map(district => ({ name: district.name, id: district.id }))
-        })
-      }
-    })
-  })
-
-  return result
 }
 
 // 根据ID获取完整的地址路径
@@ -391,43 +259,6 @@ export const getAddressPath = (regionId: string): {
 
   return result
 }
-
-// 验证地址数据完整性
-export const validateAddressData = (): {
-  isValid: boolean
-  errors: string[]
-} => {
-  const errors: string[] = []
-
-  // 检查省份数据
-  if (provinceData.length === 0) {
-    errors.push('省份数据为空')
-  }
-
-  // 检查城市数据
-  let totalCities = 0
-  Object.values(cityData).forEach(cities => {
-    totalCities += cities.length
-  })
-  if (totalCities === 0) {
-    errors.push('城市数据为空')
-  }
-
-  // 检查区县数据
-  let totalCountries = 0
-  Object.values(countryData).forEach(countries => {
-    totalCountries += countries.length
-  })
-  if (totalCountries === 0) {
-    errors.push('区县数据为空')
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  }
-}
-
 // 初始化默认地址数据（用于演示）
 export const initDefaultAddresses = (): void => {
   const existingAddresses = getUserAddressList()
