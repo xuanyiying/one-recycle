@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, message, Image } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import type { UploadProps, UploadFile } from 'antd';
-import categoryService from '../../services/categoryService';
+import categoryService from '../services/categoryService';
 
 const { Dragger } = Upload;
 

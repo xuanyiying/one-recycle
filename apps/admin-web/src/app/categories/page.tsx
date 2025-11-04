@@ -15,7 +15,7 @@ import {
     Image,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import IconUpload from '../components/IconUpload';
+import IconUpload from '@/components/IconUpload';
 import categoryService, { Category, CategoryQueryParams } from '../../services/categoryService';
 
 const CategoriesPage: React.FC = () => {
