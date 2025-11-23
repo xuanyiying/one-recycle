@@ -11,7 +11,6 @@ import './mock'
 
 // Lazy load non-critical components
 const OfflineIndicator = lazy(() => import('./components/OfflineIndicator'))
-const PerformanceDashboard = lazy(() => import('./components/PerformanceDashboard'))
 
 class App extends Component<PropsWithChildren> {
     private performanceInterval?: ReturnType<typeof setInterval>;
@@ -22,7 +21,7 @@ class App extends Component<PropsWithChildren> {
 
         // Setup navigation-based preloading
         setupNavigationPreload();
-        
+
         // Preload critical pages after a short delay
         setTimeout(() => {
             preloadCriticalPages();
@@ -54,9 +53,6 @@ class App extends Component<PropsWithChildren> {
             <AppProvider>
                 <Suspense fallback={<div>Loading...</div>}>
                     <OfflineIndicator />
-                    {process.env.NODE_ENV === 'development' && (
-                        <PerformanceDashboard />
-                    )}
                 </Suspense>
                 {this.props.children}
             </AppProvider>

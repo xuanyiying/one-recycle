@@ -178,8 +178,10 @@ export default function Index() {
 
   // 处理城市选择
   const handleCitySelect = useCallback(() => {
-    Taro.navigateTo({
-      url: '/pages/city/index'
+    // TODO: 实现城市选择功能
+    Taro.showToast({
+      title: '城市选择功能开发中',
+      icon: 'none'
     })
   }, [])
 
@@ -197,9 +199,11 @@ export default function Index() {
   }, [])
 
   // 处理文章点击
-  const handleArticleClick = useCallback((article: any) => {
-    Taro.navigateTo({
-      url: `/pages/article/detail/index?id=${article.id}`
+  const handleArticleClick = useCallback(() => {
+    // TODO: 实现文章详情功能
+    Taro.showToast({
+      title: '文章详情功能开发中',
+      icon: 'none'
     })
   }, [])
 
@@ -242,7 +246,7 @@ export default function Index() {
             onSearch={handleSearch}
             onClear={() => setSearchValue('')}
             clearable
-            shape='round' 
+            shape='round'
             rightIn={
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <Photograph color="#888B94" onClick={() => handleSearch(searchValue)} />
@@ -315,7 +319,7 @@ export default function Index() {
               key={index}
               className='article-card'
               size={'small'}
-              onClick={() => handleArticleClick(article)}
+              onClick={handleArticleClick}
             >
               <Image
                 className='article-image'

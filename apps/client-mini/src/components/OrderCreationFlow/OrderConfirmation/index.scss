@@ -1,0 +1,616 @@
+/**
+ * OrderConfirmation Component Styles
+ * Responsive design for order review and confirmation
+ */
+
+.order-confirmation {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+
+    .order-confirmation-container {
+        padding: 16px;
+        max-width: 100%;
+    }
+
+    // ========================================================================
+    // Header
+    // ========================================================================
+
+    .form-header {
+        margin-bottom: 24px;
+        padding: 16px;
+        background-color: #fff;
+        border-radius: 8px;
+
+        .form-title {
+            display: block;
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .form-subtitle {
+            display: block;
+            font-size: 14px;
+            color: #999;
+        }
+    }
+
+    // ========================================================================
+    // Error Banner
+    // ========================================================================
+
+    .error-banner {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding: 12px;
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        border-radius: 4px;
+
+        .error-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .error-content {
+            flex: 1;
+
+            .error-title {
+                display: block;
+                font-size: 14px;
+                font-weight: 600;
+                color: #856404;
+                margin-bottom: 4px;
+            }
+
+            .error-message {
+                display: block;
+                font-size: 12px;
+                color: #856404;
+            }
+        }
+    }
+
+    // ========================================================================
+    // Form Sections
+    // ========================================================================
+
+    .form-section {
+        margin-bottom: 16px;
+        padding: 16px;
+        background-color: #fff;
+        border-radius: 8px;
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+
+            .section-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .btn-edit {
+                padding: 6px 12px;
+                font-size: 12px;
+                background-color: #f0f0f0;
+                color: #666;
+                border: none;
+                border-radius: 4px;
+                height: auto;
+                line-height: 1;
+
+                &:disabled {
+                    opacity: 0.5;
+                }
+            }
+        }
+
+        .section-title {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+    }
+
+    // ========================================================================
+    // Items Summary
+    // ========================================================================
+
+    .items-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .item-summary-card {
+            padding: 12px;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+
+            .item-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #e0e0e0;
+
+                .item-number {
+                    font-size: 12px;
+                    color: #999;
+                }
+
+                .item-category {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #333;
+                }
+            }
+
+            .item-details {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+
+                .detail-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    font-size: 13px;
+
+                    .detail-label {
+                        color: #666;
+                        flex-shrink: 0;
+                        margin-right: 8px;
+                    }
+
+                    .detail-value {
+                        color: #333;
+                        flex: 1;
+                        text-align: right;
+                    }
+
+                    &.price {
+                        padding-top: 8px;
+                        border-top: 1px solid #e0e0e0;
+
+                        .detail-value-price {
+                            color: #ff6b6b;
+                            font-weight: 600;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ========================================================================
+    // Address Summary
+    // ========================================================================
+
+    .address-summary-card {
+        padding: 12px;
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+
+        .address-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+
+            .address-name {
+                font-size: 14px;
+                font-weight: 600;
+                color: #333;
+            }
+
+            .address-phone {
+                font-size: 12px;
+                color: #666;
+            }
+        }
+
+        .address-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .address-region {
+                font-size: 12px;
+                color: #999;
+            }
+
+            .address-full {
+                font-size: 13px;
+                color: #333;
+                line-height: 1.4;
+            }
+        }
+    }
+
+    // ========================================================================
+    // Time Slot Summary
+    // ========================================================================
+
+    .time-slot-summary-card {
+        padding: 12px;
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+
+        .time-slot-date {
+            margin-bottom: 8px;
+
+            .time-slot-date-text {
+                font-size: 14px;
+                font-weight: 600;
+                color: #333;
+            }
+        }
+
+        .time-slot-time {
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+
+            .time-slot-time-text {
+                font-size: 14px;
+                font-weight: 600;
+                color: #2e7d32;
+            }
+        }
+
+        .time-slot-capacity {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+
+            .capacity-label {
+                color: #666;
+            }
+
+            .capacity-value {
+                color: #333;
+                font-weight: 600;
+            }
+        }
+    }
+
+    // ========================================================================
+    // Notes Section
+    // ========================================================================
+
+    .form-field {
+        .textarea-wrapper {
+            padding: 12px;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+
+            .textarea {
+                font-size: 13px;
+                color: #333;
+                line-height: 1.5;
+                width: 100%;
+            }
+        }
+
+        .field-hint {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #999;
+        }
+    }
+
+    // ========================================================================
+    // Terms Agreement
+    // ========================================================================
+
+    .terms-agreement {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+
+        .terms-checkbox {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .terms-text {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.4;
+
+            .terms-link {
+                color: #1890ff;
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .error-message {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #ff6b6b;
+    }
+
+    // ========================================================================
+    // Order Summary Card
+    // ========================================================================
+
+    .order-summary-card {
+        margin-bottom: 16px;
+        padding: 16px;
+        background-color: #fff;
+        border-radius: 8px;
+        border: 2px solid #f0f0f0;
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+
+            .summary-label {
+                color: #666;
+            }
+
+            .summary-value {
+                color: #333;
+                font-weight: 500;
+            }
+
+            &.total {
+                margin-bottom: 0;
+                padding-top: 8px;
+                border-top: 1px solid #e0e0e0;
+
+                .summary-label {
+                    font-weight: 600;
+                    color: #333;
+                }
+
+                .summary-value-total {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #ff6b6b;
+                }
+            }
+        }
+
+        .summary-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 8px 0;
+        }
+    }
+
+    // ========================================================================
+    // Action Buttons
+    // ========================================================================
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 24px;
+
+        .btn-secondary,
+        .btn-primary {
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            height: auto;
+            line-height: 1.5;
+            transition: all 0.3s ease;
+
+            &:disabled {
+                opacity: 0.5;
+            }
+        }
+
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #666;
+
+            &:active:not(:disabled) {
+                background-color: #e0e0e0;
+            }
+        }
+
+        .btn-primary {
+            background-color: #1890ff;
+            color: #fff;
+
+            &:active:not(:disabled) {
+                background-color: #0050b3;
+            }
+        }
+    }
+
+    // ========================================================================
+    // Loading Overlay
+    // ========================================================================
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        animation: fadeIn 0.2s ease-out;
+
+        .loading-spinner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 24px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            animation: scaleIn 0.3s ease-out;
+
+            .spinner-icon {
+                font-size: 32px;
+                animation: spin 1s linear infinite;
+            }
+
+            .spinner-text {
+                font-size: 14px;
+                color: #333;
+                font-weight: 500;
+            }
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+
+    // ========================================================================
+    // Enhanced Animations for Sections
+    // ========================================================================
+
+    .order-confirmation-container {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .form-header {
+        animation: slideInUp 0.4s ease-out;
+    }
+
+    .form-section {
+        animation: slideInUp 0.4s ease-out;
+        transition: all 0.3s ease;
+
+        &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    .error-banner {
+        animation: slideInUp 0.3s ease-out;
+    }
+
+    .order-summary-card {
+        animation: slideInUp 0.4s ease-out 0.1s both;
+        transition: all 0.3s ease;
+
+        &:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    }
+
+    .form-actions {
+        animation: slideInUp 0.3s ease-out;
+
+        .btn-primary,
+        .btn-secondary {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+
+            &:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+
+        .btn-primary {
+            background-color: #1890ff;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+
+            &:active:not(:disabled) {
+                box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3);
+            }
+        }
+
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #666;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+            &:active:not(:disabled) {
+                background-color: #e0e0e0;
+            }
+        }
+    }
+}

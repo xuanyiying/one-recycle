@@ -1,82 +1,46 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { AddressList } from '@nutui/nutui-biz'
 import { useAuth } from '@/hooks/useAuth'
-import { 
-  getUserAddressList, 
-  deleteUserAddress, 
-  setDefaultAddress,
-  UserAddress 
-} from '@/utils/addressData'
-import { AddressService } from '@/services/addressService'
+import { AddressService, AddressData } from '@/services/addressService'
 import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
-// AddressList组件需要的数据格式
-interface IDataInfo {
-  id: string | number
-  addressName: string
-  phone: string
-  defaultAddress: boolean
-  fullAddress: string
-}
-
 const AddressPage = () => {
   const { user } = useAuth()
-  const [addressList, setAddressList] = useState<IDataInfo[]>([])
+  const [addressList, setAddressList] = useState<AddressData[]>([])
   const [loading, setLoading] = useState(true)
-
-  // 转换UserAddress到IDataInfo格式
-  const convertToIDataInfo = (userAddress: UserAddress): IDataInfo => ({
-    id: userAddress.id,
-    addressName: userAddress.name || '收货人',
-    phone: userAddress.phone || '',
-    defaultAddress: userAddress.selectedAddress,
-    fullAddress: `${userAddress.provinceName}${userAddress.cityName}${userAddress.countyName}${userAddress.townName}${userAddress.addressDetail}`
-  })
 
   const loadUserAddresses = useCallback(async () => {
     try {
       setLoading(true)
-      // 先尝试从API获取地址列表
+      if (!user) {
+        Taro.showToast({
+          title: '请先登录',
+          icon: 'error'
+        })
+        return
+      }
+
       const apiResult = await AddressService.getUserAddresses()
-      
+
       if (apiResult.success && apiResult.data) {
-        // 转换API数据格式
-        const convertedAddresses = apiResult.data.map((addr: any) => ({
-          id: addr.id,
-          addressName: addr.name || '收货人',
-          phone: addr.phone || '',
-          defaultAddress: addr.isDefault || false,
-          fullAddress: `${addr.province}${addr.city}${addr.district}${addr.detail}`
-        }))
-        setAddressList(convertedAddresses)
+        setAddressList(apiResult.data)
       } else {
-        // API失败时使用本地数据作为备用
-        console.warn('API获取地址失败，使用本地数据:', apiResult.error)
-        const addresses = getUserAddressList()
-        const convertedAddresses = addresses.map(convertToIDataInfo)
-        setAddressList(convertedAddresses)
+        console.warn('获取地址失败:', apiResult.error)
+        setAddressList([])
       }
     } catch (error) {
       console.error('获取地址失败:', error)
-      // 发生异常时使用本地数据作为备用
-      try {
-        const addresses = getUserAddressList()
-        const convertedAddresses = addresses.map(convertToIDataInfo)
-        setAddressList(convertedAddresses)
-      } catch (localError) {
-        console.error('本地地址数据也获取失败:', localError)
-        Taro.showToast({
-          title: '获取地址失败',
-          icon: 'error'
-        })
-      }
+      Taro.showToast({
+        title: '获取地址失败',
+        icon: 'error'
+      })
+      setAddressList([])
     } finally {
       setLoading(false)
     }
-  }, [convertToIDataInfo])
+  }, [user])
 
   useEffect(() => {
     loadUserAddresses()
@@ -89,156 +53,44 @@ const AddressPage = () => {
     })
   }, [])
 
-  // 根据ID查找原始UserAddress
-  const findUserAddressById = (id: string | number): UserAddress | undefined => {
-    const addresses = getUserAddressList()
-    return addresses.find(addr => addr.id === id)
-  }
-
   // 处理编辑地址
-  const handleEditAddress = useCallback((event: Event, item: any) => {
-    const userAddress = findUserAddressById(item.id)
-    if (userAddress) {
-      Taro.navigateTo({
-        url: `/pages/address/form/index?id=${userAddress.id}&edit=true`
-      })
-    }
+  const handleEditAddress = useCallback((address: AddressData) => {
+    Taro.navigateTo({
+      url: `/pages/address/form/index?id=${address.id}`
+    })
   }, [])
 
   // 处理删除地址
-  const handleDeleteAddress = useCallback((event: Event, item: any) => {
+  const handleDeleteAddress = useCallback((address: AddressData) => {
     Taro.showModal({
       title: '确认删除',
       content: '确定要删除这个地址吗？',
       success: async (res) => {
-        if (res.confirm) {
-          try {
-            // 先尝试API删除
-            const apiResult = await AddressService.deleteAddress(item.id)
-            
-            if (apiResult.success) {
-              // API删除成功，重新加载地址列表
-              await loadUserAddresses()
-            } else {
-              // API删除失败，使用本地删除作为备用
-              console.warn('API删除失败，使用本地删除:', apiResult.error)
-              deleteUserAddress(item.id)
-              // 重新加载地址列表
-              const updatedAddresses = getUserAddressList()
-              const convertedAddresses = updatedAddresses.map(convertToIDataInfo)
-              setAddressList(convertedAddresses)
-              
-              Taro.showToast({
-                title: '删除成功',
-                icon: 'success'
-              })
-            }
-          } catch (error) {
-            console.error('删除地址失败:', error)
-            // 发生异常时使用本地删除作为备用
-            try {
-              deleteUserAddress(item.id)
-              const updatedAddresses = getUserAddressList()
-              const convertedAddresses = updatedAddresses.map(convertToIDataInfo)
-              setAddressList(convertedAddresses)
-              
-              Taro.showToast({
-                title: '删除成功',
-                icon: 'success'
-              })
-            } catch (localError) {
-              console.error('本地删除也失败:', localError)
-              Taro.showToast({
-                title: '删除失败',
-                icon: 'error'
-              })
-            }
+        if (res.confirm && address.id) {
+          const apiResult = await AddressService.deleteAddress(address.id)
+          if (apiResult.success) {
+            await loadUserAddresses()
           }
         }
       }
     })
-  }, [convertToIDataInfo, loadUserAddresses])
+  }, [loadUserAddresses])
 
   // 处理设置默认地址
-  const handleSetDefaultAddress = useCallback(async (event: Event, item: any) => {
-    try {
-      // 先尝试API设置默认地址
-      const apiResult = await AddressService.setDefaultAddress(item.id)
-      
+  const handleSetDefaultAddress = useCallback(async (address: AddressData) => {
+    if (address.id) {
+      const apiResult = await AddressService.setDefaultAddress(address.id)
       if (apiResult.success) {
-        // API设置成功，重新加载地址列表
         await loadUserAddresses()
-        Taro.showToast({
-          title: '设置成功',
-          icon: 'success'
-        })
-      } else {
-        // API设置失败，使用本地设置作为备用
-        console.warn('API设置默认地址失败，使用本地设置:', apiResult.error)
-        setDefaultAddress(item.id)
-        // 重新加载地址列表
-        const updatedAddresses = getUserAddressList()
-        const convertedAddresses = updatedAddresses.map(convertToIDataInfo)
-        setAddressList(convertedAddresses)
-        
-        Taro.showToast({
-          title: '设置成功',
-          icon: 'success'
-        })
-      }
-    } catch (error) {
-      console.error('设置默认地址失败:', error)
-      // 发生异常时使用本地设置作为备用
-      try {
-        setDefaultAddress(item.id)
-        const updatedAddresses = getUserAddressList()
-        const convertedAddresses = updatedAddresses.map(convertToIDataInfo)
-        setAddressList(convertedAddresses)
-        
-        Taro.showToast({
-          title: '设置成功',
-          icon: 'success'
-        })
-      } catch (localError) {
-        console.error('本地设置也失败:', localError)
-        Taro.showToast({
-          title: '设置失败',
-          icon: 'error'
-        })
       }
     }
-  }, [convertToIDataInfo, loadUserAddresses])
+  }, [loadUserAddresses])
 
   // 处理地址项点击
-  const handleAddressClick = useCallback((event: Event, item: any) => {
+  const handleAddressClick = useCallback((address: AddressData) => {
     // 可以在这里处理地址选择逻辑
-    console.log('点击地址:', item)
+    console.log('点击地址:', address)
   }, [])
-
-  // 处理长按地址项
-  const handleLongPress = useCallback((event: Event, item: any) => {
-    const userAddress = findUserAddressById(item.id)
-    if (userAddress) {
-      Taro.showActionSheet({
-        itemList: ['编辑', '删除', '设为默认'],
-        success: (res) => {
-          switch (res.tapIndex) {
-            case 0:
-              handleEditAddress(event, item)
-              break
-            case 1:
-              handleDeleteAddress(event, item)
-              break
-            case 2:
-              if (!userAddress.selectedAddress) {
-                handleSetDefaultAddress(event, item)
-              }
-              break
-          }
-        }
-      })
-    }
-  }, [handleEditAddress, handleDeleteAddress])
 
   if (loading) {
     return (
@@ -253,15 +105,76 @@ const AddressPage = () => {
   return (
     <AuthGuard>
       <View className='address-page'>
-        <AddressList
-          data={addressList}
-          showBottomButton={true}
-          onAdd={handleAddAddress}
-          onEditIcon={handleEditAddress}
-          onDelIcon={handleDeleteAddress}
-          onItemClick={handleAddressClick}
-          onLongSet={handleSetDefaultAddress}
-        />
+        <View className='address-list'>
+          {addressList.length === 0 ? (
+            <View className='empty-state'>
+              <Text className='empty-text'>暂无地址</Text>
+              <Text className='empty-hint'>点击下方按钮添加新地址</Text>
+            </View>
+          ) : (
+            addressList.map((address) => (
+              <View
+                key={address.id}
+                className={`address-item ${address.isDefault ? 'default' : ''}`}
+                onClick={() => handleAddressClick(address)}
+              >
+                <View className='address-info'>
+                  <View className='address-header'>
+                    <Text className='address-name'>{address.name}</Text>
+                    <Text className='address-phone'>{address.phone}</Text>
+                    {address.isDefault && (
+                      <View className='default-tag'>
+                        <Text>默认</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View className='address-detail'>
+                    <Text>
+                      {address.province}
+                      {address.city}
+                      {address.district}
+                      {address.detail}
+                    </Text>
+                  </View>
+                </View>
+                <View className='address-actions'>
+                  <View
+                    className='action-btn edit-btn'
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditAddress(address)
+                    }}
+                  >
+                    <Text>编辑</Text>
+                  </View>
+                  <View
+                    className='action-btn delete-btn'
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteAddress(address)
+                    }}
+                  >
+                    <Text>删除</Text>
+                  </View>
+                  {!address.isDefault && (
+                    <View
+                      className='action-btn default-btn'
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSetDefaultAddress(address)
+                      }}
+                    >
+                      <Text>设为默认</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+        <View className='add-address-btn' onClick={handleAddAddress}>
+          <Text>+ 添加新地址</Text>
+        </View>
       </View>
     </AuthGuard>
   )

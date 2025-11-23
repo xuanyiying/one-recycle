@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, Picker, Icon, Switch } from '@tarojs/components'
+import { View, Text, Picker, Switch } from '@tarojs/components'
 import Taro, { getCurrentInstance } from '@tarojs/taro'
 import { IconFont } from '@nutui/icons-react-taro'
-import { getActiveCategories, getCategoryDetail } from '../../services/category'
-import { Category } from '../../types/category'
+import { getActiveCategories, getCategoryDetail } from '@/services/category'
+import { Category } from '@/types/category'
 import './index.scss'
 import { Button } from '@nutui/nutui-react-taro'
 
@@ -58,7 +58,7 @@ export default function Pricing() {
       // 简单的价格计算逻辑
       const priceRange = selectedOption.price.split('-');
       const basePrice = parseFloat(priceRange[0]) || 0;
-      const unitPrice = category?.unitPrice || 1;
+      const unitPrice = category?.priceInfo?.unitPrice || 1;
       const estimatedPriceValue = Math.round(basePrice * unitPrice * 100) / 100;
       
       setEstimatedPrice(estimatedPriceValue);

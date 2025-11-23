@@ -48,7 +48,7 @@ export default function Profile(): JSX.Element {
         error: null,
         retryCount: 0
     })
-    
+
     const { state, dispatch } = useAppContext()
     const screenSize = useResponsive()
 
@@ -111,7 +111,7 @@ export default function Profile(): JSX.Element {
             if (statsData.status === 'fulfilled') {
                 const totalOrders = statsData.value.totalOrders || 0
                 const totalAmount = statsData.value.totalIncome || 0
-                
+
                 setStats({
                     totalOrders,
                     totalAmount,
@@ -130,7 +130,7 @@ export default function Profile(): JSX.Element {
         } catch (error) {
             console.error('加载用户资料失败:', error)
             const errorMessage = error instanceof Error ? error.message : '网络连接失败，请检查网络后重试'
-            
+
             setLoadingState(prev => ({
                 ...prev,
                 isLoading: false,
@@ -195,7 +195,7 @@ export default function Profile(): JSX.Element {
 
     const handleViewOrders = useCallback(() => {
         Taro.navigateTo({
-            url: '/pages/order/list'
+            url: '/pages/order/index'
         })
     }, [])
 
@@ -207,7 +207,7 @@ export default function Profile(): JSX.Element {
             })
             return
         }
-        
+
         try {
             Taro.showModal({
                 title: '账户余额',
@@ -310,121 +310,121 @@ export default function Profile(): JSX.Element {
     return (
         <AuthGuard>
             <View className='profile-page'>
-            {/* 用户信息卡片 */}
-            <View className={`user-section ${screenSize.screenType}`}>
-                <View className='user-info'>
-                    <View className='user-avatar-container' onClick={onEditProfile}>
-                        <Avatar
-                            className='user-avatar'
-                            src={userInfo.avatarUrl || ''}
-                            shape='round'
-                        />
-                    </View>
-                    <View className='user-details'>
-                        <Text className='user-nickname'>{userInfo.nickName || '未设置昵称'}</Text>
-                        <Text className='user-phone'>{userInfo.mobile || '未绑定手机'}</Text>
+                {/* 用户信息卡片 */}
+                <View className={`user-section ${screenSize.screenType}`}>
+                    <View className='user-info'>
+                        <View className='user-avatar-container' onClick={onEditProfile}>
+                            <Avatar
+                                className='user-avatar'
+                                src={userInfo.avatarUrl || ''}
+                                shape='round'
+                            />
+                        </View>
+                        <View className='user-details'>
+                            <Text className='user-nickname'>{userInfo.nickName || '未设置昵称'}</Text>
+                            <Text className='user-phone'>{userInfo.mobile || '未绑定手机'}</Text>
+                        </View>
                     </View>
                 </View>
-            </View>
 
-            {/* 统计信息 */}
-            <View className={`user-section ${screenSize.screenType}`}>
-                <View className='stats-section'>
-                    <View className='stats-grid'>
-                        <View className='stat-item stat-orders' onClick={handleViewOrders}>
-                            <IconFont name='file' size='24' color='white'></IconFont>
-                            <Text className='stat-value'>{formattedStats.totalOrders}</Text>
-                            <Text className='stat-label'>累计订单</Text>
+                {/* 统计信息 */}
+                <View className={`user-section ${screenSize.screenType}`}>
+                    <View className='stats-section'>
+                        <View className='stats-grid'>
+                            <View className='stat-item stat-orders' onClick={handleViewOrders}>
+                                <IconFont name='file' size='24' color='white'></IconFont>
+                                <Text className='stat-value'>{formattedStats.totalOrders}</Text>
+                                <Text className='stat-label'>累计订单</Text>
+                            </View>
+                            <View className='stat-item stat-earnings' onClick={handleViewBalance}>
+                                <IconFont name='money' size='24' color='white'></IconFont>
+                                <Text className='stat-value'>¥{formattedStats.totalAmount}</Text>
+                                <Text className='stat-label'>累计收益</Text>
+                            </View>
+                            <View className='stat-item stat-carbon'>
+                                <IconFont name='cloud' size='24' color='white'></IconFont>
+                                <Text className='stat-value'>{formattedStats.savedCarbon}kg</Text>
+                                <Text className='stat-label'>减碳贡献</Text>
+                            </View>
+                            <View className='stat-item stat-balance' onClick={handleViewBalance}>
+                                <IconFont name='wallet' size='24' color='white'></IconFont>
+                                <Text className='stat-value'>{formattedStats.availableBalance}</Text>
+                                <Text className='stat-label'>可用余额</Text>
+                            </View>
                         </View>
-                        <View className='stat-item stat-earnings' onClick={handleViewBalance}>
-                            <IconFont name='money' size='24' color='white'></IconFont>
-                            <Text className='stat-value'>¥{formattedStats.totalAmount}</Text>
-                            <Text className='stat-label'>累计收益</Text>
-                        </View>
-                        <View className='stat-item stat-carbon'>
-                            <IconFont name='cloud' size='24' color='white'></IconFont>
-                            <Text className='stat-value'>{formattedStats.savedCarbon}kg</Text>
-                            <Text className='stat-label'>减碳贡献</Text>
-                        </View>
-                        <View className='stat-item stat-balance' onClick={handleViewBalance}>
+                    </View>
+                </View>
+
+                {/* 账户余额和操作 */}
+                {account && (
+                    <View className={`balance-section ${screenSize.screenType}`}>
+                        <View className='balance-header'>
+                            <Text className='balance-title'>账户余额</Text>
                             <IconFont name='wallet' size='24' color='white'></IconFont>
-                            <Text className='stat-value'>{formattedStats.availableBalance}</Text>
-                            <Text className='stat-label'>可用余额</Text>
                         </View>
+                        <Text className='balance-amount'>
+                            {accountService.formatAmount(account.availableBalance)}
+                        </Text>
+                        <Text className='balance-desc'>可用余额</Text>
+                        <View className='balance-actions'>
+                            <View className='balance-btn' onClick={handleWithdraw}>
+                                <Text>提现</Text>
+                            </View>
+                            <View className='balance-btn' onClick={handleTransactions}>
+                                <Text>交易明细</Text>
+                            </View>
+                        </View>
+                        {account.frozenBalance > 0 && (
+                            <View className='frozen-warning'>
+                                <IconFont name='warning' size='16' color='#FF9500'></IconFont>
+                                <Text className='frozen-text'>
+                                    冻结余额：{accountService.formatAmount(account.frozenBalance)}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {/* 功能菜单 */}
+                <View className={`menu-section ${screenSize.screenType}`}>
+                    <View className='menu-item' onClick={onAddressManage}>
+                        <View className='menu-content'>
+                            <View className='menu-icon'>
+                                <IconFont name='location' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                            </View>
+                            <Text className='menu-title'>地址管理</Text>
+                        </View>
+                        <Text className='menu-arrow'>›</Text>
+                    </View>
+
+                    <View className='menu-item' onClick={onContactService}>
+                        <View className='menu-content'>
+                            <View className='menu-icon'>
+                                <IconFont name='phone' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                            </View>
+                            <Text className='menu-title'>联系客服</Text>
+                        </View>
+                        <Text className='menu-arrow'>›</Text>
+                    </View>
+
+                    <View className='menu-item' onClick={onSettings}>
+                        <View className='menu-content'>
+                            <View className='menu-icon'>
+                                <IconFont name='settings' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                            </View>
+                            <Text className='menu-title'>设置</Text>
+                        </View>
+                        <Text className='menu-arrow'>›</Text>
+                    </View>
+                </View>
+
+                {/* 退出登录 */}
+                <View className={`logout-section ${screenSize.screenType}`}>
+                    <View className='logout-btn' onClick={handleLogout}>
+                        <Text>退出登录</Text>
                     </View>
                 </View>
             </View>
-
-            {/* 账户余额和操作 */}
-            {account && (
-                <View className={`balance-section ${screenSize.screenType}`}>
-                    <View className='balance-header'>
-                        <Text className='balance-title'>账户余额</Text>
-                        <IconFont name='wallet' size='24' color='white'></IconFont>
-                    </View>
-                    <Text className='balance-amount'>
-                        {accountService.formatAmount(account.availableBalance)}
-                    </Text>
-                    <Text className='balance-desc'>可用余额</Text>
-                    <View className='balance-actions'>
-                        <View className='balance-btn' onClick={handleWithdraw}>
-                            <Text>提现</Text>
-                        </View>
-                        <View className='balance-btn' onClick={handleTransactions}>
-                            <Text>交易明细</Text>
-                        </View>
-                    </View>
-                    {account.frozenBalance > 0 && (
-                        <View className='frozen-warning'>
-                            <IconFont name='warning' size='16' color='#FF9500'></IconFont>
-                            <Text className='frozen-text'>
-                                冻结余额：{accountService.formatAmount(account.frozenBalance)}
-                            </Text>
-                        </View>
-                    )}
-                </View>
-            )}
-
-            {/* 功能菜单 */}
-            <View className={`menu-section ${screenSize.screenType}`}>
-                <View className='menu-item' onClick={onAddressManage}>
-                    <View className='menu-content'>
-                        <View className='menu-icon'>
-                            <IconFont name='location' size='18' color='var(--ios-tertiary-label)'></IconFont>
-                        </View>
-                        <Text className='menu-title'>地址管理</Text>
-                    </View>
-                    <Text className='menu-arrow'>›</Text>
-                </View>
-
-                <View className='menu-item' onClick={onContactService}>
-                    <View className='menu-content'>
-                        <View className='menu-icon'>
-                            <IconFont name='phone' size='18' color='var(--ios-tertiary-label)'></IconFont>
-                        </View>
-                        <Text className='menu-title'>联系客服</Text>
-                    </View>
-                    <Text className='menu-arrow'>›</Text>
-                </View>
-
-                <View className='menu-item' onClick={onSettings}>
-                    <View className='menu-content'>
-                        <View className='menu-icon'>
-                            <IconFont name='settings' size='18' color='var(--ios-tertiary-label)'></IconFont>
-                        </View>
-                        <Text className='menu-title'>设置</Text>
-                    </View>
-                    <Text className='menu-arrow'>›</Text>
-                </View>
-            </View>
-
-            {/* 退出登录 */}
-            <View className={`logout-section ${screenSize.screenType}`}>
-                <View className='logout-btn' onClick={handleLogout}>
-                    <Text>退出登录</Text>
-                </View>
-            </View>
-        </View>
         </AuthGuard>
     )
 }

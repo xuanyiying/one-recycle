@@ -1,11 +1,11 @@
 import { View, Text, ScrollView, Picker } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
-import accountService from '../../../services/account'
-import type { Transaction } from '../../../types/account'
-import AuthGuard from '../../../components/AuthGuard'
+import accountService from '@/services/account'
+import type { Transaction } from '@/types/account'
+import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
-import { ArrowDown, Minus, Plus, Received } from '@nutui/icons-react-taro'
+import { ArrowDown, Minus, Plus } from '@nutui/icons-react-taro'
 
 export default function TransactionList() {
   const [transactions, setTransactions] = useState<Transaction[]>([])

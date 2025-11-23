@@ -1,5 +1,8 @@
 // 通用类型定义
 
+// 导出订单创建流相关类型
+export * from './order'
+
 // 用户相关类型
 export interface User {
   id: number

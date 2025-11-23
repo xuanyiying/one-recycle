@@ -1,6 +1,11 @@
 // 分类相关Mock数据
 import { createMockResponse, MockResponse } from './index'
-import { Category } from '@/types/category'
+import { 
+  Category,
+  CategoryType,
+  CategoryStatus,
+  PriceType
+} from '@/types/category'
 
 // Banner数据类型
 interface Banner {
@@ -34,8 +39,8 @@ interface Article {
 const mockBanners: Banner[] = [
   {
     id: 1,
-    title: '环保回收，绿色生活',
-    imageUrl: 'https://via.placeholder.com/800x300?text=环保回收',
+    title: '旧书回收，绿色生活',
+    imageUrl: 'https://via.placeholder.com/800x300?text=旧书回收',
     linkUrl: '/category/1',
     sortOrder: 1,
     isActive: true,
@@ -116,10 +121,27 @@ const mockCategories: Category[] = [
     id: 1,
     name: '废纸类',
     description: '各种废纸制品回收',
-    unitPrice: 1.2,
-    icon: 'https://via.placeholder.com/64x64?text=纸',
+    type: CategoryType.RECYCLE,
+    status: CategoryStatus.ACTIVE,
+    priceInfo: {
+      type: PriceType.FIXED,
+      unitPrice: 1.2,
+      unit: 'kg',
+      currency: 'CNY'
+    },
+    level: 0,
+    path: '1',
     sortOrder: 1,
-    isActive: true,
+    isVisible: true,
+    isFeatured: true,
+    seo: {
+      slug: 'paper'
+    },
+    icon: {
+      url: 'https://via.placeholder.com/64x64?text=纸',
+      filename: 'paper.png',
+      uploadedAt: '2024-01-01T00:00:00Z'
+    },
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z'
   },
@@ -127,10 +149,27 @@ const mockCategories: Category[] = [
     id: 2,
     name: '塑料类',
     description: '各种塑料制品回收',
-    unitPrice: 2.5,
-    icon: 'https://via.placeholder.com/64x64?text=塑',
+    type: CategoryType.RECYCLE,
+    status: CategoryStatus.ACTIVE,
+    priceInfo: {
+      type: PriceType.FIXED,
+      unitPrice: 2.5,
+      unit: 'kg',
+      currency: 'CNY'
+    },
+    level: 0,
+    path: '2',
     sortOrder: 2,
-    isActive: true,
+    isVisible: true,
+    isFeatured: true,
+    seo: {
+      slug: 'plastic'
+    },
+    icon: {
+      url: 'https://via.placeholder.com/64x64?text=塑',
+      filename: 'plastic.png',
+      uploadedAt: '2024-01-01T00:00:00Z'
+    },
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z'
   },
@@ -138,10 +177,27 @@ const mockCategories: Category[] = [
     id: 3,
     name: '金属类',
     description: '各种金属制品回收',
-    unitPrice: 15.0,
-    icon: 'https://via.placeholder.com/64x64?text=金',
+    type: CategoryType.RECYCLE,
+    status: CategoryStatus.ACTIVE,
+    priceInfo: {
+      type: PriceType.FIXED,
+      unitPrice: 15.0,
+      unit: 'kg',
+      currency: 'CNY'
+    },
+    level: 0,
+    path: '3',
     sortOrder: 3,
-    isActive: true,
+    isVisible: true,
+    isFeatured: false,
+    seo: {
+      slug: 'metal'
+    },
+    icon: {
+      url: 'https://via.placeholder.com/64x64?text=金',
+      filename: 'metal.png',
+      uploadedAt: '2024-01-01T00:00:00Z'
+    },
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z'
   },
@@ -149,10 +205,28 @@ const mockCategories: Category[] = [
     id: 4,
     name: '电子产品',
     description: '废旧电子设备回收',
-    unitPrice: 50.0,
-    icon: 'https://via.placeholder.com/64x64?text=电',
+    type: CategoryType.RECYCLE,
+    status: CategoryStatus.ACTIVE,
+    priceInfo: {
+      type: PriceType.RANGE,
+      minPrice: 10,
+      maxPrice: 1000,
+      unit: '台',
+      currency: 'CNY'
+    },
+    level: 0,
+    path: '4',
     sortOrder: 4,
-    isActive: true,
+    isVisible: true,
+    isFeatured: true,
+    seo: {
+      slug: 'electronics'
+    },
+    icon: {
+      url: 'https://via.placeholder.com/64x64?text=电',
+      filename: 'electronics.png',
+      uploadedAt: '2024-01-01T00:00:00Z'
+    },
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z'
   },
@@ -160,10 +234,27 @@ const mockCategories: Category[] = [
     id: 5,
     name: '衣服',
     description: '各种衣服回收',
-    unitPrice: 0.8,
-    icon: 'https://via.placeholder.com/64x64?text=玻',
+    type: CategoryType.RECYCLE,
+    status: CategoryStatus.ACTIVE,
+    priceInfo: {
+      type: PriceType.FIXED,
+      unitPrice: 0.8,
+      unit: '件',
+      currency: 'CNY'
+    },
+    level: 0,
+    path: '5',
     sortOrder: 5,
-    isActive: true,
+    isVisible: true,
+    isFeatured: false,
+    seo: {
+      slug: 'clothing'
+    },
+    icon: {
+      url: 'https://via.placeholder.com/64x64?text=衣',
+      filename: 'clothing.png',
+      uploadedAt: '2024-01-01T00:00:00Z'
+    },
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z'
   }
@@ -171,7 +262,7 @@ const mockCategories: Category[] = [
 
 // Mock获取活跃分类
 export const mockGetActiveCategories = async (): Promise<MockResponse<Category[]>> => {
-  const activeCategories = mockCategories.filter(cat => cat.isActive)
+  const activeCategories = mockCategories.filter(cat => cat.status === CategoryStatus.ACTIVE)
   return createMockResponse(activeCategories, true, '获取活跃分类成功')
 }
 
@@ -190,6 +281,18 @@ export const mockGetCategoryDetail = async (id: string): Promise<MockResponse<Ca
   }
   
   return createMockResponse(category, true, '获取分类详情成功')
+}
+
+// Mock根据类型获取分类
+export const mockGetCategoriesByType = async (type: CategoryType): Promise<MockResponse<Category[]>> => {
+  const categories = mockCategories.filter(cat => cat.type === type)
+  return createMockResponse(categories, true, '根据类型获取分类成功')
+}
+
+// Mock获取推荐分类
+export const mockGetFeaturedCategories = async (): Promise<MockResponse<Category[]>> => {
+  const featuredCategories = mockCategories.filter(cat => cat.isFeatured)
+  return createMockResponse(featuredCategories, true, '获取推荐分类成功')
 }
 
 // Mock获取Banner列表
@@ -227,6 +330,8 @@ export const categoryMockData = {
   getActiveCategories: mockGetActiveCategories,
   getAllCategories: mockGetAllCategories,
   getCategoryDetail: mockGetCategoryDetail,
+  getCategoriesByType: mockGetCategoriesByType,
+  getFeaturedCategories: mockGetFeaturedCategories,
   getBanners: mockGetBanners,
   getArticles: mockGetArticles,
   getArticleDetail: mockGetArticleDetail

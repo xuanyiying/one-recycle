@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import { View, Text, Input, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAppContext } from '@/store'
 import { login, getUserInfo } from '@/services/auth'
-import { uploadImage } from '@/services/upload'
 import './index.scss'
-import { PlatformDetector } from '@/utils/platformDetector'
-import { Button } from '@nutui/nutui-react-taro'
+import {Button, Input, Image, Checkbox, Avatar} from '@nutui/nutui-react-taro'
+import {View, Text} from "@tarojs/components"
 
 // 常量定义
 const NICKNAME_MIN_LENGTH = 2
@@ -15,19 +13,21 @@ const NICKNAME_MAX_LENGTH = 20
 interface LoginForm {
   nickname: string
   avatar: string
+  agreedToTerms: boolean
 }
 
 export default function Login() {
   const [form, setForm] = useState<LoginForm>({
     nickname: '',
-    avatar: ''
+    avatar: '',
+    agreedToTerms: false
   })
   const [loading, setLoading] = useState(false)
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [nicknameError, setNicknameError] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [checkingLoginStatus, setCheckingLoginStatus] = useState(true)
-  
+  const [avatar, setAvatar] = useState<string>('')
+
   const { dispatch } = useAppContext()
 
   // 检查登录状态
@@ -42,9 +42,11 @@ export default function Login() {
             // 用户已登录，更新全局状态并跳转首页
             dispatch({
               type: 'SET_USER',
-              payload: userInfoResult.data
+              payload: {
+                ...userInfoResult.data,
+                avatar: userInfoResult.data.avatar || '/assets/icons/default-avatar.png'
+              }
             })
-            
             await Taro.reLaunch({
               url: '/pages/index/index'
             })
@@ -59,7 +61,6 @@ export default function Login() {
         setCheckingLoginStatus(false)
       }
     }
-    
     checkLoginStatus()
   }, [dispatch])
 
@@ -72,7 +73,7 @@ export default function Login() {
       '/assets/icons/album.png',
       '/assets/icons/camera.png'
     ]
-    
+
     // 使用Taro的图片预加载方法
     preloadImages.forEach(src => {
       Taro.getImageInfo({
@@ -87,37 +88,37 @@ export default function Login() {
   // 验证昵称
   const validateNickname = (nickname: string): string => {
     const trimmedNickname = nickname.trim()
-    
+
     if (!trimmedNickname) {
       return '请输入昵称'
     }
-    
+
     if (trimmedNickname.length < NICKNAME_MIN_LENGTH) {
       return `昵称至少${NICKNAME_MIN_LENGTH}个字符`
     }
-    
+
     if (trimmedNickname.length > NICKNAME_MAX_LENGTH) {
       return `昵称不能超过${NICKNAME_MAX_LENGTH}个字符`
     }
-    
+
     // 修正正则表达式：允许中文、英文、数字、下划线和横线
     if (!/^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/.test(trimmedNickname)) {
       return '昵称只能包含中文、英文、数字、下划线和横线'
     }
-    
+
     // 检查是否包含敏感词或特殊字符
     const forbiddenPatterns = [
       /^\d+$/, // 纯数字
       /^[_-]+$/, // 纯下划线或横线
       /admin|管理员|系统|客服/i // 敏感词
     ]
-    
+
     for (const pattern of forbiddenPatterns) {
       if (pattern.test(trimmedNickname)) {
         return '昵称格式不符合要求'
       }
     }
-    
+
     return ''
   }
 
@@ -125,109 +126,14 @@ export default function Login() {
   const handleNicknameInput = (e: any) => {
     const value = e.detail.value
     setForm(prev => ({ ...prev, nickname: value }))
-    
+
     // 实时验证
     const error = validateNickname(value)
     setNicknameError(error)
-    
+
     // 清除提交错误
     if (submitError) {
       setSubmitError('')
-    }
-  }
-
-  // 处理头像选择
-  const handleAvatarClick = () => {
-    setShowAvatarPicker(true)
-  }
-
-  // 使用微信头像
-  const handleUseWechatAvatar = async () => {
-    try {
-      // 获取微信用户信息
-      const userProfile = await Taro.getUserProfile({
-        desc: '用于完善用户资料'
-      })
-      
-      if (userProfile.userInfo.avatarUrl) {
-        setForm(prev => ({ ...prev, avatar: userProfile.userInfo.avatarUrl }))
-        
-        // 如果昵称为空，使用微信昵称
-        if (!form.nickname && userProfile.userInfo.nickName) {
-          setForm(prev => ({ ...prev, nickname: userProfile.userInfo.nickName }))
-          setNicknameError('')
-        }
-      }
-      
-      setShowAvatarPicker(false)
-    } catch (error) {
-      console.error('获取微信头像失败:', error)
-      Taro.showToast({
-        title: '获取头像失败',
-        icon: 'error'
-      })
-    }
-  }
-
-  // 从相册选择
-  const handleSelectFromAlbum = async () => {
-    try {
-      const result = await Taro.chooseImage({
-        count: 1,
-        sizeType: ['compressed'],
-        sourceType: ['album']
-      })
-      
-      if (result.tempFilePaths.length > 0) {
-        const tempFilePath = result.tempFilePaths[0]
-        
-        // 上传图片
-        const uploadResult = await uploadImage(tempFilePath)
-        if (uploadResult.success && uploadResult.data) {
-          setForm(prev => ({ ...prev, avatar: uploadResult.data?.url || '' }))
-        } else {
-          throw new Error(uploadResult.message || '上传失败')
-        }
-      }
-      
-      setShowAvatarPicker(false)
-    } catch (error) {
-      console.error('选择头像失败:', error)
-      Taro.showToast({
-        title: '选择头像失败',
-        icon: 'error'
-      })
-    }
-  }
-
-  // 拍照
-  const handleTakePhoto = async () => {
-    try {
-      const result = await Taro.chooseImage({
-        count: 1,
-        sizeType: ['compressed'],
-        sourceType: ['camera']
-      })
-      
-      if (result.tempFilePaths.length > 0) {
-        const tempFilePath = result.tempFilePaths[0]
-        
-        // 上传图片
-        const uploadResult = await uploadImage(tempFilePath)
-        if (uploadResult.success && uploadResult.data) {
-          setForm(prev => ({ ...prev, avatar: uploadResult.data?.url || '' }))
-        } else {
-          throw new Error(uploadResult.message || '上传失败')
-        }
-      }
-      
-      setShowAvatarPicker(false)
-    } catch (error) {
-      console.error('拍照失败:', error)
-      Taro.showToast({
-        title: '拍照失败',
-        icon: 'error'
-      })
     }
   }
 
@@ -237,11 +143,11 @@ export default function Login() {
       // 尝试获取设备信息
       const systemInfo = await Taro.getSystemInfo()
       const deviceInfo = `${systemInfo.platform}_${systemInfo.system}_${systemInfo.model}`.replace(/\s+/g, '_')
-      
+
       // 生成基于设备信息、时间戳和随机数的唯一标识
       const timestamp = Date.now()
       const random = Math.random().toString(36).substring(2, 15)
-      
+
       return `${deviceInfo}_${timestamp}_${random}`
     } catch (error) {
       console.error('获取用户唯一标识失败:', error)
@@ -250,6 +156,11 @@ export default function Login() {
       const random = Math.random().toString(36).substring(2, 15)
       return `fallback_${timestamp}_${random}`
     }
+  }
+
+  // 切换协议同意状态
+  const handleToggleAgreement = () => {
+    setForm(prev => ({ ...prev, agreedToTerms: !prev.agreedToTerms }))
   }
 
   // 授权登录
@@ -261,20 +172,25 @@ export default function Login() {
       return
     }
 
+    // 验证是否同意协议
+    if (!form.agreedToTerms) {
+      setSubmitError('请先阅读并同意用户协议和隐私政策')
+      return
+    }
+
     setLoading(true)
     setSubmitError('')
 
     try {
       // 获取微信登录凭证
       const loginResult = await Taro.login()
-      
+
       if (!loginResult.code) {
         throw new Error('获取登录凭证失败')
       }
 
       // 获取用户唯一标识
       const uniqueId = await getUserUniqueId()
-
       // 调用登录API
       const authResult = await login({
         code: loginResult.code,
@@ -287,15 +203,15 @@ export default function Login() {
       if (authResult.success && authResult.data) {
         // 存储用户信息
         const { token, refreshToken, user } = authResult.data
-        
+        setAvatar(authResult.data.user.avatar || '/assets/icons/default-avatar.png')
         // 存储token和刷新令牌
-        await Taro.setStorageSync('token', token)
+          Taro.setStorageSync('token', token)
         if (refreshToken) {
-          await Taro.setStorageSync('refreshToken', refreshToken)
+          Taro.setStorageSync('refreshToken', refreshToken)
         }
         // 存储用户信息到本地，便于跨会话读取
-        await Taro.setStorageSync('user', user)
-        
+        Taro.setStorageSync('user', user)
+
         // 更新全局状态
         dispatch({
           type: 'SET_USER',
@@ -363,8 +279,8 @@ export default function Login() {
       {/* 登录头部 */}
       <View className="login-header">
         <View className="logo">
-          <Image 
-            src="/assets/icons/logo.png" 
+          <Image
+            src="/assets/icons/logo.png"
             className="logo-image"
             mode="aspectFit"
           />
@@ -376,27 +292,20 @@ export default function Login() {
       <View className="main-content">
         {/* 头像区域 */}
         <View className="avatar-section">
-          <Button
-            className="avatar-container"
-            onClick={handleAvatarClick}
-          >
-            {form.avatar ? (
-              <Image 
-                src={form.avatar} 
+            {avatar ? (
+              <Avatar
+                src={avatar}
                 className="user-avatar"
-                mode="aspectFill"
+                size="large"
               />
             ) : (
               <View className="default-avatar">
-                <Image 
+                <Avatar
                   src="/assets/icons/default-avatar.png"
                   className="avatar-icon"
-                  mode="aspectFit"
                 />
               </View>
             )}
-          </Button>
-          <Text className="avatar-tip">点击获取头像</Text>
         </View>
 
         {/* 昵称输入区域 */}
@@ -407,7 +316,7 @@ export default function Login() {
               placeholder="请输入昵称"
               value={form.nickname}
               onInput={handleNicknameInput}
-              maxlength={20}
+              maxLength={20}
             />
           </View>
           {nicknameError && (
@@ -423,6 +332,27 @@ export default function Login() {
           <Text className="description-content">
             为了区分不同客户信息将获得您的公开信息(昵称、头像、地区等)
           </Text>
+        </View>
+
+        {/* 用户协议同意区域 */}
+        <View className="agreement-checkbox">
+            <Checkbox defaultChecked={form.agreedToTerms} onClick={handleToggleAgreement} />
+          <View className="agreement-text-wrapper">
+            <Text className="agreement-text">我已阅读并同意</Text>
+            <Text
+              className="agreement-link"
+              onClick={handleUserAgreement}
+            >
+              《用户协议》
+            </Text>
+            <Text className="agreement-text">和</Text>
+            <Text
+              className="agreement-link"
+              onClick={handlePrivacyPolicy}
+            >
+              《隐私政策》
+            </Text>
+          </View>
         </View>
 
         {/* 提交错误信息 */}
@@ -441,11 +371,11 @@ export default function Login() {
             block
             loading={loading}
             onClick={handleAuthorizeLogin}
-            disabled={loading || !!nicknameError || !form.nickname.trim()}
+            disabled={loading || !!nicknameError || !form.nickname.trim() || !form.agreedToTerms}
           >
             {loading ? '授权登录中...' : '授权登录'}
           </Button>
-          
+
           <Button
             className="skip-btn"
             color="default"
@@ -457,87 +387,7 @@ export default function Login() {
             暂不授权
           </Button>
         </View>
-
-        {/* 用户协议 */}
-        <View className="agreement">
-          <Text className="agreement-text">
-            登录即表示同意
-          </Text>
-          <Button
-            className="link-container"
-            size="small"
-            onClick={handleUserAgreement}
-          >
-            <Text className="link">《用户协议》</Text>
-          </Button>
-          <Text className="agreement-text">和</Text>
-          <Button
-            className="link-container"
-            size="small"
-            onClick={handlePrivacyPolicy}
-          >
-            <Text className="link">《隐私政策》</Text>
-          </Button>
-        </View>
       </View>
-
-      {/* 头像选择器 */}
-      {showAvatarPicker && (
-        <View className="avatar-picker-overlay" onTap={() => setShowAvatarPicker(false)}>
-          <View className="avatar-picker-modal" onTap={(e) => e.stopPropagation()}>
-            <Button
-              className="avatar-picker-header"
-              block
-              onClick={handleUseWechatAvatar}
-            >
-              <Text className="picker-title">用{PlatformDetector.getPlatformChineseName()}头像</Text>
-               <Image 
-                  src="/assets/icons/wechat-avatar.png"
-                  className="option-icon"
-                  mode="aspectFit"
-                />
-            </Button>
-            
-              <Button
-                className="avatar-option"
-                block
-                onClick={handleSelectFromAlbum}
-              >
-                <Image 
-                  src="/assets/icons/album.png"
-                  className="option-icon"
-                  mode="aspectFit"
-                />
-                <Text className="option-text">从相册选择</Text>
-              </Button>
-              
-              <Button
-                className="avatar-option"
-                block
-                onClick={handleTakePhoto}
-              >
-                <Image 
-                  src="/assets/icons/camera.png"
-                  className="option-icon"
-                  mode="aspectFit"
-                />
-                <Text className="option-text">拍照</Text>
-              </Button>
-            </View>
-            
-            <View className="avatar-picker-footer">
-              <Button 
-                className="cancel-btn"
-                color="default"
-                size={'normal'}
-                block
-                onClick={() => setShowAvatarPicker(false)}
-              >
-                取消
-              </Button>
-            </View>
-          </View>
-      )}
     </View>
   )
 }

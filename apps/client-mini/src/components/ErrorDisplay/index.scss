@@ -1,0 +1,137 @@
+@import '../../styles/variables.scss';
+
+.error-display {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+
+  .error-icon,
+  .banner-icon {
+    font-size: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .error-text,
+  .banner-message {
+    font-size: 14px;
+    line-height: 1.5;
+    flex: 1;
+  }
+}
+
+// Inline mode - 简洁的字段错误
+.error-inline {
+  padding: 8px 12px;
+  background-color: #fff3f3;
+  border-left: 3px solid #ff4d4f;
+
+  &.error-warning {
+    background-color: #fffbe6;
+    border-left-color: #faad14;
+  }
+
+  &.error-info {
+    background-color: #e6f7ff;
+    border-left-color: #1890ff;
+  }
+
+  .error-text {
+    color: #ff4d4f;
+  }
+
+  &.error-warning .error-text {
+    color: #faad14;
+  }
+
+  &.error-info .error-text {
+    color: #1890ff;
+  }
+}
+
+// Banner mode - 横幅样式
+.error-banner {
+  flex-direction: column;
+  background-color: #fff3f3;
+  border: 1px solid #ffccc7;
+
+  &.error-warning {
+    background-color: #fffbe6;
+    border-color: #ffe58f;
+  }
+
+  &.error-info {
+    background-color: #e6f7ff;
+    border-color: #91d5ff;
+  }
+
+  .banner-content {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .banner-text {
+    flex: 1;
+  }
+
+  .banner-title {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #262626;
+    margin-bottom: 4px;
+  }
+
+  .banner-message {
+    color: #595959;
+  }
+
+  .banner-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    width: 100%;
+
+    .btn-retry,
+    .btn-dismiss {
+      flex: 1;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    .btn-retry {
+      background-color: $primary-color;
+      color: white;
+    }
+
+    .btn-dismiss {
+      background-color: #f5f5f5;
+      color: #595959;
+    }
+  }
+}
+
+// Message mode - 消息框样式
+.error-message {
+  background-color: #fff3f3;
+  border: 1px solid #ffccc7;
+
+  &.error-warning {
+    background-color: #fffbe6;
+    border-color: #ffe58f;
+  }
+
+  &.error-info {
+    background-color: #e6f7ff;
+    border-color: #91d5ff;
+  }
+
+  .error-text {
+    color: #262626;
+  }
+}

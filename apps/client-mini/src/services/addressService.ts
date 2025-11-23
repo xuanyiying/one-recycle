@@ -7,12 +7,13 @@ import { AuthService } from './authService'
 export interface AddressData {
   id?: string | number
   name: string
-  phone: string
-  province: string
-  city: string
-  district: string
-  detail: string
-  isDefault?: boolean
+  phone: string // 
+  province: string // 省
+  city: string // 市
+  area: string // 区
+  district: string  //
+  detail: string // 详细地址
+  isDefault?: boolean 
   userId?: number
 }
 

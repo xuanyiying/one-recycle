@@ -80,9 +80,7 @@
   width: 100%;
 
   .avatar-container {
-    width: 160rpx; // 80pt
-    height: 160rpx; // 80pt
-    border-radius: 50%;
+    height: 240rpx; // 80pt
     overflow: hidden;
     margin-bottom: $spacing-12; // 12pt
     background: var(--ios-secondary-system-background);
@@ -91,6 +89,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    cursor: pointer;
 
     &:active {
       transform: scale(0.95);
@@ -102,19 +101,10 @@
       height: 100%;
     }
 
-    .default-avatar {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--ios-tertiary-system-background);
-
-      .avatar-icon {
-        width: 80rpx; // 40pt
-        height: 80rpx; // 40pt
-        opacity: 0.6;
-      }
+    .avatar-icon {
+      width: 80rpx; // 40pt
+      height: 80rpx; // 40pt
+      opacity: 0.6;
     }
   }
 
@@ -129,6 +119,7 @@
 .nickname-section {
   width: 100%;
   margin-bottom: $spacing-24; // 24pt
+  padding: 0rpx 36rpx ;
 
   .input-wrapper {
     width: 100%;
@@ -227,64 +218,87 @@
   }
 }
 
-// ==================== 用户协议区域 ====================
-.agreement {
+// ==================== 用户协议同意区域 ====================
+.agreement-checkbox {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   align-items: center;
-  text-align: center;
-  gap: $spacing-4; // 4pt
+  justify-content: center;
+  width: 100%;
+  margin-bottom: $spacing-16; // 16pt
+  padding: 0 $spacing-4; // 0 4pt
 
-  .agreement-text {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-    color: var(--ios-secondary-label);
-    line-height: $line-height-relaxed;
-  }
-
-  .link-container {
-    display: inline-block;
-    padding: $spacing-2 $spacing-4; // 2pt 4pt
+  .nut-checkbox {
+    width: 36rpx; // 18pt
+    height: 36rpx; // 18pt
+    border: 2rpx solid var(--ios-secondary-label); // 1pt 边框 - 与文字颜色一致
     border-radius: $border-radius-xs; // 4pt
-    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: $spacing-8; // 8pt
     background: transparent;
-    border: none;
+    transition: all 0.2s ease;
 
-    &:active {
-      background-color: rgba(0, 122, 255, 0.1); // iOS 蓝色背景
+    &.nut-checkbox--checked {
+      background: var(--ios-blue); // iOS 系统蓝色
+      border-color: var(--ios-blue);
     }
 
-    .link {
+    &:active {
+      transform: scale(0.95);
+    }
+
+    .nut-checkbox__icon {
+      @extend .ios-body; // 使用 iOS Body 样式
+      color: white;
+      font-weight: 600;
+      line-height: 1;
+    }
+  }
+
+  .agreement-text-wrapper {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: $spacing-2; // 2pt
+
+    .agreement-text {
+      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      color: var(--ios-secondary-label);
+      line-height: $line-height-relaxed;
+    }
+
+    .agreement-link {
       @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-blue); // iOS 系统蓝色
       text-decoration: underline;
       line-height: $line-height-relaxed;
+      padding: $spacing-2 $spacing-4; // 2pt 4pt
+      margin: -#{$spacing-2} 0; // -2pt 0 - 增加点击区域
+      border-radius: $border-radius-xs; // 4pt
+      transition: background-color 0.2s ease;
+
+      &:active {
+        background-color: rgba(0, 122, 255, 0.1); // iOS 蓝色背景
+      }
     }
   }
 }
 
 // ==================== 头像选择器 ====================
-.avatar-picker-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4); // iOS 遮罩颜色
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: ios-fade-in 0.3s ease-out;
-}
-
-.avatar-picker-modal {
+.avatar-picker-container {
   width: 100%;
+  height: 100%;
   background: var(--ios-secondary-system-grouped-background);
   border-radius: $border-radius-lg $border-radius-lg 0 0; // 20pt 顶部圆角
-  animation: ios-slide-in-up 0.3s ease-out;
   overflow: hidden;
-  @include ios-safe-area-bottom; // 适配安全区域
+  padding-bottom: constant(safe-area-inset-bottom); // iOS 11.0-11.2
+  padding-bottom: env(safe-area-inset-bottom); // iOS 11.2+
+  display: flex;
+  flex-direction: column;
 
   .avatar-picker-header {
     display: flex;
@@ -303,6 +317,7 @@
     .picker-title {
       @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
       flex: 1;
+      text-align: left;
     }
 
     .option-icon {
@@ -342,17 +357,26 @@
     }
   }
 
-  .avatar-picker-footer {
-    padding: $spacing-12 $spacing-16 $spacing-20; // 12pt 16pt 20pt
-
-    .cancel-btn {
-      @extend .ios-button-secondary; // 使用 iOS 次要按钮样式
-      width: 100%;
-    }
+  .cancel-btn {
+    @extend .ios-button-secondary; // 使用 iOS 次要按钮样式
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: $spacing-12;
+    margin-left: $spacing-12;
+    margin-right: $spacing-12;
   }
 }
 
 // ==================== iOS 动画 ====================
+@keyframes ios-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes ios-slide-in-up {
   from {
     transform: translateY(100%);

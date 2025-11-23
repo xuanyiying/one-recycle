@@ -1,0 +1,94 @@
+/**
+ * NetworkErrorHandler Component Styles
+ */
+
+.network-error-handler {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  border-radius: 8px;
+  background-color: #fff5f5;
+  border: 1px solid #feb2b2;
+
+  .error-container {
+    display: flex;
+    gap: 12px;
+
+    .error-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .error-content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+
+      .error-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #c53030;
+      }
+
+      .error-message {
+        font-size: 13px;
+        color: #742a2a;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      .error-hint {
+        font-size: 12px;
+        color: #975a5a;
+        line-height: 1.3;
+      }
+    }
+  }
+
+  .error-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+
+    .btn-retry,
+    .btn-dismiss {
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:active {
+        opacity: 0.8;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-retry {
+      background-color: #f56565;
+      color: white;
+
+      &:active:not(:disabled) {
+        background-color: #e53e3e;
+      }
+    }
+
+    .btn-dismiss {
+      background-color: transparent;
+      color: #c53030;
+      border: 1px solid #c53030;
+
+      &:active:not(:disabled) {
+        background-color: #fff5f5;
+      }
+    }
+  }
+}

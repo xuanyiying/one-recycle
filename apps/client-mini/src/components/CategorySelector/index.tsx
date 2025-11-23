@@ -1,14 +1,15 @@
 import { View, Text, Picker } from '@tarojs/components'
 import './index.scss'
+
 interface Category {
-  id: number
+  id: number | string
   name: string
 }
 
 interface CategorySelectorProps {
   categories: Category[]
-  value: string
-  onChange: (category: string) => void
+  value: string // category id or name
+  onChange: (categoryId: string) => void
   placeholder?: string
   required?: boolean
 }
@@ -23,9 +24,15 @@ export default function CategorySelector({
   const handleChange = (e: any) => {
     const selectedCategory = categories[e.detail.value]
     if (selectedCategory) {
-      onChange(selectedCategory.name)
+      onChange(String(selectedCategory.id))
     }
   }
+
+  // Find selected category by id or name
+  const selectedIndex = categories.findIndex(
+    cat => String(cat.id) === value || cat.name === value
+  )
+  const selectedCategory = selectedIndex >= 0 ? categories[selectedIndex] : null
 
   return (
     <View className='category-selector'>
@@ -35,12 +42,12 @@ export default function CategorySelector({
       <Picker
         mode='selector'
         range={categories.map(cat => cat.name)}
-        value={categories.findIndex(cat => cat.name === value)}
+        value={selectedIndex >= 0 ? selectedIndex : 0}
         onChange={handleChange}
       >
         <View className='picker-item'>
-          <Text className={value ? 'selected' : 'placeholder'}>
-            {value || placeholder}
+          <Text className={selectedCategory ? 'selected' : 'placeholder'}>
+            {selectedCategory?.name || placeholder}
           </Text>
           <Text className='arrow'>▼</Text>
         </View>
