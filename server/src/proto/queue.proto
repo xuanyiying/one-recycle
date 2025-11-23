@@ -1,0 +1,26 @@
+syntax = "proto3";
+package queue;
+
+service QueueService {
+  rpc PublishTask (PublishTaskRequest) returns (PublishTaskResponse);
+  rpc Ack (AckRequest) returns (AckResponse);
+  rpc Nack (NackRequest) returns (NackResponse);
+  rpc Consume (ConsumeRequest) returns (stream TaskMessage);
+}
+
+message PublishTaskRequest {
+  string queue = 1;
+  string payload = 2;
+  int32 priority = 3;
+  int64 delayMs = 4;
+}
+
+message PublishTaskResponse { string taskId = 1; }
+message AckRequest { string taskId = 1; }
+message AckResponse { bool success = 1; }
+message NackRequest { string taskId = 1; string reason = 2; }
+message NackResponse { bool success = 1; }
+message ConsumeRequest { string queue = 1; int32 maxInFlight = 2; }
+
+message TaskMessage { string taskId = 1; string payload = 2; int32 priority = 3; }
+

@@ -12,7 +12,8 @@ import {
   MaxLength
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { CategoryType, CategoryStatus } from '../entities/category.entity';
+import { CategoryType } from './create-category.dto';
+import { CategoryStatus, PaginationParams } from '@one-recycle/shared';
 
 /**
  * 价格范围查询DTO
@@ -34,7 +35,12 @@ export class PriceRangeDto {
 /**
  * 分类查询DTO
  */
-export class QueryCategoryDto {
+export class QueryCategoryDto implements PaginationParams {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  name?: string;
+
   @IsOptional()
   @IsEnum(CategoryType)
   type?: CategoryType;
@@ -112,14 +118,14 @@ export class QueryCategoryDto {
   @Transform(({ value }) => parseInt(value))
   @IsNumber()
   @Min(1)
-  page?: number = 1;
+  page: number = 1;
 
   @IsOptional()
   @Transform(({ value }) => parseInt(value))
   @IsNumber()
   @Min(1)
   @Max(100)
-  pageSize?: number = 20;
+  limit: number = 20;
 
   // 排序参数
   @IsOptional()
@@ -129,6 +135,14 @@ export class QueryCategoryDto {
   @IsOptional()
   @IsEnum(['asc', 'desc'])
   sortDirection?: 'asc' | 'desc' = 'asc';
+  
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+  
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -176,16 +190,16 @@ export class BatchOperationDto {
   @IsArray()
   @Transform(({ value }) => {
     if (Array.isArray(value)) {
-      return value.map(id => parseInt(id));
+      return value;
     }
     return [];
   })
   @IsNumber({}, { each: true })
   @Min(1, { each: true })
-  ids: number[];
+  ids: string[] = [];
 
   @IsEnum(['activate', 'deactivate', 'archive', 'delete', 'updateParent', 'updateSort'])
-  operation: string;
+  operation: string = '';
 
   @IsOptional()
   data?: any;

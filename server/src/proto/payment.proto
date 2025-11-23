@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package payment;
+
+service PaymentService {
+  rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc GetPayment (GetPaymentRequest) returns (GetPaymentResponse);
+  rpc UpdatePaymentStatus (UpdatePaymentStatusRequest) returns (UpdatePaymentStatusResponse);
+  rpc CreateRefund (CreateRefundRequest) returns (CreateRefundResponse);
+  rpc GetRefund (GetRefundRequest) returns (GetRefundResponse);
+}
+
+message CreatePaymentRequest {
+  string orderId = 1;
+  double amount = 2;
+  string provider = 3;
+}
+
+message CreatePaymentResponse {
+  bool success = 1;
+  string paymentId = 2;
+  string transactionId = 3;
+  string message = 4;
+}
+
+message GetPaymentRequest {
+  string paymentId = 1;
+}
+
+message GetPaymentResponse {
+  Payment payment = 1;
+}
+
+message Payment {
+  string id = 1;
+  string orderId = 2;
+  string transactionId = 3;
+  double total = 4;
+  string status = 5;
+  string provider = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+}
+
+message UpdatePaymentStatusRequest {
+  string transactionId = 1;
+  string status = 2;
+}
+
+message UpdatePaymentStatusResponse {
+  bool success = 1;
+  Payment payment = 2;
+}
+
+message CreateRefundRequest {
+  string paymentId = 1;
+  double refundAmount = 2;
+  string reason = 3;
+}
+
+message CreateRefundResponse {
+  bool success = 1;
+  string refundId = 2;
+  string outRefundNo = 3;
+  string message = 4;
+}
+
+message GetRefundRequest {
+  string refundId = 1;
+}
+
+message GetRefundResponse {
+  Refund refund = 1;
+}
+
+message Refund {
+  string id = 1;
+  string paymentId = 2;
+  string outRefundNo = 3;
+  double refundAmount = 4;
+  string status = 5;
+  string reason = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+}

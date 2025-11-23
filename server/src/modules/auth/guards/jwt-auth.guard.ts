@@ -1,0 +1,164 @@
+import { 
+  Injectable, 
+  ExecutionContext, 
+  UnauthorizedException, 
+  ForbiddenException,
+  Logger 
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { RedisService } from '@one-recycle/shared';
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  private readonly logger = new Logger(JwtAuthGuard.name);
+
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly redisService: RedisService,
+  ) {
+    super();
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    // 检查是否标记为公开接口
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
+    try {
+      // 调用父类的 canActivate 方法进行基础 JWT 验证
+      const result = await super.canActivate(context);
+      if (!result) {
+        throw new UnauthorizedException('令牌验证失败');
+      }
+
+      const request = context.switchToHttp().getRequest();
+      const user = request.user;
+
+      if (!user) {
+        throw new UnauthorizedException('用户信息不存在');
+      }
+
+      // 验证会话是否有效
+      await this.validateSession(user);
+
+      // 检查用户权限
+      await this.checkPermissions(context, user);
+
+      this.logger.log(`用户 ${user.id} 通过认证验证`);
+      return true;
+
+    } catch (error) {
+      this.logger.error(`认证失败: ${error.message}`, error.stack);
+      
+      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      
+      throw new UnauthorizedException('认证验证失败');
+    }
+  }
+
+  /**
+   * 验证用户会话是否有效
+   */
+  private async validateSession(user: any): Promise<void> {
+    if (!user.sessionId) {
+      throw new UnauthorizedException('会话信息不存在');
+    }
+
+    try {
+      const sessionKey = `auth:session:${user.sessionId}`;
+      const sessionData = await this.redisService.get(sessionKey);
+
+      if (!sessionData) {
+        throw new UnauthorizedException('会话已过期或不存在');
+      }
+
+      const session = JSON.parse(sessionData);
+      
+      // 验证会话中的用户ID是否匹配
+      if (session.userId !== user.id) {
+        throw new UnauthorizedException('会话用户不匹配');
+      }
+
+      // 检查会话是否被标记为无效
+      if (session.invalidated) {
+        throw new UnauthorizedException('会话已失效');
+      }
+
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error(`会话验证失败: ${error.message}`);
+      throw new UnauthorizedException('会话验证失败');
+    }
+  }
+
+  /**
+   * 检查用户权限
+   */
+  private async checkPermissions(context: ExecutionContext, user: any): Promise<void> {
+    // 检查是否需要管理员权限
+    const requireAdmin = this.reflector.getAllAndOverride<boolean>('requireAdmin', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (requireAdmin && user.role !== 'ADMIN') {
+      throw new ForbiddenException('需要管理员权限');
+    }
+
+    // 检查特定角色要求
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (requiredRoles && requiredRoles.length > 0) {
+      if (!requiredRoles.includes(user.role)) {
+        throw new ForbiddenException(`需要以下角色之一: ${requiredRoles.join(', ')}`);
+      }
+    }
+
+    // 检查用户状态
+    if (user.status && user.status !== 'ACTIVE') {
+      throw new ForbiddenException('用户账户已被禁用');
+    }
+  }
+
+  /**
+   * 处理认证错误
+   */
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    if (err) {
+      this.logger.error(`认证错误: ${err.message}`, err.stack);
+      throw err;
+    }
+
+    if (!user) {
+      const errorMessage = info?.message || '令牌无效';
+      this.logger.warn(`认证失败: ${errorMessage}`);
+      
+      // 根据不同的错误类型返回不同的错误信息
+      if (info?.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('令牌已过期');
+      } else if (info?.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('令牌格式错误');
+      } else if (info?.name === 'NotBeforeError') {
+        throw new UnauthorizedException('令牌尚未生效');
+      }
+      
+      throw new UnauthorizedException(errorMessage);
+    }
+
+    return user;
+  }
+}

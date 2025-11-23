@@ -1,0 +1,881 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextIndex"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 系统配置表
+model SystemConfig {
+  id          String   @id
+  key         String   @unique
+  value       String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
+}
+
+/// 平台信息表
+model Platform {
+  id          String       @id
+  name        String // 微信、支付宝、抖音、快手等
+  code        String       @unique // wx, alipay, douyin, kuaishou
+  appId       String       @map("app_id")
+  appSecret   String       @map("app_secret")
+  isActive    Boolean      @default(true) @map("is_active")
+  config      Json? // 平台特定配置
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  appVersions AppVersion[]
+
+  @@map("platforms")
+}
+
+/// 客户端版本管理
+model AppVersion {
+  id          String   @id
+  platformId  String   @map("platform_id")
+  version     String
+  buildNumber Int      @map("build_number")
+  url         String
+  forceUpdate Boolean  @default(false) @map("force_update")
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  platform    Platform @relation(fields: [platformId], references: [id])
+
+  @@index([platformId])
+  @@map("app_versions")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  type        String   @default("PRODUCT")
+  parentId    Int?     @map("parent_id")
+  icon        String?
+  priceInfo   String   @map("price_info")
+  seo         String
+  sortOrder   Int      @default(0) @map("sort_order")
+  isVisible   Boolean  @default(true) @map("is_visible")
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  attributes  String?
+  level       Int      @default(0)
+  path        String   @default("0")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 自引用关系
+  parent         Category?       @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       Category[]      @relation("CategoryHierarchy")
+  inventoryItems InventoryItem[]
+  orderItems     OrderItem[]
+
+  @@index([type])
+  @@index([parentId])
+  @@map("categories")
+}
+
+/// 用户主表
+model User {
+  id               BigInt            @id @default(autoincrement())
+  mobile           String?           @unique @db.VarChar(20)
+  email            String?           @unique @db.VarChar(100)
+  nickname         String?           @db.VarChar(50)
+  realName         String?           @map("real_name") @db.VarChar(50)
+  avatarUrl        String?           @map("avatar_url") @db.VarChar(255)
+  gender           String? // male, female, other
+  birthday         DateTime?
+  status           UserStatus        @default(ACTIVE)
+  level            Int               @default(0) // 用户等级
+  points           Int               @default(0) @map("points") // 积分
+  balance          Float             @default(0) @map("balance") // 余额
+  lastLogin        DateTime?         @map("last_login")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  identities       UserIdentity[]
+  addresses        Address[]
+  orders           Order[]
+  favorites        UserFavorite[]
+  feedbacks        UserFeedback[]
+  courierFeedbacks CourierFeedback[]
+  orderFeedback    OrderFeedback[]
+  Withdrawal Withdrawal[]
+  Account Account[]
+
+  @@index([mobile])
+  @@index([email])
+  @@index([status])
+  @@map("users")
+
+}
+
+/// 用户地址表
+model Address {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  consignee String   @db.VarChar(50)
+  mobile    String   @db.VarChar(20)
+  province  String   @db.VarChar(50)
+  city      String   @db.VarChar(50)
+  district  String   @db.VarChar(50)
+  detail    String   @db.VarChar(255)
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+  orders    Order[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+/// 用户多平台身份
+model UserIdentity {
+  id           BigInt   @id @default(autoincrement())
+  userId       BigInt   @map("user_id")
+  provider     String   @db.VarChar(20) // 'wechat', 'alipay', 'douyin', 'kuaishou'
+  appId        String   @map("app_id") @db.VarChar(100)
+  openid       String   @db.VarChar(100)
+  unionid      String?  @db.VarChar(100)
+  sessionKey   String?  @map("session_key") @db.VarChar(100)
+  accessToken  String?  @map("access_token")
+  refreshToken String?  @map("refresh_token")
+  expiresIn    Int?     @map("expires_in")
+  scope        String?  @db.VarChar(200)
+  extraData    Json?    @map("extra_data")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([provider, openid])
+  @@index([userId])
+  @@index([unionid])
+  @@map("user_identities")
+}
+
+enum UserStatus {
+  ACTIVE // 正常
+  SUSPENDED // 禁用
+  DELETED // 删除
+}
+
+/// 订单表
+model Order {
+  id                 BigInt              @id @default(autoincrement())
+  orderNo            String              @unique @map("order_no")
+  userId             BigInt              @map("user_id")
+  addressId          BigInt              @map("address_id")
+  orderType          String              @default("RECYCLE") @map("order_type")
+  status             String              @default("PENDING")
+  priority           Int                 @default(0)
+  expectPickupTime   DateTime?           @map("expect_pickup_time")
+  actualPickupTime   DateTime?           @map("actual_pickup_time")
+  expectDeliveryTime DateTime?           @map("expect_delivery_time")
+  actualDeliveryTime DateTime?           @map("actual_delivery_time")
+  estimatedAmount    Float               @map("estimated_amount")
+  settlementAmount   Float               @map("settlement_amount")
+  payAmount          Float               @map("pay_amount")
+  discountAmount     Float               @default(0) @map("discount_amount")
+  couponId           String?             @map("coupon_id")
+  channel            String
+  remark             String?
+  source             String? // 来源平台
+  sourceAppVersion   String?             @map("source_app_version")
+  longitude          Float? // 经度
+  latitude           Float? // 纬度
+  cancelReason       String?             @map("cancel_reason")
+  cancelAt           DateTime?           @map("cancel_at")
+  closedAt           DateTime?           @map("closed_at")
+  completedAt        DateTime?           @map("completed_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  user               User                @relation(fields: [userId], references: [id])
+  address            Address             @relation(fields: [addressId], references: [id])
+  items              OrderItem[]
+  assignments        OrderAssignment[]
+  courierAssignments CourierAssignment[]
+  payments           Payment[]
+  reservations       Reservation[]
+  paymentLogs        PaymentLog[]
+  feedback           OrderFeedback?
+  timeline           OrderTimeline[]
+  userFeedbacks      UserFeedback[]
+  courierFeedbacks   CourierFeedback[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderType])
+  @@index([channel])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+/// 订单分配表
+model OrderAssignment {
+  id         BigInt    @id @default(autoincrement())
+  orderId    BigInt    @map("order_id")
+  courierId  BigInt    @map("courier_id")
+  status     String    @default("PENDING")
+  acceptedAt DateTime? @map("accepted_at")
+  arrivedAt  DateTime? @map("arrived_at")
+  finishedAt DateTime? @map("finished_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  order      Order     @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("order_assignments")
+}
+
+/// 订单项表
+model OrderItem {
+  id              BigInt   @id @default(autoincrement())
+  orderId         BigInt   @map("order_id")
+  categoryId      Int      @map("category_id")
+  estimatedWeight Float    @map("estimated_weight")
+  actualWeight    Float?   @map("actual_weight")
+  unitPrice       Float    @map("unit_price")
+  amount          Float
+  createdAt       DateTime @default(now()) @map("created_at")
+  order           Order    @relation(fields: [orderId], references: [id])
+  category        Category @relation(fields: [categoryId], references: [id])
+
+  @@index([orderId])
+  @@index([categoryId])
+  @@map("order_items")
+}
+
+/// 支付表
+model Payment {
+  id            BigInt          @id @default(autoincrement())
+  orderId       BigInt          @map("order_id")
+  transactionId String          @unique @map("transaction_id")
+  outTradeNo    String          @unique @map("out_trade_no")
+  total         Float
+  status        PaymentStatus
+  provider      PaymentProvider
+  notifyRaw     String?         @map("notify_raw")
+  paidAt        DateTime?       @map("paid_at")
+  closedAt      DateTime?       @map("closed_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  order         Order           @relation(fields: [orderId], references: [id])
+  refunds       Refund[]
+  logs          PaymentLog[]
+
+  @@index([orderId])
+  @@index([transactionId])
+  @@index([outTradeNo])
+  @@index([status])
+  @@index([provider])
+  @@map("payments")
+}
+
+/// 支付日志表
+model PaymentLog {
+  id            BigInt          @id @default(autoincrement())
+  transactionId String          @unique @map("transaction_id")
+  orderId       BigInt?         @map("order_id")
+  amount        Float
+  status        PaymentStatus
+  provider      PaymentProvider
+  rawData       String?         @map("raw_data")
+  processedAt   DateTime?       @map("processed_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  order         Order?          @relation(fields: [orderId], references: [id])
+  payment       Payment?        @relation(fields: [transactionId], references: [transactionId])
+
+  @@index([transactionId])
+  @@index([orderId])
+  @@map("payment_logs")
+}
+
+/// 退款表
+model Refund {
+  id           BigInt       @id @default(autoincrement())
+  paymentId    BigInt       @map("payment_id")
+  outRefundNo  String       @unique @map("out_refund_no")
+  refundAmount Float        @map("refund_amount")
+  status       RefundStatus
+  reason       String?
+  notifyRaw    String?      @map("notify_raw")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  payment      Payment      @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([outRefundNo])
+  @@map("refunds")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum PaymentProvider {
+  WECHAT
+  ALIPAY
+  UNIONPAY
+  BALANCE
+}
+
+/// 通知表
+model Notification {
+  id              String               @id
+  type            NotificationType
+  status          NotificationStatus
+  priority        NotificationPriority
+  recipient       Json
+  content         String
+  deliveryOptions Json?                @map("delivery_options")
+  sentAt          DateTime?            @map("sent_at")
+  deliveredAt     DateTime?            @map("delivered_at")
+  failedAt        DateTime?            @map("failed_at")
+  result          Json?
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([type])
+  @@map("notifications")
+}
+
+/// 通知模板表
+model NotificationTemplate {
+  id        String       @id
+  name      String
+  type      TemplateType
+  subject   String?
+  content   String
+  variables String[]
+  isActive  Boolean      @default(true) @map("is_active")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@map("notification_templates")
+}
+
+/// 通知批次表
+model NotificationBatch {
+  id             String    @id
+  name           String
+  description    String?
+  totalCount     Int       @map("total_count")
+  sentCount      Int       @map("sent_count")
+  deliveredCount Int       @map("delivered_count")
+  failedCount    Int       @map("failed_count")
+  status         String
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("notification_batches")
+}
+
+enum NotificationType {
+  SMS
+  EMAIL
+  PUSH
+  IN_APP
+  WEBHOOK
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TemplateType {
+  ORDER_CONFIRMATION
+  PAYMENT_SUCCESS
+  DELIVERY_UPDATE
+  SYSTEM_ALERT
+  CUSTOM
+}
+
+/// 库存项目表
+model InventoryItem {
+  id               BigInt                 @id @default(autoincrement())
+  warehouseId      BigInt                 @map("warehouse_id")
+  categoryId       Int                    @map("category_id")
+  name             String
+  description      String?
+  unit             String
+  quantity         Float
+  reservedQty      Float                  @default(0) @map("reserved_qty")
+  availableQty     Float                  @map("available_qty")
+  unitPrice        Float                  @map("unit_price")
+  totalPrice       Float                  @map("total_price")
+  location         String?
+  status           InventoryStatus
+  itemType         ItemType               @map("item_type")
+  condition        ItemCondition
+  sourceOrderId    BigInt?                @map("source_order_id")
+  qualityGrade     String?                @map("quality_grade")
+  processingStatus ProcessingStatus       @map("processing_status")
+  expiryDate       DateTime?              @map("expiry_date")
+  batchNumber      String?                @map("batch_number")
+  minStockLevel    Float?                 @map("min_stock_level")
+  maxStockLevel    Float?                 @map("max_stock_level")
+  weight           Float? // 物品重量
+  volume           Float? // 物品体积
+  brand            String? // 品牌
+  model            String? // 型号
+  images           String[] // 图片URL列表
+  tags             String[] // 标签
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  warehouse        Warehouse              @relation(fields: [warehouseId], references: [id])
+  category         Category               @relation(fields: [categoryId], references: [id])
+  transactions     InventoryTransaction[]
+  reservations     Reservation[]
+  qualityChecks    QualityCheck[]
+
+  @@index([warehouseId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([processingStatus])
+  @@map("inventory_items")
+}
+
+/// 库存交易表
+model InventoryTransaction {
+  id          BigInt        @id @default(autoincrement())
+  itemId      BigInt        @map("item_id")
+  type        String // IN, OUT, ADJUST
+  quantity    Float
+  unitPrice   Float         @map("unit_price")
+  totalPrice  Float         @map("total_price")
+  referenceId String?       @map("reference_id")
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  item        InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId])
+  @@map("inventory_transactions")
+}
+
+/// 库存预订表
+model Reservation {
+  id         BigInt            @id @default(autoincrement())
+  itemId     BigInt            @map("item_id")
+  orderId    BigInt            @map("order_id")
+  quantity   Float
+  status     ReservationStatus
+  reservedAt DateTime          @map("reserved_at")
+  expiresAt  DateTime?         @map("expires_at")
+  notes      String?
+  createdAt  DateTime          @default(now()) @map("created_at")
+  item       InventoryItem     @relation(fields: [itemId], references: [id])
+  order      Order             @relation(fields: [orderId], references: [id])
+
+  @@index([itemId])
+  @@index([orderId])
+  @@map("reservations")
+}
+
+/// 质量检查表
+model QualityCheck {
+  id        BigInt        @id @default(autoincrement())
+  itemId    BigInt        @map("item_id")
+  checkerId BigInt        @map("checker_id")
+  checkType String        @map("check_type")
+  result    String
+  score     Int?
+  notes     String?
+  images    String[]
+  checkedAt DateTime      @map("checked_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  item      InventoryItem @relation(fields: [itemId], references: [id])
+
+  @@index([itemId])
+  @@map("quality_checks")
+}
+
+/// 仓库表
+model Warehouse {
+  id             BigInt          @id @default(autoincrement())
+  name           String
+  code           String          @unique
+  type           WarehouseType
+  address        String
+  contactPhone   String          @map("contact_phone")
+  capacity       Float?
+  status         WarehouseStatus
+  description    String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  inventoryItems InventoryItem[]
+
+  @@map("warehouses")
+}
+
+enum InventoryStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+  RESERVED
+  DAMAGED
+}
+
+enum ItemType {
+  RECYCLED
+  NEW
+  REFURBISHED
+}
+
+enum ItemCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum ProcessingStatus {
+  RECEIVED
+  INSPECTING
+  CLEANING
+  REPAIRING
+  READY_FOR_SALE
+  SOLD
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+}
+
+enum WarehouseType {
+  MAIN
+  BRANCH
+  DISTRIBUTION
+}
+
+enum WarehouseStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+/// 快递员状态
+enum CourierStatus {
+  OFFLINE
+  AVAILABLE
+  BUSY
+  SUSPENDED
+}
+
+/// 派单任务状态
+enum TaskStatus {
+  ASSIGNED
+  ACCEPTED
+  REJECTED
+  IN_PROGRESS
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+/// 快递员表
+model Courier {
+  id              String        @id
+  name            String
+  phone           String        @unique
+  email           String?       @unique
+  idCard          String?       @unique @map("id_card")
+  avatarUrl       String?       @map("avatar_url")
+  status          CourierStatus @default(OFFLINE)
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  workingHours    Json?
+  serviceAreas    String[]
+  vehicleType     String?       @map("vehicle_type")
+  vehiclePlate    String?       @map("vehicle_plate")
+  rating          Float         @default(0)
+  totalOrders     Int           @default(0)
+  completedOrders Int           @default(0)
+  cancelledOrders Int           @default(0) @map("cancelled_orders")
+  rejectedOrders  Int           @default(0) @map("rejected_orders")
+  lastOnlineAt    DateTime?     @map("last_online_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  assignments     CourierAssignment[]
+  orderFeedback   OrderFeedback[]
+  courierFeedback CourierFeedback[]   @relation("CourierToCourierFeedback")
+
+  @@index([status])
+  @@index([phone])
+  @@map("couriers")
+}
+
+/// 快递员派单任务
+model CourierAssignment {
+  id                String     @id
+  taskId            String?
+  orderId           BigInt     @map("order_id")
+  orderNo           String     @map("order_no")
+  courierId         String     @map("courier_id")
+  waybillNo         String?    @map("waybill_no")
+  pickupCode        String?    @map("pickup_code")
+  status            TaskStatus
+  assignedAt        DateTime   @default(now()) @map("assigned_at")
+  acceptedAt        DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  failedAt          DateTime?
+  notes             String?
+  estimatedDuration Int?
+  actualDuration    Int?
+  pickupLocation    Json?
+  deliveryLocation  Json?
+
+  courier Courier @relation(fields: [courierId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
+
+  @@index([courierId])
+  @@index([orderId])
+  @@map("courier_assignments")
+}
+
+/// 取件通知（快递员）
+model PickupNotification {
+  id           String    @id
+  taskId       String
+  orderId      BigInt    @map("order_id")
+  orderNo      String    @map("order_no")
+  courierId    String    @map("courier_id")
+  waybillNo    String?   @map("waybill_no")
+  pickupCode   String?   @map("pickup_code")
+  senderInfo   Json      @map("sender_info")
+  receiverInfo Json      @map("receiver_info")
+  priority     String?
+  status       String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  respondedAt  DateTime?
+  response     Json?
+
+  @@index([courierId])
+  @@index([orderId])
+  @@map("pickup_notifications")
+}
+
+/// 用户收藏表
+model UserFavorite {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  itemId    BigInt   @map("item_id")
+  type      String // CATEGORY, PRODUCT, etc.
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([itemId])
+  @@map("user_favorites")
+}
+
+/// 用户反馈表
+model UserFeedback {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  orderId   BigInt?   @map("order_id")
+  type      String // COMPLAINT, SUGGESTION, PRAISE
+  content   String
+  images    String[]
+  status    String    @default("PENDING") // PENDING, PROCESSED, RESOLVED
+  reply     String?
+  repliedAt DateTime? @map("replied_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User      @relation(fields: [userId], references: [id])
+  order     Order?    @relation(fields: [orderId], references: [id])
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@map("user_feedbacks")
+}
+
+/// 订单时间线表
+model OrderTimeline {
+  id        BigInt   @id @default(autoincrement())
+  orderId   BigInt   @map("order_id")
+  status    String
+  message   String
+  operator  String? // SYSTEM, USER, COURIER, ADMIN
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+  @@map("order_timelines")
+}
+
+/// 快递员反馈表
+model CourierFeedback {
+  id        BigInt   @id @default(autoincrement())
+  courierId String   @map("courier_id")
+  userId    BigInt?  @map("user_id")
+  orderId   BigInt?  @map("order_id")
+  rating    Int // 1-5星
+  content   String?
+  images    String[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  courier   Courier  @relation(fields: [courierId], references: [id], name: "CourierToCourierFeedback")
+  user      User?    @relation(fields: [userId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([courierId])
+  @@index([userId])
+  @@map("courier_feedbacks")
+}
+
+/// 订单反馈表
+model OrderFeedback {
+  id        BigInt   @id @default(autoincrement())
+  orderId   BigInt   @unique @map("order_id")
+  userId    BigInt   @map("user_id")
+  courierId String   @map("courier_id")
+  rating    Int // 1-5星
+  content   String?
+  images    String[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  order     Order    @relation(fields: [orderId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  courier   Courier  @relation(fields: [courierId], references: [id])
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([courierId])
+  @@map("order_feedbacks")
+}
+
+model Account {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  availableBalance Float @map("available_balance") @default(0.0) // 可用余额
+  frozenBalance Float @map("frozen_balance") @default(0.0) // 冻结余额
+  totalIncome Float @map("total_income") @default(0.0) // 收益总额
+  totalWithdrawal Float @map("total_withdrawal") @default(0.0) // 提现总额
+  version Int @map("version") @default(0) // 版本号，用于乐观锁
+  accountType String @map("account_type") // BANK, PAYPAL, WECHAT, ALIPAY
+  accountDetails Json @map("account_details") // 存储账户信息的JSON
+  isVerified Boolean @default(false) @map("is_verified") // 是否已验证
+  createdAt DateTime @default(now()) @map("created_at") // 创建时间
+  updatedAt DateTime @updatedAt @map("updated_at") // 更新时间
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([accountType])
+  @@map("accounts")
+  Transaction Transaction[]
+  Withdrawal Withdrawal[]
+}
+
+
+// 提现记录
+model Withdrawal {
+  id             BigInt           @id @default(autoincrement())
+  accountId      BigInt           @map("account_id")
+  userId         BigInt           @map("user_id")
+  amount         Decimal          @db.Decimal(10, 2)
+  provider       PaymentProvider
+  outTradeNo     String           @unique @map("out_trade_no") @db.VarChar(128)
+  transactionId  String?          @map("transaction_id") @db.VarChar(128)
+  status         WithdrawalStatus @default(PENDING)
+  accountInfo    Json             @map("account_info") // 提现账户信息
+  adminId        BigInt?          @map("admin_id")
+  processedAt    DateTime?        @map("processed_at")
+  rejectedReason String?          @map("rejected_reason") @db.VarChar(255)
+  callbackData   Json?            @map("callback_data")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  account        Account          @relation(fields: [accountId], references: [id])
+  transactions   Transaction[]
+
+  @@index([accountId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("withdrawals")
+  User User[]
+}
+
+
+// 交易记录
+model Transaction {
+  id            BigInt          @id @default(autoincrement())
+  accountId     BigInt          @map("account_id")
+  type          TransactionType
+  amount        Decimal         @db.Decimal(10, 2)
+  balanceBefore Decimal         @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter  Decimal         @map("balance_after") @db.Decimal(10, 2)
+  orderId       String?         @map("order_id") @db.VarChar(64)
+  withdrawalId  BigInt?         @map("withdrawal_id")
+  description   String          @db.VarChar(255)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  account       Account         @relation(fields: [accountId], references: [id])
+  withdrawal    Withdrawal?     @relation(fields: [withdrawalId], references: [id])
+
+  @@index([accountId])
+  @@index([orderId])
+  @@index([withdrawalId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([accountId, type])
+  @@index([accountId, createdAt])
+  @@map("transactions")
+}
+enum TransactionType {
+  ORDER_INCOME // 订单收入
+  WITHDRAWAL_FREEZE // 提现冻结
+  WITHDRAWAL_SUCCESS // 提现成功
+  WITHDRAWAL_FAILED // 提现失败
+  WITHDRAWAL_REJECTED // 提现拒绝
+  REFUND // 退款
+  ADJUSTMENT // 人工调整
+}
+
+enum WithdrawalStatus {
+  PENDING // 待处理
+  PROCESSING // 处理中
+  SUCCESS // 成功
+  FAILED // 失败
+  REJECTED // 已拒绝
+  TIMEOUT // 超时
+}
