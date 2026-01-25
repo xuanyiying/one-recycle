@@ -69,7 +69,6 @@ export class AuthService {
      */
     static async login(params: LoginParams): Promise<LoginResponse> {
         try {
-            const url = `/account/auth/third-party-login` // 统一使用 authService 的路径
             // 或者根据 params.platform 决定？
             // 原 auth.ts 使用 `/auth/third-party/${params.platform}`
             // 原 authService.ts 使用 `/account/auth/third-party-login` 并传 provider

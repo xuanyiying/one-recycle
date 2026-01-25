@@ -1,4 +1,4 @@
-@import '../../styles/variables.scss';
+@use '../../styles/global.scss' as *;
 
 .icon-button {
   display: inline-flex;

@@ -1,0 +1,88 @@
+@use './variables.scss' as *;
+
+// ==================== 基础 Mixins ====================
+
+// 文本省略
+@mixin text-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// 多行文本省略
+@mixin text-ellipsis-multi($lines: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+  overflow: hidden;
+}
+
+// 清除浮动
+@mixin clearfix {
+  &::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+// 绝对定位居中
+@mixin abs-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// 弹性布局居中
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ==================== 适配 Mixins ====================
+
+@mixin safe-area-padding($direction) {
+  padding-#{$direction}: constant(safe-area-inset-#{$direction});
+  padding-#{$direction}: env(safe-area-inset-#{$direction});
+}
+
+@mixin responsive-page-padding {
+  padding: $spacing-16;
+  @media (max-width: 375px) {
+    padding: $spacing-12;
+  }
+  @media (min-width: 430px) {
+    padding: $spacing-24;
+  }
+}
+
+@mixin mobile-standard {
+  @media (max-width: 375px) {
+    @content;
+  }
+}
+
+@mixin mobile-small {
+  @media (max-width: 320px) {
+    @content;
+  }
+}
+
+@mixin mobile-large {
+  @media (min-width: 414px) {
+    @content;
+  }
+}

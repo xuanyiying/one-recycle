@@ -41,3 +41,12 @@ WHERE
     tc.constraint_type = 'UNIQUE' 
     AND tc.table_name = 'users'
     AND kcu.column_name = 'mobile';
+
+    -- Seed data for categories
+INSERT INTO "categories" ("name", "description", "price_info", "seo", "updated_at")
+SELECT '旧书', '各类二手书籍回收', '{}', '{}', CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM "categories" WHERE "name" = '旧书');
+
+INSERT INTO "categories" ("name", "description", "price_info", "seo", "updated_at")
+SELECT '旧衣', '各类旧衣物回收', '{}', '{}', CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM "categories" WHERE "name" = '旧衣');

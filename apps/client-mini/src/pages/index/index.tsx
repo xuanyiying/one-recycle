@@ -20,7 +20,7 @@ export default function Index() {
   const [banners, setBanners] = useState<Banner[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
-
+loading
   useEffect(() => {
     initPageData()
     // 模拟定位

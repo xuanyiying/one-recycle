@@ -74,7 +74,7 @@ const CategoriesPage: React.FC = () => {
 
   const handleDeleteCategory = async (id: string) => {
     try {
-      await categoryService.deleteCategory(id);
+      await categoryService.deleteCategory(Number(id));
       message.success('分类删除成功');
       // 重新获取数据
       fetchCategories();
@@ -192,7 +192,7 @@ const CategoriesPage: React.FC = () => {
           </Button>
           <Popconfirm
             title="确定要删除这个分类吗？"
-            onConfirm={() => handleDeleteCategory(record.id)}
+            onConfirm={() => handleDeleteCategory(String(record.id))}
             okText="确定"
             cancelText="取消"
           >

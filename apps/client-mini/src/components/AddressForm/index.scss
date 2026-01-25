@@ -1,7 +1,7 @@
 /**
  * AddressForm Component Styles
  */
-@import '../../styles/variables.scss';
+@use '../../styles/global.scss' as *;
 
 .address-form {
   width: 100%;
