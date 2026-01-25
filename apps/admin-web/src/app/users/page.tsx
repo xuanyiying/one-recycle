@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
+import { Table, Button, Select, Space, Tag, Alert, Tooltip, Popconfirm, Input, Spin } from 'antd';
     Table,
     Button,
     Modal,
@@ -20,8 +20,8 @@ import {
     Pagination,
     Tooltip,
     Popconfirm,
-} from 'antd';
-import {
+import { UserRole, UserStatus } from '@/types/user';
+import { useUsers, LocalUser } from '@/hooks/useUsers';
     PlusOutlined,
     EditOutlined,
     DeleteOutlined,
@@ -34,7 +34,7 @@ import {
     MailOutlined,
     PhoneOutlined,
     SearchOutlined,
-} from '@ant-design/icons';
+  const {
 import type {
     User,
     UserStats,
@@ -46,16 +46,16 @@ import type {
     UpdateUserRequest,
 } from '../../services/userService';
 import { userService, UserStatus as UserStatusEnum, UserRole as UserRoleEnum } from '../../services/userService';
-
-const { Option } = Select;
-const { Search } = Input;
-
+    handleSearch,
+    handleFilter,
+    handleTableChange,
+    handleRefresh,
 // 本地用户接口，添加key字段用于Table组件
 interface LocalUser extends User {
     key: string;
 }
 
-const UsersPage: React.FC = () => {
+    handleDeleteUser,
     const [users, setUsers] = useState<LocalUser[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -151,7 +151,7 @@ const UsersPage: React.FC = () => {
         form.resetFields();
         setIsModalVisible(true);
     };
-
+  const handleModalOk = async (values: any) => {
     // 编辑用户
     const handleEditUser = (user: LocalUser) => {
         setEditingUser(user);
@@ -165,7 +165,7 @@ const UsersPage: React.FC = () => {
         });
         setIsModalVisible(true);
     };
-
+      success = await createUser({
     // 查看用户详情
     const handleViewUser = (user: LocalUser) => {
         setSelectedUser(user);
@@ -224,7 +224,7 @@ const UsersPage: React.FC = () => {
             console.error('Error saving user:', err);
         }
     };
-
+      [UserStatus.PENDING]: { color: 'blue', text: '待激活' },
     // 模态框取消
     const handleModalCancel = () => {
         setIsModalVisible(false);
@@ -278,7 +278,7 @@ const UsersPage: React.FC = () => {
         const config = roleConfig[role];
         return <Tag color={config.color}>{config.text}</Tag>;
     };
-
+      key: 'fullName',
     // 表格列定义
     const columns = [
         {
@@ -412,7 +412,7 @@ const UsersPage: React.FC = () => {
             ),
         },
     ];
-
+          </Button>
     if (error) {
         return (
             <Alert
@@ -428,7 +428,7 @@ const UsersPage: React.FC = () => {
             />
         );
     }
-
+        }}
     return (
         <div>
             {/* 统计卡片 */}
@@ -520,7 +520,7 @@ const UsersPage: React.FC = () => {
                     </Button>
                 </Space>
             </div>
-
+            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
             {/* 用户表格 */}
             <Spin spinning={loading}>
                 <Table
@@ -548,138 +548,11 @@ const UsersPage: React.FC = () => {
                     }}
                 />
             </Spin>
-
-            {/* 添加/编辑用户模态框 */}
-            <Modal
-                title={editingUser ? "编辑用户" : "添加用户"}
-                open={isModalVisible}
-                onOk={handleModalOk}
-                onCancel={handleModalCancel}
-                okText="确定"
-                cancelText="取消"
-                width={600}
-            >
-                <Form form={form} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="username"
-                                label="用户名"
-                                rules={[{ required: true, message: '请输入用户名' }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="fullName"
-                                label="姓名"
-                                rules={[{ required: true, message: '请输入姓名' }]}
-                            >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="email"
-                                label="邮箱"
-                                rules={[
-                                    { required: true, message: '请输入邮箱' },
-                                    { type: 'email', message: '请输入有效的邮箱地址' }
-                                ]}
-                            >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="phone"
-                                label="手机号"
-                            >
-                                <Input />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="role"
-                                label="角色"
-                                rules={[{ required: true, message: '请选择角色' }]}
-                            >
-                                <Select>
-                                    <Option value={UserRoleEnum.ADMIN}>管理员</Option>
-                                    <Option value={UserRoleEnum.MANAGER}>经理</Option>
-                                    <Option value={UserRoleEnum.OPERATOR}>操作员</Option>
-                                    <Option value={UserRoleEnum.CUSTOMER}>客户</Option>
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="status"
-                                label="状态"
-                                rules={[{ required: true, message: '请选择状态' }]}
-                            >
-                                <Select>
-                                    <Option value={UserStatusEnum.ACTIVE}>活跃</Option>
-                                    <Option value={UserStatusEnum.INACTIVE}>非活跃</Option>
-                                    <Option value={UserStatusEnum.SUSPENDED}>暂停</Option>
-                                    <Option value={UserStatusEnum.PENDING}>待激活</Option>
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </Form>
-            </Modal>
-
-            {/* 用户详情模态框 */}
-            <Modal
-                title="用户详情"
-                open={isDetailModalVisible}
-                onCancel={handleDetailModalCancel}
-                footer={[
-                    <Button key="close" onClick={handleDetailModalCancel}>
-                        关闭
-                    </Button>
-                ]}
-                width={800}
-            >
-                {selectedUser && (
-                    <div>
-                        <Row gutter={16}>
-                            <Col span={12}>
-                                <p><strong>用户名:</strong> {selectedUser.username}</p>
-                                <p><strong>姓名:</strong> {selectedUser.fullName}</p>
-                                <p><strong>邮箱:</strong> {selectedUser.email}</p>
-                                <p><strong>手机号:</strong> {selectedUser.phone || '-'}</p>
-                            </Col>
-                            <Col span={12}>
-                                <p><strong>角色:</strong> {renderRoleTag(selectedUser.role)}</p>
-                                <p><strong>状态:</strong> {renderStatusTag(selectedUser.status)}</p>
-                                <p><strong>注册时间:</strong> {new Date(selectedUser.createdAt).toLocaleString()}</p>
-                                <p><strong>最后登录:</strong> {selectedUser.lastLoginAt ? new Date(selectedUser.lastLoginAt).toLocaleString() : '-'}</p>
-                            </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={12}>
-                                <p><strong>邮箱验证:</strong> {selectedUser.isEmailVerified ? '已验证' : '未验证'}</p>
-                                <p><strong>手机验证:</strong> {selectedUser.isPhoneVerified ? '已验证' : '未验证'}</p>
-                            </Col>
-                        </Row>
-                        {selectedUser.address && (
-                            <div>
-                                <h4>地址信息</h4>
-                                <p>{selectedUser.address.street}, {selectedUser.address.city}, {selectedUser.address.state} {selectedUser.address.zipCode}, {selectedUser.address.country}</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </Modal>
-        </div>
-    );
+        user={selectedUser}
+        onCancel={() => setIsDetailModalVisible(false)}
+      />
+    </div>
+  );
 };
 
 export default UsersPage;

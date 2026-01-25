@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { OrderService } from './services/order.service';
-import { OrderController } from './controllers/order.controller';
+import { OrderController } from './order.controller';
 import { OrderGrpcController } from './order.grpc.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 @Module({
@@ -10,4 +10,4 @@ import { PrismaModule } from '../../prisma/prisma.module';
   providers: [OrderService],
   exports: [OrderService],
 })
-export class OrderModule { }
+export class OrderModule {}

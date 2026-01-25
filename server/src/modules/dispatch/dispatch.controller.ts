@@ -6,8 +6,13 @@ export class DispatchController {
   constructor(private readonly dispatchService: DispatchService) {}
 
   @Post('assign')
-  async assignOrder(@Body() assignData: { orderId: string; courierId: string }) {
-    return this.dispatchService.assignOrder(assignData.orderId, assignData.courierId);
+  async assignOrder(
+    @Body() assignData: { orderId: string; courierId: string },
+  ) {
+    return this.dispatchService.assignOrder(
+      assignData.orderId,
+      assignData.courierId,
+    );
   }
 
   @Get('assignments')
@@ -21,7 +26,10 @@ export class DispatchController {
   }
 
   @Put('assignments/:id/status')
-  async updateAssignmentStatus(@Param('id') id: string, @Body() statusData: { status: string }) {
+  async updateAssignmentStatus(
+    @Param('id') id: string,
+    @Body() statusData: { status: string },
+  ) {
     return this.dispatchService.updateAssignmentStatus(id, statusData.status);
   }
 
@@ -35,4 +43,3 @@ export class DispatchController {
     return this.dispatchService.rejectAssignment(id);
   }
 }
-

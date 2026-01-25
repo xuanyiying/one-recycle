@@ -5,7 +5,7 @@ export class CreateAddressDto {
   userId!: number;
 
   @IsString()
-  consignee!: string;
+  name!: string;
 
   @IsString()
   mobile!: string;
@@ -18,6 +18,15 @@ export class CreateAddressDto {
 
   @IsString()
   district!: string;
+
+  @IsString()
+  town!: string;
+
+  @IsString()
+  street!: string;
+
+  @IsString()
+  zipCode!: string;
 
   @IsString()
   detail!: string;

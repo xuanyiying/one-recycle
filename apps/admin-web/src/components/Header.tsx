@@ -29,22 +29,26 @@ const AppHeader: React.FC = () => {
   ];
 
   return (
-    <div style={{ 
-      padding: 0, 
-      background: '#fff', 
-      position: 'fixed', 
-      width: '100%', 
-      zIndex: 1, 
-      height: 64,
-      borderBottom: '1px solid #f0f0f0'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '0 24px', 
-        height: '100%' 
-      }}>
+    <div
+      style={{
+        padding: 0,
+        background: '#fff',
+        position: 'fixed',
+        width: '100%',
+        zIndex: 1,
+        height: 64,
+        borderBottom: '1px solid #f0f0f0',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '0 24px',
+          height: '100%',
+        }}
+      >
         <div>
           <h2 style={{ margin: 0, color: '#1890ff' }}>回收管理系统</h2>
         </div>
@@ -53,10 +57,7 @@ const AppHeader: React.FC = () => {
             <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
           </Badge>
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <Avatar 
-              style={{ cursor: 'pointer' }} 
-              icon={<UserOutlined />} 
-            />
+            <Avatar style={{ cursor: 'pointer' }} icon={<UserOutlined />} />
           </Dropdown>
         </div>
       </div>

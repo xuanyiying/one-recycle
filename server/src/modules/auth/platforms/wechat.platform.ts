@@ -14,8 +14,8 @@ export class WeChatPlatform {
   private readonly appSecret: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.appId = this.configService.get<string>('WECHAT_APP_ID');
-    this.appSecret = this.configService.get<string>('WECHAT_APP_SECRET');
+    this.appId = this.configService.get<string>('WECHAT_APP_ID') || '';
+    this.appSecret = this.configService.get<string>('WECHAT_APP_SECRET') || '';
   }
 
   async code2Session(code: string): Promise<WeChatUserInfo> {

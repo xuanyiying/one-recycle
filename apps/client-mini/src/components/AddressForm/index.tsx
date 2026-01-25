@@ -3,13 +3,15 @@
  * Modal form for adding or editing addresses with NutUI Address component
  */
 
-import { useState, useCallback } from 'react'
-import { View, Text, ScrollView } from '@tarojs/components'
+import { useState, useCallback, useEffect } from 'react'
 import Taro from '@tarojs/taro'
-import { Address, AddressLabel, AddressFormData } from '@/types/order'
+import { View, Text, ScrollView } from '@tarojs/components'
+import { Address, AddressLabel, AddressFormData } from '@/types/address'
 import './index.scss'
-import { Input, Button, Cascader, TextArea } from '@nutui/nutui-react-taro'
-import { cascaderOptions as addressData } from '@/utils/regionTreeData'
+import { Input, Button, TextArea, Switch } from '@nutui/nutui-react-taro'
+import { ADDRESS_LABEL_OPTIONS } from '@/config/constants'
+import AddressPicker from '../AddressPicker'
+import { AddressService } from '@/services/address'
 
 // ============================================================================
 // Types
@@ -17,22 +19,11 @@ import { cascaderOptions as addressData } from '@/utils/regionTreeData'
 
 interface AddressFormProps {
     initialData?: Address
-    onSave: (data: Omit<Address, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
+    onSave: (data: AddressFormData & { isDefault: boolean, coordinates?: any }) => Promise<void>
     onCancel: () => void
     isLoading: boolean
     errors: Record<string, string>
 }
-
-// ============================================================================
-// Label Options
-// ============================================================================
-
-const LABEL_OPTIONS: Array<{ value: AddressLabel; label: string }> = [
-    { value: AddressLabel.HOME, label: '家' },
-    { value: AddressLabel.WORK, label: '工作' },
-    { value: AddressLabel.SCHOOL, label: '学校' },
-    { value: AddressLabel.OTHER, label: '其他' },
-]
 
 // ============================================================================
 // Component
@@ -49,56 +40,62 @@ export default function AddressForm({
     const [formData, setFormData] = useState<AddressFormData>({
         recipientName: initialData?.recipientName || '',
         phoneNumber: initialData?.phoneNumber || '',
-        region: initialData?.region || '',
+        province: initialData?.province || '',
+        city: initialData?.city || '',
+        district: initialData?.district || '',
         detailedAddress: initialData?.detailedAddress || '',
         label: initialData?.label || AddressLabel.HOME,
     })
 
     const [isDefault, setIsDefault] = useState(initialData?.isDefault || false)
-    const [showLabelPicker, setShowLabelPicker] = useState(false)
-    const [showAddressPicker, setShowAddressPicker] = useState(false)
-    const [selectedRegion, setSelectedRegion] = useState<string[]>([])
     const [coordinates, setCoordinates] = useState(initialData?.coordinates)
+    const [localErrors, setLocalErrors] = useState<Record<string, string>>({})
 
-    // ============================================================================
-    // Location Handlers
-    // ============================================================================
-
-    const handleGetLocation = useCallback(async () => {
-        try {
-            Taro.showLoading({ title: '定位中...' })
-
-            // Get current location
-            const location = await Taro.getLocation({
-                type: 'gcj02', // 国测局坐标系
+    // Auto-save draft
+    useEffect(() => {
+        if (!initialData) { // Only save for new address forms
+            Taro.setStorage({
+                key: 'address_form_draft',
+                data: { formData, isDefault, coordinates }
             })
-
-            setCoordinates({
-                latitude: location.latitude,
-                longitude: location.longitude,
-            })
-
-            // Reverse geocoding to get address
-            // In production, call a geocoding API here
-            Taro.showToast({
-                title: '定位成功',
-                icon: 'success',
-            })
-
-            // Open address picker after getting location
-            setShowAddressPicker(true)
-        } catch (error) {
-            console.error('定位失败:', error)
-            Taro.showToast({
-                title: '定位失败，请手动选择',
-                icon: 'none',
-            })
-            // Still allow manual selection
-            setShowAddressPicker(true)
-        } finally {
-            Taro.hideLoading()
         }
-    }, [])
+    }, [formData, isDefault, coordinates, initialData])
+
+    // Restore draft
+    useEffect(() => {
+        if (!initialData) {
+            Taro.getStorage({
+                key: 'address_form_draft',
+                success: (res) => {
+                    if (res.data) {
+                        setFormData(res.data.formData)
+                        setIsDefault(res.data.isDefault)
+                        setCoordinates(res.data.coordinates)
+                    }
+                }
+            })
+        }
+    }, [initialData])
+
+    // Validation
+    const validate = () => {
+        const newErrors: Record<string, string> = {}
+        if (!formData.recipientName.trim()) newErrors.recipientName = '请输入取件人姓名'
+        if (!formData.phoneNumber.trim()) {
+            newErrors.phoneNumber = '请输入电话号码'
+        } else if (!/^1[3-9]\d{9}$/.test(formData.phoneNumber)) {
+            newErrors.phoneNumber = '请输入有效的手机号码'
+        }
+        if (!formData.province || !formData.city) newErrors.region = '请完整选择所在地区'
+        if (!formData.detailedAddress.trim()) {
+            newErrors.detailedAddress = '请输入详细地址'
+        } else if (formData.detailedAddress.length < 5) {
+            newErrors.detailedAddress = '详细地址不能少于5个字符'
+        }
+
+        setLocalErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
 
     // ============================================================================
     // Form Handlers
@@ -109,73 +106,113 @@ export default function AddressForm({
             ...prev,
             recipientName: value,
         }))
-    }, [])
+        if (localErrors.recipientName) {
+            setLocalErrors(prev => ({ ...prev, recipientName: '' }))
+        }
+    }, [localErrors])
 
     const handlePhoneNumberChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
             phoneNumber: value,
         }))
-    }, [])
-
-    const handleAddressChange = useCallback((value: any, params?: any) => {
-        console.log('Address changed - value:', value, 'params:', params)
-
-        // params contains the selected address data
-        if (params && params.selectedOptions) {
-            const selectedOptions = params.selectedOptions
-            // Use label instead of text for NutUI Cascader
-            const regionParts = selectedOptions.map((item: any) => item.label || item.text).filter(Boolean)
-            const region = regionParts.join(' ')
-
-            console.log('Selected region:', region)
-
-            setFormData((prev) => ({
-                ...prev,
-                region,
-            }))
-
-            setSelectedRegion(value)
+        if (localErrors.phoneNumber) {
+            setLocalErrors(prev => ({ ...prev, phoneNumber: '' }))
         }
-        setShowAddressPicker(false)
-    }, [])
+    }, [localErrors])
+
+    const handleAddressPickerChange = useCallback((address: Partial<Address>) => {
+        setFormData((prev) => ({
+            ...prev,
+            province: address.province || prev.province,
+            city: address.city || prev.city,
+            district: address.district || prev.district,
+            detailedAddress: address.detailedAddress || prev.detailedAddress,
+        }))
+        if (address.coordinates) {
+            setCoordinates(address.coordinates)
+        }
+        if (localErrors.region || localErrors.detailedAddress) {
+            setLocalErrors(prev => ({ ...prev, region: '', detailedAddress: '' }))
+        }
+    }, [localErrors])
 
     const handleDetailedAddressChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
             detailedAddress: value,
         }))
-    }, [])
+        if (localErrors.detailedAddress) {
+            setLocalErrors(prev => ({ ...prev, detailedAddress: '' }))
+        }
+    }, [localErrors])
 
     const handleLabelChange = useCallback((label: AddressLabel) => {
         setFormData((prev) => ({
             ...prev,
             label,
         }))
-        setShowLabelPicker(false)
-    }, [])
-
-    const handleDefaultChange = useCallback(() => {
-        setIsDefault((prev) => !prev)
     }, [])
 
     // ============================================================================
     // Form Submission
     // ============================================================================
 
-    const handleSubmit = useCallback(async () => {
+    const executeSave = useCallback(async () => {
         await onSave({
             ...formData,
             isDefault,
             coordinates,
         })
-    }, [formData, isDefault, coordinates, onSave])
+
+        // Clear draft on success
+        if (!initialData) {
+            Taro.removeStorage({ key: 'address_form_draft' })
+        }
+    }, [formData, isDefault, coordinates, onSave, initialData])
+
+    const handleSubmit = useCallback(async () => {
+        if (!validate()) {
+            Taro.showToast({ title: '请完善地址信息', icon: 'none' })
+            return
+        }
+
+        // 业务规则校验：配送范围
+        try {
+            const rangeCheck = await AddressService.checkDeliveryRange({
+                province: formData.province,
+                city: formData.city,
+                district: formData.district,
+                coordinates
+            })
+
+            if (rangeCheck.success && rangeCheck.data && !rangeCheck.data.inRange) {
+                Taro.showModal({
+                    title: '超出服务范围',
+                    content: rangeCheck.data.message || '该地址暂时无法提供上门回收服务，是否仍要保存？',
+                    confirmText: '仍要保存',
+                    cancelText: '取消',
+                    success: async (res) => {
+                        if (res.confirm) {
+                            await executeSave()
+                        }
+                    }
+                })
+                return
+            }
+        } catch (e) {
+            console.error('Delivery range check failed', e)
+            // 校验失败时不阻断流程，允许尝试保存
+        }
+
+        await executeSave()
+    }, [formData, isDefault, coordinates, validate, executeSave])
 
     // ============================================================================
     // Render
     // ============================================================================
 
-    const labelDisplay = LABEL_OPTIONS.find((opt) => opt.value === formData.label)?.label || '其他'
+    const combinedErrors = { ...errors, ...localErrors }
 
     return (
         <ScrollView className='address-form' scrollY>
@@ -185,171 +222,128 @@ export default function AddressForm({
                     <Text className='form-title'>
                         {initialData ? '编辑地址' : '添加新地址'}
                     </Text>
+                    <Text className='form-subtitle'>请确保地址准确，以便我们上门取件</Text>
                 </View>
 
                 {/* Form Fields */}
                 <View className='form-section'>
                     {/* Recipient Name */}
                     <View className='form-field'>
-                        <Text className='field-label'>
-                            取件人 <Text className='required'>*</Text>
-                        </Text>
+                        <View className='field-header'>
+                            <Text className='field-label'>取件人</Text>
+                            <Text className='required-mark'>*</Text>
+                        </View>
                         <Input
                             value={formData.recipientName}
                             onChange={(value) => handleRecipientNameChange(value)}
                             placeholder='请输入取件人姓名'
-                            maxLength={50}
+                            maxLength={20}
+                            className={combinedErrors.recipientName ? 'error' : ''}
                         />
-                        {errors.recipientName && (
-                            <Text className='error-message'>{errors.recipientName}</Text>
+                        {combinedErrors.recipientName && (
+                            <Text className='error-text'>{combinedErrors.recipientName}</Text>
                         )}
                     </View>
 
                     {/* Phone Number */}
                     <View className='form-field'>
-                        <Text className='field-label'>
-                            电话号码 <Text className='required'>*</Text>
-                        </Text>
+                        <View className='field-header'>
+                            <Text className='field-label'>电话号码</Text>
+                            <Text className='required-mark'>*</Text>
+                        </View>
                         <Input
                             value={formData.phoneNumber}
                             onChange={(value) => handlePhoneNumberChange(value)}
                             placeholder='请输入电话号码'
                             type='tel'
-                            maxLength={20}
+                            maxLength={11}
+                            className={combinedErrors.phoneNumber ? 'error' : ''}
                         />
-                        {errors.phoneNumber && (
-                            <Text className='error-message'>{errors.phoneNumber}</Text>
+                        {combinedErrors.phoneNumber && (
+                            <Text className='error-text'>{combinedErrors.phoneNumber}</Text>
                         )}
                     </View>
 
-                    {/* Region Selection */}
+                    {/* Address Selection with Unified Picker */}
                     <View className='form-field'>
-                        <Text className='field-label'>
-                            所在地区 <Text className='required'>*</Text>
-                        </Text>
-                        <View className='region-selector-wrapper'>
-                            <View
-                                className='region-selector'
-                                onClick={() => {
-                                    console.log('Opening address picker')
-                                    console.log('addressData:', addressData)
-                                    console.log('selectedRegion:', selectedRegion)
-                                    setShowAddressPicker(true)
-                                }}
-                            >
-                                <Text className={`region-value ${!formData.region ? 'placeholder' : ''}`}>
-                                    {formData.region || '请选择省/市/区'}
-                                </Text>
-                                <Text className='selector-arrow'>›</Text>
-                            </View>
-                            <Button
-                                className='location-btn'
-                                size='small'
-                                onClick={handleGetLocation}
-                            >
-                                📍 定位
-                            </Button>
+                        <View className='field-header'>
+                            <Text className='field-label'>所在地区</Text>
+                            <Text className='required-mark'>*</Text>
                         </View>
-                        {errors.region && (
-                            <Text className='error-message'>{errors.region}</Text>
+                        <AddressPicker 
+                            value={formData}
+                            onChange={handleAddressPickerChange}
+                        />
+                        {combinedErrors.region && (
+                            <Text className='error-text'>{combinedErrors.region}</Text>
                         )}
                     </View>
 
-                    {/* Detailed Address */}
+                    {/* Detailed Address with Multiline Support */}
                     <View className='form-field'>
-                        <Text className='field-label'>
-                            详细地址 <Text className='required'>*</Text>
-                        </Text>
+                        <View className='field-header'>
+                            <Text className='field-label'>详细地址</Text>
+                            <Text className='required-mark'>*</Text>
+                        </View>
                         <TextArea
                             value={formData.detailedAddress}
                             onChange={(value) => handleDetailedAddressChange(value)}
-                            placeholder='请输入街道、门牌号等详细地址'
-                            maxLength={200}
-                            rows={3}
+                            placeholder='请输入详细地址（街道、门牌号等）'
+                            maxLength={100}
+                            autoSize
                             showCount
+                            className={`detailed-address-input ${combinedErrors.detailedAddress ? 'error' : ''}`}
                         />
-                        {errors.detailedAddress && (
-                            <Text className='error-message'>{errors.detailedAddress}</Text>
+                        {combinedErrors.detailedAddress && (
+                            <Text className='error-text'>{combinedErrors.detailedAddress}</Text>
                         )}
                     </View>
 
                     {/* Address Label */}
                     <View className='form-field'>
                         <Text className='field-label'>地址标签</Text>
-                        <View
-                            className='label-selector'
-                            onClick={() => setShowLabelPicker(!showLabelPicker)}
-                        >
-                            <Text className='label-value'>{labelDisplay}</Text>
-                            <Text className='label-arrow'>›</Text>
+                        <View className='label-options'>
+                            {ADDRESS_LABEL_OPTIONS.map((option) => (
+                                <View
+                                    key={option.value}
+                                    className={`label-tag ${formData.label === option.value ? 'active' : ''}`}
+                                    onClick={() => handleLabelChange(option.value as AddressLabel)}
+                                >
+                                    {option.label}
+                                </View>
+                            ))}
                         </View>
-
-                        {showLabelPicker && (
-                            <View className='label-picker'>
-                                {LABEL_OPTIONS.map((option) => (
-                                    <View
-                                        key={option.value}
-                                        className={`label-option ${formData.label === option.value ? 'selected' : ''
-                                            }`}
-                                        onClick={() => handleLabelChange(option.value)}
-                                    >
-                                        <Text>{option.label}</Text>
-                                        {formData.label === option.value && (
-                                            <Text className='checkmark'>✓</Text>
-                                        )}
-                                    </View>
-                                ))}
-                            </View>
-                        )}
                     </View>
 
-                    {/* Default Address Checkbox */}
-                    <View className='form-field checkbox-field'>
-                        <View className='checkbox-wrapper' onClick={handleDefaultChange}>
-                            <View className={`checkbox ${isDefault ? 'checked' : ''}`}>
-                                {isDefault && <Text className='checkmark'>✓</Text>}
-                            </View>
-                            <Text className='checkbox-label'>设为默认地址</Text>
-                        </View>
+                    {/* Set Default */}
+                    <View className='form-field inline'>
+                        <Text className='field-label'>设为默认地址</Text>
+                        <Switch 
+                            checked={isDefault} 
+                            onChange={(val: boolean) => setIsDefault(val)}
+                        />
                     </View>
                 </View>
 
-                {/* Action Buttons */}
+                {/* Actions */}
                 <View className='form-actions'>
-                    <Button
-                        className='btn-secondary'
+                    <Button 
+                        className='btn-cancel' 
                         onClick={onCancel}
                         disabled={isLoading}
                     >
                         取消
                     </Button>
-                    <Button
-                        className='btn-primary'
+                    <Button 
+                        className='btn-save' 
+                        type='primary' 
                         onClick={handleSubmit}
-                        disabled={isLoading}
+                        loading={isLoading}
                     >
-                        {isLoading ? '保存中...' : '保存地址'}
+                        保存地址
                     </Button>
                 </View>
             </View>
-
-            {/* Cascader 级联选择器 */}
-            {showAddressPicker && (
-                <Cascader
-                    visible={showAddressPicker}
-                    value={selectedRegion}
-                    title="选择所在地区"
-                    options={addressData}
-                    onClose={() => {
-                        console.log('Cascader closed')
-                        setShowAddressPicker(false)
-                    }}
-                    onChange={handleAddressChange}
-                    onLoad={() => {
-                        console.log('Cascader loaded')
-                    }}
-                />
-            )}
         </ScrollView>
     )
 }

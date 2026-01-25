@@ -18,4 +18,3 @@ export class CreateCourierDto {
   @IsArray()
   serviceAreas?: string[];
 }
-

@@ -1,5 +1,120 @@
 // 系统相关Mock数据
 import { createMockResponse, MockDataGenerator, MockResponse } from './index'
+// Banner数据类型
+interface Banner {
+  id: number
+  title: string
+  subtitle: string
+  description: string
+  image: string
+  link: string
+  sortOrder: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// 文章数据类型
+interface Article {
+  id: number
+  title: string
+  content: string
+  summary: string
+  image: string // Changed from imageUrl
+  publishDate: string // Changed from publishedAt
+  views: number // Changed from viewCount
+  categoryId?: number
+  author: string
+  isPublished: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// Mock Banner数据
+const mockBanners: Banner[] = [
+  {
+    id: 1,
+    title: '旧书回收，绿色生活',
+    subtitle: '让知识循环利用',
+    description: '专业旧书回收服务，上门取件',
+    image: 'https://placehold.co/800x300/png?text=%E6%97%A7%E4%B9%A6%E5%9B%9E%E6%94%B6',
+    link: '/category/1',
+    sortOrder: 1,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 2,
+    title: '旧衣回收，价格优惠',
+    subtitle: '衣旧情深，爱心传递',
+    description: '高价回收旧衣物，支持公益',
+    image: 'https://placehold.co/800x300/png?text=%E5%BA%9F%E7%BA%B8%E5%9B%9E%E6%94%B6',
+    link: '/category/1',
+    sortOrder: 2,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 3,
+    title: '电子产品回收专场',
+    subtitle: '安全环保，高价回收',
+    description: '手机电脑家电回收，隐私清除',
+    image: 'https://placehold.co/800x300/png?text=%E7%94%B5%E5%AD%90%E5%9B%9E%E6%94%B6',
+    link: '/category/4',
+    sortOrder: 3,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  }
+]
+
+// Mock Articles数据
+const mockArticles: Article[] = [
+  {
+    id: 1,
+    title: '如何正确分类回收废品',
+    content: '废品分类回收是环保的重要环节...',
+    summary: '学习正确的废品分类方法，提高回收效率',
+    image: 'https://placehold.co/400x200/png?text=%E5%88%86%E7%B1%BB%E5%9B%9E%E6%94%B6',
+    categoryId: 1,
+    author: '环保专家',
+    publishDate: '2024-01-10T10:00:00Z',
+    isPublished: true,
+    views: 1250,
+    createdAt: '2024-01-10T10:00:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 2,
+    title: '废纸回收的经济价值',
+    content: '废纸回收不仅环保，还有很好的经济效益...',
+    summary: '了解废纸回收的经济价值和市场前景',
+    image: 'https://placehold.co/400x200/png?text=%E5%BA%9F%E7%BA%B8%E4%BB%B7%E5%80%BC',
+    categoryId: 1,
+    author: '回收专家',
+    publishDate: '2024-01-12T14:30:00Z',
+    isPublished: true,
+    views: 890,
+    createdAt: '2024-01-12T14:30:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 3,
+    title: '电子产品回收注意事项',
+    content: '电子产品回收需要注意数据安全和环保处理...',
+    summary: '电子产品回收的安全须知和环保要求',
+    image: 'https://placehold.co/400x200/png?text=%E7%94%B5%E5%AD%90%E5%9B%9E%E6%94%B6',
+    categoryId: 4,
+    author: '技术专家',
+    publishDate: '2024-01-14T09:15:00Z',
+    isPublished: true,
+    views: 567,
+    createdAt: '2024-01-14T09:15:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  }
+]
 
 // 系统配置接口定义
 export interface SystemConfig {
@@ -340,6 +455,25 @@ export const mockUploadImage = async (imageData: any): Promise<MockResponse<stri
   return createMockResponse(imageUrl, true, '图片上传成功')
 }
 
+// Mock获取城市列表
+export const mockGetCities = async (): Promise<MockResponse<any>> => {
+  const cities = [
+    {
+      name: '北京市',
+      cities: [
+        { name: '北京市', districts: [{ name: '朝阳区' }, { name: '海淀区' }] }
+      ]
+    },
+    {
+      name: '上海市',
+      cities: [
+        { name: '上海市', districts: [{ name: '浦东新区' }, { name: '黄浦区' }] }
+      ]
+    }
+  ]
+  return createMockResponse(cities, true, '获取城市列表成功')
+}
+
 // 导出所有系统相关mock函数
 export const systemMockData = {
   getSystemConfig: mockGetSystemConfig,
@@ -351,5 +485,6 @@ export const systemMockData = {
   getFAQCategories: mockGetFAQCategories,
   getAnnouncements: mockGetAnnouncements,
   getCustomerService: mockGetCustomerService,
-  uploadImage: mockUploadImage
+  uploadImage: mockUploadImage,
+  getCities: mockGetCities
 }

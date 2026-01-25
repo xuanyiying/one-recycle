@@ -8,13 +8,14 @@
 import { useState, useCallback, useEffect } from 'react'
 import { View, Text, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Address, AddressLabel } from '@/types/order'
+import { Address } from '@/types/order'
+import { AddressLabel, AddressFormData } from '@/types/address'
 import { validateAddress, validateAddressInServiceArea } from '../../../utils/orderValidation'
 import { useOrderStore } from '../../../store/orderStore'
 import AddressCard from './AddressCard'
 import AddressForm from '@/components/AddressForm'
 import './index.scss'
-import { AddressService } from '@/services/addressService'
+import { AddressService } from '@/services/address'
 
 // ============================================================================
 // Types
@@ -39,11 +40,11 @@ export default function AddressSelection({
 }: AddressSelectionProps) {
     // State management
     const { state, selectAddress, addAddress, updateAddress } = useOrderStore()
-    const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(
-        initialAddress?.id || state.selectedAddressId
+    const [selectedAddressId, setSelectedAddressId] = useState<string | number | undefined>(
+        initialAddress?.id ?? state.selectedAddressId
     )
     const [showAddressForm, setShowAddressForm] = useState(false)
-    const [editingAddressId, setEditingAddressId] = useState<string | undefined>()
+    const [editingAddressId, setEditingAddressId] = useState<string | number | undefined>()
     const [isLoading, setIsLoading] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -60,21 +61,8 @@ export default function AddressSelection({
             try {
                 const response = await AddressService.getUserAddresses()
                 if (response.success && response.data) {
-                    // Convert AddressData to Address format and add to store
-                    const convertedAddresses = response.data.map((addr) => ({
-                        id: String(addr.id),
-                        recipientName: addr.name,
-                        phoneNumber: addr.phone,
-                        region: `${addr.province} ${addr.city} ${addr.area || addr.district}`,
-                        detailedAddress: addr.detail,
-                        isDefault: addr.isDefault || false,
-                        label: AddressLabel.HOME,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                    }))
-
                     // Add addresses to store
-                    convertedAddresses.forEach(addr => addAddress(addr))
+                    response.data.forEach(addr => addAddress(addr))
                 }
             } catch (error) {
                 console.error('Failed to load addresses:', error)
@@ -98,7 +86,7 @@ export default function AddressSelection({
     // Address Selection Handlers
     // ============================================================================
 
-    const handleSelectAddress = useCallback((addressId: string) => {
+    const handleSelectAddress = useCallback((addressId: string | number) => {
         setSelectedAddressId(addressId)
         selectAddress(addressId)
         setErrors({})
@@ -113,6 +101,54 @@ export default function AddressSelection({
         setEditingAddressId(addressId)
         setShowAddressForm(true)
     }, [])
+
+    const handleImportFromWechat = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const res = await Taro.chooseAddress()
+            
+            // Map WeChat address to our format
+            const newAddress: AddressFormData = {
+                recipientName: res.userName,
+                phoneNumber: res.telNumber,
+                province: res.provinceName,
+                city: res.cityName,
+                district: res.countyName,
+                detailedAddress: res.detailInfo,
+                region: `${res.provinceName} ${res.cityName} ${res.countyName}`,
+                label: AddressLabel.OTHER,
+                isDefault: false
+            }
+
+            // Save the address
+            const response = await AddressService.createAddress(newAddress)
+            if (response.success && response.data) {
+                addAddress(response.data)
+                const addressId = String(response.data.id)
+                setSelectedAddressId(addressId)
+                selectAddress(addressId)
+                Taro.showToast({ title: '导入成功', icon: 'success' })
+            }
+        } catch (error: any) {
+            // Check if user denied permission or canceled
+            if (error.errMsg?.includes('cancel')) return
+            
+            // If native fails, fallback to manual form with a hint
+            Taro.showModal({
+                title: '微信导入失败',
+                content: '无法获取微信地址，是否切换到手动添加？',
+                confirmText: '手动添加',
+                success: (modalRes) => {
+                    if (modalRes.confirm) {
+                        handleAddNewAddress()
+                    }
+                }
+            })
+            console.error('WeChat Address Import Error:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [addAddress, selectAddress, handleAddNewAddress])
 
     const handleDeleteAddress = useCallback(async (addressId: string) => {
         Taro.showModal({
@@ -151,14 +187,16 @@ export default function AddressSelection({
     // ============================================================================
 
     const handleSaveAddress = useCallback(
-        async (formData: Omit<Address, 'id' | 'createdAt' | 'updatedAt'>) => {
+        async (formData: AddressFormData) => {
+            // formData comes from AddressForm which uses AddressFormData & { isDefault: boolean, coordinates?: any }
+            
             // Validate address
-            const addressErrors = validateAddress({
-                id: editingAddressId || 'temp',
+            const addressToValidate = {
                 ...formData,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            })
+                id: editingAddressId || 'temp',
+            }
+            
+            const addressErrors = validateAddress(addressToValidate as Address)
 
             if (addressErrors.length > 0) {
                 const errorMap: Record<string, string> = {}
@@ -171,12 +209,7 @@ export default function AddressSelection({
 
             // Validate address is within service area
             const isInServiceArea = validateAddressInServiceArea(
-                {
-                    id: editingAddressId || 'temp',
-                    ...formData,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                },
+                addressToValidate as Address,
                 serviceAreaBoundary
             )
 
@@ -193,22 +226,20 @@ export default function AddressSelection({
 
             setIsLoading(true)
             try {
-                // Convert Address to AddressData format
-                const regionParts = formData.region.split(' ').filter(Boolean)
-                const [province = '', city = '', district = ''] = regionParts
-
-                const addressData = {
-                    name: formData.recipientName,
-                    phone: formData.phoneNumber,
-                    province,
-                    city,
-                    area: district,
-                    district,
-                    detail: formData.detailedAddress,
+                // Prepare data for API - matches Address model
+                const addressData: Omit<Address, 'id'> = {
+                    recipientName: formData.recipientName,
+                    phoneNumber: formData.phoneNumber,
+                    province: formData.province,
+                    city: formData.city,
+                    district: formData.district,
+                    detailedAddress: formData.detailedAddress,
                     isDefault: formData.isDefault,
+                    label: formData.label,
+                    coordinates: formData.coordinates
                 }
 
-                let response
+                let response: any
                 if (editingAddressId) {
                     // Update existing address via API
                     response = await AddressService.updateAddress(editingAddressId, addressData)
@@ -218,21 +249,10 @@ export default function AddressSelection({
                 }
 
                 if (response.success && response.data) {
-                    // Convert response back to Address format
+                    // response.data is already transformed by AddressService to unified Address format
                     const savedAddress: Address = {
-                        id: String(response.data.id),
-                        recipientName: response.data.name,
-                        phoneNumber: response.data.phone,
-                        region: `${response.data.province} ${response.data.city} ${response.data.area || response.data.district}`,
-                        detailedAddress: response.data.detail,
-                        isDefault: response.data.isDefault || false,
-                        label: formData.label,
-                        coordinates: formData.coordinates,
-                        createdAt: editingAddressId
-                            ? addresses.find((a) => a.id === editingAddressId)?.createdAt ||
-                            new Date().toISOString()
-                            : new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
+                        ...response.data,
+                        id: String(response.data.id)
                     }
 
                     if (editingAddressId) {
@@ -241,8 +261,8 @@ export default function AddressSelection({
                     } else {
                         // Add to store
                         addAddress(savedAddress)
-                        setSelectedAddressId(savedAddress.id)
-                        selectAddress(savedAddress.id)
+                        setSelectedAddressId(savedAddress.id as string)
+                        selectAddress(savedAddress.id as string)
                     }
 
                     setShowAddressForm(false)
@@ -349,12 +369,12 @@ export default function AddressSelection({
                         <View className='addresses-list'>
                             {addresses.map((address) => (
                                 <AddressCard
-                                    key={address.id}
+                                    key={String(address.id)}
                                     address={address}
-                                    isSelected={selectedAddressId === address.id}
-                                    onSelect={() => handleSelectAddress(address.id)}
-                                    onEdit={() => handleEditAddress(address.id)}
-                                    onDelete={() => handleDeleteAddress(address.id)}
+                                    isSelected={selectedAddressId === String(address.id)}
+                                    onSelect={() => handleSelectAddress(String(address.id))}
+                                    onEdit={() => handleEditAddress(String(address.id))}
+                                    onDelete={() => handleDeleteAddress(String(address.id))}
                                 />
                             ))}
                         </View>
@@ -362,7 +382,10 @@ export default function AddressSelection({
                         {/* Add New Address Button */}
                         <View className='add-address-section'>
                             <Button className='btn-secondary' onClick={handleAddNewAddress}>
-                                + 添加新地址
+                                + 手动添加
+                            </Button>
+                            <Button className='btn-wechat' onClick={handleImportFromWechat}>
+                                <Text className='icon'>📱</Text> 微信导入
                             </Button>
                         </View>
                     </View>

@@ -19,7 +19,7 @@ interface MockConfig {
 
 // Mock配置
 const mockConfig: MockConfig = {
-  enabled: ENV_CONFIG.USE_MOCK_DATA || true ,
+  enabled: ENV_CONFIG.USE_MOCK_DATA,
   delay: 300 // 300ms延迟模拟真实网络请求
 }
 
@@ -72,6 +72,8 @@ const mockRoutes: Record<string, MockRouteHandler> = {}
 export const registerMockRoute = (pattern: string, handler: MockRouteHandler) => {
   mockRoutes[pattern] = handler
 }
+
+export { MockAutoLogin } from './auth'
 
 // Mock管理器
 export const mockManager = {
@@ -256,43 +258,34 @@ export * from './auth'
 export * from './category'
 export * from './order'
 export * from './account'
+export * from './address'
+export * from './user'
 export * from './payment'
 export * from './notification'
 export * from './system'
-export * from './autoLogin'
 
 // 自动注册所有mock路由
-;(async () => {
+// 使用同步方式导入和注册，确保在应用初始化前完成
+import { registerAllMockRoutes } from './routes'
+import { MockAutoLogin } from './auth'
+
+const initMockSystem = async () => {
   try {
-    console.log('[Mock] Starting auto-registration of mock routes...')
-    const { registerAllMockRoutes } = await import('./routes')
+    console.log('[Mock] Starting initialization of mock system...')
+    
+    // 1. 注册路由
     registerAllMockRoutes()
     
-    // 导入并运行验证器
-    const { validateMockSystem, testCriticalRoutes } = await import('./validator')
-    
-    // 验证Mock系统
-    const validationResult = validateMockSystem()
-    if (!validationResult.isValid) {
-      console.error('[Mock] ❌ Mock system validation failed:', validationResult.errors)
-    } else {
-      console.log('[Mock] ✅ Mock system validation passed')
-    }
-    
-    // 测试关键路由
-    const testResults = await testCriticalRoutes()
-    const failedTests = Object.entries(testResults).filter(([_, success]) => !success)
-    if (failedTests.length > 0) {
-      console.warn('[Mock] ⚠️ Some critical routes failed testing:', failedTests)
-    } else {
-      console.log('[Mock] ✅ All critical routes tested successfully')
+    // 2. 初始化自动登录
+    if (ENV_CONFIG.USE_MOCK_DATA) {
+      await MockAutoLogin.initialize()
     }
 
-    // 初始化mock环境下的自动登录
-    const { MockAutoLogin } = await import('./autoLogin')
-    await MockAutoLogin.initialize()
-    
+    console.log('[Mock] ✅ Mock system initialized successfully')
   } catch (e) {
-    console.error('[Mock] ❌ Failed to auto-register routes:', e)
+    console.error('[Mock] ❌ Error during mock system initialization:', e)
   }
-})()
+}
+
+// 立即执行初始化
+initMockSystem()

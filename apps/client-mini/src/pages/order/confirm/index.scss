@@ -3,6 +3,7 @@
 .order-confirm-page {
   min-height: 100vh;
   background: $bg-secondary;
+  @include responsive-page-padding;
   padding-bottom: 140rpx;
 
   .loading-container {

@@ -5,8 +5,8 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { BusinessException } from '@one-recycle/shared';
-import { ApiResponse } from '@one-recycle/shared';
+import { BusinessException } from '../exceptions/business.exception';
+import { ApiResponse } from '../types/common.types';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {

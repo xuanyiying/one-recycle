@@ -1,8 +1,14 @@
 import { Controller, Post, Body, Logger } from '@nestjs/common';
 import { OrderQueueService } from './services/order-queue.service';
 import { PaymentQueueService } from './services/payment-queue.service';
-import { OrderCompletedEventDto, OrderCancelledEventDto } from './dto/order-events.dto';
-import { WithdrawalCreatedEventDto, WithdrawalCompletedEventDto } from './dto/payment-events.dto';
+import {
+  OrderCompletedEventDto,
+  OrderCancelledEventDto,
+} from './dto/order-events.dto';
+import {
+  WithdrawalCreatedEventDto,
+  WithdrawalCompletedEventDto,
+} from './dto/payment-events.dto';
 
 @Controller('queue')
 export class QueueController {
@@ -18,21 +24,26 @@ export class QueueController {
    * POST /queue/order/completed
    */
   @Post('order/completed')
-  async handleOrderCompleted(@Body() data: OrderCompletedEventDto): Promise<{ success: boolean; message: string }> {
+  async handleOrderCompleted(
+    @Body() data: OrderCompletedEventDto,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(
       `Received order completed event: ${data.orderId}, ` +
-      `User: ${data.userId}, Amount: ${data.settlementAmount}`
+        `User: ${data.userId}, Amount: ${data.settlementAmount}`,
     );
-    
+
     try {
       await this.orderQueueService.handleOrderCompleted(data);
-      
+
       return {
         success: true,
         message: `Order completed event queued successfully: ${data.orderId}`,
       };
     } catch (error) {
-      this.logger.error(`Failed to queue order completed event: ${data.orderId}`, error.stack);
+      this.logger.error(
+        `Failed to queue order completed event: ${data.orderId}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -42,18 +53,23 @@ export class QueueController {
    * POST /queue/order/cancelled
    */
   @Post('order/cancelled')
-  async handleOrderCancelled(@Body() data: OrderCancelledEventDto): Promise<{ success: boolean; message: string }> {
+  async handleOrderCancelled(
+    @Body() data: OrderCancelledEventDto,
+  ): Promise<{ success: boolean; message: string }> {
     this.logger.log(`Received order cancelled event: ${data.orderId}`);
-    
+
     try {
       await this.orderQueueService.handleOrderCancelled(data);
-      
+
       return {
         success: true,
         message: `Order cancelled event queued successfully: ${data.orderId}`,
       };
     } catch (error) {
-      this.logger.error(`Failed to queue order cancelled event: ${data.orderId}`, error.stack);
+      this.logger.error(
+        `Failed to queue order cancelled event: ${data.orderId}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -80,7 +96,7 @@ export class QueueController {
     } catch (error) {
       this.logger.error(
         `Failed to queue withdrawal created event: ${data.withdrawalId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -108,7 +124,7 @@ export class QueueController {
     } catch (error) {
       this.logger.error(
         `Failed to queue withdrawal completed event: ${data.withdrawalId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }

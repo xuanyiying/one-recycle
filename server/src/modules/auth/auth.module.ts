@@ -5,22 +5,22 @@ import { AuthController } from './auth.controller';
 import { AuthRedisService } from './auth-redis.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { WeChatPlatform } from './platforms/wechat.platform';
-import { AlipayPlatform } from './platforms/alipay.platform';
-import { TikTokPlatform } from './platforms/tiktok.platform';
-import { KuaishouPlatform } from './platforms/kuaishou.platform';
+import { WeChatPlatform } from '@/modules/auth/platforms';
+import { AlipayPlatform } from '@/modules/auth/platforms';
+import { TikTokPlatform } from '@/modules/auth/platforms';
+import { KuaishouPlatform } from '@/modules/auth/platforms';
 import { AccountClient } from './clients/account.client';
 
 @Module({
   imports: [
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => {
+      useFactory: (configService: ConfigService) => {
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN', '15m');
         return {
           secret: configService.get<string>('JWT_SECRET'),
           signOptions: {
-            expiresIn: expiresIn as any, // 类型断言以解决版本兼容性问题
+            expiresIn: parseInt(expiresIn), // 类型断言以解决版本兼容性问题
           },
         };
       },

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { useAppContext } from '@/store'
-import { AuthService } from '@/services/authService'
+import { AuthService } from '@/services/auth'
+import { MockAutoLogin } from '@/mock'
 
 export const useAuth = () => {
   const { state, dispatch } = useAppContext()
@@ -16,19 +17,37 @@ export const useAuth = () => {
   useEffect(() => {
     const checkStoredAuth = async () => {
       try {
+        // 在开发环境下处理 Mock 登录
+        if (process.env.NODE_ENV === 'development') {
+          if (MockAutoLogin.isMockAutoLogin()) {
+            const mockLoginInfo = MockAutoLogin.getMockLoginInfo()
+            if (mockLoginInfo) {
+              await AuthService.saveLoginInfo(mockLoginInfo.token!, mockLoginInfo.user!)
+            } else {
+              await MockAutoLogin.initialize()
+            }
+          }
+        }
+
         const authStatus = AuthService.checkLoginStatus()
         
         if (authStatus.isLoggedIn && authStatus.token && authStatus.user) {
           // 同步到全局状态
-          dispatch({ type: 'SET_TOKEN', payload: authStatus.token })
-          dispatch({ type: 'SET_USER', payload: authStatus.user })
+          dispatch({ 
+            type: 'LOGIN', 
+            payload: { 
+              user: authStatus.user, 
+              token: authStatus.token 
+            } 
+          })
         } else {
-          // 清理无效的状态
-          dispatch({ type: 'LOGOUT' })
+          // 如果全局已经有值但本地没了，才清理
+          if (state.token || state.user) {
+            dispatch({ type: 'LOGOUT' })
+          }
         }
       } catch (error) {
         console.error('检查存储的认证信息失败:', error)
-        dispatch({ type: 'LOGOUT' })
       }
     }
 
@@ -38,179 +57,87 @@ export const useAuth = () => {
     }
   }, [dispatch, state.token, state.user])
 
-  // 检查认证状态
+  // 检查认证状态的导出函数
   const checkAuthStatus = useCallback(async () => {
     try {
       setLoading(true)
       
-      const loginStatus = AuthService.checkLoginStatus()
+      // 先尝试从本地存储获取，以防全局状态还没更新
+      const storedToken = Taro.getStorageSync('token')
+      const storedUser = Taro.getStorageSync('user')
       
+      if (storedToken && storedUser) {
+        if (!state.token || !state.user) {
+          dispatch({
+            type: 'LOGIN',
+            payload: { user: storedUser, token: storedToken }
+          })
+        }
+        return { isLoggedIn: true, user: storedUser, token: storedToken }
+      }
+      
+      const loginStatus = AuthService.checkLoginStatus()
       if (loginStatus.isLoggedIn && loginStatus.token && loginStatus.user) {
-        // 更新全局状态
         dispatch({
           type: 'LOGIN',
-          payload: {
-            user: loginStatus.user,
-            token: loginStatus.token
-          }
+          payload: { user: loginStatus.user, token: loginStatus.token }
         })
+        return { isLoggedIn: true, user: loginStatus.user, token: loginStatus.token }
       } else {
-        // 清理状态
         dispatch({ type: 'LOGOUT' })
+        return { isLoggedIn: false }
       }
     } catch (error) {
       console.error('检查认证状态失败:', error)
-      dispatch({ type: 'LOGOUT' })
+      return { isLoggedIn: false }
     } finally {
       setLoading(false)
     }
-  }, [dispatch])
+  }, [dispatch, state.token, state.user])
 
   // 登录
-  const login = useCallback(async (user: any, token: string, provider?: string) => {
+  const login = useCallback(async (userData: any, userToken: string, provider?: string) => {
     try {
       setLoading(true)
-      
-      // 保存到本地存储
-      await AuthService.saveLoginInfo(token, user)
-      
-      // 保存登录提供商信息
+      await AuthService.saveLoginInfo(userToken, userData)
       if (provider) {
         Taro.setStorageSync('loginProvider', provider)
       }
-      
-      // 更新全局状态
       dispatch({
         type: 'LOGIN',
-        payload: { user, token }
+        payload: { user: userData, token: userToken }
       })
-      
       return { success: true }
     } catch (error) {
       console.error('登录状态更新失败:', error)
-      return { success: false, error: '登录状态更新失败' }
+      return { success: false, message: '登录失败' }
     } finally {
       setLoading(false)
     }
   }, [dispatch])
 
-  // 登出
+  // 退出登录
   const logout = useCallback(async () => {
     try {
       setLoading(true)
-      
-      // 调用登出服务
       await AuthService.logout()
-      
-      // 清理登录提供商信息
-      Taro.removeStorageSync('loginProvider')
-      
-      // 更新全局状态
       dispatch({ type: 'LOGOUT' })
-      
       return { success: true }
     } catch (error) {
-      console.error('登出失败:', error)
-      return { success: false, error: '登出失败' }
+      console.error('退出登录失败:', error)
+      return { success: false, message: '退出失败' }
     } finally {
       setLoading(false)
     }
   }, [dispatch])
-
-  // 更新用户信息
-  const updateUser = useCallback((userData: any) => {
-    try {
-      // 更新本地存储
-      Taro.setStorageSync('user', userData)
-      
-      // 更新全局状态
-      dispatch({
-        type: 'UPDATE_USER',
-        payload: userData
-      })
-      
-      return { success: true }
-    } catch (error) {
-      console.error('更新用户信息失败:', error)
-      return { success: false, error: '更新用户信息失败' }
-    }
-  }, [dispatch])
-
-  // 刷新token
-  const refreshToken = useCallback(async () => {
-    try {
-      setLoading(true)
-      
-      const result = await AuthService.refreshToken()
-      
-      if (result.success && result.token) {
-        // 更新全局状态
-        dispatch({
-          type: 'SET_TOKEN',
-          payload: result.token
-        })
-        
-        return { success: true, token: result.token }
-      } else {
-        // token刷新失败，需要重新登录
-        await logout()
-        return { success: false, error: 'Token已过期，请重新登录' }
-      }
-    } catch (error) {
-      console.error('刷新token失败:', error)
-      await logout()
-      return { success: false, error: 'Token刷新失败' }
-    } finally {
-      setLoading(false)
-    }
-  }, [dispatch, logout])
-
-  // 检查是否需要登录，如果未登录则跳转到登录页
-  const requireAuth = useCallback((showModal: boolean = true) => {
-    if (!isLoggedIn) {
-      if (showModal) {
-        Taro.showModal({
-          title: '提示',
-          content: '请先登录',
-          confirmText: '去登录',
-          cancelText: '取消',
-          success: (res) => {
-            if (res.confirm) {
-              Taro.navigateTo({
-                url: '/pages/login/index'
-              })
-            }
-          }
-        })
-      } else {
-        Taro.navigateTo({
-          url: '/pages/login/index'
-        })
-      }
-      return false
-    }
-    return true
-  }, [isLoggedIn])
-
-  // 静默检查登录状态，不显示弹窗
-  const checkLoginSilently = useCallback(() => {
-    return isLoggedIn
-  }, [isLoggedIn])
 
   return {
-    // 状态
     isLoggedIn,
     user,
     token,
     loading,
-    
-    // 方法
     checkAuthStatus,
     login,
-    logout,
-    updateUser,
-    refreshToken,
-    requireAuth,
-    checkLoginSilently
+    logout
   }
 }

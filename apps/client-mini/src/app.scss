@@ -2,8 +2,10 @@
 
 // 导入 iOS 设计系统
 @use './styles/variables.scss' as *;
-@use './styles/ios.scss' as *;
 @use './styles/global.scss' as *;
+
+// 初始化全局样式
+@include ios-global-styles;
 
 // iOS 应用级容器样式
 .container {
@@ -14,15 +16,15 @@
 
 // iOS 页面基础样式
 .page {
-  @extend .ios-page;
+  @include ios-page;
 }
 
 // iOS 内容区域
 .content {
-  @extend .ios-content;
+  @include ios-content;
 }
 
 // iOS 分组区域
 .section {
-  @extend .ios-section;
+  @include ios-section;
 }

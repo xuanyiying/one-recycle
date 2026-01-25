@@ -1,5 +1,4 @@
-@use '../../../styles/variables.scss' as *;
-@use '../../../styles/ios.scss' as *;
+@use '../../../styles/global.scss' as *;
 
 // ==================== iOS 交易记录页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -7,13 +6,12 @@
 .transaction-list-page {
   min-height: 100vh;
   background-color: var(--ios-system-grouped-background);
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
+  @include responsive-page-padding;
 }
 
 // iOS 页面头部
 .page-header {
-  @extend .ios-navigation-bar;
+  @include ios-navigation-bar;
   background-color: var(--ios-system-background);
   padding: $spacing-16 $page-padding; // 16pt
   border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
@@ -24,28 +22,28 @@
     align-items: center;
 
     .back-btn {
-      @extend .ios-button-text;
+      @include ios-button-text;
       padding: $spacing-8; // 8pt
       margin-left: -$spacing-8; // -8pt 扩大触摸区域
       
       text {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-blue);
       }
     }
 
     .header-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
     }
 
     .filter-btn {
-      @extend .ios-button-text;
+      @include ios-button-text;
       padding: $spacing-8; // 8pt
       margin-right: -$spacing-8; // -8pt 扩大触摸区域
       
       text {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-blue);
       }
     }
@@ -72,11 +70,11 @@
     }
 
     .filter-text {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
     }
 
     .filter-arrow {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       color: var(--ios-tertiary-label);
     }
   }
@@ -87,7 +85,7 @@
   padding: $spacing-16 $page-padding; // 16pt
 
   .stats-card {
-    @extend .ios-card;
+    @include ios-card;
     background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
     color: white;
 
@@ -98,13 +96,13 @@
       margin-bottom: $spacing-16; // 16pt
 
       .stats-title {
-        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
         font-weight: $font-weight-semibold;
         color: white;
       }
 
       .stats-period {
-        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
         color: rgba(255, 255, 255, 0.8);
       }
     }
@@ -118,7 +116,7 @@
         text-align: center;
 
         .stats-value {
-          @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+          @include ios-title2; // 使用 iOS Title 2 样式 (44rpx)
           font-weight: $font-weight-bold;
           color: white;
           margin-bottom: $spacing-4; // 4pt
@@ -126,7 +124,7 @@
         }
 
         .stats-label {
-          @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
           color: rgba(255, 255, 255, 0.8);
         }
       }
@@ -145,18 +143,18 @@
     padding: $spacing-16 0 $spacing-12; // 16pt 0 12pt
 
     .list-title {
-      @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+      @include ios-title2; // 使用 iOS Title 2 样式 (44rpx)
       font-weight: $font-weight-semibold;
     }
 
     .list-count {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
     }
   }
 
   .transaction-item {
-    @extend .ios-card;
+    @include ios-card;
     margin-bottom: $spacing-12; // 12pt
     transition: all 0.2s ease;
 
@@ -217,21 +215,21 @@
           flex: 1;
 
           .item-title {
-            @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+            @include ios-body; // 使用 iOS Body 样式 (34rpx)
             font-weight: $font-weight-medium;
             margin-bottom: $spacing-4; // 4pt
             display: block;
           }
 
           .item-time {
-            @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+            @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
             color: var(--ios-secondary-label);
             margin-bottom: $spacing-2; // 2pt
             display: block;
           }
 
           .item-order {
-            @extend .ios-caption2; // 使用 iOS Caption 2 样式 (22rpx)
+            @include ios-caption2; // 使用 iOS Caption 2 样式 (22rpx)
             color: var(--ios-tertiary-label);
             font-family: $font-family-number; // 使用数字字体
             display: block;
@@ -243,7 +241,7 @@
         text-align: right;
 
         .item-amount {
-          @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+          @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
           font-weight: $font-weight-bold;
           font-family: $font-family-number; // 使用数字字体
           margin-bottom: $spacing-2; // 2pt
@@ -271,7 +269,7 @@
         }
 
         .item-status {
-          @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+          @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
           color: var(--ios-secondary-label);
         }
       }
@@ -284,7 +282,7 @@
     padding: $spacing-20; // 20pt
 
     .loading-text {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
     }
   }
@@ -294,7 +292,7 @@
     padding: $spacing-20; // 20pt
 
     .no-more-text {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-tertiary-label);
     }
   }
@@ -313,20 +311,20 @@
     }
 
     .empty-title {
-      @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+      @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
       font-weight: $font-weight-semibold;
       margin-bottom: $spacing-8; // 8pt
     }
 
     .empty-desc {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
       line-height: $line-height-relaxed;
       margin-bottom: $spacing-24; // 24pt
     }
 
     .empty-action {
-      @extend .ios-button-primary;
+      @include ios-button-primary;
       padding: 0 $spacing-32; // 0 32pt
     }
   }
@@ -362,26 +360,26 @@
       border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
       .cancel-btn {
-        @extend .ios-button-text;
+        @include ios-button-text;
         padding: $spacing-8; // 8pt
         
         text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: var(--ios-blue);
         }
       }
 
       .modal-title {
-        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
         font-weight: $font-weight-semibold;
       }
 
       .confirm-btn {
-        @extend .ios-button-text;
+        @include ios-button-text;
         padding: $spacing-8; // 8pt
         
         text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: var(--ios-blue);
         }
       }
@@ -398,7 +396,7 @@
         }
 
         .group-title {
-          @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+          @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
           font-weight: $font-weight-semibold;
           margin-bottom: $spacing-12; // 12pt
         }
@@ -430,7 +428,7 @@
             }
 
             .option-text {
-              @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+              @include ios-body; // 使用 iOS Body 样式 (34rpx)
             }
           }
         }

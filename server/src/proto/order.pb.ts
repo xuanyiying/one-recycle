@@ -1,8 +1,9 @@
+// @ts-nocheck
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 
-export const protobufPackage = "order";
+export const protobufPackage = 'order';
 
 export interface CreateOrderRequest {
   userId: string;
@@ -76,7 +77,7 @@ export interface CancelOrderResponse {
   message: string;
 }
 
-export const ORDER_PACKAGE_NAME = "order";
+export const ORDER_PACKAGE_NAME = 'order';
 
 export interface OrderServiceClient {
   createOrder(request: CreateOrderRequest): Observable<CreateOrderResponse>;
@@ -93,44 +94,73 @@ export interface OrderServiceClient {
 export interface OrderServiceController {
   createOrder(
     request: CreateOrderRequest,
-  ): Promise<CreateOrderResponse> | Observable<CreateOrderResponse> | CreateOrderResponse;
+  ):
+    | Promise<CreateOrderResponse>
+    | Observable<CreateOrderResponse>
+    | CreateOrderResponse;
 
   getOrder(
     request: GetOrderRequest,
-  ): Promise<GetOrderResponse> | Observable<GetOrderResponse> | GetOrderResponse;
+  ):
+    | Promise<GetOrderResponse>
+    | Observable<GetOrderResponse>
+    | GetOrderResponse;
 
   updateOrder(
     request: UpdateOrderRequest,
-  ): Promise<UpdateOrderResponse> | Observable<UpdateOrderResponse> | UpdateOrderResponse;
+  ):
+    | Promise<UpdateOrderResponse>
+    | Observable<UpdateOrderResponse>
+    | UpdateOrderResponse;
 
   listOrders(
     request: ListOrdersRequest,
-  ): Promise<ListOrdersResponse> | Observable<ListOrdersResponse> | ListOrdersResponse;
+  ):
+    | Promise<ListOrdersResponse>
+    | Observable<ListOrdersResponse>
+    | ListOrdersResponse;
 
   cancelOrder(
     request: CancelOrderRequest,
-  ): Promise<CancelOrderResponse> | Observable<CancelOrderResponse> | CancelOrderResponse;
+  ):
+    | Promise<CancelOrderResponse>
+    | Observable<CancelOrderResponse>
+    | CancelOrderResponse;
 }
 
 export function OrderServiceControllerMethods() {
   return function (constructor: Function) {
     const methodNames = [
-      "createOrder",
-      "getOrder",
-      "updateOrder",
-      "listOrders",
-      "cancelOrder",
+      'createOrder',
+      'getOrder',
+      'updateOrder',
+      'listOrders',
+      'cancelOrder',
     ];
     methodNames.forEach((methodName) => {
-      const descriptor: any = Object.getOwnPropertyDescriptor(constructor.prototype, methodName);
-      GrpcMethod("OrderService", methodName)(constructor.prototype[methodName], methodName, descriptor);
+      const descriptor: any = Object.getOwnPropertyDescriptor(
+        constructor.prototype,
+        methodName,
+      );
+      GrpcMethod('OrderService', methodName)(
+        constructor.prototype[methodName],
+        methodName,
+        descriptor,
+      );
     });
     const grpcStreamMethods = [];
     grpcStreamMethods.forEach((methodName) => {
-      const descriptor: any = Object.getOwnPropertyDescriptor(constructor.prototype, methodName);
-      GrpcStreamMethod("OrderService", methodName)(constructor.prototype[methodName], methodName, descriptor);
+      const descriptor: any = Object.getOwnPropertyDescriptor(
+        constructor.prototype,
+        methodName,
+      );
+      GrpcStreamMethod('OrderService', methodName)(
+        constructor.prototype[methodName],
+        methodName,
+        descriptor,
+      );
     });
   };
 }
 
-export const ORDER_SERVICE_NAME = "OrderService";
+export const ORDER_SERVICE_NAME = 'OrderService';

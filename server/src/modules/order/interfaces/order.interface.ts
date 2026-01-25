@@ -1,11 +1,16 @@
-import { OrderEntity, OrderItemEntity, OrderType, OrderStatus, OrderPriority } from '../entities/order.entity';
+import { OrderPriority, OrderStatus, OrderType } from '@/common';
+import { Order } from '@prisma/client';
 
 export interface IOrderService {
-  create(createOrderData: CreateOrderData): Promise<OrderEntity>;
-  findAll(filters: OrderFilters, page?: number, limit?: number): Promise<{ orders: OrderEntity[]; total: number }>;
-  findOne(id: number): Promise<OrderEntity>;
-  update(id: number, updateData: UpdateOrderData): Promise<OrderEntity>;
-  cancel(id: number): Promise<OrderEntity>;
+  create(createOrderData: CreateOrderData): Promise<Order>;
+  findAll(
+    filters: OrderFilters,
+    page?: number,
+    limit?: number,
+  ): Promise<{ orders: Order[]; total: number }>;
+  findOne(id: number): Promise<Order>;
+  update(id: number, updateData: UpdateOrderData): Promise<Order>;
+  cancel(id: number): Promise<Order>;
   remove(id: number): Promise<void>;
 }
 
@@ -44,7 +49,7 @@ export interface UpdateOrderData {
 }
 
 export interface OrderFilters {
-  userId?: number;
+  userId?: string;
   status?: OrderStatus;
   orderType?: OrderType;
   priority?: OrderPriority;

@@ -1,6 +1,7 @@
 // 通用类型定义
 
 // 导出订单创建流相关类型
+export * from './address'
 export * from './order'
 
 // 用户相关类型
@@ -30,18 +31,6 @@ export interface UserBalance {
   frozenBalance: number
   totalEarnings: number
   withdrawableBalance: number
-}
-
-export interface Address {
-  id: number
-  name: string
-  phone: string
-  province: string
-  city: string
-  district: string
-  detail: string
-  isDefault: boolean
-  tag: string
 }
 
 // 分类相关类型
@@ -79,11 +68,11 @@ export interface Order {
   status: OrderStatus
   statusText: string
   categoryName: string
-  items: string[]
+  items: OrderItem[]
   estimatedWeight: number
   estimatedPrice: number
   actualPrice?: number | null
-  address: string
+  address: string | OrderAddress
   appointmentTime: string
   courierName?: string
   courierPhone?: string
@@ -117,10 +106,17 @@ export interface OrderTimeline {
 }
 
 export interface OrderItem {
-  name: string
-  description: string
-  estimatedWeight: number
-  photos: string[]
+  name?: string // 兼容旧字段
+  description?: string // 兼容旧字段
+  estimatedWeight?: number // 兼容旧字段
+  photos?: string[] // 兼容旧字段
+  
+  // 新字段 (匹配 Mock/Backend)
+  categoryId?: number
+  categoryName?: string
+  weight?: number
+  unitPrice?: number
+  amount?: number
 }
 
 export interface OrderAddress {

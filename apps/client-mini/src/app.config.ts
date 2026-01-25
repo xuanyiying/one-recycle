@@ -4,7 +4,6 @@ export default {
         'pages/login/index',
         'pages/category/index',
         'pages/recycle/index',
-        'pages/address/select/index',
         'pages/order/index',
         'pages/order/confirm/index',
         'pages/order/detail/index',
@@ -12,24 +11,33 @@ export default {
         'pages/profile/index',
         'pages/profile/edit/index',
         'pages/settings/index',
-        'pages/address/index',
-        'pages/address/form/index',
         'pages/agreement/index',
         'pages/withdrawal/index',
         'pages/withdrawal/list/index',
         'pages/withdrawal/detail/index',
         'pages/transaction/list/index',
     ],
+    subpackages: [
+        {
+            root: 'pages/address',
+            pages: [
+                'index',
+                'select/index',
+                'form/index'
+            ]
+        }
+    ],
     window: {
         backgroundTextStyle: 'light',
-        navigationBarBackgroundColor: '#00c896',
-        navigationBarTitleText: '爱回收',
-        navigationBarTextStyle: 'white',
-        navigationStyle: 'default'
+        navigationBarBackgroundColor: '#F5F5F0',
+        navigationBarTitleText: 'OneRecycle',
+        navigationBarTextStyle: 'black',
+        backgroundColor: '#F5F5F0',
+        navigationStyle: 'custom'
     },
     tabBar: {
-        color: '#666666',
-        selectedColor: '#00c896',
+        color: '#636E72',
+        selectedColor: '#2E7D32',
         backgroundColor: '#ffffff',
         borderStyle: 'black',
         list: [
@@ -38,12 +46,6 @@ export default {
                 text: '首页',
                 iconPath: 'assets/icons/home.png',
                 selectedIconPath: 'assets/icons/home-active.png'
-            },
-            {
-                pagePath: 'pages/recycle/index',
-                text: '回收',
-                iconPath: 'assets/icons/recycle.png',
-                selectedIconPath: 'assets/icons/recycle-active.png'
             },
             {
                 pagePath: 'pages/order/index',
@@ -63,5 +65,8 @@ export default {
         'scope.userLocation': {
             desc: '用于获取位置信息，展示附近回收点并提供上门服务范围'
         }
-    }
+    },
+    requiredPrivateInfos: [
+        'getLocation'
+    ]
 }

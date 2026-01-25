@@ -2,339 +2,207 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { getBanners, getArticles } from '@/services/system'
-import { getAllCategories } from '@/services/category'
-import { getCategoryIcon, getCategoryGradient } from '@/config/categoryConfig'
 import './index.scss'
+import { useMenu } from './useMenu'
 import { Banner, Article } from '@/types'
-import { Category } from '@/types/category'
-import { Button, Divider, SearchBar } from '@nutui/nutui-react-taro'
-import { IconFont, Photograph, Scan } from '@nutui/icons-react-taro'
-
-
+import { 
+  Location, 
+  Notice, 
+  Star, 
+  ArrowDown, 
+  Edit 
+} from '@nutui/icons-react-taro'
+import { getCdnUrl } from '@/utils/cdn'
 
 export default function Index() {
+  const { features, handleFeatureClick } = useMenu()
   const [currentCity, setCurrentCity] = useState('北京')
-  const [searchValue, setSearchValue] = useState('')
   const [banners, setBanners] = useState<Banner[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 初始化数据
   useEffect(() => {
     initPageData()
-    getCurrentLocation()
+    // 模拟定位
+    setTimeout(() => setCurrentCity('北京市'), 1000)
   }, [])
-
-  // 获取用户当前位置和城市信息
-  const getCurrentLocation = async () => {
-    try {
-      // 获取用户位置授权
-      const authResult = await Taro.getSetting()
-
-      if (!authResult.authSetting['scope.userLocation']) {
-        // 请求位置权限
-        const authorizeResult = await Taro.authorize({
-          scope: 'scope.userLocation'
-        }).catch(() => {
-          // 用户拒绝授权，使用默认城市
-          console.log('用户拒绝位置授权，使用默认城市')
-          return null
-        })
-
-        if (!authorizeResult) {
-          return
-        }
-      }
-
-      // 获取当前位置
-      const locationResult = await Taro.getLocation({
-        type: 'gcj02'
-      })
-
-      // 逆地理编码获取城市信息
-      const cityResult = await getCityFromLocation(locationResult.latitude, locationResult.longitude)
-
-      if (cityResult) {
-        setCurrentCity(cityResult)
-      }
-    } catch (error) {
-      console.error('获取位置信息失败:', error)
-      // 保持默认城市
-    }
-  }
-
-  // 根据经纬度获取城市信息
-  const getCityFromLocation = async (latitude: number, longitude: number): Promise<string | null> => {
-    try {
-      // 这里可以调用第三方地理编码服务，比如腾讯地图、高德地图等
-      // 为了演示，这里使用一个简化的实现
-
-      // 可以根据实际需求接入真实的地理编码API
-      // 例如：腾讯地图逆地理编码API
-      const response = await fetch(
-        `https://apis.map.qq.com/ws/geocoder/v1/?location=${latitude},${longitude}&key=YOUR_API_KEY&get_poi=0`
-      ).catch(() => null)
-
-      if (response && response.ok) {
-        const data = await response.json()
-        if (data.status === 0 && data.result?.address_component?.city) {
-          return data.result.address_component.city.replace('市', '')
-        }
-      }
-
-      // 如果API调用失败，可以根据经纬度范围简单判断主要城市
-      return getCityByCoordinates(latitude, longitude)
-    } catch (error) {
-      console.error('逆地理编码失败:', error)
-      return null
-    }
-  }
-
-  // 根据坐标简单判断城市（备用方案）
-  const getCityByCoordinates = (latitude: number, longitude: number): string | null => {
-    // 主要城市的大致坐标范围（简化版本）
-    const cityRanges = [
-      { name: '北京', lat: [39.4, 41.0], lng: [115.7, 117.4] },
-      { name: '上海', lat: [30.7, 31.9], lng: [120.9, 122.0] },
-      { name: '广州', lat: [22.8, 23.9], lng: [112.9, 114.0] },
-      { name: '深圳', lat: [22.4, 22.8], lng: [113.7, 114.6] },
-      { name: '杭州', lat: [29.9, 30.6], lng: [119.7, 120.9] },
-      { name: '南京', lat: [31.8, 32.4], lng: [118.4, 119.2] },
-      { name: '武汉', lat: [30.1, 31.0], lng: [113.7, 115.0] },
-      { name: '成都', lat: [30.1, 31.0], lng: [103.7, 104.9] }
-    ]
-
-    for (const city of cityRanges) {
-      if (
-        latitude >= city.lat[0] && latitude <= city.lat[1] &&
-        longitude >= city.lng[0] && longitude <= city.lng[1]
-      ) {
-        return city.name
-      }
-    }
-
-    return null
-  }
-
-
 
   const initPageData = async () => {
     try {
       setLoading(true)
-      console.log('🚀 开始初始化页面数据...')
-
-      const [bannersResult, categoriesResult, articlesResult] = await Promise.all([
+      const [bannersResult, articlesResult] = await Promise.all([
         getBanners(),
-        getAllCategories(),
         getArticles()
       ])
 
-      console.log('📊 API调用结果:')
-      console.log('- Banners:', bannersResult)
-      console.log('- Categories:', categoriesResult)
-      console.log('- Articles:', articlesResult)
-
       if (bannersResult.success) {
         setBanners(bannersResult.data || [])
-        console.log('✅ Banners数据设置成功，数量:', bannersResult.data?.length || 0)
-      } else {
-        console.log('❌ Banners数据获取失败')
       }
-
-      // getAllCategories直接返回数组
-      setCategories(categoriesResult || [])
-      console.log('✅ Categories数据设置成功，数量:', categoriesResult?.length || 0)
-
       if (articlesResult.success) {
         setArticles(articlesResult.data || [])
-        console.log('✅ Articles数据设置成功，数量:', articlesResult.data?.length || 0)
-      } else {
-        console.log('❌ Articles数据获取失败')
       }
     } catch (error) {
-      console.error('❌ 初始化页面数据失败:', error)
-      Taro.showToast({
-        title: '数据加载失败',
-        icon: 'none'
-      })
+      console.error('初始化数据失败:', error)
     } finally {
       setLoading(false)
-      console.log('🏁 页面数据初始化完成')
     }
   }
 
-  // 处理搜索
-  const handleSearch = useCallback((keyword: string) => {
-    if (!keyword.trim()) {
-      Taro.showToast({
-        title: '请输入搜索内容',
-        icon: 'none'
-      })
-      return
-    }
+  const handleRecycleClick = useCallback((type: 'book' | 'clothes') => {
+    Taro.navigateTo({
+      url: `/pages/recycle/index?category=${type}`
+    })
+  }, [])
 
-  }, [searchValue])
-
-  // 处理城市选择
   const handleCitySelect = useCallback(() => {
-    // TODO: 实现城市选择功能
-    Taro.showToast({
-      title: '城市选择功能开发中',
-      icon: 'none'
-    })
+    Taro.showToast({ title: '城市选择功能开发中', icon: 'none' })
   }, [])
-
-  // 处理品类点击
-  const handleCategoryClick = useCallback((categoryName: string) => {
-    if (categoryName === '查看更多') {
-      Taro.navigateTo({
-        url: '/pages/category/index'
-      })
-    } else {
-      Taro.navigateTo({
-        url: `/pages/recycle/index?category=${encodeURIComponent(categoryName)}`
-      })
-    }
-  }, [])
-
-  // 处理文章点击
-  const handleArticleClick = useCallback(() => {
-    // TODO: 实现文章详情功能
-    Taro.showToast({
-      title: '文章详情功能开发中',
-      icon: 'none'
-    })
-  }, [])
-
-  if (loading) {
-    return (
-      <View className='index-page loading'>
-        <View className='loading-content'>
-          <Text>加载中...</Text>
-        </View>
-      </View>
-    )
-  }
 
   return (
     <View className='index-page'>
+      {/* 自定义导航栏背景 */}
+      <View className='nav-bg' />
+
       {/* 顶部区域 */}
       <View className='header'>
-        <View className='header-top'>
-          <View className='logo-area'>
-            <Text className='logo'>OneRecycle</Text>
-          </View>
-          <Button
-            className='city-selector'
-            size={'small'}
-            type='default'
-            onClick={handleCitySelect}
-          >
+        <View className='location-weather'>
+          <View className='location' onClick={handleCitySelect}>
+            <Location size={16} color='#2D3436' />
             <Text className='city-name'>{currentCity}</Text>
-            <Text className='city-arrow'>▼</Text>
-          </Button>
+            <ArrowDown size={10} color='#2D3436' />
+          </View>
+          <View className='weather-tip'>
+            <Notice size={14} color='#2E7D32' />
+            <Text className='tip-text'>今日适宜整理心情</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* 核心操作区 (双卡片) */}
+      <View className='core-action-area'>
+        <View 
+          className='action-card book-card'
+          onClick={() => handleRecycleClick('book')}
+          hoverClass='card-hover'
+          hoverStayTime={100}
+        >
+          <View className='card-content'>
+            <View className='title-area'>
+               <Edit size={20} color='#2E7D32' className='card-icon' />
+               <Text className='card-title'>旧书回收</Text>
+            </View>
+            <Text className='card-desc'>知识循环</Text>
+            <View className='price-tag'>
+              <Text className='price'>0.8</Text>
+              <Text className='unit'>元/kg</Text>
+            </View>
+          </View>
+          <Image 
+            className='card-bg-img' 
+            src={getCdnUrl('https://img12.360buyimg.com/img/s160x160_jfs/t1/192028/25/25459/6075/629f2716E2e83d844/9247656828555365.png', { w: 160, h: 160, fmt: 'webp', q: 80 })} 
+            mode='aspectFit'
+            lazyLoad
+          />
         </View>
 
-        {/* 搜索框 */}
-        <View className='search-container'>
-          <SearchBar
-            leftIn={<Scan />}
-            placeholder="搜索回收品类"
-            value={searchValue}
-            onChange={setSearchValue}
-            onSearch={handleSearch}
-            onClear={() => setSearchValue('')}
-            clearable
-            shape='round'
-            rightIn={
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <Photograph color="#888B94" onClick={() => handleSearch(searchValue)} />
-                <Divider direction="vertical" />
-                <IconFont name="search" color="$primary-color" size="24" />
-              </div>
-            }
+        <View 
+          className='action-card clothes-card'
+          onClick={() => handleRecycleClick('clothes')}
+          hoverClass='card-hover'
+          hoverStayTime={100}
+        >
+          <View className='card-content'>
+            <View className='title-area'>
+               <Star size={20} color='#2E7D32' className='card-icon' />
+               <Text className='card-title'>旧衣回收</Text>
+            </View>
+            <Text className='card-desc'>衣旧情深</Text>
+            <View className='price-tag'>
+              <Text className='price'>0.5</Text>
+              <Text className='unit'>元/kg</Text>
+            </View>
+          </View>
+          <Image 
+            className='card-bg-img' 
+            src={getCdnUrl('https://placehold.co/160x160/e8f5e9/2e7d32.png?text=Clothes', { w: 160, h: 160, fmt: 'webp', q: 80 })} 
+            mode='aspectFit' 
+            lazyLoad
           />
         </View>
       </View>
 
-      {/* 品类导航 */}
-      <View className='category-nav'>
-        <View className='category-grid'>
-          {categories.map((item, index) => (
-            <Button
-              key={index}
-              className='category-item'
-              size={'small'}
-              onClick={() => handleCategoryClick(item.name)}
-            >
-              <View
-                className='category-icon'
-                style={{ background: getCategoryGradient(item.name) }}
-              >
-                <IconFont name={getCategoryIcon(item.name)} size='24' color='white' />
-              </View>
-              <Text className='category-name'>{item.name}</Text>
-            </Button>
-          ))}
-        </View>
+      {/* 功能栏 */}
+      <View className='feature-bar'>
+        {features.map((item) => (
+          <View 
+            key={item.key} 
+            className='feature-item' 
+            onClick={() => handleFeatureClick(item)}
+            hoverClass='feature-item-hover'
+            hoverStayTime={100}
+          >
+            <View className='icon-box' style={{ backgroundColor: item.bgColor }}>
+              {item.icon}
+            </View>
+            <Text className='feature-name'>{item.name}</Text>
+          </View>
+        ))}
       </View>
 
-      {/* Banner 区域 */}
+      {/* 活动 Banner */}
       <View className='banner-section'>
         <Swiper
           className='banner-swiper'
           indicatorDots
           autoplay
-          interval={3000}
+          interval={4000}
           duration={500}
           circular
+          indicatorColor='rgba(255, 255, 255, 0.6)'
+          indicatorActiveColor='#2E7D32'
         >
           {banners.map((banner, index) => (
             <SwiperItem key={index}>
               <View className='banner-item'>
                 <Image
                   className='banner-image'
-                  src={banner.image || ''}
+                  src={getCdnUrl(banner.image || '', { w: 750, h: 300, fmt: 'webp', q: 80 })}
                   mode='aspectFill'
+                  lazyLoad
                 />
-                <View className='banner-content'>
-                  <Text className='banner-title'>{banner.title || ''}</Text>
-                  <Text className='banner-subtitle'>{banner.subtitle || ''}</Text>
-                </View>
               </View>
             </SwiperItem>
           ))}
         </Swiper>
       </View>
-      {/* 信息流/文章 */}
+
+      {/* 环保资讯 */}
       <View className='article-section'>
         <View className='section-header'>
           <Text className='section-title'>环保资讯</Text>
-          <Text className='section-more'>更多 &gt;</Text>
+          <Text className='section-more'>更多</Text>
         </View>
         <View className='article-list'>
           {articles.map((article, index) => (
-            <Button
+            <View
               key={index}
               className='article-card'
-              size={'small'}
-              onClick={handleArticleClick}
+              onClick={() => Taro.showToast({ title: '文章详情即将上线', icon: 'none' })}
             >
               <Image
                 className='article-image'
-                src={article.imageUrl}
+                src={getCdnUrl(article.imageUrl, { w: 690, h: 360, fmt: 'webp', q: 80 })}
                 mode='aspectFill'
+                lazyLoad
               />
               <View className='article-content'>
                 <Text className='article-title'>{article.title}</Text>
-                <Text className='article-summary'>{article.summary}</Text>
                 <View className='article-meta'>
                   <Text className='article-date'>{article.publishDate}</Text>
-                  <Text className='article-views'>{article.views}次阅读</Text>
+                  <Text className='article-views'>{article.views} 阅读</Text>
                 </View>
               </View>
-            </Button>
+            </View>
           ))}
         </View>
       </View>

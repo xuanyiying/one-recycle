@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuth } from '@/hooks/useAuth'
-import { AddressService, AddressData } from '@/services/addressService'
+import { AddressService } from '@/services/address'
 import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
+import { Address } from '@/types'
 
 const AddressPage = () => {
   const { user } = useAuth()
-  const [addressList, setAddressList] = useState<AddressData[]>([])
+  const [addressList, setAddressList] = useState<Address[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadUserAddresses = useCallback(async () => {
@@ -54,14 +55,14 @@ const AddressPage = () => {
   }, [])
 
   // 处理编辑地址
-  const handleEditAddress = useCallback((address: AddressData) => {
+  const handleEditAddress = useCallback((address: Address) => {
     Taro.navigateTo({
       url: `/pages/address/form/index?id=${address.id}`
     })
   }, [])
 
   // 处理删除地址
-  const handleDeleteAddress = useCallback((address: AddressData) => {
+  const handleDeleteAddress = useCallback((address: Address) => {
     Taro.showModal({
       title: '确认删除',
       content: '确定要删除这个地址吗？',
@@ -77,7 +78,7 @@ const AddressPage = () => {
   }, [loadUserAddresses])
 
   // 处理设置默认地址
-  const handleSetDefaultAddress = useCallback(async (address: AddressData) => {
+  const handleSetDefaultAddress = useCallback(async (address: Address) => {
     if (address.id) {
       const apiResult = await AddressService.setDefaultAddress(address.id)
       if (apiResult.success) {
@@ -87,7 +88,7 @@ const AddressPage = () => {
   }, [loadUserAddresses])
 
   // 处理地址项点击
-  const handleAddressClick = useCallback((address: AddressData) => {
+  const handleAddressClick = useCallback((address: Address) => {
     // 可以在这里处理地址选择逻辑
     console.log('点击地址:', address)
   }, [])
@@ -120,8 +121,8 @@ const AddressPage = () => {
               >
                 <View className='address-info'>
                   <View className='address-header'>
-                    <Text className='address-name'>{address.name}</Text>
-                    <Text className='address-phone'>{address.phone}</Text>
+                    <Text className='address-name'>{address.recipientName}</Text>
+                    <Text className='address-phone'>{address.phoneNumber}</Text>
                     {address.isDefault && (
                       <View className='default-tag'>
                         <Text>默认</Text>
@@ -133,7 +134,7 @@ const AddressPage = () => {
                       {address.province}
                       {address.city}
                       {address.district}
-                      {address.detail}
+                      {address.detailedAddress}
                     </Text>
                   </View>
                 </View>

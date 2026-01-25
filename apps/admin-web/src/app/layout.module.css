@@ -1,0 +1,22 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 200px;
+  transition: all 0.2s;
+}
+
+.contentWrapper {
+  margin: 80px 16px 0;
+  overflow: initial;
+}
+
+.pageContent {
+  padding: 24px;
+  background: #fff;
+  min-height: 360px;
+  border-radius: 8px;
+}

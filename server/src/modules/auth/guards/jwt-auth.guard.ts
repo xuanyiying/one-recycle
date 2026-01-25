@@ -1,13 +1,13 @@
-import { 
-  Injectable, 
-  ExecutionContext, 
-  UnauthorizedException, 
+import { RedisService } from '@/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
   ForbiddenException,
-  Logger 
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import { RedisService } from '@one-recycle/shared';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -53,14 +53,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
       this.logger.log(`用户 ${user.id} 通过认证验证`);
       return true;
-
     } catch (error) {
-      this.logger.error(`认证失败: ${error.message}`, error.stack);
-      
-      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
+      this.logger.error(`认证失败: ${(error as any).message}`, (error as any).stack);
+
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
-      
+
       throw new UnauthorizedException('认证验证失败');
     }
   }
@@ -82,7 +84,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       }
 
       const session = JSON.parse(sessionData);
-      
+
       // 验证会话中的用户ID是否匹配
       if (session.userId !== user.id) {
         throw new UnauthorizedException('会话用户不匹配');
@@ -92,12 +94,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       if (session.invalidated) {
         throw new UnauthorizedException('会话已失效');
       }
-
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      this.logger.error(`会话验证失败: ${error.message}`);
+      this.logger.error(`会话验证失败: ${(error as any).message}`);
       throw new UnauthorizedException('会话验证失败');
     }
   }
@@ -105,12 +106,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   /**
    * 检查用户权限
    */
-  private async checkPermissions(context: ExecutionContext, user: any): Promise<void> {
+  private async checkPermissions(
+    context: ExecutionContext,
+    user: any,
+  ): Promise<void> {
     // 检查是否需要管理员权限
-    const requireAdmin = this.reflector.getAllAndOverride<boolean>('requireAdmin', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requireAdmin = this.reflector.getAllAndOverride<boolean>(
+      'requireAdmin',
+      [context.getHandler(), context.getClass()],
+    );
 
     if (requireAdmin && user.role !== 'ADMIN') {
       throw new ForbiddenException('需要管理员权限');
@@ -124,7 +128,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     if (requiredRoles && requiredRoles.length > 0) {
       if (!requiredRoles.includes(user.role)) {
-        throw new ForbiddenException(`需要以下角色之一: ${requiredRoles.join(', ')}`);
+        throw new ForbiddenException(
+          `需要以下角色之一: ${requiredRoles.join(', ')}`,
+        );
       }
     }
 
@@ -146,7 +152,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (!user) {
       const errorMessage = info?.message || '令牌无效';
       this.logger.warn(`认证失败: ${errorMessage}`);
-      
+
       // 根据不同的错误类型返回不同的错误信息
       if (info?.name === 'TokenExpiredError') {
         throw new UnauthorizedException('令牌已过期');
@@ -155,7 +161,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       } else if (info?.name === 'NotBeforeError') {
         throw new UnauthorizedException('令牌尚未生效');
       }
-      
+
       throw new UnauthorizedException(errorMessage);
     }
 

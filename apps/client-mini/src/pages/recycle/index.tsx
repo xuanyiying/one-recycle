@@ -1,24 +1,31 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { View } from '@tarojs/components'
+import Taro, { useRouter } from '@tarojs/taro'
 import { useAuth } from '../../hooks/useAuth'
 import AuthGuard from '../../components/AuthGuard'
 import OrderCreationFlow from '../../components/OrderCreationFlow/OrderCreationFlow'
 import { OrderStoreProvider } from '../../store/orderStore'
 import './index.scss'
 
-/**
- * Recycle Page
- * Entry point for order creation that delegates to OrderCreationFlow
- * 
- * This page serves as the main entry point for users to create recycling orders.
- * It wraps the OrderCreationFlow component with authentication and state management.
- */
 export default function RecycleForm() {
   const { isLoggedIn, requireAuth } = useAuth()
+  const router = useRouter()
+  const [category, setCategory] = useState<string>('')
 
-  // Require authentication before showing the form
+  useEffect(() => {
+    if (router.params.category) {
+      setCategory(router.params.category)
+    }
+  }, [router.params])
+
+  // Move authentication check to side effect
+  useEffect(() => {
+    if (!isLoggedIn) {
+      requireAuth()
+    }
+  }, [isLoggedIn, requireAuth])
+
   if (!isLoggedIn) {
-    requireAuth()
     return null
   }
 
@@ -27,7 +34,7 @@ export default function RecycleForm() {
       <AuthGuard>
         <View className='recycle-form-page'>
           <OrderStoreProvider>
-            <OrderCreationFlow />
+            <OrderCreationFlow initialCategory={category} />
           </OrderStoreProvider>
         </View>
       </AuthGuard>

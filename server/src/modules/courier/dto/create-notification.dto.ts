@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreatePickupNotificationDto {
   @IsString()
@@ -25,4 +25,3 @@ export class CreatePickupNotificationDto {
   @IsOptional()
   priority?: string;
 }
-

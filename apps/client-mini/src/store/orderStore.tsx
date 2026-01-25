@@ -13,7 +13,7 @@ import { Address, TimeSlot, DraftOrder, OrderFormState } from '../types/order'
 interface OrderStoreState {
     // User addresses
     addresses: Address[]
-    selectedAddressId?: string
+    selectedAddressId?: string | number
 
     // Time slots
     availableTimeSlots: TimeSlot[]
@@ -43,10 +43,10 @@ interface OrderStoreState {
 
 type OrderStoreAction =
     | { type: 'SET_ADDRESSES'; payload: Address[] }
-    | { type: 'SELECT_ADDRESS'; payload: string }
+    | { type: 'SELECT_ADDRESS'; payload: string | number }
     | { type: 'ADD_ADDRESS'; payload: Address }
     | { type: 'UPDATE_ADDRESS'; payload: Address }
-    | { type: 'DELETE_ADDRESS'; payload: string }
+    | { type: 'DELETE_ADDRESS'; payload: string | number }
     | { type: 'SET_TIME_SLOTS'; payload: TimeSlot[] }
     | { type: 'SELECT_TIME_SLOT'; payload: string }
     | { type: 'SET_SERVICE_AREA'; payload: any }
@@ -163,10 +163,10 @@ interface OrderStoreContextType {
     dispatch: React.Dispatch<OrderStoreAction>
     // Helper methods
     setAddresses: (addresses: Address[]) => void
-    selectAddress: (addressId: string) => void
+    selectAddress: (addressId: string | number) => void
     addAddress: (address: Address) => void
     updateAddress: (address: Address) => void
-    deleteAddress: (addressId: string) => void
+    deleteAddress: (addressId: string | number) => void
     setTimeSlots: (slots: TimeSlot[]) => void
     selectTimeSlot: (slotId: string) => void
     setServiceArea: (boundary: any) => void
@@ -198,7 +198,7 @@ export const OrderStoreProvider = ({ children }: OrderStoreProviderProps) => {
         dispatch({ type: 'SET_ADDRESSES', payload: addresses })
     }, [])
 
-    const selectAddress = useCallback((addressId: string) => {
+    const selectAddress = useCallback((addressId: string | number) => {
         dispatch({ type: 'SELECT_ADDRESS', payload: addressId })
     }, [])
 
@@ -210,7 +210,7 @@ export const OrderStoreProvider = ({ children }: OrderStoreProviderProps) => {
         dispatch({ type: 'UPDATE_ADDRESS', payload: address })
     }, [])
 
-    const deleteAddress = useCallback((addressId: string) => {
+    const deleteAddress = useCallback((addressId: string | number) => {
         dispatch({ type: 'DELETE_ADDRESS', payload: addressId })
     }, [])
 

@@ -1,6 +1,7 @@
 import { Component, PropsWithChildren, lazy, Suspense } from 'react'
 import { AppProvider } from './store'
 import { setupNavigationPreload, preloadCriticalPages } from './utils/preloadPages'
+import { AddressDataService } from './services/address-data-service'
 import { performanceMonitor } from './utils/performanceMonitor'
 import networkStatusManager from './utils/networkStatus'
 import './styles/global.scss' // 引入全局样式
@@ -8,6 +9,7 @@ import './app.scss'
 
 // 导入mock系统以确保路由被正确注册
 import './mock'
+import { MockAutoLogin } from './mock'
 
 // Lazy load non-critical components
 const OfflineIndicator = lazy(() => import('./components/OfflineIndicator'))
@@ -15,9 +17,14 @@ const OfflineIndicator = lazy(() => import('./components/OfflineIndicator'))
 class App extends Component<PropsWithChildren> {
     private performanceInterval?: ReturnType<typeof setInterval>;
 
-    componentDidMount() {
+    async componentDidMount() {
         // Initialize network status monitoring
         networkStatusManager.initialize();
+
+        // Initialize mock auto login in development
+        if (process.env.NODE_ENV === 'development') {
+             await MockAutoLogin.initialize();
+        }
 
         // Setup navigation-based preloading
         setupNavigationPreload();
@@ -25,6 +32,8 @@ class App extends Component<PropsWithChildren> {
         // Preload critical pages after a short delay
         setTimeout(() => {
             preloadCriticalPages();
+            // Preload core address data
+            AddressDataService.preloadCoreProvinces();
         }, 2000);
 
         // Send performance metrics every 5 minutes in production

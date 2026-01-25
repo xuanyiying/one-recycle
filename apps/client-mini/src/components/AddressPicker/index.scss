@@ -1,0 +1,206 @@
+@import '../../styles/variables.scss';
+
+.address-picker {
+  background: #fff;
+  border-radius: 12rpx;
+  overflow: hidden;
+
+  .picker-section {
+    display: flex;
+    align-items: center;
+    padding: 32rpx;
+    border-bottom: 1rpx solid #f5f5f5;
+    min-height: 100rpx;
+
+    &.search-trigger {
+      border-top: 1rpx solid #f5f5f5;
+    }
+
+    .label {
+      width: 160rpx;
+      font-size: 28rpx;
+      color: #333;
+    }
+
+    .value-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+
+      .loading-spinner {
+        width: 24rpx;
+        height: 24rpx;
+        border: 2rpx solid #ccc;
+        border-top-color: $primary-color;
+        border-radius: 50%;
+        margin-left: 12rpx;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .value {
+      font-size: 28rpx;
+      color: #333;
+    }
+
+    .placeholder {
+      font-size: 28rpx;
+      color: #999;
+    }
+
+    .arrow {
+      font-size: 24rpx;
+      color: #ccc;
+      margin-left: 16rpx;
+    }
+  }
+
+  .position-actions {
+    display: flex;
+    align-items: center;
+    padding: 32rpx;
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+
+    .action-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 24rpx;
+      color: $primary-color;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
+      letter-spacing: 1rpx;
+
+      .nut-icon {
+        margin-bottom: 12rpx;
+        font-size: 40rpx;
+        filter: drop-shadow(0 4rpx 8rpx rgba(0, 0, 0, 0.1));
+      }
+
+      &:active {
+        opacity: 0.8;
+        transform: translateY(2rpx) scale(0.96);
+      }
+    }
+
+    .divider {
+      width: 2rpx;
+      height: 48rpx;
+      background: rgba(0, 0, 0, 0.05);
+      margin: 0 32rpx;
+    }
+  }
+}
+
+.search-popup {
+  height: 85vh;
+  border-radius: 40rpx 40rpx 0 0;
+  overflow: hidden;
+  box-shadow: 0 -20rpx 60rpx rgba(0, 0, 0, 0.15);
+
+  .search-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 300rpx;
+      background: radial-gradient(circle at top right, rgba($primary-color, 0.08), transparent),
+                  radial-gradient(circle at top left, rgba($primary-color, 0.05), transparent);
+      pointer-events: none;
+    }
+
+    .nut-searchbar {
+      padding: 40rpx 32rpx 20rpx;
+      background: transparent;
+
+      .nut-searchbar__content {
+        background: #f5f5f5;
+        border-radius: 20rpx;
+        padding: 10rpx 24rpx;
+      }
+    }
+
+    .suggestions-list {
+      flex: 1;
+      padding: 0 32rpx;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+
+      .suggestion-item {
+        padding: 32rpx 0;
+        border-bottom: 1rpx solid rgba(0, 0, 0, 0.03);
+        animation: slideUpFade 0.4s ease-out backwards;
+
+        @for $i from 1 through 10 {
+          &:nth-child(#{$i}) {
+            animation-delay: #{$i * 0.05}s;
+          }
+        }
+
+        .item-name {
+          display: block;
+          font-size: 30rpx;
+          color: #2d3436;
+          font-weight: 500;
+          margin-bottom: 8rpx;
+          @include text-ellipsis;
+        }
+
+        .item-address {
+          display: block;
+          font-size: 24rpx;
+          color: #b2bec3;
+          @include text-ellipsis;
+        }
+
+        &:active {
+          opacity: 0.6;
+          background: rgba(0, 0, 0, 0.01);
+        }
+      }
+
+      .loading-text, .empty-text, .list-footer {
+        padding: 60rpx 0;
+        text-align: center;
+        font-size: 26rpx;
+        color: #b2bec3;
+        letter-spacing: 1rpx;
+      }
+
+      .list-footer {
+        padding: 30rpx 0 60rpx;
+        font-size: 22rpx;
+        opacity: 0.8;
+        border-top: 1rpx dashed rgba(0, 0, 0, 0.05);
+        margin-top: 20rpx;
+      }
+    }
+  }
+}
+
+@keyframes slideUpFade {
+  from { 
+    opacity: 0; 
+    transform: translateY(30rpx); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

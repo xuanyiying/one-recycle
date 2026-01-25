@@ -1,14 +1,15 @@
 /**
  * AddressForm Component Styles
  */
+@import '../../styles/variables.scss';
 
 .address-form {
   width: 100%;
   height: 100%;
-  background: #f5f5f5;
+  background: #f8f8f8;
 
   .address-form-container {
-    padding: 32rpx 24rpx;
+    padding: 32rpx 32rpx 100rpx;
     min-height: 100vh;
   }
 
@@ -18,12 +19,20 @@
 
   .form-header {
     margin-bottom: 40rpx;
+    padding: 0 8rpx;
 
     .form-title {
       display: block;
-      font-size: 36rpx;
+      font-size: 40rpx;
       font-weight: 600;
       color: #333;
+      margin-bottom: 8rpx;
+    }
+
+    .form-subtitle {
+      display: block;
+      font-size: 24rpx;
+      color: #999;
     }
   }
 
@@ -33,9 +42,10 @@
 
   .form-section {
     background: #fff;
-    border-radius: 12rpx;
-    padding: 24rpx;
-    margin-bottom: 32rpx;
+    border-radius: 20rpx;
+    padding: 32rpx;
+    margin-bottom: 48rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
   }
 
   // ============================================================================
@@ -43,262 +53,128 @@
   // ============================================================================
 
   .form-field {
-    margin-bottom: 24rpx;
+    margin-bottom: 40rpx;
 
     &:last-child {
       margin-bottom: 0;
     }
 
-    .field-label {
-      display: block;
-      font-size: 26rpx;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 12rpx;
+    &.inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0;
+      padding-top: 24rpx;
+      border-top: 1rpx solid #f5f5f5;
+    }
 
-      .required {
-        color: #ff3b30;
+    .field-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16rpx;
+    }
+
+    .field-label {
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .required-mark {
+      color: #ff4d4f;
+      margin-left: 4rpx;
+      font-size: 24rpx;
+    }
+
+    .nut-input, .nut-textarea {
+      padding: 24rpx 0;
+      border-bottom: 1rpx solid #eee;
+      background: transparent;
+      
+      &.error {
+        border-bottom-color: #ff4d4f;
+      }
+
+      .nut-input-native, .nut-textarea-native {
+        font-size: 28rpx;
+        color: #333;
       }
     }
 
-    .error-message {
+    .detailed-address-input {
+      border: 1rpx solid #eee;
+      border-radius: 12rpx;
+      padding: 24rpx;
+      background: #fafafa;
+      min-height: 160rpx;
+
+      &.error {
+        border-color: #ff4d4f;
+      }
+    }
+
+    .error-text {
       display: block;
-      font-size: 20rpx;
-      color: #ff3b30;
+      font-size: 22rpx;
+      color: #ff4d4f;
       margin-top: 8rpx;
     }
-  }
 
-  // ============================================================================
-  // Region Selector
-  // ============================================================================
-
-  .region-selector-wrapper {
-    display: flex;
-    gap: 12rpx;
-    align-items: center;
-
-    .region-selector {
-      flex: 1;
+    // Label Options
+    .label-options {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16rpx 16rpx;
-      background: #f9f9f9;
-      border: 2rpx solid #e8e8e8;
-      border-radius: 8rpx;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      flex-wrap: wrap;
+      gap: 20rpx;
+      margin-top: 16rpx;
 
-      &:active {
-        background: #f0f0f0;
-      }
-
-      .region-value {
-        font-size: 26rpx;
-        color: #333;
-
-        &.placeholder {
-          color: #999;
-        }
-      }
-
-      .selector-arrow {
-        font-size: 28rpx;
-        color: #999;
-        transition: transform 0.3s ease;
-      }
-    }
-
-    .location-btn {
-      flex-shrink: 0;
-      padding: 12rpx 20rpx;
-      background: #007aff;
-      color: #fff;
-      border: none;
-      border-radius: 8rpx;
-      font-size: 24rpx;
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &:active {
-        background: #0051d5;
-      }
-    }
-  }
-
-  // ============================================================================
-  // Label Selector
-  // ============================================================================
-
-  .label-selector {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16rpx 16rpx;
-    background: #f9f9f9;
-    border: 2rpx solid #e8e8e8;
-    border-radius: 8rpx;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:active {
-      background: #f0f0f0;
-    }
-
-    .label-value {
-      font-size: 26rpx;
-      color: #333;
-    }
-
-    .label-arrow {
-      font-size: 28rpx;
-      color: #999;
-      transition: transform 0.3s ease;
-    }
-  }
-
-  // ============================================================================
-  // Label Picker
-  // ============================================================================
-
-  .label-picker {
-    display: flex;
-    flex-direction: column;
-    gap: 8rpx;
-    margin-top: 12rpx;
-    padding: 12rpx;
-    background: #f9f9f9;
-    border: 2rpx solid #e8e8e8;
-    border-radius: 8rpx;
-
-    .label-option {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12rpx 16rpx;
-      background: #fff;
-      border-radius: 6rpx;
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &:active {
-        background: #f0f0f0;
-      }
-
-      &.selected {
-        background: #f0f7ff;
-        border: 2rpx solid #007aff;
-
-        text {
-          color: #007aff;
-          font-weight: 600;
-        }
-
-        .checkmark {
-          color: #007aff;
-        }
-      }
-
-      text {
-        font-size: 26rpx;
-        color: #333;
-      }
-
-      .checkmark {
+      .label-tag {
+        padding: 8rpx 32rpx;
         font-size: 24rpx;
-        color: #999;
-      }
-    }
-  }
+        color: #666;
+        background: #f5f5f5;
+        border-radius: 30rpx;
+        border: 1rpx solid transparent;
+        transition: all 0.2s ease;
 
-  // ============================================================================
-  // Checkbox Field
-  // ============================================================================
+        &.active {
+          color: $primary-color;
+          background: rgba($primary-color, 0.1);
+          border-color: $primary-color;
+          font-weight: 500;
+        }
 
-  .checkbox-field {
-    margin-top: 32rpx;
-    padding-top: 24rpx;
-    border-top: 2rpx solid #f0f0f0;
-
-    .checkbox-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 12rpx;
-      cursor: pointer;
-
-      .checkbox {
-        flex-shrink: 0;
-        width: 32rpx;
-        height: 32rpx;
-        border: 2rpx solid #d0d0d0;
-        border-radius: 6rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-
-        &.checked {
-          background: #007aff;
-          border-color: #007aff;
-
-          .checkmark {
-            color: #fff;
-            font-size: 20rpx;
-          }
+        &:active {
+          opacity: 0.8;
         }
       }
-
-      .checkbox-label {
-        font-size: 26rpx;
-        color: #333;
-      }
     }
   }
 
   // ============================================================================
-  // Form Actions
+  // Actions
   // ============================================================================
 
   .form-actions {
     display: flex;
-    gap: 16rpx;
-    margin-top: 40rpx;
-    padding-bottom: 40rpx;
+    gap: 24rpx;
 
-    .btn-primary,
-    .btn-secondary {
+    .nut-button {
       flex: 1;
-      min-height: 88rpx;
-      font-size: 28rpx;
-      font-weight: 600;
-      border-radius: 12rpx;
+      height: 88rpx;
+      border-radius: 44rpx;
+      font-size: 30rpx;
+      font-weight: 500;
+    }
+
+    .btn-cancel {
+      background: #eee;
+      color: #666;
       border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
     }
 
-    .btn-primary {
-      background: #007aff;
-      color: #fff;
-
-      &:active:not(:disabled) {
-        background: #0051d5;
-      }
-    }
-
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-
-      &:active:not(:disabled) {
-        background: #e0e0e0;
-      }
+    .btn-save {
+      background: $primary-color;
+      border: none;
     }
   }
 }

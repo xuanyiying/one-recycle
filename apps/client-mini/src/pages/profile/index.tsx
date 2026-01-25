@@ -4,13 +4,15 @@ import Taro, { usePullDownRefresh } from '@tarojs/taro'
 
 import { IconFont } from '@nutui/icons-react-taro'
 import { useAppContext } from '@/store'
-import { getUserInfo } from '@/services/user'
 import accountService from '@/services/account'
 import type { Account } from '@/types/account'
 import AuthGuard from '@/components/AuthGuard'
 import { useResponsive } from '@/hooks/useResponsive'
+import { MockAutoLogin } from '@/mock'
 import './index.scss'
 import { Avatar } from '@nutui/nutui-react-taro'
+import { getUserById } from '@/services'
+import defaultAvatar from '@/assets/icons/default-avatar.png'
 
 // TypeScript interfaces for component state
 interface UserInfo {
@@ -84,7 +86,7 @@ export default function Profile(): JSX.Element {
 
             // 并行请求优化性能
             const [userInfoResult, accountData, statsData] = await Promise.allSettled([
-                getUserInfo(state.user.id),
+                getUserById(state.user.id),
                 accountService.getMyAccount(),
                 accountService.getMyStats()
             ])
@@ -316,7 +318,7 @@ export default function Profile(): JSX.Element {
                         <View className='user-avatar-container' onClick={onEditProfile}>
                             <Avatar
                                 className='user-avatar'
-                                src={userInfo.avatarUrl || ''}
+                                src={userInfo.avatarUrl || defaultAvatar}
                                 shape='round'
                             />
                         </View>
@@ -424,6 +426,24 @@ export default function Profile(): JSX.Element {
                         <Text>退出登录</Text>
                     </View>
                 </View>
+
+                {/* 开发调试工具 */}
+                {process.env.NODE_ENV === 'development' && (
+                    <View className='debug-section'>
+                        <View className='debug-header'>
+                            <Text className='debug-title'>🔧 开发调试模式</Text>
+                        </View>
+                        <View className='debug-content'>
+                            <View className='debug-row'>
+                                <Text className='debug-label'>当前环境</Text>
+                                <Text className='debug-value'>{process.env.NODE_ENV}</Text>
+                            </View>
+                             <View className='debug-btn' onClick={() => MockAutoLogin.switchUser()}>
+                                <Text>切换测试账号</Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
             </View>
         </AuthGuard>
     )

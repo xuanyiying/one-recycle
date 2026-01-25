@@ -18,26 +18,21 @@ export interface CascaderOption {
   children?: CascaderOption[]
 }
 
-// 转换 region.json 数据为树形结构
+// 转换 region.json 数据为树形结构 (支持无限层级，目前 JSON 到三级)
 export const convertRegionDataToTree = (): RegionTreeNode[] => {
-  // 获取省份数据 (key为'00')
-  const provinces = regionData['00'] || {}
-  
-  // 构建树形结构
-  return Object.entries(provinces).map(([provinceId, provinceName]) => {
-    // 获取该省对应的城市数据
-    const cities = regionData[provinceId] || {}
-    
-    return {
-      value: provinceId,
-      text: provinceName as string,
-      children: Object.entries(cities).map(([cityId, cityName]) => ({
-        value: cityId,
-        text: cityName as string,
-        children: [] // 当前数据结构只到市级，没有区级数据
-      }))
-    }
-  })
+  const buildTree = (parentId: string): RegionTreeNode[] => {
+    const items = regionData[parentId as keyof typeof regionData] || {}
+    return Object.entries(items).map(([id, name]) => {
+      const children = buildTree(id)
+      return {
+        value: id,
+        text: name as string,
+        children: children.length > 0 ? children : undefined
+      }
+    })
+  }
+
+  return buildTree('00')
 }
 
 // 导出转换后的树形数据

@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentService } from './payment.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentLogRepository } from './payment-log.repository';
-import { PaymentStatus, RefundStatus } from '@prisma/client';
 
 describe('PaymentService', () => {
   let service: PaymentService;

@@ -1,12 +1,12 @@
-import  apiClient  from './apiClient';
+import apiClient from './apiClient';
 
-// 订单状态枚举
 export enum OrderStatus {
-  PENDING = 'pending',
-  CONFIRMED = 'confirmed',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled'
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  REFUNDED = 'REFUNDED',
 }
 
 // 订单类型接口
@@ -114,7 +114,7 @@ class OrderService {
   async createOrder(data: CreateOrderRequest): Promise<Order> {
     return apiClient.post<Order>(this.baseUrl, data, {
       showSuccess: true,
-      successMessage: '订单创建成功'
+      successMessage: '订单创建成功',
     });
   }
 
@@ -124,7 +124,7 @@ class OrderService {
   async updateOrder(id: string, data: UpdateOrderRequest): Promise<Order> {
     return apiClient.put<Order>(`${this.baseUrl}/${id}`, data, {
       showSuccess: true,
-      successMessage: '订单更新成功'
+      successMessage: '订单更新成功',
     });
   }
 
@@ -134,7 +134,7 @@ class OrderService {
   async deleteOrder(id: string): Promise<void> {
     return apiClient.delete<void>(`${this.baseUrl}/${id}`, {
       showSuccess: true,
-      successMessage: '订单删除成功'
+      successMessage: '订单删除成功',
     });
   }
 
@@ -142,20 +142,28 @@ class OrderService {
    * 批量删除订单
    */
   async batchDeleteOrders(ids: string[]): Promise<void> {
-    return apiClient.post<void>(`${this.baseUrl}/batch-delete`, { ids }, {
-      showSuccess: true,
-      successMessage: '批量删除成功'
-    });
+    return apiClient.post<void>(
+      `${this.baseUrl}/batch-delete`,
+      { ids },
+      {
+        showSuccess: true,
+        successMessage: '批量删除成功',
+      },
+    );
   }
 
   /**
    * 更新订单状态
    */
   async updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
-    return apiClient.patch<Order>(`${this.baseUrl}/${id}/status`, { status }, {
-      showSuccess: true,
-      successMessage: '订单状态更新成功'
-    });
+    return apiClient.patch<Order>(
+      `${this.baseUrl}/${id}/status`,
+      { status },
+      {
+        showSuccess: true,
+        successMessage: '订单状态更新成功',
+      },
+    );
   }
 
   /**
@@ -171,7 +179,7 @@ class OrderService {
   async exportOrders(params?: OrderQueryParams): Promise<Blob> {
     const response = await apiClient.getInstance().get(`${this.baseUrl}/export`, {
       params,
-      responseType: 'blob'
+      responseType: 'blob',
     });
     return response.data;
   }

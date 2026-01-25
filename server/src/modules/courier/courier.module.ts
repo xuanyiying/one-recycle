@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/prisma/prisma.module';
-import { CourierService } from './services/courier.service';
-import { CourierController } from './controllers/courier.controller';
+import { CourierService } from './courier.service';
+import { CourierController } from './courier.controller';
 
 @Module({
   imports: [PrismaModule],
@@ -10,4 +10,3 @@ import { CourierController } from './controllers/courier.controller';
   exports: [CourierService],
 })
 export class CourierModule {}
-

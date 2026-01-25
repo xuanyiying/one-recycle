@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { OrderService } from './services/order.service';
-import { generateSecureOrderNumber } from '@one-recycle/shared';
 import {
   GetOrderRequest,
   CreateOrderRequest,
@@ -9,12 +8,13 @@ import {
   CancelOrderRequest,
   GetOrderResponse,
   ListOrdersRequest,
-  ListOrdersResponse
+  ListOrdersResponse,
 } from '../../proto/order.pb';
+import { generateSecureOrderNumber } from '@/common';
 
 @Controller()
 export class OrderGrpcController {
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
   @GrpcMethod('OrderService', 'GetOrder')
   async getOrder(data: GetOrderRequest): Promise<GetOrderResponse> {
@@ -32,13 +32,15 @@ export class OrderGrpcController {
       const orderNo = generateSecureOrderNumber();
       const order = await this.orderService.createRecycleOrder({
         orderNo,
-        userId: parseInt(data.userId),
-        addressId: parseInt(data.addressId),
-        orderType: 'RECYCLE' as any,
+        userId: data.userId,
+        addressId: data.addressId,
+        // orderType is handled by createRecycleOrder internally
+        channel: 'GRPC',
+        items: [], // gRPC createOrder might need to handle items properly
         estimatedAmount: 0, // 临时值，实际应该根据items计算
-        expectPickupTime: data.items.length > 0 ? new Date() : undefined,
+        expectPickupTime: data.items.length > 0 ? new Date().toISOString() : '',
         source: 'grpc',
-        remark: data.remark
+        remark: data.remark,
       });
       return { order: this.mapToOrder(order) };
     } catch (error) {
@@ -49,7 +51,10 @@ export class OrderGrpcController {
   @GrpcMethod('OrderService', 'UpdateOrder')
   async updateOrder(data: UpdateOrderRequest): Promise<GetOrderResponse> {
     try {
-      const order = await this.orderService.update(parseInt(data.orderId), { status: data.status as any, remark: data.remark });
+      const order = await this.orderService.update(parseInt(data.orderId), {
+        status: data.status as any,
+        remark: data.remark,
+      });
       return { order: this.mapToOrder(order) };
     } catch (error) {
       throw this.handleGrpcError(error);
@@ -70,16 +75,16 @@ export class OrderGrpcController {
   async listOrders(data: ListOrdersRequest): Promise<ListOrdersResponse> {
     try {
       const result = await this.orderService.findAll(
-        { userId: parseInt(data.userId) },
+        { userId: data.userId },
         data.page,
-        data.limit
+        data.limit,
       );
-      
+
       return {
-        orders: result.orders.map(order => this.mapToOrder(order)),
+        orders: result.orders.map((order) => this.mapToOrder(order)),
         total: result.total,
         page: data.page,
-        limit: data.limit
+        limit: data.limit,
       };
     } catch (error) {
       throw this.handleGrpcError(error);
@@ -107,26 +112,28 @@ export class OrderGrpcController {
       source: order.source || '',
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
-      items: order.items?.map((item: any) => ({
-        id: item.id.toString(),
-        orderId: item.orderId.toString(),
-        categoryId: item.categoryId.toString(),
-        estimatedWeight: item.estimatedWeight,
-        actualWeight: item.actualWeight || 0,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-        createdAt: item.createdAt.toISOString()
-      })) || [],
-      assignments: order.assignments?.map((assignment: any) => ({
-        id: assignment.id.toString(),
-        orderId: assignment.orderId.toString(),
-        courierId: assignment.courierId.toString(),
-        status: assignment.status,
-        acceptedAt: assignment.acceptedAt?.toISOString() || '',
-        arrivedAt: assignment.arrivedAt?.toISOString() || '',
-        finishedAt: assignment.finishedAt?.toISOString() || '',
-        createdAt: assignment.createdAt.toISOString()
-      })) || []
+      items:
+        order.items?.map((item: any) => ({
+          id: item.id.toString(),
+          orderId: item.orderId.toString(),
+          categoryId: item.categoryId.toString(),
+          estimatedWeight: item.estimatedWeight,
+          actualWeight: item.actualWeight || 0,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+          createdAt: item.createdAt.toISOString(),
+        })) || [],
+      assignments:
+        order.assignments?.map((assignment: any) => ({
+          id: assignment.id.toString(),
+          orderId: assignment.orderId.toString(),
+          courierId: assignment.courierId.toString(),
+          status: assignment.status,
+          acceptedAt: assignment.acceptedAt?.toISOString() || '',
+          arrivedAt: assignment.arrivedAt?.toISOString() || '',
+          finishedAt: assignment.finishedAt?.toISOString() || '',
+          createdAt: assignment.createdAt.toISOString(),
+        })) || [],
     };
   }
 

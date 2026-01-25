@@ -1,31 +1,44 @@
-import { Injectable } from '@nestjs/common';
-import { IOrderService, CreateOrderData, UpdateOrderData, OrderFilters } from '../interfaces/order.interface';
-import {PrismaService} from "@/prisma/prisma.service";
-import { Order } from '@prisma/client';
-import { OrderStatus, OrderType } from "@one-recycle/shared";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import { OrderStatus, OrderType } from '@/common';
+import { CreateOrderDto, UpdateOrderDto } from '../dto';
+import { OrderFilters } from '../interfaces/order.interface';
+import { Order, Prisma } from '@prisma/client';
 
 @Injectable()
-export class OrderService implements IOrderService {
-  constructor(private readonly prisma: PrismaService) { }
+export class OrderService {
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateOrderData): Promise<Order> {
+  async create(data: CreateOrderDto): Promise<Order> {
+    const { items, ...orderData } = data;
+    
+    // 构造 Prisma 输入类型
+    const createInput: Prisma.OrderCreateInput = {
+      orderNo: orderData.orderNo || `ORD${Date.now()}`,
+      user: { connect: { id: BigInt(orderData.userId) } },
+      address: { connect: { id: BigInt(orderData.addressId) } },
+      status: orderData.status || OrderStatus.PENDING,
+      expectPickupTime: new Date(orderData.expectPickupTime),
+      estimatedAmount: orderData.estimatedAmount || 0,
+      settlementAmount: orderData.estimatedAmount || 0, // 初始结算金额等于预估金额
+      payAmount: 0,
+      channel: orderData.channel,
+      remark: orderData.remark,
+      source: orderData.source,
+      orderType: OrderType.RECYCLE,
+      items: {
+        create: items.map(item => ({
+          category: { connect: { id: item.categoryId } },
+          estimatedWeight: item.estimatedWeight,
+          actualWeight: 0, // 初始实际重量为0
+          unitPrice: item.unitPrice,
+          amount: item.estimatedWeight * item.unitPrice,
+        }))
+      }
+    };
+
     const order = await this.prisma.order.create({
-      data: {
-        orderNo: data.orderNo,
-        userId: BigInt(data.userId),
-        addressId: BigInt(data.addressId),
-        status: OrderStatus.PENDING as any,
-        expectPickupTime: data.expectPickupTime,
-        expectDeliveryTime: data.expectDeliveryTime,
-        estimatedAmount: data.estimatedAmount,
-        settlementAmount: data.settlementAmount || data.estimatedAmount,
-        payAmount: data.payAmount || 0,
-        channel: data.channel || 'APP',
-        remark: data.remark,
-        source: data.source,
-          orderType: OrderType.RECYCLE as any,
-
-      } as any,
+      data: createInput,
       include: {
         items: true,
         assignments: true,
@@ -35,8 +48,12 @@ export class OrderService implements IOrderService {
     return this.mapToOrder(order);
   }
 
-  async findAll(filters: OrderFilters, page?: number, limit?: number): Promise<{ orders: Order[]; total: number }> {
-    const where: any = {};
+  async findAll(
+    filters: OrderFilters,
+    page?: number,
+    limit?: number,
+  ): Promise<{ orders: Order[]; total: number }> {
+    const where: Prisma.OrderWhereInput = {};
 
     if (filters?.userId) {
       where.userId = BigInt(filters.userId);
@@ -68,7 +85,7 @@ export class OrderService implements IOrderService {
     ]);
 
     return {
-      orders: orders.map(order => this.mapToOrder(order)),
+      orders: orders.map((order) => this.mapToOrder(order)),
       total,
     };
   }
@@ -83,7 +100,7 @@ export class OrderService implements IOrderService {
     });
 
     if (!order) {
-      throw new Error('Order not found');
+      throw new NotFoundException('Order not found');
     }
 
     return this.mapToOrder(order);
@@ -101,18 +118,23 @@ export class OrderService implements IOrderService {
     return order ? this.mapToOrder(order) : null;
   }
 
-  async update(id: number, data: UpdateOrderData): Promise<Order> {
-    const updateData: any = {};
+  async update(id: number, data: UpdateOrderDto): Promise<Order> {
+    const updateData: Prisma.OrderUpdateInput = {};
 
     if (data.status) updateData.status = data.status;
-    if (data.expectPickupTime) updateData.expectPickupTime = data.expectPickupTime;
-    if (data.actualPickupTime) updateData.actualPickupTime = data.actualPickupTime;
-    if (data.expectDeliveryTime) updateData.expectDeliveryTime = data.expectDeliveryTime;
-    if (data.actualDeliveryTime) updateData.actualDeliveryTime = data.actualDeliveryTime;
-    if (data.settlementAmount !== undefined) updateData.settlementAmount = data.settlementAmount;
+    if (data.expectPickupTime)
+      updateData.expectPickupTime = new Date(data.expectPickupTime);
+    if (data.actualPickupTime)
+      updateData.actualPickupTime = new Date(data.actualPickupTime);
+    if (data.expectDeliveryTime)
+      updateData.expectDeliveryTime = new Date(data.expectDeliveryTime);
+    if (data.actualDeliveryTime)
+      updateData.actualDeliveryTime = new Date(data.actualDeliveryTime);
+    if (data.settlementAmount !== undefined)
+      updateData.settlementAmount = data.settlementAmount;
     if (data.payAmount !== undefined) updateData.payAmount = data.payAmount;
     if (data.remark) updateData.remark = data.remark;
-    if (data.priority) updateData.priority = data.priority;
+    if (data.priority) updateData.priority = data.priority as unknown as number;
 
     const order = await this.prisma.order.update({
       where: { id: BigInt(id) },
@@ -129,7 +151,7 @@ export class OrderService implements IOrderService {
   async cancel(id: number): Promise<Order> {
     const order = await this.prisma.order.update({
       where: { id: BigInt(id) },
-      data: { status: OrderStatus.CANCELLED as any },
+      data: { status: OrderStatus.CANCELLED },
       include: {
         items: true,
         assignments: true,
@@ -145,124 +167,43 @@ export class OrderService implements IOrderService {
     });
   }
 
-  async delete(id: number): Promise<void> {
-    await this.prisma.order.delete({
-      where: { id: BigInt(id) },
-    });
-  }
-
   // 兼容旧版方法
-  async createRecycleOrder(data: CreateOrderData): Promise<Order> {
-    return this.create({
-      ...data,
-      orderType: OrderType.RECYCLE,
-    });
+  async createRecycleOrder(data: CreateOrderDto): Promise<Order> {
+    return this.create(data);
   }
 
-  async createSaleOrder(data: CreateOrderData): Promise<Order> {
-    return this.create({
-      ...data,
-      orderType: OrderType.SALE,
-    });
+  async createSaleOrder(data: CreateOrderDto): Promise<Order> {
+    return this.create(data);
   }
 
   private mapToOrder(order: any): Order {
     const baseOrder: any = {
+      ...order,
       id: Number(order.id),
-      orderNo: order.orderNo,
       userId: Number(order.userId),
       addressId: Number(order.addressId),
-      orderType: order.orderType,
-      status: order.status,
-      priority: order.priority,
-      expectPickupTime: order.expectPickupTime,
-      actualPickupTime: order.actualPickupTime,
-      expectDeliveryTime: order.expectDeliveryTime,
-      actualDeliveryTime: order.actualDeliveryTime,
-      estimatedAmount: order.estimatedAmount,
-      settlementAmount: order.settlementAmount,
-      payAmount: order.payAmount,
-      channel: order.channel,
-      remark: order.remark,
-      source: order.source,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
     };
 
-    // 只有当 items 存在时才添加
     if (order.items) {
       baseOrder.items = order.items.map((item: any) => ({
+        ...item,
         id: Number(item.id),
         orderId: Number(item.orderId),
         categoryId: Number(item.categoryId),
-        estimatedWeight: item.estimatedWeight,
-        actualWeight: item.actualWeight,
-        unitPrice: item.unitPrice,
-        amount: item.amount,
-        createdAt: item.createdAt,
       }));
     }
 
-    // 只有当 assignments 存在时才添加
     if (order.assignments) {
       baseOrder.assignments = order.assignments.map((assignment: any) => ({
+        ...assignment,
         id: Number(assignment.id),
         orderId: Number(assignment.orderId),
         courierId: Number(assignment.courierId),
-        status: assignment.status,
-        acceptedAt: assignment.acceptedAt,
-        arrivedAt: assignment.arrivedAt,
-        finishedAt: assignment.finishedAt,
-        createdAt: assignment.createdAt,
       }));
     }
 
-    return baseOrder;
-  }
-
-  async getOrderStats(userId: number): Promise<any> {
-    const stats = await this.prisma.order.groupBy({
-      by: ['status'],
-      where: {
-        userId: BigInt(userId),
-      },
-      _count: {
-        status: true,
-      },
-    });
-
-    return stats.reduce((acc: any, stat: any) => {
-      acc[stat.status] = stat._count.status;
-      return acc;
-    }, {} as Record<string, number>);
-  }
-
-  async getUserDetailedStats(userId: number): Promise<any> {
-    const [totalOrders, completedOrders, totalAmount] = await Promise.all([
-      this.prisma.order.count({
-        where: { userId: BigInt(userId) },
-      }),
-      this.prisma.order.count({
-        where: {
-          userId: BigInt(userId),
-          status: OrderStatus.COMPLETED as any,
-        },
-      }),
-      this.prisma.order.aggregate({
-        where: {
-          userId: BigInt(userId),
-          status: OrderStatus.COMPLETED as any,
-        },
-        _sum: {
-          settlementAmount: true,
-        },
-      }),
-    ]);
-
-    return {
-      totalOrders,
-      completedOrders,
-      totalAmount: totalAmount._sum.settlementAmount || 0,
-    };
+    return baseOrder as Order;
   }
 }

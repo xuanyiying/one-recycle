@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro'
-import {ENV_CONFIG} from '../config/env'
+import {ENV_CONFIG, isDevelopment} from '../config/env'
 import {requestCache} from './requestCache'
 import {performanceMonitor} from './performanceMonitor'
 import errorHandler, {retryWithBackoff} from './errorHandler'
@@ -68,45 +68,55 @@ const attemptTokenRefresh = async (): Promise<string | null> => {
 }
 
 // 通用请求函数
-const request = async (url: string, options: RequestOptions = {}) => {
-    // 检查是否使用mock数据
-    const shouldUseMock = ENV_CONFIG.USE_MOCK_DATA || false;
-    console.log(`[Mock System] ==================== Mock Request Debug ====================`)
-    console.log(`[Mock System] ENV_CONFIG.USE_MOCK_DATA:`, ENV_CONFIG.USE_MOCK_DATA)
-    console.log(`[Mock System] shouldUseMock:`, shouldUseMock)
-    console.log(`[Mock System] mockManager.isEnabled():`, mockManager.isEnabled())
-    console.log(`[Mock System] Request URL:`, url)
-    console.log(`[Mock System] Request Method:`, options.method || 'GET')
-    console.log(`[Mock System] Request Data:`, options.data)
+const request = async <T = any>(url: string, options: RequestOptions = {}): Promise<T> => {
+    // 检查是否使用mock数据（仅开发环境考虑 mock）
+    const shouldUseMock = isDevelopment() && ENV_CONFIG.USE_MOCK_DATA === true;
+    if (isDevelopment()) {
+        console.log(`[Mock System] ==================== Mock Request Debug ====================`)
+        console.log(`[Mock System] ENV_CONFIG.USE_MOCK_DATA:`, ENV_CONFIG.USE_MOCK_DATA)
+        console.log(`[Mock System] shouldUseMock:`, shouldUseMock)
+        console.log(`[Mock System] mockManager.isEnabled():`, mockManager.isEnabled())
+        console.log(`[Mock System] Request URL:`, url)
+        console.log(`[Mock System] Request Method:`, options.method || 'GET')
+        console.log(`[Mock System] Request Data:`, options.data)
+    }
     
     if (shouldUseMock && mockManager.isEnabled()) {
-        console.log(`[Mock System] ✅ Mock conditions met, attempting mock request...`)
+        if (isDevelopment()) console.log(`[Mock System] ✅ Mock conditions met, attempting mock request...`)
 
         try {
             const mockResponse = await mockManager.handleRequest(url, options.method || 'GET', options.data)
             if (mockResponse) {
-                console.log(`[Mock System] ✅ Mock response received:`, mockResponse)
-                console.log(`[Mock System] ==================== Mock Request Success ====================`)
-                return mockResponse
+                if (isDevelopment()) {
+                    console.log(`[Mock System] ✅ Mock response received:`, mockResponse)
+                    console.log(`[Mock System] ==================== Mock Request Success ====================`)
+                }
+                return mockResponse as T
             } else {
-                console.log(`[Mock System] ❌ No mock response returned`)
-                console.log(`[Mock System] Running mock diagnosis...`)
+                if (isDevelopment()) {
+                    console.log(`[Mock System] ❌ No mock response returned`)
+                    console.log(`[Mock System] Running mock diagnosis...`)
+                }
                 mockManager.diagnose()
             }
         } catch (error) {
-            console.error(`[Mock System] ❌ Mock request failed:`, error)
-            console.log(`[Mock System] Running mock diagnosis...`)
+            if (isDevelopment()) {
+                console.error(`[Mock System] ❌ Mock request failed:`, error)
+                console.log(`[Mock System] Running mock diagnosis...`)
+            }
             mockManager.diagnose()
             // 如果mock失败，继续使用真实请求
         }
     } else {
-        console.log(`[Mock System] ❌ Mock conditions not met:`)
-        console.log(`[Mock System]   - shouldUseMock: ${shouldUseMock}`)
-        console.log(`[Mock System]   - mockManager.isEnabled(): ${mockManager.isEnabled()}`)
-        console.log(`[Mock System] Proceeding with real API request...`)
+        if (isDevelopment()) {
+            console.log(`[Mock System] ❌ Mock conditions not met:`)
+            console.log(`[Mock System]   - shouldUseMock: ${shouldUseMock}`)
+            console.log(`[Mock System]   - mockManager.isEnabled(): ${mockManager.isEnabled()}`)
+            console.log(`[Mock System] Proceeding with real API request...`)
+        }
     }
     
-    console.log(`[Mock System] ==================== Proceeding to Real API ====================`)
+    if (isDevelopment()) console.log(`[Mock System] ==================== Proceeding to Real API ====================`)
 
     const token = Taro.getStorageSync('token')
 
@@ -126,28 +136,28 @@ const request = async (url: string, options: RequestOptions = {}) => {
     const cacheKey = generateCacheKey(url, defaultOptions.method, defaultOptions.data);
 
     // Wrap request with retry logic if enabled
-    const executeWithRetry = async () => {
+    const executeWithRetry = async (): Promise<T> => {
         if (shouldCache) {
             return requestCache.getOrFetch(
                 cacheKey,
                 async () => {
-                    return executeRequest(url, defaultOptions);
+                    return executeRequest<T>(url, defaultOptions);
                 },
                 options.cacheTTL
             );
         }
 
-        return executeRequest(url, defaultOptions);
+        return executeRequest<T>(url, defaultOptions);
     };
 
-    // Apply retry logic for retryable requests
-    if (options.retry !== false) {
+    // Apply retry logic仅在显式开启时执行
+    if (options.retry === true) {
         return retryWithBackoff(executeWithRetry, {
             maxRetries: options.maxRetries || 2,
             initialDelay: 1000,
             backoffMultiplier: 2,
             onRetry: (attempt) => {
-                console.log(`[Retry] Attempt ${attempt} for ${url}`);
+                if (isDevelopment()) console.log(`[Retry] Attempt ${attempt} for ${url}`);
             }
         });
     }
@@ -156,7 +166,7 @@ const request = async (url: string, options: RequestOptions = {}) => {
 }
 
 // Execute actual HTTP request
-const executeRequest = async (url: string, options: any) => {
+const executeRequest = async <T = any>(url: string, options: any): Promise<T> => {
     const startTime = Date.now();
 
     try {
@@ -169,7 +179,7 @@ const executeRequest = async (url: string, options: any) => {
         }
 
         const fullUrl = `${ENV_CONFIG.API_BASE_URL}${url}`
-        console.log(`[API Request] ${options.method} ${fullUrl}`)
+        if (isDevelopment()) console.log(`[API Request] ${options.method} ${fullUrl}`)
 
         const response = await Taro.request({
             url: fullUrl,
@@ -184,10 +194,10 @@ const executeRequest = async (url: string, options: any) => {
             response.statusCode
         );
 
-        console.log(`[API Response] ${response.statusCode} ${url}`)
+        if (isDevelopment()) console.log(`[API Response] ${response.statusCode} ${url}`)
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
-            return response.data
+            return response.data as T
         } else if (response.statusCode === 401) {
             // 尝试刷新token并重试一次
             const newToken = await attemptTokenRefresh()
@@ -201,7 +211,7 @@ const executeRequest = async (url: string, options: any) => {
                 }
                 const retryResp = await Taro.request({ url: fullUrl, ...retryOptions })
                 if (retryResp.statusCode >= 200 && retryResp.statusCode < 300) {
-                    return retryResp.data
+                    return retryResp.data as T
                 }
             }
             // 刷新失败或重试失败，走统一错误处理
@@ -240,20 +250,20 @@ const executeRequest = async (url: string, options: any) => {
 }
 
 // 封装各种HTTP方法
-export const get = (url: string, params?: any, options?: { cache?: boolean; cacheTTL?: number }) => {
-    return request(url, {method: 'GET', data: params, ...options})
+export function get<T = any>(url: string, params?: any, options?: { cache?: boolean; cacheTTL?: number }) {
+    return request<T>(url, {method: 'GET', data: params, ...options})
 }
 
-export const post = (url: string, data?: any) => {
-    return request(url, {method: 'POST', data})
+export function post<T = any>(url: string, data?: any) {
+    return request<T>(url, {method: 'POST', data})
 }
 
-export const put = (url: string, data?: any) => {
-    return request(url, {method: 'PUT', data})
+export function put<T = any>(url: string, data?: any) {
+    return request<T>(url, {method: 'PUT', data})
 }
 
-export const del = (url: string) => {
-    return request(url, {method: 'DELETE'})
+export function del<T = any>(url: string) {
+    return request<T>(url, {method: 'DELETE'})
 }
 
 // 清除缓存工具函数

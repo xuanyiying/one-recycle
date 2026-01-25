@@ -35,12 +35,12 @@ const IconUpload: React.FC<IconUploadProps> = ({ value, onChange, disabled = fal
       try {
         setUploading(true);
         onProgress?.({ percent: 50 });
-        
+
         const response = await categoryService.uploadIcon(file as File);
-        
+
         onProgress?.({ percent: 100 });
         onSuccess?.(response);
-        
+
         setPreviewUrl(response.url);
         onChange?.(response.url);
         message.success('图标上传成功');
@@ -59,18 +59,18 @@ const IconUpload: React.FC<IconUploadProps> = ({ value, onChange, disabled = fal
         message.error('只能上传图片文件!');
         return false;
       }
-      
+
       const isLt5M = file.size / 1024 / 1024 < 5;
       if (!isLt5M) {
         message.error('图片大小不能超过 5MB!');
         return false;
       }
-      
+
       return true;
     },
     onChange(info) {
       const { status } = info.file;
-      
+
       if (status === 'uploading') {
         setFileList([info.file]);
       } else if (status === 'done' || status === 'error') {
@@ -101,7 +101,7 @@ const IconUpload: React.FC<IconUploadProps> = ({ value, onChange, disabled = fal
             />
             <div>
               <div>当前图标</div>
-              <a 
+              <a
                 onClick={() => {
                   setPreviewUrl(null);
                   onChange?.(null);
@@ -114,15 +114,13 @@ const IconUpload: React.FC<IconUploadProps> = ({ value, onChange, disabled = fal
           </div>
         </div>
       ) : null}
-      
+
       <Dragger {...uploadProps} style={{ marginBottom: 16 }}>
         <p className="ant-upload-drag-icon">
           <InboxOutlined />
         </p>
         <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-        <p className="ant-upload-hint">
-          支持单个文件上传。仅支持图片格式，文件大小不超过5MB。
-        </p>
+        <p className="ant-upload-hint">支持单个文件上传。仅支持图片格式，文件大小不超过5MB。</p>
       </Dragger>
     </div>
   );

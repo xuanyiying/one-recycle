@@ -1,23 +1,34 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { SnowflakeIdGenerator } from '@one-recycle/shared';
-import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
-import { PaymentLogRepository, PaymentLogData } from './payment-log.repository';
+import {
+  PaymentProvider,
+  PaymentStatus,
+  RefundStatus,
+} from '@prisma/client';
+import { SnowflakeIdGenerator } from '@/common';
 
 @Injectable()
 export class PaymentService {
-  private readonly idGenerator = new SnowflakeIdGenerator({ workerId: 6, datacenterId: 1 });
+  private readonly idGenerator = new SnowflakeIdGenerator({
+    workerId: 6,
+    datacenterId: 1,
+  });
 
-  constructor(
-    private prisma: PrismaService,
-    private paymentLogRepository: PaymentLogRepository
-  ) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createPaymentDto: CreatePaymentDto) {
     // 检查是否已有支付记录
+    // 检查是否已有支付记录
     const existingPayment = await this.prisma.payment.findFirst({
-      where: { orderId: BigInt(createPaymentDto.orderId), status: PaymentStatus.SUCCESS }
+      where: {
+        orderId: BigInt(createPaymentDto.orderId),
+        status: PaymentStatus.SUCCESS,
+      },
     });
 
     if (existingPayment) {
@@ -25,8 +36,9 @@ export class PaymentService {
     }
 
     // 生成交易号
-    const transactionId = `PAY${this.idGenerator.nextId()}`;
-    const outTradeNo = `OUT${this.idGenerator.nextId()}`;
+    const id = this.idGenerator.nextId();
+    const transactionId = BigInt(id);
+    const outTradeNo = `OUT${id}`;
 
     return this.prisma.payment.create({
       data: {
@@ -35,14 +47,14 @@ export class PaymentService {
         outTradeNo: outTradeNo,
         total: createPaymentDto.amount,
         status: PaymentStatus.PENDING,
-        transactionId: transactionId
-      }
+        transactionId: transactionId,
+      },
     });
   }
 
-  async updatePaymentStatus(transactionId: string, status: PaymentStatus) {
+  async updatePaymentStatus(transactionId: bigint, status: PaymentStatus) {
     const payment = await this.prisma.payment.findFirst({
-      where: { transactionId: transactionId }
+      where: { transactionId: transactionId },
     });
 
     if (!payment) {
@@ -51,14 +63,14 @@ export class PaymentService {
 
     return this.prisma.payment.update({
       where: { id: payment.id },
-      data: { status: status, updatedAt: new Date() }
+      data: { status: status, updatedAt: new Date() },
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: bigint) {
     const payment = await this.prisma.payment.findUnique({
-      where: { id: BigInt(id) },
-      include: { refunds: true }
+      where: { id: id },
+      include: { refunds: true },
     });
 
     if (!payment) {
@@ -68,17 +80,17 @@ export class PaymentService {
     return payment;
   }
 
-  async findByOrderId(orderId: string) {
+  async findByOrderId(orderId: bigint) {
     return this.prisma.payment.findMany({
-      where: { orderId: BigInt(orderId) },
+      where: { orderId: orderId },
       include: { refunds: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async createRefund(paymentId: string, refundAmount: number, reason?: string) {
+  async createRefund(paymentId: bigint, refundAmount: number, reason?: string) {
     const payment = await this.prisma.payment.findUnique({
-      where: { id: BigInt(paymentId) }
+      where: { id: paymentId },
     });
 
     if (!payment) {
@@ -97,18 +109,18 @@ export class PaymentService {
 
     return this.prisma.refund.create({
       data: {
-        paymentId: BigInt(paymentId),
+        paymentId: paymentId,
         outRefundNo,
         refundAmount,
         reason,
-        status: RefundStatus.PROCESSING
-      }
+        status: RefundStatus.PROCESSING,
+      },
     });
   }
 
-  async updateRefundStatus(refundId: string, status: RefundStatus) {
+  async updateRefundStatus(refundId: bigint, status: RefundStatus) {
     const refund = await this.prisma.refund.findUnique({
-      where: { id: BigInt(refundId) }
+      where: { id: refundId },
     });
 
     if (!refund) {
@@ -116,15 +128,15 @@ export class PaymentService {
     }
 
     return this.prisma.refund.update({
-      where: { id: BigInt(refundId) },
-      data: { status: status }
+      where: { id: refundId },
+      data: { status: status },
     });
   }
 
-  async findByTransactionId(transactionId: string) {
+  async findByTransactionId(transactionId: bigint) {
     const payment = await this.prisma.payment.findFirst({
-      where: { transactionId },
-      include: { refunds: true }
+      where: { transactionId: transactionId },
+      include: { refunds: true },
     });
 
     if (!payment) {
@@ -137,7 +149,7 @@ export class PaymentService {
   async findByOutTradeNo(outTradeNo: string) {
     const payment = await this.prisma.payment.findFirst({
       where: { outTradeNo },
-      include: { refunds: true }
+      include: { refunds: true },
     });
 
     if (!payment) {
@@ -149,7 +161,7 @@ export class PaymentService {
 
   async findByRefundId(refundId: string) {
     const refund = await this.prisma.refund.findUnique({
-      where: { id: BigInt(refundId) }
+      where: { id: BigInt(refundId) },
     });
 
     if (!refund) {
@@ -161,7 +173,7 @@ export class PaymentService {
 
   async handlePaymentNotify(notifyData: any) {
     const payment = await this.prisma.payment.findFirst({
-      where: { outTradeNo: notifyData.outTradeNo }
+      where: { outTradeNo: notifyData.outTradeNo },
     });
 
     if (!payment) {
@@ -172,16 +184,19 @@ export class PaymentService {
       where: { id: payment.id },
       data: {
         transactionId: notifyData.transactionId,
-        status: notifyData.tradeState === 'SUCCESS' ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
+        status:
+          notifyData.tradeState === 'SUCCESS'
+            ? PaymentStatus.SUCCESS
+            : PaymentStatus.FAILED,
         notifyRaw: notifyData.notifyRaw,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
   }
 
   async handleRefundNotify(notifyData: any) {
     const refund = await this.prisma.refund.findFirst({
-      where: { outRefundNo: notifyData.outRefundNo }
+      where: { outRefundNo: notifyData.outRefundNo },
     });
 
     if (!refund) {
@@ -191,37 +206,46 @@ export class PaymentService {
     return this.prisma.refund.update({
       where: { id: refund.id },
       data: {
-        status: notifyData.refundStatus === 'SUCCESS' ? RefundStatus.SUCCESS : RefundStatus.FAILED,
+        status:
+          notifyData.refundStatus === 'SUCCESS'
+            ? RefundStatus.SUCCESS
+            : RefundStatus.FAILED,
         notifyRaw: notifyData.notifyRaw,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
   }
 
   async getPaymentStats() {
     const totalPayments = await this.prisma.payment.count();
     const successfulPayments = await this.prisma.payment.count({
-      where: { status: PaymentStatus.SUCCESS }
+      where: { status: PaymentStatus.SUCCESS },
     });
     const failedPayments = await this.prisma.payment.count({
-      where: { status: PaymentStatus.FAILED }
+      where: { status: PaymentStatus.FAILED },
     });
     const pendingPayments = await this.prisma.payment.count({
-      where: { status: PaymentStatus.PENDING }
+      where: { status: PaymentStatus.PENDING },
     });
 
     const totalAmountResult = await this.prisma.payment.findMany({
       where: { status: PaymentStatus.SUCCESS },
-      select: { total: true }
+      select: { total: true },
     });
-    const totalAmount = totalAmountResult.reduce((sum, payment) => sum + payment.total, 0);
+    const totalAmount = totalAmountResult.reduce(
+      (sum, payment) => sum + payment.total,
+      0,
+    );
 
     const totalRefunds = await this.prisma.refund.count();
     const totalRefundAmountResult = await this.prisma.refund.findMany({
       where: { status: RefundStatus.SUCCESS },
-      select: { refundAmount: true }
+      select: { refundAmount: true },
     });
-    const totalRefundAmount = totalRefundAmountResult.reduce((sum, refund) => sum + Number(refund.refundAmount), 0);
+    const totalRefundAmount = totalRefundAmountResult.reduce(
+      (sum, refund) => sum + Number(refund.refundAmount),
+      0,
+    );
 
     return {
       totalPayments,
@@ -230,28 +254,36 @@ export class PaymentService {
       pendingPayments,
       totalAmount,
       totalRefunds,
-      totalRefundAmount
+      totalRefundAmount,
     };
   }
 
   // 支付日志相关方法
-  async createPaymentLog(data: PaymentLogData) {
-    return this.paymentLogRepository.createPaymentLog(data);
+  async createPaymentLog(data: any) {
+    return this.prisma.paymentLog.create({ data });
   }
 
-  async getPaymentLogsByOrderId(orderId: string) {
-    return this.paymentLogRepository.findByOrderId(orderId);
+  async getPaymentLogsByOrderId(orderId: bigint) {
+    return this.prisma.paymentLog.findMany({
+      where: { orderId: BigInt(orderId) },
+    });
   }
 
-  async getPaymentLogByTransactionId(transactionId: string) {
-    return this.paymentLogRepository.findByTransactionId(transactionId);
+  async getPaymentLogByTransactionId(transactionId: bigint) {
+    return this.prisma.paymentLog.findFirst({
+      where: { transactionId: transactionId },
+    });
   }
 
-  async isTransactionProcessed(transactionId: string) {
-    return this.paymentLogRepository.isTransactionProcessed(transactionId);
+  async isTransactionProcessed(transactionId: bigint) {
+    return this.prisma.paymentLog.findFirst({
+      where: { transactionId: transactionId, status: 'SUCCESS' },
+    });
   }
 
   async getPaymentStatsInRange(startDate: Date, endDate: Date) {
-    return this.paymentLogRepository.getPaymentStats(startDate, endDate);
+    return this.prisma.paymentLog.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+    });
   }
 }

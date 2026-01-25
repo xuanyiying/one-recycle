@@ -1,74 +1,204 @@
-import { View, Text } from '@tarojs/components'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
+import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import './index.scss'
-import {Button, Image} from '@nutui/nutui-react-taro'
-import {getActiveCategories} from "@/services/category";
+import { SearchBar, Button as NutButton, Switch } from '@nutui/nutui-react-taro'
+import { Search, Check, ArrowRight } from '@nutui/icons-react-taro'
+import { getActiveCategories } from "@/services/category"
 import { Category } from "@/types"
 import { convertServiceToUICategories } from "@/utils/category"
+import { IconButton } from '@/components/IconButton'
+import './index.scss'
 
 const CategoryPage = () => {
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
-    const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [activeRootId, setActiveRootId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [isMultiSelect, setIsMultiSelect] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-      const fetchCategories = async () => {
-        // 获取分类数据，并设置到categories中
-        const serviceCategories = await getActiveCategories();
-        const uiCategories = convertServiceToUICategories(serviceCategories);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoading(true)
+      try {
+        const serviceCategories = await getActiveCategories()
+        const uiCategories = convertServiceToUICategories(serviceCategories)
         setCategories(uiCategories)
-        // 获取用户选择的分类，并设置到selectedCategory中
+        if (uiCategories.length > 0) {
+          setActiveRootId(uiCategories[0].id)
+        }
+        
+        // Load initial selection from router
         const instance = Taro.getCurrentInstance()
         const categoryId = instance.router?.params?.categoryId
         if (categoryId) {
-          setSelectedCategory(Number(categoryId))
+          setSelectedIds([Number(categoryId)])
+          // Find root of this category to activate it
+          const root = uiCategories.find(c => c.id === Number(categoryId) || c.subCategories?.some(sub => sub.id === Number(categoryId)))
+          if (root) setActiveRootId(root.id)
         }
-        Taro.setNavigationBarTitle({
-          title: '回收分类'
-        })
+      } finally {
+        setLoading(false)
       }
-      
-      fetchCategories()
+    }
+    
+    fetchCategories()
+    
+    Taro.setNavigationBarTitle({ title: '回收分类' })
   }, [])
 
-  // 处理分类点击
-  const handleCategoryClick = (category: Category) => {
-    setSelectedCategory(category.id)
+  // Filter categories based on search
+  const filteredCategories = useMemo(() => {
+    if (!searchText) return categories
+    
+    return categories.map(root => {
+      // Check if root matches
+      const rootMatches = root.name.includes(searchText)
+      // Check if any child matches
+      const matchingChildren = root.subCategories?.filter(sub => sub.name.includes(searchText)) || []
+      
+      if (rootMatches || matchingChildren.length > 0) {
+        return {
+          ...root,
+          // If root matches, show all children? Or just matching? 
+          // Better to show all if root matches, or just matching children if root doesn't.
+          // Let's filter children if root doesn't match directly, but if root matches keep all?
+          // Strategy: Only show matching items.
+          subCategories: rootMatches ? root.subCategories : matchingChildren
+        }
+      }
+      return null
+    }).filter(Boolean) as Category[]
+  }, [categories, searchText])
 
-    // 跳转到回收表单页面
+  const activeRoot = useMemo(() => {
+    return filteredCategories.find(c => c.id === activeRootId) || filteredCategories[0]
+  }, [filteredCategories, activeRootId])
+
+  const handleRootClick = (id: number) => {
+    setActiveRootId(id)
+  }
+
+  const handleSubCategoryClick = (subId: number, subName: string, rootId: number) => {
+    if (isMultiSelect) {
+      setSelectedIds(prev => {
+        if (prev.includes(subId)) {
+          return prev.filter(id => id !== subId)
+        } else {
+          return [...prev, subId]
+        }
+      })
+    } else {
+      setSelectedIds([subId])
+      // Navigate immediately for single select
+      Taro.navigateTo({
+        url: `/pages/recycle/index?categoryId=${subId}&category=${encodeURIComponent(subName)}`
+      })
+    }
+  }
+
+  const handleConfirm = () => {
+    if (selectedIds.length === 0) {
+      Taro.showToast({ title: '请至少选择一项', icon: 'none' })
+      return
+    }
+    // Pass multiple categories. Since target page might strictly expect one, 
+    // we might need to adjust logic. For now, pass the first one or a combined string.
+    // Assuming target page handles one, we pick first.
+    // Ideally we pass IDs via EventChannel or Store.
+    // Here we maintain backward compatibility roughly.
+    const selectedNames = categories
+      .flatMap(c => c.subCategories || [])
+      .filter(sub => selectedIds.includes(sub.id))
+      .map(sub => sub.name)
+      .join(',')
+      
     Taro.navigateTo({
-      url: `/pages/recycle/index?categoryId=${category.id}&category=${encodeURIComponent(category.name)}`
+      url: `/pages/recycle/index?categoryId=${selectedIds.join(',')}&category=${encodeURIComponent(selectedNames)}`
     })
   }
 
   return (
-    <View className='category-page'>
-      <View className='header'>
-        <Text className='title'>选择回收分类</Text>
-        <Text className='subtitle'>请选择您要回收的物品类型</Text>
+    <View className='category-page ios-page-padding'>
+      <View className='header-section ios-section-spacing'>
+        <SearchBar
+          className='search-bar'
+          placeholder='搜索回收品类'
+          value={searchText}
+          onChange={(val) => setSearchText(val)}
+          left={<Search size={18} />}
+        />
+        <View className='mode-switch'>
+           <Text className='switch-label'>多选模式</Text>
+           <Switch checked={isMultiSelect} onChange={setIsMultiSelect} />
+        </View>
       </View>
 
-      <View className='category-grid'>
-        {categories.map((category) => (
-          <Button
-            key={category.id}
-            className={`category-item ${selectedCategory === category.id ? 'selected' : ''}`}
-            size={'small'}
-            onClick={() => handleCategoryClick(category)}
-          >
+      <View className='content-container'>
+        {/* Sidebar */}
+        <ScrollView scrollY className='sidebar'>
+          {filteredCategories.map(root => (
             <View
-              className='category-icon'
+              key={root.id}
+              className={`sidebar-item ${activeRoot?.id === root.id ? 'active' : ''}`}
+              onClick={() => handleRootClick(root.id)}
             >
-               <Image src={category.icon} className={'icon-image'} />
+              <View className='indicator' />
+              <Text className='root-name'>{root.name}</Text>
             </View>
-            <Text className='category-name'>{category.name}</Text>
-          </Button>
-        ))}
+          ))}
+        </ScrollView>
+
+        {/* Main Content */}
+        <ScrollView scrollY className='main-content'>
+          {activeRoot ? (
+            <View className='subcategory-grid'>
+              {activeRoot.subCategories?.map(sub => {
+                const isSelected = selectedIds.includes(sub.id)
+                return (
+                  <View
+                    key={sub.id}
+                    className={`subcategory-card ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleSubCategoryClick(sub.id, sub.name, activeRoot.id)}
+                  >
+                    <View className='card-content'>
+                       <Text className='sub-name'>{sub.name}</Text>
+                       <Text className='sub-price'>¥{sub.basePrice}起</Text>
+                    </View>
+                    {isSelected && (
+                      <View className='check-mark'>
+                        <Check size={16} color='#fff' />
+                      </View>
+                    )}
+                  </View>
+                )
+              })}
+              {(!activeRoot.subCategories || activeRoot.subCategories.length === 0) && (
+                <View className='empty-tip'>该分类下暂无细项</View>
+              )}
+            </View>
+          ) : (
+            <View className='empty-state'>未找到相关分类</View>
+          )}
+        </ScrollView>
       </View>
 
-      <View className='tips'>
-        <Text className='tips-text'>选择分类后将为您创建回收订单</Text>
-      </View>
+      {/* Footer for Multi-select */}
+      {isMultiSelect && (
+        <View className='footer-actions ios-safe-area-bottom'>
+          <View className='selection-info'>
+            已选 <Text className='count'>{selectedIds.length}</Text> 项
+          </View>
+          <IconButton
+            icon={<ArrowRight />}
+            variant='primary'
+            onClick={handleConfirm}
+            className='confirm-btn'
+          >
+            确认选择
+          </IconButton>
+        </View>
+      )}
     </View>
   )
 }

@@ -24,8 +24,8 @@ import {
     createAutoSaveDraft,
     isValidDraftOrder,
     getDraftOrderCompletionPercentage,
-} from '../../services/draftOrderService'
-import { submitOrder, validateOrderForSubmission } from '../../services/orderSubmissionService'
+} from '../../services/draftOrder'
+import { submitOrder, validateOrderForSubmission } from '../../services/order'
 import ItemForm from './ItemForm'
 import AddressSelection from './AddressSelection'
 import TimeSlotSelection from './TimeSlotSelection'
@@ -43,7 +43,7 @@ type OrderStep = 1 | 2 | 3 | 4 | 'success'
 interface OrderFlowState {
     currentStep: OrderStep
     items: Item[]
-    selectedAddressId?: string
+    selectedAddressId?: string | number
     selectedTimeSlotId?: string
     notes?: string
     agreedToTerms: boolean
@@ -57,11 +57,15 @@ interface DraftRecoveryState {
     completionPercentage: number
 }
 
+interface OrderCreationFlowProps {
+    initialCategory?: string
+}
+
 // ============================================================================
 // Component
 // ============================================================================
 
-export default function OrderCreationFlow() {
+export default function OrderCreationFlow({ initialCategory }: OrderCreationFlowProps) {
     // Store
     const {
         state: storeState,
@@ -240,7 +244,6 @@ export default function OrderCreationFlow() {
 
         updateFormState({
             currentStep: 2,
-            items,
         })
 
         // Auto-save
@@ -435,7 +438,7 @@ export default function OrderCreationFlow() {
         })
 
         // Navigate to home or orders page
-        Taro.navigateTo({
+        Taro.switchTab({
             url: '/pages/index/index',
         })
     }, [])
@@ -469,6 +472,7 @@ export default function OrderCreationFlow() {
                 <ItemForm
                     onNext={handleItemsNext}
                     initialItems={flowState.items}
+                    initialCategory={initialCategory}
                 />
             )}
 

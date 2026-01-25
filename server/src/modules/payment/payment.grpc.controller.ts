@@ -1,10 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { PaymentService } from './payment.service';
-import { 
-  CreatePaymentRequest, 
-  CreateRefundRequest, 
-  GetPaymentRequest, 
+import {
+  CreatePaymentRequest,
+  CreateRefundRequest,
+  GetPaymentRequest,
   GetPaymentResponse,
   GetRefundRequest,
   GetRefundResponse,
@@ -19,19 +19,27 @@ import {
   PaymentStatsResponse,
   UpdatePaymentStatusRequest,
   UpdatePaymentStatusResponse,
-  CreateRefundResponse
-} from '../../proto/payment.pb';
-import {PaymentProvider, PaymentStatus} from "@prisma/client";
+  CreateRefundResponse,
+} from '@/proto/payment.pb';
+import {
+  PaymentProvider,
+  PaymentStatus,
+  Payment,
+  PaymentLog,
+  Refund,
+} from '@prisma/client';
 
 @Controller()
 export class PaymentGrpcController {
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @GrpcMethod('PaymentService', 'GetPayment')
   async getPayment(data: GetPaymentRequest): Promise<GetPaymentResponse> {
     try {
-      const payment = await this.paymentService.findOne(data.paymentId.toString());
-      return { payment: this.mapToPayment(payment) };
+      const payment = await this.paymentService.findOne(BigInt(data.paymentId)); // 转换为bigint
+      return {
+        payment: payment ? this.mapToPayment(payment) : undefined,
+      };
     } catch (error) {
       throw this.handleGrpcError(error);
     }
@@ -41,9 +49,9 @@ export class PaymentGrpcController {
   async createPayment(data: CreatePaymentRequest): Promise<GetPaymentResponse> {
     try {
       const payment = await this.paymentService.create({
-        orderId: data.orderId.toString(),
+        orderId: data.orderId.toString(), // 保持为字符串传递
         amount: Number(data.amount),
-        provider: data.provider
+        provider: data.provider,
       });
       return { payment: this.mapToPayment(payment) };
     } catch (error) {
@@ -52,10 +60,17 @@ export class PaymentGrpcController {
   }
 
   @GrpcMethod('PaymentService', 'UpdatePaymentStatus')
-  async updatePaymentStatus(data: UpdatePaymentStatusRequest): Promise<UpdatePaymentStatusResponse> {
+  async updatePaymentStatus(
+    data: UpdatePaymentStatusRequest,
+  ): Promise<UpdatePaymentStatusResponse> {
     try {
-      await this.paymentService.updatePaymentStatus(data.transactionId, data.status as any);
-      const payment = await this.paymentService.findByTransactionId(data.transactionId);
+      await this.paymentService.updatePaymentStatus(
+        data.transactionId, // 保持为bigint
+        data.status as any,
+      );
+      const payment = await this.paymentService.findByTransactionId(
+        data.transactionId, // 保持为bigint
+      );
       return { success: true, payment: this.mapToPayment(payment) };
     } catch (error) {
       throw this.handleGrpcError(error);
@@ -66,15 +81,15 @@ export class PaymentGrpcController {
   async createRefund(data: CreateRefundRequest): Promise<CreateRefundResponse> {
     try {
       const refund = await this.paymentService.createRefund(
-        data.paymentId.toString(),
+        data.paymentId,
         Number(data.refundAmount),
-        data.reason
+        data.reason,
       );
       return {
         success: true,
-        refundId: refund.id.toString(),
+        refundId: refund.id,
         outRefundNo: refund.outRefundNo,
-        message: 'Refund created successfully'
+        message: 'Refund created successfully',
       };
     } catch (error) {
       throw this.handleGrpcError(error);
@@ -85,52 +100,59 @@ export class PaymentGrpcController {
   async getRefund(data: GetRefundRequest): Promise<GetRefundResponse> {
     try {
       // 这里需要在PaymentService中添加findByRefundId方法
-      const refund = await this.paymentService.findByRefundId(data.refundId.toString());
+      const refund = await this.paymentService.findByRefundId(
+        data.refundId.toString(),
+      ); // 转换为字符串
       return { refund: this.mapToRefund(refund) };
     } catch (error) {
       throw this.handleGrpcError(error);
     }
   }
 
-  private mapToPayment(payment: any) {
+  private mapToPayment(payment: Payment) {
     return {
-      id: payment.id.toString(),
-      orderId: payment.orderId.toString(),
-      transactionId: payment.transactionId || '',
+      id: payment.id,
+      orderId: payment.orderId,
+      transactionId: payment.transactionId || 0n,
       outTradeNo: payment.outTradeNo || '',
       total: payment.total,
       status: payment.status,
       provider: payment.provider,
       notifyRaw: payment.notifyRaw || '',
       createdAt: payment.createdAt.toISOString(),
-      updatedAt: payment.updatedAt.toISOString()
+      updatedAt: payment.updatedAt.toISOString(),
     };
   }
 
-  private mapToRefund(refund: any) {
+  private mapToRefund(refund: Refund) {
     return {
-      id: refund.id.toString(),
-      paymentId: refund.paymentId.toString(),
+      id: refund.id,
+      paymentId: refund.paymentId,
       outRefundNo: refund.outRefundNo || '',
       refundAmount: refund.refundAmount,
       status: refund.status,
       reason: refund.reason || '',
       notifyRaw: refund.notifyRaw || '',
       createdAt: refund.createdAt.toISOString(),
-      updatedAt: refund.updatedAt.toISOString()
+      updatedAt: refund.updatedAt.toISOString(),
     };
   }
 
   @GrpcMethod('PaymentService', 'CreatePaymentLog')
-  async createPaymentLog(data: CreatePaymentLogRequest): Promise<PaymentLogResponse> {
+  async createPaymentLog(
+    data: CreatePaymentLogRequest,
+  ): Promise<PaymentLogResponse> {
     try {
       const paymentLog = await this.paymentService.createPaymentLog({
+        id: 0n,
         orderId: data.orderId,
         transactionId: data.transactionId,
         status: data.status as PaymentStatus,
         amount: parseFloat(data.amount),
         provider: data.provider as PaymentProvider,
-        rawData: data.reason
+        rawData: data.reason,
+        createdAt: new Date(),
+        processedAt: new Date(),
       });
       return this.mapToPaymentLogResponse(paymentLog);
     } catch (error) {
@@ -139,11 +161,15 @@ export class PaymentGrpcController {
   }
 
   @GrpcMethod('PaymentService', 'GetPaymentLogsByOrderId')
-  async getPaymentLogsByOrderId(data: GetPaymentLogsByOrderIdRequest): Promise<PaymentLogsResponse> {
+  async getPaymentLogsByOrderId(
+    data: GetPaymentLogsByOrderIdRequest,
+  ): Promise<PaymentLogsResponse> {
     try {
-      const logs = await this.paymentService.getPaymentLogsByOrderId(data.orderId);
+      const logs = await this.paymentService.getPaymentLogsByOrderId(
+        data.orderId,
+      );
       return {
-        logs: logs.map(log => this.mapToPaymentLogResponse(log))
+        logs: logs.map((log) => this.mapToPaymentLogResponse(log)),
       };
     } catch (error) {
       throw this.handleGrpcError(error);
@@ -151,9 +177,16 @@ export class PaymentGrpcController {
   }
 
   @GrpcMethod('PaymentService', 'GetPaymentLogByTransactionId')
-  async getPaymentLogByTransactionId(data: GetPaymentLogByTransactionIdRequest): Promise<PaymentLogResponse> {
+  async getPaymentLogByTransactionId(
+    data: GetPaymentLogByTransactionIdRequest,
+  ): Promise<PaymentLogResponse> {
     try {
-      const log = await this.paymentService.getPaymentLogByTransactionId(data.transactionId);
+      const log = await this.paymentService.getPaymentLogByTransactionId(
+        data.transactionId,
+      );
+      if (!log) {
+        throw new Error('Payment log not found');
+      }
       return this.mapToPaymentLogResponse(log);
     } catch (error) {
       throw this.handleGrpcError(error);
@@ -161,45 +194,60 @@ export class PaymentGrpcController {
   }
 
   @GrpcMethod('PaymentService', 'IsTransactionProcessed')
-  async isTransactionProcessed(data: IsTransactionProcessedRequest): Promise<IsTransactionProcessedResponse> {
+  async isTransactionProcessed(
+    data: IsTransactionProcessedRequest,
+  ): Promise<IsTransactionProcessedResponse> {
     try {
-      const processed = await this.paymentService.isTransactionProcessed(data.transactionId);
-      return { processed };
+      const processed = await this.paymentService.isTransactionProcessed(
+        data.transactionId,
+      );
+      return { processed: !!processed };
     } catch (error) {
       throw this.handleGrpcError(error);
     }
   }
 
   @GrpcMethod('PaymentService', 'GetPaymentStats')
-  async getPaymentStats(data: GetPaymentStatsRequest): Promise<PaymentStatsResponse> {
+  async getPaymentStats(
+    data: GetPaymentStatsRequest,
+  ): Promise<PaymentStatsResponse> {
     try {
-      const stats = await this.paymentService.getPaymentStatsInRange(
+      const logs = await this.paymentService.getPaymentStatsInRange(
         new Date(data.startDate),
-        new Date(data.endDate)
+        new Date(data.endDate),
       );
+
+      // 计算统计信息
+      const total = logs.length;
+      const success = logs.filter((log) => log.status === 'SUCCESS').length;
+      const failed = logs.filter((log) => log.status === 'FAILED').length;
+      const pending = logs.filter((log) => log.status === 'PENDING').length;
+      const totalAmount = logs.reduce((sum, log) => sum + log.amount, 0);
+
       return {
-        total: stats.totalTransactions,
-        success: stats.successfulTransactions,
-        failed: stats.failedTransactions,
-        closed: stats.pendingTransactions,
-        totalAmount: stats.totalAmount.toString()
+        total,
+        success,
+        failed,
+        closed: pending,
+        totalAmount: totalAmount.toString(), // 转换为字符串
       };
     } catch (error) {
       throw this.handleGrpcError(error);
     }
   }
 
-  private mapToPaymentLogResponse(paymentLog: any): PaymentLogResponse {
+  private mapToPaymentLogResponse(paymentLog: PaymentLog): PaymentLogResponse {
     return {
       id: paymentLog.id,
-      orderId: paymentLog.orderId.toString(),
-      transactionId: paymentLog.transactionId || '',
+      orderId: paymentLog.orderId,
+      transactionId: paymentLog.transactionId || 0n,
       status: paymentLog.status,
-      amount: paymentLog.total?.toString() || '0',
+      amount: paymentLog.amount?.toString() || '0',
       provider: paymentLog.provider,
-      reason: paymentLog.notifyRaw || '',
+      reason: paymentLog.rawData || '',
       createdAt: paymentLog.createdAt.toISOString(),
-      updatedAt: paymentLog.updatedAt.toISOString()
+      updatedAt:
+        paymentLog.processedAt?.toISOString() || new Date().toISOString(),
     };
   }
 

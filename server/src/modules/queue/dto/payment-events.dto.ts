@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsNumber, IsDateString, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsDateString,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 
 // Existing payment event DTOs
 export class PaymentCallbackEventDto {
@@ -185,5 +192,5 @@ export class WithdrawalCompletedEventDto {
   rejectedReason?: string;
 
   @IsDateString()
-  completedAt: string;
+  completedAt!: string;
 }

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, JobOptions } from 'bull';
-import { QUEUE_NAMES } from '../queue.module';
+import { QUEUE_NAMES } from '../queue.constants';
 import {
   PaymentCallbackEventDto,
   PaymentSuccessEventDto,
@@ -10,16 +10,17 @@ import {
   WithdrawalCreatedEventDto,
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
-import { SnowflakeIdGenerator } from '@one-recycle/shared';
+import { SnowflakeIdGenerator } from '@/common';
 
 @Injectable()
 export class PaymentQueueService {
   private readonly logger = new Logger(PaymentQueueService.name);
-  private readonly idGenerator = new SnowflakeIdGenerator({ workerId: 2, datacenterId: 1 });
+  private readonly idGenerator = new SnowflakeIdGenerator({
+    workerId: 2,
+    datacenterId: 1,
+  });
 
-  constructor(
-    @InjectQueue(QUEUE_NAMES.PAYMENT) private paymentQueue: Queue,
-  ) {}
+  constructor(@InjectQueue(QUEUE_NAMES.PAYMENT) private paymentQueue: Queue) {}
 
   /**
    * 处理支付回调
@@ -37,13 +38,20 @@ export class PaymentQueueService {
         jobId: `payment-callback-${data.transactionId}`,
       };
 
-      const job = await this.paymentQueue.add('process-payment-callback', data, jobOptions);
+      const job = await this.paymentQueue.add(
+        'process-payment-callback',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Payment callback queued: ${data.transactionId}, Order: ${data.orderId}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue payment callback: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue payment callback: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -62,13 +70,20 @@ export class PaymentQueueService {
         },
       };
 
-      const job = await this.paymentQueue.add('payment-success', data, jobOptions);
+      const job = await this.paymentQueue.add(
+        'payment-success',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Payment success event queued: ${data.transactionId}, Order: ${data.orderId}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue payment success event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue payment success event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -87,13 +102,20 @@ export class PaymentQueueService {
         },
       };
 
-      const job = await this.paymentQueue.add('payment-failed', data, jobOptions);
+      const job = await this.paymentQueue.add(
+        'payment-failed',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Payment failed event queued: ${data.transactionId}, Order: ${data.orderId}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue payment failed event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue payment failed event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -114,13 +136,20 @@ export class PaymentQueueService {
         jobId: `refund-${data.transactionId}-${this.idGenerator.nextId()}`,
       };
 
-      const job = await this.paymentQueue.add('refund-process', data, jobOptions);
+      const job = await this.paymentQueue.add(
+        'refund-process',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Refund process queued: ${data.transactionId}, Order: ${data.orderId}, Amount: ${data.amount}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue refund process: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue refund process: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -139,7 +168,10 @@ export class PaymentQueueService {
       this.logger.log(`Verifying payment signature for provider: ${provider}`);
       return true;
     } catch (error) {
-      this.logger.error(`Failed to verify payment signature: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to verify payment signature: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return false;
     }
   }
@@ -151,15 +183,18 @@ export class PaymentQueueService {
     try {
       const jobId = `payment-callback-${transactionId}`;
       const job = await this.paymentQueue.getJob(jobId);
-      
+
       if (job) {
         const state = await job.getState();
         return state === 'completed';
       }
-      
+
       return false;
     } catch (error) {
-      this.logger.error(`Failed to check payment status: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to check payment status: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       return false;
     }
   }
@@ -195,7 +230,10 @@ export class PaymentQueueService {
         paused: isPaused,
       };
     } catch (error) {
-      this.logger.error(`Failed to get queue stats: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get queue stats: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -208,7 +246,7 @@ export class PaymentQueueService {
       await this.paymentQueue.pause();
       this.logger.log('Payment queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${error.message}`, error.stack);
+      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -221,7 +259,10 @@ export class PaymentQueueService {
       await this.paymentQueue.resume();
       this.logger.log('Payment queue resumed');
     } catch (error) {
-      this.logger.error(`Failed to resume queue: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to resume queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -229,7 +270,9 @@ export class PaymentQueueService {
   /**
    * 处理提现创建事件
    */
-  async handleWithdrawalCreated(data: WithdrawalCreatedEventDto): Promise<void> {
+  async handleWithdrawalCreated(
+    data: WithdrawalCreatedEventDto,
+  ): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 8,
@@ -242,13 +285,20 @@ export class PaymentQueueService {
         jobId: `withdrawal-created-${data.withdrawalId}`,
       };
 
-      const job = await this.paymentQueue.add('withdrawal-created', data, jobOptions);
+      const job = await this.paymentQueue.add(
+        'withdrawal-created',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Withdrawal created event queued: ${data.withdrawalId}, User: ${data.userId}, Amount: ${data.amount}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue withdrawal created event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue withdrawal created event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -256,7 +306,9 @@ export class PaymentQueueService {
   /**
    * 处理提现完成事件
    */
-  async handleWithdrawalCompleted(data: WithdrawalCompletedEventDto): Promise<void> {
+  async handleWithdrawalCompleted(
+    data: WithdrawalCompletedEventDto,
+  ): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 9,
@@ -269,13 +321,20 @@ export class PaymentQueueService {
         jobId: `withdrawal-completed-${data.withdrawalId}-${this.idGenerator.nextId()}`,
       };
 
-      const job = await this.paymentQueue.add('withdrawal-completed', data, jobOptions);
+      const job = await this.paymentQueue.add(
+        'withdrawal-completed',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Withdrawal completed event queued: ${data.withdrawalId}, Status: ${data.status}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue withdrawal completed event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue withdrawal completed event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

@@ -3,8 +3,15 @@ import Taro from '@tarojs/taro'
 import { useAppContext } from '@/store'
 import { login, getUserInfo } from '@/services/auth'
 import './index.scss'
-import {Button, Input, Image, Checkbox, Avatar} from '@nutui/nutui-react-taro'
-import {View, Text} from "@tarojs/components"
+import {Button, Input, Checkbox, Avatar} from '@nutui/nutui-react-taro'
+import {View, Text, Image} from "@tarojs/components"
+
+// 导入图片资源
+import logoIcon from '../../assets/icons/logo.png'
+import defaultAvatar from '../../assets/icons/default-avatar.png'
+import wechatAvatar from '../../assets/icons/wechat-avatar.png'
+import albumIcon from '../../assets/icons/album.png'
+import cameraIcon from '../../assets/icons/camera.png'
 
 // 常量定义
 const NICKNAME_MIN_LENGTH = 2
@@ -44,7 +51,7 @@ export default function Login() {
               type: 'SET_USER',
               payload: {
                 ...userInfoResult.data,
-                avatar: userInfoResult.data.avatar || '/assets/icons/default-avatar.png'
+                avatar: userInfoResult.data.avatar || defaultAvatar
               }
             })
             await Taro.reLaunch({
@@ -64,25 +71,10 @@ export default function Login() {
     checkLoginStatus()
   }, [dispatch])
 
-  // 预加载图片资源
+  // 移除图片预加载，避免在某些环境下 getImageInfo 报错导致渲染层网络错误
   useEffect(() => {
-    const preloadImages = [
-      '/assets/icons/logo.png',
-      '/assets/icons/default-avatar.png',
-      '/assets/icons/wechat-avatar.png',
-      '/assets/icons/album.png',
-      '/assets/icons/camera.png'
-    ]
-
-    // 使用Taro的图片预加载方法
-    preloadImages.forEach(src => {
-      Taro.getImageInfo({
-        src: src
-      }).catch(() => {
-        // 忽略预加载失败的图片
-        console.log(`预加载图片失败: ${src}`)
-      })
-    })
+    // 如果确实需要预加载，可以使用更安全的方式
+    console.log('Login page loaded, assets initialized')
   }, [])
 
   // 验证昵称
@@ -280,7 +272,7 @@ export default function Login() {
       <View className="login-header">
         <View className="logo">
           <Image
-            src="/assets/icons/logo.png"
+            src={logoIcon}
             className="logo-image"
             mode="aspectFit"
           />
@@ -301,7 +293,7 @@ export default function Login() {
             ) : (
               <View className="default-avatar">
                 <Avatar
-                  src="/assets/icons/default-avatar.png"
+                  src={defaultAvatar}
                   className="avatar-icon"
                 />
               </View>

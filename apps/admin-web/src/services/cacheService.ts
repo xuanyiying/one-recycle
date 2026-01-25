@@ -56,7 +56,7 @@ class CacheService {
    */
   get<T>(key: string): T | null {
     const item = this.cache.get(key);
-    
+
     if (!item) {
       return null;
     }
@@ -131,7 +131,7 @@ class CacheService {
       }
     });
 
-    keysToDelete.forEach(key => {
+    keysToDelete.forEach((key) => {
       this.cache.delete(key);
     });
   }
@@ -156,11 +156,7 @@ class CacheService {
   /**
    * 缓存装饰器 - 用于自动缓存异步函数结果
    */
-  async withCache<T>(
-    key: string,
-    fetcher: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
+  async withCache<T>(key: string, fetcher: () => Promise<T>, ttl?: number): Promise<T> {
     // 先尝试从缓存获取
     const cached = this.get<T>(key);
     if (cached !== null) {
@@ -185,13 +181,13 @@ class CacheService {
     const regex = new RegExp(pattern);
     const keysToDelete: string[] = [];
 
-    Array.from(this.cache.keys()).forEach(key => {
+    Array.from(this.cache.keys()).forEach((key) => {
       if (regex.test(key)) {
         keysToDelete.push(key);
       }
     });
 
-    keysToDelete.forEach(key => {
+    keysToDelete.forEach((key) => {
       this.cache.delete(key);
     });
 
@@ -201,14 +197,10 @@ class CacheService {
   /**
    * 刷新特定缓存
    */
-  async refresh<T>(
-    key: string,
-    fetcher: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
+  async refresh<T>(key: string, fetcher: () => Promise<T>, ttl?: number): Promise<T> {
     // 删除现有缓存
     this.delete(key);
-    
+
     // 重新获取并缓存
     const data = await fetcher();
     this.set(key, data, ttl);
@@ -227,20 +219,20 @@ export const CACHE_KEYS = {
   // Dashboard
   DASHBOARD_STATS: 'dashboard:stats',
   DASHBOARD_CHARTS: 'dashboard:charts',
-  
+
   // Couriers
   COURIERS_LIST: (params: string) => `couriers:list:${params}`,
   COURIER_DETAIL: (id: string) => `courier:detail:${id}`,
   COURIER_STATS: 'couriers:stats',
   COURIER_WORK_RECORDS: (id: string, params: string) => `courier:${id}:work_records:${params}`,
   COURIER_RATINGS: (id: string, params: string) => `courier:${id}:ratings:${params}`,
-  
+
   // Notifications
   NOTIFICATIONS_LIST: (params: string) => `notifications:list:${params}`,
   NOTIFICATION_DETAIL: (id: string) => `notification:detail:${id}`,
   NOTIFICATION_STATS: 'notifications:stats',
   NOTIFICATION_TEMPLATES: (params: string) => `notification_templates:list:${params}`,
-  
+
   // Settings
   USER_PROFILE: 'settings:user_profile',
   SYSTEM_SETTINGS: 'settings:system',
@@ -249,19 +241,19 @@ export const CACHE_KEYS = {
   BACKUP_SETTINGS: 'settings:backup',
   BACKUP_RECORDS: (params: string) => `settings:backup_records:${params}`,
   SYSTEM_INFO: 'settings:system_info',
-  
+
   // Users (for future use)
   USERS_LIST: (params: string) => `users:list:${params}`,
   USER_DETAIL: (id: string) => `user:detail:${id}`,
-  
+
   // Orders (for future use)
   ORDERS_LIST: (params: string) => `orders:list:${params}`,
   ORDER_DETAIL: (id: string) => `order:detail:${id}`,
-  
+
   // Inventory (for future use)
   INVENTORY_LIST: (params: string) => `inventory:list:${params}`,
   INVENTORY_ITEM: (id: string) => `inventory:item:${id}`,
-  
+
   // Categories (for future use)
   CATEGORIES_LIST: (params: string) => `categories:list:${params}`,
   CATEGORY_DETAIL: (id: string) => `category:detail:${id}`,
@@ -275,7 +267,7 @@ export const cacheUtils = {
   generateParamsKey(params: Record<string, any>): string {
     return Object.keys(params)
       .sort()
-      .map(key => `${key}=${params[key]}`)
+      .map((key) => `${key}=${params[key]}`)
       .join('&');
   },
 

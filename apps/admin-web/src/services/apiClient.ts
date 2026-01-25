@@ -46,7 +46,7 @@ export class ApiClient {
     if (serviceName) {
       fullBaseURL = `${baseURL}/api/v1`;
     }
-    
+
     this.instance = axios.create({
       baseURL: fullBaseURL,
       timeout: 30000,
@@ -72,30 +72,39 @@ export class ApiClient {
         config.headers['X-Request-ID'] = this.generateRequestId();
 
         // 日志记录
-        console.log(`[${serviceName || 'API'}] 发送请求: ${config.method?.toUpperCase()} ${config.url}`);
+        console.log(
+          `[${serviceName || 'API'}] 发送请求: ${config.method?.toUpperCase()} ${config.url}`,
+        );
 
         return config;
       },
       (error) => {
         console.error(`[${serviceName || 'API'}] 请求拦截器错误:`, error);
         return Promise.reject(error);
-      }
+      },
     );
 
     // 响应拦截器
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => {
-        console.log(`[${serviceName || 'API'}] 收到响应: ${response.status} ${response.config.url}`);
+        console.log(
+          `[${serviceName || 'API'}] 收到响应: ${response.status} ${response.config.url}`,
+        );
         return response;
       },
       (error: AxiosError) => {
-        console.error(`[${serviceName || 'API'}] 响应错误:`, error.response?.status, error.config?.url, error.message);
+        console.error(
+          `[${serviceName || 'API'}] 响应错误:`,
+          error.response?.status,
+          error.config?.url,
+          error.message,
+        );
 
         // 统一错误处理
         this.handleError(error);
 
         return Promise.reject(error);
-      }
+      },
     );
   }
 

@@ -81,7 +81,9 @@ export default function SettingsPage() {
   // 状态管理
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(
+    null,
+  );
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings | null>(null);
   const [backupSettings, setBackupSettings] = useState<BackupSettings | null>(null);
   const [backupRecords, setBackupRecords] = useState<BackupRecord[]>([]);
@@ -107,21 +109,15 @@ export default function SettingsPage() {
   const loadAllSettings = async () => {
     setPageLoading(true);
     try {
-      const [
-        profileData,
-        systemData,
-        notificationData,
-        securityData,
-        backupData,
-        systemInfoData,
-      ] = await Promise.all([
-        settingsService.getUserProfile(),
-        settingsService.getSystemSettings(),
-        settingsService.getNotificationSettings(),
-        settingsService.getSecuritySettings(),
-        settingsService.getBackupSettings(),
-        settingsService.getSystemInfo(),
-      ]);
+      const [profileData, systemData, notificationData, securityData, backupData, systemInfoData] =
+        await Promise.all([
+          settingsService.getUserProfile(),
+          settingsService.getSystemSettings(),
+          settingsService.getNotificationSettings(),
+          settingsService.getSecuritySettings(),
+          settingsService.getBackupSettings(),
+          settingsService.getSystemInfo(),
+        ]);
 
       setUserProfile(profileData);
       setSystemSettings(systemData);
@@ -376,9 +372,11 @@ export default function SettingsPage() {
     }
   };
 
-    if (pageLoading) {
+  if (pageLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <div
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -451,10 +449,7 @@ export default function SettingsPage() {
               </Popconfirm>
             </>
           )}
-          <Popconfirm
-            title="确定要删除此备份吗？"
-            onConfirm={() => handleDeleteBackup(record.id)}
-          >
+          <Popconfirm title="确定要删除此备份吗？" onConfirm={() => handleDeleteBackup(record.id)}>
             <Button type="link" danger icon={<DeleteOutlined />}>
               删除
             </Button>
@@ -470,24 +465,24 @@ export default function SettingsPage() {
 
       <Tabs defaultActiveKey="1">
         {/* 个人资料 */}
-        <TabPane tab={<span><UserOutlined />个人资料</span>} key="1">
+        <TabPane
+          tab={
+            <span>
+              <UserOutlined />
+              个人资料
+            </span>
+          }
+          key="1"
+        >
           <Row gutter={24}>
             <Col span={16}>
               <Card title="基本信息">
-                <Form
-                  form={personalForm}
-                  layout="vertical"
-                  onFinish={handlePersonalSubmit}
-                >
+                <Form form={personalForm} layout="vertical" onFinish={handlePersonalSubmit}>
                   <Row gutter={16}>
                     <Col span={24}>
                       <Form.Item label="头像">
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                          <Avatar 
-                            size={80} 
-                            src={userProfile?.avatar} 
-                            icon={<UserOutlined />} 
-                          />
+                          <Avatar size={80} src={userProfile?.avatar} icon={<UserOutlined />} />
                           <Upload
                             beforeUpload={handleAvatarUpload}
                             showUploadList={false}
@@ -554,9 +549,7 @@ export default function SettingsPage() {
                       <Button type="primary" htmlType="submit" loading={loading}>
                         保存更改
                       </Button>
-                      <Button onClick={() => setPasswordModalVisible(true)}>
-                        修改密码
-                      </Button>
+                      <Button onClick={() => setPasswordModalVisible(true)}>修改密码</Button>
                     </Space>
                   </Form.Item>
                 </Form>
@@ -589,15 +582,19 @@ export default function SettingsPage() {
         </TabPane>
 
         {/* 系统设置 */}
-        <TabPane tab={<span><SettingOutlined />系统设置</span>} key="2">
+        <TabPane
+          tab={
+            <span>
+              <SettingOutlined />
+              系统设置
+            </span>
+          }
+          key="2"
+        >
           <Row gutter={24}>
             <Col span={16}>
               <Card title="基本设置">
-                <Form
-                  form={systemForm}
-                  layout="vertical"
-                  onFinish={handleSystemSubmit}
-                >
+                <Form form={systemForm} layout="vertical" onFinish={handleSystemSubmit}>
                   <Row gutter={16}>
                     <Col span={12}>
                       <Form.Item
@@ -731,23 +728,16 @@ export default function SettingsPage() {
                 <Divider />
 
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Button 
-                    icon={<ClearOutlined />} 
+                  <Button
+                    icon={<ClearOutlined />}
                     onClick={handleClearCache}
                     loading={loading}
                     block
                   >
                     清理缓存
                   </Button>
-                  <Popconfirm
-                    title="确定要重启系统吗？"
-                    onConfirm={handleRestartSystem}
-                  >
-                    <Button 
-                      icon={<PoweroffOutlined />} 
-                      danger 
-                      block
-                    >
+                  <Popconfirm title="确定要重启系统吗？" onConfirm={handleRestartSystem}>
+                    <Button icon={<PoweroffOutlined />} danger block>
                       重启系统
                     </Button>
                   </Popconfirm>
@@ -758,13 +748,17 @@ export default function SettingsPage() {
         </TabPane>
 
         {/* 通知设置 */}
-        <TabPane tab={<span><BellOutlined />通知设置</span>} key="3">
+        <TabPane
+          tab={
+            <span>
+              <BellOutlined />
+              通知设置
+            </span>
+          }
+          key="3"
+        >
           <Card title="通知偏好">
-            <Form
-              form={notificationForm}
-              layout="vertical"
-              onFinish={handleNotificationSubmit}
-            >
+            <Form form={notificationForm} layout="vertical" onFinish={handleNotificationSubmit}>
               <Title level={4}>邮件通知</Title>
               <Row gutter={16}>
                 <Col span={6}>
@@ -773,7 +767,10 @@ export default function SettingsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={6}>
-                  <Form.Item name={['emailNotifications', 'userRegistrations']} valuePropName="checked">
+                  <Form.Item
+                    name={['emailNotifications', 'userRegistrations']}
+                    valuePropName="checked"
+                  >
                     <Checkbox>用户注册</Checkbox>
                   </Form.Item>
                 </Col>
@@ -783,7 +780,10 @@ export default function SettingsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={6}>
-                  <Form.Item name={['emailNotifications', 'marketingEmails']} valuePropName="checked">
+                  <Form.Item
+                    name={['emailNotifications', 'marketingEmails']}
+                    valuePropName="checked"
+                  >
                     <Checkbox>营销邮件</Checkbox>
                   </Form.Item>
                 </Col>
@@ -855,7 +855,11 @@ export default function SettingsPage() {
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name={['quietHours', 'enabled']} label="免打扰时间" valuePropName="checked">
+                  <Form.Item
+                    name={['quietHours', 'enabled']}
+                    label="免打扰时间"
+                    valuePropName="checked"
+                  >
                     <Switch />
                   </Form.Item>
                 </Col>
@@ -884,20 +888,24 @@ export default function SettingsPage() {
         </TabPane>
 
         {/* 安全设置 */}
-        <TabPane tab={<span><SecurityScanOutlined />安全设置</span>} key="4">
+        <TabPane
+          tab={
+            <span>
+              <SecurityScanOutlined />
+              安全设置
+            </span>
+          }
+          key="4"
+        >
           <Row gutter={24}>
             <Col span={16}>
               <Card title="安全配置">
-                <Form
-                  form={securityForm}
-                  layout="vertical"
-                  onFinish={handleSecuritySubmit}
-                >
+                <Form form={securityForm} layout="vertical" onFinish={handleSecuritySubmit}>
                   <Title level={4}>认证设置</Title>
                   <Row gutter={16}>
                     <Col span={12}>
                       <Form.Item name="twoFactorEnabled" label="双因子认证" valuePropName="checked">
-                        <Switch 
+                        <Switch
                           onChange={(checked) => {
                             if (checked && !securitySettings?.twoFactorEnabled) {
                               handleEnableTwoFactor();
@@ -923,12 +931,18 @@ export default function SettingsPage() {
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name={['sessionManagement', 'sessionTimeout']} label="会话超时(分钟)">
+                      <Form.Item
+                        name={['sessionManagement', 'sessionTimeout']}
+                        label="会话超时(分钟)"
+                      >
                         <InputNumber min={5} max={1440} />
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name={['sessionManagement', 'rememberMeDuration']} label="记住我(天)">
+                      <Form.Item
+                        name={['sessionManagement', 'rememberMeDuration']}
+                        label="记住我(天)"
+                      >
                         <InputNumber min={1} max={30} />
                       </Form.Item>
                     </Col>
@@ -952,22 +966,34 @@ export default function SettingsPage() {
 
                   <Row gutter={16}>
                     <Col span={6}>
-                      <Form.Item name={['passwordPolicy', 'requireUppercase']} valuePropName="checked">
+                      <Form.Item
+                        name={['passwordPolicy', 'requireUppercase']}
+                        valuePropName="checked"
+                      >
                         <Checkbox>需要大写字母</Checkbox>
                       </Form.Item>
                     </Col>
                     <Col span={6}>
-                      <Form.Item name={['passwordPolicy', 'requireLowercase']} valuePropName="checked">
+                      <Form.Item
+                        name={['passwordPolicy', 'requireLowercase']}
+                        valuePropName="checked"
+                      >
                         <Checkbox>需要小写字母</Checkbox>
                       </Form.Item>
                     </Col>
                     <Col span={6}>
-                      <Form.Item name={['passwordPolicy', 'requireNumbers']} valuePropName="checked">
+                      <Form.Item
+                        name={['passwordPolicy', 'requireNumbers']}
+                        valuePropName="checked"
+                      >
                         <Checkbox>需要数字</Checkbox>
                       </Form.Item>
                     </Col>
                     <Col span={6}>
-                      <Form.Item name={['passwordPolicy', 'requireSpecialChars']} valuePropName="checked">
+                      <Form.Item
+                        name={['passwordPolicy', 'requireSpecialChars']}
+                        valuePropName="checked"
+                      >
                         <Checkbox>需要特殊字符</Checkbox>
                       </Form.Item>
                     </Col>
@@ -988,10 +1014,7 @@ export default function SettingsPage() {
                   message="安全评分"
                   description={
                     <div>
-                      <Progress 
-                        percent={85} 
-                        strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
-                      />
+                      <Progress percent={85} strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }} />
                       <Text type="secondary">您的账户安全性良好</Text>
                     </div>
                   }
@@ -1027,15 +1050,19 @@ export default function SettingsPage() {
         </TabPane>
 
         {/* 备份设置 */}
-        <TabPane tab={<span><DatabaseOutlined />备份管理</span>} key="5">
+        <TabPane
+          tab={
+            <span>
+              <DatabaseOutlined />
+              备份管理
+            </span>
+          }
+          key="5"
+        >
           <Row gutter={24}>
             <Col span={16}>
               <Card title="备份设置">
-                <Form
-                  form={backupForm}
-                  layout="vertical"
-                  onFinish={handleBackupSubmit}
-                >
+                <Form form={backupForm} layout="vertical" onFinish={handleBackupSubmit}>
                   <Row gutter={16}>
                     <Col span={12}>
                       <Form.Item name="autoBackup" label="自动备份" valuePropName="checked">
@@ -1107,8 +1134,8 @@ export default function SettingsPage() {
                       <Button type="primary" htmlType="submit" loading={loading}>
                         保存设置
                       </Button>
-                      <Button 
-                        icon={<CloudUploadOutlined />} 
+                      <Button
+                        icon={<CloudUploadOutlined />}
                         onClick={handleCreateBackup}
                         loading={loading}
                       >
@@ -1151,7 +1178,9 @@ export default function SettingsPage() {
                 <Statistic
                   title="最后备份"
                   value={backupRecords[0]?.createdAt}
-                  formatter={(value) => value ? dayjs(value as string).format('MM-DD HH:mm') : '无'}
+                  formatter={(value) =>
+                    value ? dayjs(value as string).format('MM-DD HH:mm') : '无'
+                  }
                 />
               </Card>
             </Col>
@@ -1166,11 +1195,7 @@ export default function SettingsPage() {
         onCancel={() => setPasswordModalVisible(false)}
         footer={null}
       >
-        <Form
-          form={passwordForm}
-          layout="vertical"
-          onFinish={handlePasswordSubmit}
-        >
+        <Form form={passwordForm} layout="vertical" onFinish={handlePasswordSubmit}>
           <Form.Item
             name="currentPassword"
             label="当前密码"
@@ -1214,9 +1239,7 @@ export default function SettingsPage() {
               <Button type="primary" htmlType="submit" loading={loading}>
                 确认修改
               </Button>
-              <Button onClick={() => setPasswordModalVisible(false)}>
-                取消
-              </Button>
+              <Button onClick={() => setPasswordModalVisible(false)}>取消</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -1236,20 +1259,15 @@ export default function SettingsPage() {
             type="info"
             style={{ marginBottom: 16 }}
           />
-          
+
           {qrCode && (
             <div style={{ marginBottom: 16 }}>
               <img src={qrCode} alt="QR Code" style={{ width: 200, height: 200 }} />
             </div>
           )}
 
-          <Form
-            onFinish={(values) => handleVerifyTwoFactor(values.code)}
-          >
-            <Form.Item
-              name="code"
-              rules={[{ required: true, message: '请输入验证码' }]}
-            >
+          <Form onFinish={(values) => handleVerifyTwoFactor(values.code)}>
+            <Form.Item name="code" rules={[{ required: true, message: '请输入验证码' }]}>
               <Input placeholder="请输入6位验证码" maxLength={6} />
             </Form.Item>
 
@@ -1258,9 +1276,7 @@ export default function SettingsPage() {
                 <Button type="primary" htmlType="submit">
                   验证并启用
                 </Button>
-                <Button onClick={() => setTwoFactorModalVisible(false)}>
-                  取消
-                </Button>
+                <Button onClick={() => setTwoFactorModalVisible(false)}>取消</Button>
               </Space>
             </Form.Item>
           </Form>

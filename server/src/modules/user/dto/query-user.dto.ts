@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { UserRole } from '@one-recycle/shared';
-import { PaginationParams } from '@one-recycle/shared';
+import { UserStatus } from '@prisma/client';
+import { PaginationParams } from '../../../common/types/common.types';
 
 export class QueryUserDto implements PaginationParams {
   @IsOptional()
@@ -12,8 +12,8 @@ export class QueryUserDto implements PaginationParams {
   nickname?: string;
 
   @IsOptional()
-  @IsEnum(UserRole)
-  status?: UserRole;
+  @IsEnum(UserStatus)
+  status?: UserStatus;
 
   @IsOptional()
   @IsEnum(['id', 'mobile', 'nickname', 'createdAt'])

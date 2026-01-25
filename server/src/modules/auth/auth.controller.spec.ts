@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
 import { AuthRedisService } from './auth-redis.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -23,11 +24,11 @@ describe('AuthController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        { provide: AuthRedisService, useValue: mockAuthService },
-      ],
+      providers: [{ provide: AuthRedisService, useValue: mockAuthService }],
     })
       .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -41,13 +42,16 @@ describe('AuthController', () => {
 
   describe('login', () => {
     it('should login successfully', async () => {
-      const loginDto: LoginDto = { mobile: '13800138000', verificationCode: '123456' };
+      const loginDto: LoginDto = {
+        mobile: '13800138000',
+        verificationCode: '123456',
+      };
       const expectedResult = {
         user: {
           id: 'user-123',
           phone: '13800138000',
           nickname: '测试用户',
-          avatar: null,
+          avatar: undefined,
           role: 'USER',
           status: 'ACTIVE',
         },
@@ -73,19 +77,28 @@ describe('AuthController', () => {
       const sendCodeDto: SendCodeDto = { mobile: '13800138000', type: 'login' };
       const expectedResult = { success: true, message: '验证码发送成功' };
 
-      jest.spyOn(authService, 'sendVerificationCode').mockResolvedValue(expectedResult);
+      jest
+        .spyOn(authService, 'sendVerificationCode')
+        .mockResolvedValue(expectedResult);
 
       const result = await controller.sendCode(sendCodeDto);
 
       expect(result).toEqual(expectedResult);
-      expect(authService.sendVerificationCode).toHaveBeenCalledWith(sendCodeDto);
+      expect(authService.sendVerificationCode).toHaveBeenCalledWith(
+        sendCodeDto,
+      );
     });
   });
 
   describe('refresh', () => {
     it('should refresh token successfully', async () => {
-      const refreshTokenDto: RefreshTokenDto = { refreshToken: 'refresh-token' };
-      const expectedResult = { accessToken: 'new-access-token', expiresIn: 86400 };
+      const refreshTokenDto: RefreshTokenDto = {
+        refreshToken: 'refresh-token',
+      };
+      const expectedResult = {
+        accessToken: 'new-access-token',
+        expiresIn: 86400,
+      };
 
       jest.spyOn(authService, 'refreshToken').mockResolvedValue(expectedResult);
 
@@ -120,7 +133,7 @@ describe('AuthController', () => {
           id: 'user-123',
           phone: '13800138000',
           nickname: '测试用户',
-          avatar: null,
+          avatar: undefined,
           role: 'USER',
           status: 'ACTIVE',
         },
@@ -132,12 +145,20 @@ describe('AuthController', () => {
         sessionId: 'session-123',
       };
 
-      jest.spyOn(authService, 'thirdPartyLogin').mockResolvedValue(expectedResult);
+      jest
+        .spyOn(authService, 'thirdPartyLogin')
+        .mockResolvedValue(expectedResult);
 
-      const result = await controller.thirdPartyLogin(platform, thirdPartyLoginDto);
+      const result = await controller.thirdPartyLogin(
+        platform,
+        thirdPartyLoginDto,
+      );
 
       expect(result).toEqual(expectedResult);
-      expect(authService.thirdPartyLogin).toHaveBeenCalledWith(platform, thirdPartyLoginDto);
+      expect(authService.thirdPartyLogin).toHaveBeenCalledWith(
+        platform,
+        thirdPartyLoginDto,
+      );
     });
   });
 });

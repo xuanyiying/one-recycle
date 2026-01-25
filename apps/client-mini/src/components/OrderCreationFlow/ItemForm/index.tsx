@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { View, Text, Button, ScrollView } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Picker } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { Item, ItemCondition } from '../../../types/order'
 import { calculateItemPrice } from '../../../utils/priceCalculation'
@@ -26,11 +26,13 @@ interface ItemFormProps {
     onNext: (items: Item[]) => void
     onBack?: () => void
     initialItems?: Item[]
+    initialCategory?: string
 }
 
 interface FormData {
     categoryId: string
     categoryName: string
+    categorySlug: string
     brandModel: string
     condition: ItemCondition
     weight: number
@@ -51,7 +53,7 @@ import { Category } from '../../../types/category'
 // Component
 // ============================================================================
 
-export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemFormProps) {
+export default function ItemForm({ onNext, onBack, initialItems = [], initialCategory }: ItemFormProps) {
     // State management
     const [items, setItems] = useState<Item[]>(initialItems)
     const [categories, setCategories] = useState<Category[]>([])
@@ -59,6 +61,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
     const [formData, setFormData] = useState<FormData>({
         categoryId: '',
         categoryName: '',
+        categorySlug: '',
         brandModel: '',
         condition: ItemCondition.GOOD,
         weight: 0,
@@ -91,7 +94,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
         }
 
         loadCategories()
-    }, [])
+    }, [initialCategory])
 
     // ============================================================================
     // Form Data Handlers
@@ -104,6 +107,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
                 ...prev,
                 categoryId: String(category.id),
                 categoryName: category.name,
+                categorySlug: category.seo?.slug || ''
             }))
             // Clear errors for category field
             setErrors((prev) => {
@@ -190,7 +194,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
             'other': { requiresBrandModel: false, requiresCondition: false, requiresWeight: true, requiresQuantity: true }
         }
 
-        const config = CATEGORY_FIELD_CONFIG[formData.categoryId] || CATEGORY_FIELD_CONFIG['other']
+        const config = CATEGORY_FIELD_CONFIG[formData.categorySlug] || CATEGORY_FIELD_CONFIG['other']
 
         if (config.requiresBrandModel && (!formData.brandModel || formData.brandModel.trim() === '')) {
             newErrors.brandModel = '请输入品牌/型号'
@@ -229,6 +233,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
             id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             categoryId: formData.categoryId,
             categoryName: formData.categoryName,
+            categorySlug: formData.categorySlug,
             brandModel: formData.brandModel,
             condition: formData.condition,
             weight: formData.weight,
@@ -253,24 +258,25 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
 
         setItems((prev) => [...prev, newItem])
 
-        // Reset form
-        setFormData({
-            categoryId: '',
-            categoryName: '',
+        // Reset form (keep category if fixed)
+        setFormData(prev => ({
+            categoryId: initialCategory ? prev.categoryId : '',
+            categoryName: initialCategory ? prev.categoryName : '',
+            categorySlug: initialCategory ? prev.categorySlug : '',
             brandModel: '',
             condition: ItemCondition.GOOD,
             weight: 0,
             quantity: 1,
             photos: [],
             notes: '',
-        })
+        }))
         setErrors({})
 
         Taro.showToast({
             title: '物品已添加',
             icon: 'success',
         })
-    }, [formData])
+    }, [formData, initialCategory])
 
     const handleRemoveItem = useCallback((itemId: string) => {
         setItems((prev) => prev.filter((item) => item.id !== itemId))
@@ -286,6 +292,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
             setFormData({
                 categoryId: item.categoryId,
                 categoryName: item.categoryName,
+                categorySlug: item.categorySlug || '',
                 brandModel: item.brandModel,
                 condition: item.condition,
                 weight: item.weight,
@@ -340,7 +347,9 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
             <View className='item-form-container'>
                 {/* Header */}
                 <View className='form-header'>
-                    <Text className='form-title'>添加回收物品</Text>
+                    <Text className='form-title'>
+                        {initialCategory === 'book' ? '旧书回收' : (initialCategory === 'clothes' ? '旧衣回收' : '添加回收物品')}
+                    </Text>
                     <Text className='form-subtitle'>第1步，共4步</Text>
                 </View>
 
@@ -348,22 +357,44 @@ export default function ItemForm({ onNext, onBack, initialItems = [] }: ItemForm
                 <View className='form-section'>
                     <Text className='section-title'>物品信息</Text>
 
-                    {/* Category Selector */}
-                    <View className='form-field'>
-                        {loadingCategories ? (
-                            <View className='loading-categories'>
-                                <Text>加载分类中...</Text>
+                    {/* Category Selection Area */}
+                    {formData.categoryId ? (
+                        <View className='current-category-section'>
+                            <View className='category-info'>
+                                <Text className='label'>当前选择分类：</Text>
+                                <Text className='value'>{formData.categoryName}</Text>
                             </View>
-                        ) : (
-                            <CategorySelector
-                                categories={categories.map(cat => ({ id: cat.id, name: cat.name }))}
-                                value={formData.categoryId}
-                                onChange={handleCategoryChange}
-                                required
-                            />
-                        )}
-                        {errors.categoryId && <Text className='error-message'>{errors.categoryId}</Text>}
-                    </View>
+                            <Picker
+                                mode='selector'
+                                range={categories.map(cat => cat.name)}
+                                onChange={(e) => {
+                                    const selectedIndex = e.detail.value
+                                    const category = categories[selectedIndex]
+                                    if (category) {
+                                        handleCategoryChange(String(category.id))
+                                    }
+                                }}
+                            >
+                                <View className='modify-btn'>修改</View>
+                            </Picker>
+                        </View>
+                    ) : (
+                        <View className='form-field'>
+                            {loadingCategories ? (
+                                <View className='loading-categories'>
+                                    <Text>加载分类中...</Text>
+                                </View>
+                            ) : (
+                                <CategorySelector
+                                    categories={categories.map(cat => ({ id: cat.id, name: cat.name }))}
+                                    value={formData.categoryId}
+                                    onChange={handleCategoryChange}
+                                    required
+                                />
+                            )}
+                            {errors.categoryId && <Text className='error-message'>{errors.categoryId}</Text>}
+                        </View>
+                    )}
 
                     {/* Item Details Form */}
                     <ItemDetailsForm

@@ -218,7 +218,7 @@ class SettingsService {
       return cacheService.withCache(
         CACHE_KEYS.USER_PROFILE,
         () => this.fetchUserProfile(),
-        5 * 60 * 1000 // 5分钟缓存
+        5 * 60 * 1000, // 5分钟缓存
       );
     }
     return this.fetchUserProfile();
@@ -253,7 +253,7 @@ class SettingsService {
       return cacheService.withCache(
         CACHE_KEYS.SYSTEM_SETTINGS,
         () => this.fetchSystemSettings(),
-        10 * 60 * 1000 // 10分钟缓存
+        10 * 60 * 1000, // 10分钟缓存
       );
     }
     return this.fetchSystemSettings();
@@ -276,7 +276,7 @@ class SettingsService {
       return cacheService.withCache(
         CACHE_KEYS.NOTIFICATION_SETTINGS,
         () => this.fetchNotificationSettings(),
-        5 * 60 * 1000 // 5分钟缓存
+        5 * 60 * 1000, // 5分钟缓存
       );
     }
     return this.fetchNotificationSettings();
@@ -286,7 +286,9 @@ class SettingsService {
     return await apiClient.get('/api/settings/notifications');
   }
 
-  async updateNotificationSettings(data: UpdateNotificationSettingsRequest): Promise<NotificationSettings> {
+  async updateNotificationSettings(
+    data: UpdateNotificationSettingsRequest,
+  ): Promise<NotificationSettings> {
     const response: NotificationSettings = await apiClient.put('/api/settings/notifications', data);
     // 清除通知设置缓存
     cacheService.delete(CACHE_KEYS.NOTIFICATION_SETTINGS);
@@ -304,7 +306,9 @@ class SettingsService {
   }
 
   async enableTwoFactor(): Promise<{ qrCode: string; secret: string }> {
-    const response: { qrCode: string; secret: string } = await apiClient.post('/api/settings/security/2fa/enable');
+    const response: { qrCode: string; secret: string } = await apiClient.post(
+      '/api/settings/security/2fa/enable',
+    );
     return response;
   }
 

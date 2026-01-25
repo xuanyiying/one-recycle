@@ -1,5 +1,5 @@
 export default {
-    navigationBarTitleText: '预约回收',
-    navigationBarBackgroundColor: '#00B894',
+    navigationBarTitleText: '回收预约',
+    navigationBarBackgroundColor: '#1AAD19',
     navigationBarTextStyle: 'white'
 }

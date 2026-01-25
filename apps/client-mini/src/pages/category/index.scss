@@ -1,319 +1,251 @@
-@use '../../styles/variables.scss' as *;
-@use '../../styles/ios.scss' as *;
-
-// ==================== iOS 分类页面样式 ====================
-// 严格遵循 Apple Human Interface Guidelines
+@import '../../styles/variables.scss';
 
 .category-page {
-  min-height: 100vh;
-  background-color: var(--ios-system-grouped-background);
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
-  padding: $spacing-20 $page-padding; // 20pt 16pt
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+  background-color: $bg-color;
+  @include responsive-page-padding;
+}
 
-  .header {
-    text-align: center;
-    margin-bottom: $spacing-32; // 32pt
-
-    .title {
-      @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
-      font-weight: $font-weight-bold;
-      margin-bottom: $spacing-8; // 8pt
-      display: block;
-    }
-
-    .subtitle {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
-      color: var(--ios-secondary-label);
-      display: block;
-    }
-  }
-
-  .search-section {
-    margin-bottom: $spacing-24; // 24pt
-
-    .search-input {
-      @extend .ios-input;
-      width: 100%;
-      background-color: var(--ios-secondary-system-background);
-      border: none;
-
-      &::placeholder {
-        color: var(--ios-tertiary-label);
-      }
+.header-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  
+  .search-bar {
+    flex: 1;
+    background: transparent;
+    padding: 0;
+    
+    .nut-searchbar__input-bar {
+      background: #fff;
+      border: 1px solid $border-color;
+      border-radius: $button-radius;
     }
   }
 
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: $spacing-16; // 16pt
-    margin-bottom: $spacing-32; // 32pt
-
-    .category-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: $spacing-20; // 20pt
-      background-color: var(--ios-secondary-system-grouped-background);
-      border-radius: $card-radius; // 12pt
-      border: 4rpx solid transparent; // 2pt 透明边框
-      transition: all 0.2s ease;
-      cursor: pointer;
-
-      &:active {
-        transform: scale(0.95);
-        background-color: var(--ios-tertiary-system-grouped-background);
-      }
-
-      &.selected {
-        border-color: var(--ios-blue);
-        background-color: rgba(0, 122, 255, 0.1);
-        transform: scale(1.02);
-      }
-
-      .category-icon {
-        width: 120rpx; // 60pt
-        height: 120rpx; // 60pt
-        border-radius: $border-radius-base; // 12pt
-        @include flex-center;
-        margin-bottom: $spacing-12; // 12pt
-        background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
-
-        .icon-image {
-          width: 64rpx; // 32pt
-          height: 64rpx; // 32pt
-        }
-
-        .icon-text {
-          @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
-          color: white;
-          font-weight: $font-weight-semibold;
-        }
-
-        // 不同分类的背景色
-        &.clothing {
-          background: linear-gradient(135deg, #FF9500 0%, #FFCC02 100%);
-        }
-
-        &.electronics {
-          background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
-        }
-
-        &.books {
-          background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
-        }
-
-        &.furniture {
-          background: linear-gradient(135deg, #8E8E93 0%, #AEAEB2 100%);
-        }
-
-        &.metal {
-          background: linear-gradient(135deg, #FF3B30 0%, #FF6961 100%);
-        }
-
-        &.paper {
-          background: linear-gradient(135deg, #AF52DE 0%, #BF5AF2 100%);
-        }
-      }
-
-      .category-name {
-        @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
-        font-weight: $font-weight-medium;
-        text-align: center;
-        line-height: $line-height-normal;
-      }
-
-      .category-desc {
-        @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
-        color: var(--ios-secondary-label);
-        text-align: center;
-        margin-top: $spacing-4; // 4pt
-        line-height: $line-height-relaxed;
-      }
-    }
-  }
-
-  .popular-section {
-    margin-bottom: $spacing-32; // 32pt
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: $spacing-16; // 16pt
-
-      .section-title {
-        @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
-        font-weight: $font-weight-semibold;
-      }
-
-      .view-all-btn {
-        @extend .ios-button-text;
-        padding: $spacing-8; // 8pt
-
-        text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
-          color: var(--ios-blue);
-        }
-      }
-    }
-
-    .popular-list {
-      display: flex;
-      flex-direction: column;
-      gap: $spacing-8; // 8pt
-
-      .popular-item {
-        display: flex;
-        align-items: center;
-        padding: $spacing-12; // 12pt
-        background-color: var(--ios-secondary-system-grouped-background);
-        border-radius: $border-radius-base; // 12pt
-        transition: all 0.2s ease;
-
-        &:active {
-          background-color: var(--ios-tertiary-system-grouped-background);
-        }
-
-        .item-icon {
-          width: 64rpx; // 32pt
-          height: 64rpx; // 32pt
-          border-radius: $border-radius-sm; // 8pt
-          margin-right: $spacing-12; // 12pt
-          background-color: var(--ios-blue);
-          @include flex-center;
-
-          image {
-            width: 32rpx; // 16pt
-            height: 32rpx; // 16pt
-          }
-        }
-
-        .item-info {
-          flex: 1;
-
-          .item-name {
-            @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
-            font-weight: $font-weight-medium;
-            margin-bottom: $spacing-2; // 2pt
-          }
-
-          .item-price {
-            @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-            color: var(--ios-blue);
-            font-weight: $font-weight-medium;
-          }
-        }
-
-        .item-arrow {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
-          color: var(--ios-tertiary-label);
-        }
-      }
-    }
-  }
-
-  .tips {
-    @extend .ios-card;
-    position: fixed;
-    bottom: 120rpx; // 60pt
-    left: $page-padding; // 16pt
-    right: $page-padding; // 16pt
-    background-color: rgba(var(--ios-secondary-system-grouped-background-rgb), 0.95);
-    backdrop-filter: blur(20rpx); // 10pt
-    text-align: center;
-
-    .tips-icon {
-      font-size: 48rpx; // 24pt
-      color: var(--ios-blue);
-      margin-bottom: $spacing-8; // 8pt
-    }
-
-    .tips-text {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-secondary-label);
-      line-height: $line-height-relaxed;
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    
+    .switch-label {
+      font-size: $font-size-caption;
+      color: $text-secondary;
     }
   }
 }
 
-// ==================== 响应式适配 ====================
-@include mobile-standard {
-  .category-page {
-    padding: $spacing-16 $spacing-12; // 16pt 12pt
+.content-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: #fff;
+  border-radius: $card-radius;
+  box-shadow: $box-shadow-sm;
+  margin-bottom: $spacing-lg; // Space for footer if needed
+  
+  .sidebar {
+    width: 200rpx;
+    background: $bg-tertiary;
+    border-right: 1px solid $border-light;
+    
+    .sidebar-item {
+      position: relative;
+      padding: $spacing-md $spacing-sm;
+      text-align: center;
+      transition: all 0.3s ease;
+      
+      .root-name {
+        font-size: $font-size-body;
+        color: $text-secondary;
+      }
+      
+      .indicator {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6rpx;
+        height: 32rpx;
+        background: transparent;
+        border-radius: 0 4rpx 4rpx 0;
+        transition: background 0.3s ease;
+      }
+      
+      &.active {
+        background: #fff;
+        
+        .root-name {
+          color: $primary-color;
+          font-weight: $font-weight-bold;
+        }
+        
+        .indicator {
+          background: $primary-color;
+        }
+      }
+    }
+  }
 
-    .category-grid {
+  .main-content {
+    flex: 1;
+    padding: $spacing-md;
+    
+    .subcategory-grid {
+      display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: $spacing-12; // 12pt
-
-      .category-item {
-        padding: $spacing-16; // 16pt
-
-        .category-icon {
-          width: 96rpx; // 48pt
-          height: 96rpx; // 48pt
-
-          .icon-image {
-            width: 48rpx; // 24pt
-            height: 48rpx; // 24pt
+      gap: $spacing-md;
+      
+      .subcategory-card {
+        position: relative;
+        background: $bg-color;
+        border-radius: $button-radius;
+        padding: $spacing-md;
+        border: 2rpx solid transparent;
+        transition: all 0.3s ease;
+        
+        .card-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: $spacing-xs;
+          
+          .sub-name {
+            font-size: $font-size-body;
+            font-weight: $font-weight-medium;
+            color: $text-color;
+          }
+          
+          .sub-price {
+            font-size: $font-size-caption;
+            color: $warning-color;
           }
         }
+        
+        .check-mark {
+          position: absolute;
+          top: -10rpx;
+          right: -10rpx;
+          width: 32rpx;
+          height: 32rpx;
+          background: $primary-color;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.1);
+        }
+        
+        &.selected {
+          border-color: $primary-color;
+          background: rgba($primary-color, 0.05);
+        }
+        
+        &:active {
+          transform: scale(0.98);
+        }
       }
+      
+      .empty-tip {
+        grid-column: span 2;
+        text-align: center;
+        padding: $spacing-xl;
+        color: $text-tertiary;
+        font-size: $font-size-caption;
+      }
+    }
+    
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: $text-tertiary;
+      font-size: $font-size-body;
     }
   }
 }
 
-// ==================== iOS 动画效果 ====================
-@keyframes ios-fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20rpx); // 10pt
+.footer-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: $spacing-md $page-padding;
+  box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  
+  .selection-info {
+    font-size: $font-size-body;
+    color: $text-color;
+    
+    .count {
+      color: $primary-color;
+      font-weight: bold;
+      font-size: $font-size-headline;
+      margin: 0 $spacing-xs;
+    }
   }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .confirm-btn {
+    min-width: 240rpx;
   }
 }
 
-.category-item {
-  animation: ios-fade-in-up 0.3s ease forwards;
-
-  // 错开动画时间
-  &:nth-child(1) {
-    animation-delay: 0.05s;
+// Dark Mode
+@media (prefers-color-scheme: dark) {
+  .category-page {
+    background-color: #000;
   }
-
-  &:nth-child(2) {
-    animation-delay: 0.1s;
+  
+  .content-container {
+    background: #1c1c1e;
+    
+    .sidebar {
+      background: #2c2c2e;
+      border-right-color: #38383a;
+      
+      .sidebar-item {
+        &.active {
+          background: #1c1c1e;
+        }
+      }
+    }
+    
+    .main-content {
+      .subcategory-card {
+        background: #2c2c2e;
+        
+        .sub-name {
+          color: #fff;
+        }
+        
+        &.selected {
+          background: rgba($primary-color, 0.2);
+        }
+      }
+    }
   }
-
-  &:nth-child(3) {
-    animation-delay: 0.15s;
+  
+  .header-section .search-bar .nut-searchbar__input-bar {
+    background: #1c1c1e;
+    border-color: #38383a;
   }
-
-  &:nth-child(4) {
-    animation-delay: 0.2s;
-  }
-
-  &:nth-child(5) {
-    animation-delay: 0.25s;
-  }
-
-  &:nth-child(6) {
-    animation-delay: 0.3s;
-  }
-
-  &:nth-child(7) {
-    animation-delay: 0.35s;
-  }
-
-  &:nth-child(8) {
-    animation-delay: 0.4s;
-  }
-
-  &:nth-child(9) {
-    animation-delay: 0.45s;
+  
+  .footer-actions {
+    background: #1c1c1e;
+    border-top: 1px solid #38383a;
+    
+    .selection-info {
+      color: #fff;
+    }
   }
 }

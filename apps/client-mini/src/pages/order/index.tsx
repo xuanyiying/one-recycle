@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Button } from '@tarojs/components';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, ScrollView, Button, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useAuth } from '@/hooks/useAuth';
 import { getUserOrders } from '@/services/order';
 import AuthGuard from '@/components/AuthGuard';
 import { Order, OrderStatus } from '@/types';
+import { Popup } from '@nutui/nutui-react-taro';
+import { Edit, Star, Close } from '@nutui/icons-react-taro';
 import './index.scss';
+import { getCdnUrl } from '@/utils/cdn';
 
 const OrderListPage: React.FC = () => {
   const { user } = useAuth();
@@ -13,10 +16,20 @@ const OrderListPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [orderList, setOrderList] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | OrderStatus>('all');
+  const [showCategorySelect, setShowCategorySelect] = useState(false);
 
-  useEffect(() => {
-    loadOrderList();
-  }, []);
+  // 监听页面显示，检查是否有来自其他页面的跳转参数，并触发数据加载
+  Taro.useDidShow(() => {
+    const targetTab = Taro.getStorageSync('ORDER_ACTIVE_TAB')
+    if (targetTab) {
+      setActiveTab(targetTab as any)
+      Taro.removeStorageSync('ORDER_ACTIVE_TAB')
+    }
+    // 每次显示页面都刷新数据（首屏也由 useDidShow 触发，避免与 useEffect 重复）
+    loadOrderList()
+  })
+
+  // 移除首次 useEffect 触发，避免与 useDidShow 重复请求
 
   const loadOrderList = async () => {
     try {
@@ -71,12 +84,10 @@ const OrderListPage: React.FC = () => {
     return colorMap[status] || '#666';
   };
 
-  const getFilteredOrders = () => {
-    if (activeTab === 'all') {
-      return orderList;
-    }
-    return orderList.filter(order => order.status === activeTab);
-  };
+  const filteredOrders = useMemo(() => {
+    if (activeTab === 'all') return orderList
+    return orderList.filter(order => order.status === activeTab)
+  }, [orderList, activeTab])
 
   const handleOrderClick = (orderId: string) => {
     Taro.navigateTo({
@@ -85,49 +96,90 @@ const OrderListPage: React.FC = () => {
   };
 
   const handleCreateOrder = () => {
+    setShowCategorySelect(true);
+  };
+
+  const handleSelectCategory = (category: string) => {
+    setShowCategorySelect(false);
     Taro.navigateTo({
-      url: '/pages/recycle/index'
+      url: `/pages/recycle/index?category=${category}`
     });
   };
 
-  const filteredOrders = getFilteredOrders();
+  // Helper to format date
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   // Render order item component
   const renderOrderItem = useCallback((order: Order) => (
     <View
       key={order.id}
-      className="order-item"
+      className="order-card"
       onClick={() => handleOrderClick(order.id)}
+      hoverClass="order-card-hover"
+      hoverStayTime={70}
     >
-      <View className="order-header">
-        <Text className="order-number">订单号：{order.id}</Text>
-        <View 
-          className="status-badge"
-          style={{ backgroundColor: getStatusColor(order.status) }}
-        >
-          <Text className="status-text">{order.statusText}</Text>
+      <View className="card-header">
+        <Text className="order-no">订单号 {order.id}</Text>
+        <View className={`status-tag ${order.status.toLowerCase()}`}>
+          <Text className="status-text">{getStatusText(order.status)}</Text>
         </View>
       </View>
 
-      <View className="order-content">
-        <View className="order-info">
-          <Text className="category">{order.categoryName}</Text>
-          <Text className="description">{order.items.join(', ')}</Text>
-          <Text className="weight">重量：{order.estimatedWeight}kg</Text>
-        </View>
-
-        <View className="price-info">
-          {order.actualPrice ? (
-            <Text className="actual-price">¥{order.actualPrice.toFixed(2)}</Text>
-          ) : (
-            <Text className="estimated-price">预估 ¥{order.estimatedPrice.toFixed(2)}</Text>
-          )}
-        </View>
+      <View className="card-body">
+        {Array.isArray(order.items) && order.items.map((item, index) => (
+          <View key={index} className="item-row">
+            <View className="item-image-placeholder">
+               {item.photos && item.photos.length > 0 ? (
+                 <Image
+                   src={getCdnUrl(item.photos[0], { w: 160, h: 160, fmt: 'webp', q: 80 })}
+                   className="item-img"
+                   mode="aspectFill"
+                   lazyLoad
+                 />
+               ) : (
+                 <View className="icon-wrapper">
+                    {(item.categoryName || item.name || '').includes('书') ? <Edit size={24} color='#999' /> : <Star size={24} color='#999' />}
+                 </View>
+               )}
+            </View>
+            <View className="item-content">
+              <View className="item-main">
+                <Text className="item-title">{item.categoryName || item.name || '回收物品'}</Text>
+                <Text className="item-price">
+                  {item.amount ? `¥${item.amount.toFixed(2)}` : '待估价'}
+                </Text>
+              </View>
+              <View className="item-sub">
+                <Text className="item-specs">
+                   {(item.weight || item.estimatedWeight) ? `${item.weight || item.estimatedWeight}kg` : ''}
+                   {(item.weight || item.estimatedWeight) && item.unitPrice ? ' | ' : ''}
+                   {item.unitPrice ? `¥${item.unitPrice}/kg` : ''}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ))}
       </View>
 
-      <View className="order-footer">
-        <Text className="create-time">下单时间：{order.createTime}</Text>
-        <Text className="pickup-time">上门时间：{order.appointmentTime}</Text>
+      <View className="card-footer">
+        <View className="info-col">
+           <Text className="info-text">{formatDate(order.appointmentTime || order.createTime)}</Text>
+        </View>
+        <View className="total-col">
+           <Text className="total-label">预估合计</Text>
+           <Text className="total-price">
+             <Text className="symbol">¥</Text>
+             {order.actualPrice ? order.actualPrice.toFixed(2) : (order.estimatedPrice?.toFixed(2) ?? '0.00')}
+           </Text>
+        </View>
       </View>
     </View>
   ), []);
@@ -198,6 +250,67 @@ const OrderListPage: React.FC = () => {
           </Button>
         </View>
       )}
+
+      {/* 分类选择弹窗 */}
+      <Popup
+        visible={showCategorySelect}
+        position="bottom"
+        round
+        onClose={() => setShowCategorySelect(false)}
+        className="category-popup"
+      >
+        <View className="popup-header">
+          <Text className="popup-title">选择回收类型</Text>
+          <View className="close-btn" onClick={() => setShowCategorySelect(false)}>
+            <Close size={20} color="#999" />
+          </View>
+        </View>
+        <View className="category-options">
+          <View 
+            className="category-card book-card"
+            onClick={() => handleSelectCategory('book')}
+          >
+            <View className="card-content">
+              <View className="title-area">
+                 <Edit size={24} color='#2E7D32' className="card-icon" />
+                 <Text className="card-title">旧书回收</Text>
+              </View>
+              <Text className="card-desc">知识循环</Text>
+              <View className="price-tag">
+                <Text className="price">0.8</Text>
+                <Text className="unit">元/kg</Text>
+              </View>
+            </View>
+            <Image 
+              className="card-bg-img" 
+              src="https://img12.360buyimg.com/img/s160x160_jfs/t1/192028/25/25459/6075/629f2716E2e83d844/9247656828555365.png" 
+              mode="aspectFit" 
+            />
+          </View>
+
+          <View 
+            className="category-card clothes-card"
+            onClick={() => handleSelectCategory('clothes')}
+          >
+            <View className="card-content">
+              <View className="title-area">
+                 <Star size={24} color='#2E7D32' className="card-icon" />
+                 <Text className="card-title">旧衣回收</Text>
+              </View>
+              <Text className="card-desc">衣旧情深</Text>
+              <View className="price-tag">
+                <Text className="price">0.5</Text>
+                <Text className="unit">元/kg</Text>
+              </View>
+            </View>
+            <Image 
+              className="card-bg-img" 
+              src="https://placehold.co/160x160/e8f5e9/2e7d32.png?text=Clothes" 
+              mode="aspectFit" 
+            />
+          </View>
+        </View>
+      </Popup>
       </View>
     </AuthGuard>
   );

@@ -1,7 +1,13 @@
-import { Injectable, UnauthorizedException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RedisService, SnowflakeIdGenerator } from '@one-recycle/shared';
+import { RedisService } from '../../common/redis/redis.service';
+import { SnowflakeIdGenerator } from '../../common/utils/common.util';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -13,6 +19,7 @@ import { TikTokPlatform } from './platforms/tiktok.platform';
 import { KuaishouPlatform } from './platforms/kuaishou.platform';
 import { AccountClient } from './clients/account.client';
 import axios from 'axios';
+import { UpdateUserDto } from '@/modules/user/dto';
 
 export interface AuthResult {
   user: {
@@ -74,7 +81,10 @@ export class AuthRedisService {
     private readonly kuaishouPlatform: KuaishouPlatform,
     private readonly accountClient: AccountClient,
   ) {
-    this.idGenerator = new SnowflakeIdGenerator({ workerId: 11, datacenterId: 1 });
+    this.idGenerator = new SnowflakeIdGenerator({
+      workerId: 11,
+      datacenterId: 1,
+    });
   }
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
@@ -119,7 +129,7 @@ export class AuthRedisService {
     return {
       user: {
         id: user.id,
-        phone: user.mobile,
+        phone: user.mobile || '',
         nickname: user.nickname,
         avatar: user.avatarUrl,
         role: 'USER',
@@ -130,7 +140,9 @@ export class AuthRedisService {
     };
   }
 
-  async sendVerificationCode(sendCodeDto: SendCodeDto): Promise<{ success: boolean; message: string }> {
+  async sendVerificationCode(
+    sendCodeDto: SendCodeDto,
+  ): Promise<{ success: boolean; message: string }> {
     const { mobile, type = 'login' } = sendCodeDto;
 
     // 验证手机号格式
@@ -141,8 +153,12 @@ export class AuthRedisService {
     // 检查是否频繁发送
     const existingCode = await this.getVerificationCode(mobile);
     if (existingCode && existingCode.expiresAt > Date.now()) {
-      const remainingTime = Math.ceil((existingCode.expiresAt - Date.now()) / 1000);
-      throw new BadRequestException(`验证码仍然有效，请${remainingTime}秒后再试`);
+      const remainingTime = Math.ceil(
+        (existingCode.expiresAt - Date.now()) / 1000,
+      );
+      throw new BadRequestException(
+        `验证码仍然有效，请${remainingTime}秒后再试`,
+      );
     }
 
     // 生成验证码
@@ -168,7 +184,9 @@ export class AuthRedisService {
     };
   }
 
-  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<{ accessToken: string; expiresIn: number }> {
+  async refreshToken(
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<{ accessToken: string; expiresIn: number }> {
     const { refreshToken } = refreshTokenDto;
 
     const tokenData = await this.getRefreshToken(refreshToken);
@@ -192,7 +210,10 @@ export class AuthRedisService {
     };
   }
 
-  async logout(userId: string, logoutDto: LogoutDto): Promise<{ success: boolean; message: string }> {
+  async logout(
+    userId: string,
+    logoutDto: LogoutDto,
+  ): Promise<{ success: boolean; message: string }> {
     const { refreshToken } = logoutDto;
 
     // 删除刷新令牌
@@ -209,7 +230,10 @@ export class AuthRedisService {
     };
   }
 
-  async thirdPartyLogin(platform: string, thirdPartyLoginDto: ThirdPartyLoginDto): Promise<AuthResult> {
+  async thirdPartyLogin(
+    platform: string,
+    thirdPartyLoginDto: ThirdPartyLoginDto,
+  ): Promise<AuthResult> {
     const { code, nickname, avatarUrl, deviceFingerprint } = thirdPartyLoginDto;
 
     // 根据平台获取用户信息
@@ -218,43 +242,54 @@ export class AuthRedisService {
 
     switch (platform.toLowerCase()) {
       case 'weapp':
-      case 'wechat':
+      case 'wechat': {
         const wechatInfo = await this.wechatPlatform.code2Session(code);
-        platformUserInfo = { openid: wechatInfo.openid, unionid: wechatInfo.unionid };
-        appId = this.configService.get<string>('WECHAT_APP_ID');
+        platformUserInfo = {
+          openid: wechatInfo.openid,
+          unionid: wechatInfo.unionid,
+        };
+        appId = this.configService.get<string>('WECHAT_APP_ID') || '';
         break;
+      }
 
-      case 'alipay':
+      case 'alipay': {
         const alipayInfo = await this.alipayPlatform.getAccessToken(code);
         platformUserInfo = { openid: alipayInfo.openid || alipayInfo.user_id };
-        appId = this.configService.get<string>('ALIPAY_APP_ID');
+        appId = this.configService.get<string>('ALIPAY_APP_ID') || '';
         break;
+      }
 
       case 'tt':
       case 'tiktok':
-      case 'douyin':
+      case 'douyin': {
         const tiktokInfo = await this.tiktokPlatform.code2Session(code);
         platformUserInfo = { openid: tiktokInfo.openid };
-        appId = this.configService.get<string>('DOUYIN_APP_ID');
+        appId = this.configService.get<string>('DOUYIN_APP_ID') || '';
         break;
+      }
 
       case 'kwai':
-      case 'kuaishou':
+      case 'kuaishou': {
         const kuaishouInfo = await this.kuaishouPlatform.code2Session(code);
         platformUserInfo = { openid: kuaishouInfo.openid };
-        appId = this.configService.get<string>('KUAISHOU_APP_ID');
+        appId = this.configService.get<string>('KUAISHOU_APP_ID') || '';
         break;
+      }
 
       default:
         throw new BadRequestException(`不支持的平台: ${platform}`);
     }
 
     // 查找或创建用户
-    let user = await this.accountClient.findUserByIdentity(platform, platformUserInfo.openid);
+    let user = await this.accountClient.findUserByIdentity(
+      platform,
+      platformUserInfo.openid,
+    );
 
     if (!user) {
       // 创建新用户
-      const defaultNickname = nickname || `用户${platformUserInfo.openid.slice(-6)}`;
+      const defaultNickname =
+        nickname || `用户${platformUserInfo.openid.slice(-6)}`;
       user = await this.accountClient.createUser({
         nickname: defaultNickname,
         avatarUrl: avatarUrl,
@@ -270,7 +305,7 @@ export class AuthRedisService {
     } else {
       // 更新用户信息（如果提供了新的昵称或头像）
       if (nickname || avatarUrl) {
-        const updateData: any = {};
+        const updateData: UpdateUserDto = {};
         if (nickname) updateData.nickname = nickname;
         if (avatarUrl) updateData.avatarUrl = avatarUrl;
         user = await this.accountClient.updateUser(user.id, updateData);
@@ -288,7 +323,11 @@ export class AuthRedisService {
     });
 
     // 生成令牌
-    const tokens = await this.generateTokensWithPlatform(user, sessionId, platform);
+    const tokens = await this.generateTokensWithPlatform(
+      user,
+      sessionId,
+      platform,
+    );
 
     return {
       user: {
@@ -306,13 +345,18 @@ export class AuthRedisService {
 
   // ==================== Redis操作方法 ====================
 
-  private async saveVerificationCode(phone: string, data: VerificationCodeData): Promise<void> {
+  private async saveVerificationCode(
+    phone: string,
+    data: VerificationCodeData,
+  ): Promise<void> {
     const key = `auth:code:${phone}`;
     const ttl = this.CODE_EXPIRY_MINUTES * 60;
     await this.redisService.set(key, data, ttl);
   }
 
-  private async getVerificationCode(phone: string): Promise<VerificationCodeData | null> {
+  private async getVerificationCode(
+    phone: string,
+  ): Promise<VerificationCodeData | null> {
     const key = `auth:code:${phone}`;
     return await this.redisService.get<VerificationCodeData>(key);
   }
@@ -322,7 +366,10 @@ export class AuthRedisService {
     await this.redisService.del(key);
   }
 
-  private async saveSession(sessionId: string, data: SessionData): Promise<void> {
+  private async saveSession(
+    sessionId: string,
+    data: SessionData,
+  ): Promise<void> {
     const key = `auth:session:${sessionId}`;
     const ttl = this.TOKEN_EXPIRY_HOURS * 3600;
     await this.redisService.set(key, data, ttl);
@@ -330,7 +377,10 @@ export class AuthRedisService {
     // 同时维护用户的会话列表
     const userSessionsKey = `auth:user:sessions:${data.userId}`;
     await this.redisService.sadd(userSessionsKey, sessionId);
-    await this.redisService.expire(userSessionsKey, this.REFRESH_TOKEN_EXPIRY_DAYS * 86400);
+    await this.redisService.expire(
+      userSessionsKey,
+      this.REFRESH_TOKEN_EXPIRY_DAYS * 86400,
+    );
   }
 
   private async getSession(sessionId: string): Promise<SessionData | null> {
@@ -352,7 +402,8 @@ export class AuthRedisService {
 
   private async deleteUserSessions(userId: string): Promise<void> {
     const userSessionsKey = `auth:user:sessions:${userId}`;
-    const sessionIds = await this.redisService.smembers<string>(userSessionsKey);
+    const sessionIds =
+      await this.redisService.smembers<string>(userSessionsKey);
 
     // 删除所有会话
     for (const sessionId of sessionIds) {
@@ -364,13 +415,18 @@ export class AuthRedisService {
     await this.redisService.del(userSessionsKey);
   }
 
-  private async saveRefreshToken(token: string, data: RefreshTokenData): Promise<void> {
+  private async saveRefreshToken(
+    token: string,
+    data: RefreshTokenData,
+  ): Promise<void> {
     const key = `auth:refresh:${token}`;
     const ttl = this.REFRESH_TOKEN_EXPIRY_DAYS * 86400;
     await this.redisService.set(key, data, ttl);
   }
 
-  private async getRefreshToken(token: string): Promise<RefreshTokenData | null> {
+  private async getRefreshToken(
+    token: string,
+  ): Promise<RefreshTokenData | null> {
     const key = `auth:refresh:${token}`;
     return await this.redisService.get<RefreshTokenData>(key);
   }
@@ -382,15 +438,24 @@ export class AuthRedisService {
 
   // ==================== 辅助方法 ====================
 
-  private async generateTokens(user: any, sessionId: string): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
-    const payload = { sub: user.id, phone: user.mobile, role: 'USER', sessionId };
+  private async generateTokens(
+    user: any,
+    sessionId: string,
+  ): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+    const payload = {
+      sub: user.id,
+      phone: user.mobile,
+      role: 'USER',
+      sessionId,
+    };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.idGenerator.nextId();
     const expiresIn = this.TOKEN_EXPIRY_HOURS * 3600;
 
     // 存储刷新令牌到Redis
-    const refreshTokenExpiresAt = Date.now() + this.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    const refreshTokenExpiresAt =
+      Date.now() + this.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     await this.saveRefreshToken(refreshToken, {
       userId: user.id,
       expiresAt: refreshTokenExpiresAt,
@@ -421,7 +486,8 @@ export class AuthRedisService {
     const expiresIn = this.TOKEN_EXPIRY_HOURS * 3600;
 
     // 存储刷新令牌
-    const refreshTokenExpiresAt = Date.now() + this.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    const refreshTokenExpiresAt =
+      Date.now() + this.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     await this.saveRefreshToken(refreshToken, {
       userId: user.id,
       expiresAt: refreshTokenExpiresAt,
@@ -475,15 +541,25 @@ export class AuthRedisService {
     return this.idGenerator.nextId();
   }
 
-  private async sendSMS(phone: string, code: string, type: string): Promise<void> {
+  private async sendSMS(
+    phone: string,
+    code: string,
+    type: string,
+  ): Promise<void> {
     try {
-      const notificationServiceUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL', 'http://localhost:3008');
+      const notificationServiceUrl = this.configService.get<string>(
+        'NOTIFICATION_SERVICE_URL',
+        'http://localhost:3008',
+      );
 
-      await axios.post(`${notificationServiceUrl}/api/v1/notifications/send-sms`, {
-        phone,
-        message: `您的验证码是：${code}，5分钟内有效。`,
-        type,
-      });
+      await axios.post(
+        `${notificationServiceUrl}/api/v1/notifications/send-sms`,
+        {
+          phone,
+          message: `您的验证码是：${code}，5分钟内有效。`,
+          type,
+        },
+      );
     } catch (error) {
       this.logger.error('发送短信失败:', error);
       // 在开发环境中，可以将验证码打印到控制台

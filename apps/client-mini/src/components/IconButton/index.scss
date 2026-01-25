@@ -1,0 +1,100 @@
+@import '../../styles/variables.scss';
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-base;
+  
+  .btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16rpx; // 8px (standard 8px = 16rpx)
+    font-size: 1.2em; // Balance with text
+  }
+
+  .btn-text {
+    font-weight: $font-weight-medium;
+  }
+
+  // Primary Button (Filled)
+  &.icon-button-primary {
+    background: $primary-color;
+    color: white;
+    border: none;
+    box-shadow: $box-shadow-base;
+
+    &:active {
+      background: $primary-dark;
+    }
+  }
+
+  // Secondary Button (Outlined)
+  &.icon-button-secondary {
+    background: transparent;
+    border: 2rpx solid $primary-color;
+    color: $primary-color;
+
+    &:active {
+      background: rgba($primary-color, 0.1);
+    }
+  }
+  
+  // Text Button
+  &.icon-button-text {
+    background: transparent;
+    border: none;
+    color: $primary-color;
+    box-shadow: none;
+    padding-left: $spacing-xs;
+    padding-right: $spacing-xs;
+    
+    .btn-icon {
+       margin-right: 8rpx;
+    }
+  }
+
+  // Sizes
+  &.icon-button-small {
+    height: $button-height-sm;
+    font-size: $font-size-caption1;
+    padding: 0 $spacing-sm;
+    border-radius: $button-radius;
+  }
+
+  &.icon-button-normal {
+    height: $button-height-md;
+    font-size: $font-size-body;
+    padding: 0 $spacing-md;
+    border-radius: $button-radius;
+  }
+
+  &.icon-button-large {
+    height: $button-height-lg;
+    font-size: $font-size-headline;
+    padding: 0 $spacing-lg;
+    border-radius: $button-radius;
+  }
+}
+
+// Dark Mode Support
+@media (prefers-color-scheme: dark) {
+  .icon-button {
+    &.icon-button-secondary {
+       border-color: $primary-light;
+       color: $primary-light;
+    }
+    
+    &.icon-button-text {
+      color: $primary-light;
+    }
+  }
+}

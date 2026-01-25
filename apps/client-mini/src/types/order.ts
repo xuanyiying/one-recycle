@@ -1,3 +1,8 @@
+import type { Address, AddressFormData } from './address'
+import { AddressLabel } from './address'
+export type { Address, AddressFormData }
+export { AddressLabel }
+
 /**
  * Order Creation Flow Types
  * Defines all types for the multi-step order creation process
@@ -19,13 +24,6 @@ export enum ItemCondition {
   NEW = 'new',
   GOOD = 'good',
   FAIR = 'fair',
-}
-
-export enum AddressLabel {
-  HOME = 'home',
-  WORK = 'work',
-  SCHOOL = 'school',
-  OTHER = 'other',
 }
 
 // ============================================================================
@@ -71,6 +69,7 @@ export interface Item {
   id: string
   categoryId: string
   categoryName: string
+  categorySlug?: string
   brandModel: string
   condition: ItemCondition
   weight: number
@@ -84,40 +83,13 @@ export interface Item {
 export interface ItemFormData {
   categoryId: string
   categoryName: string
+  categorySlug?: string
   brandModel: string
   condition: ItemCondition
   weight: number
   quantity: number
   photos: string[]
   notes?: string
-}
-
-// ============================================================================
-// Address Types
-// ============================================================================
-
-export interface Address {
-  id: string
-  recipientName: string
-  phoneNumber: string
-  region: string
-  detailedAddress: string
-  label: AddressLabel
-  isDefault: boolean
-  coordinates?: {
-    latitude: number
-    longitude: number
-  }
-  createdAt: string
-  updatedAt: string
-}
-
-export interface AddressFormData {
-  recipientName: string
-  phoneNumber: string
-  region: string
-  detailedAddress: string
-  label: AddressLabel
 }
 
 // ============================================================================
@@ -180,7 +152,7 @@ export interface OrderConfirmation {
 export interface DraftOrder {
   id: string
   items: Item[]
-  selectedAddressId?: string
+  selectedAddressId?: string | number
   selectedTimeSlotId?: string
   notes?: string
   createdAt: string
@@ -195,7 +167,7 @@ export interface DraftOrder {
 export interface OrderFormState {
   currentStep: 1 | 2 | 3 | 4
   items: Item[]
-  selectedAddressId?: string
+  selectedAddressId?: string | number
   selectedTimeSlotId?: string
   notes?: string
   agreedToTerms: boolean
@@ -214,7 +186,7 @@ export interface ValidationError {
 
 export interface CreateOrderRequest {
   items: Item[]
-  addressId: string
+  addressId: string | number
   timeSlotId: string
   notes?: string
   agreedToTerms: boolean

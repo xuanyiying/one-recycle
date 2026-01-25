@@ -1,11 +1,9 @@
+// @ts-nocheck
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
-
-export const protobufPackage = "payment";
-
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 export interface CreatePaymentRequest {
-  orderId: string;
+  orderId: bigint;
   amount: number;
   provider: string;
 }
@@ -26,9 +24,9 @@ export interface GetPaymentResponse {
 }
 
 export interface Payment {
-  id: string;
-  orderId: string;
-  transactionId: string;
+  id: bigint;
+  orderId: bigint;
+  transactionId: bigint;
   total: number;
   status: string;
   provider: string;
@@ -37,7 +35,7 @@ export interface Payment {
 }
 
 export interface UpdatePaymentStatusRequest {
-  transactionId: string;
+  transactionId: bigint;
   status: string;
 }
 
@@ -47,20 +45,20 @@ export interface UpdatePaymentStatusResponse {
 }
 
 export interface CreateRefundRequest {
-  paymentId: string;
+  paymentId: bigint;
   refundAmount: number;
   reason: string;
 }
 
 export interface CreateRefundResponse {
   success: boolean;
-  refundId: string;
+  refundId: bigint;
   outRefundNo: string;
   message: string;
 }
 
 export interface GetRefundRequest {
-  refundId: string;
+  refundId: bigint;
 }
 
 export interface GetRefundResponse {
@@ -68,8 +66,8 @@ export interface GetRefundResponse {
 }
 
 export interface Refund {
-  id: string;
-  paymentId: string;
+  id: bigint;
+  paymentId: bigint;
   outRefundNo: string;
   refundAmount: number;
   status: string;
@@ -79,8 +77,8 @@ export interface Refund {
 }
 
 export interface CreatePaymentLogRequest {
-  orderId: string;
-  transactionId: string;
+  orderId: bigint;
+  transactionId: bigint;
   status: string;
   amount: string;
   provider: string;
@@ -88,9 +86,9 @@ export interface CreatePaymentLogRequest {
 }
 
 export interface PaymentLogResponse {
-  id: string;
-  orderId: string;
-  transactionId: string;
+  id: bigint;
+  orderId: bigint;
+  transactionId: bigint;
   status: string;
   amount: string;
   provider: string;
@@ -104,15 +102,15 @@ export interface PaymentLogsResponse {
 }
 
 export interface GetPaymentLogsByOrderIdRequest {
-  orderId: string;
+  orderId: bigint;
 }
 
 export interface GetPaymentLogByTransactionIdRequest {
-  transactionId: string;
+  transactionId: bigint;
 }
 
 export interface IsTransactionProcessedRequest {
-  transactionId: string;
+  transactionId: bigint;
 }
 
 export interface IsTransactionProcessedResponse {
@@ -131,11 +129,10 @@ export interface PaymentStatsResponse {
   closed: number;
   totalAmount: string;
 }
-
-export const PAYMENT_PACKAGE_NAME = "payment";
-
 export interface PaymentServiceClient {
-  createPayment(request: CreatePaymentRequest): Observable<CreatePaymentResponse>;
+  createPayment(
+    request: CreatePaymentRequest,
+  ): Observable<CreatePaymentResponse>;
 
   getPayment(request: GetPaymentRequest): Observable<GetPaymentResponse>;
 
@@ -178,7 +175,10 @@ export interface PaymentServiceController {
 
   getPayment(
     request: GetPaymentRequest,
-  ): Promise<GetPaymentResponse> | Observable<GetPaymentResponse> | GetPaymentResponse;
+  ):
+    | Promise<GetPaymentResponse>
+    | Observable<GetPaymentResponse>
+    | GetPaymentResponse;
 
   updatePaymentStatus(
     request: UpdatePaymentStatusRequest,
@@ -196,7 +196,10 @@ export interface PaymentServiceController {
 
   getRefund(
     request: GetRefundRequest,
-  ): Promise<GetRefundResponse> | Observable<GetRefundResponse> | GetRefundResponse;
+  ):
+    | Promise<GetRefundResponse>
+    | Observable<GetRefundResponse>
+    | GetRefundResponse;
 
   createPaymentLog(
     request: CreatePaymentLogRequest,
@@ -237,23 +240,23 @@ export interface PaymentServiceController {
 export function PaymentServiceControllerMethods() {
   return function (constructor: Function) {
     const methodNames = [
-      "createPayment",
-      "getPayment",
-      "updatePaymentStatus",
-      "createRefund",
-      "getRefund",
-      "createPaymentLog",
-      "getPaymentLogsByOrderId",
-      "getPaymentLogByTransactionId",
-      "isTransactionProcessed",
-      "getPaymentStats",
+      'createPayment',
+      'getPayment',
+      'updatePaymentStatus',
+      'createRefund',
+      'getRefund',
+      'createPaymentLog',
+      'getPaymentLogsByOrderId',
+      'getPaymentLogByTransactionId',
+      'isTransactionProcessed',
+      'getPaymentStats',
     ];
     methodNames.forEach((methodName) => {
       const descriptor: any = Object.getOwnPropertyDescriptor(
         constructor.prototype,
         methodName,
       );
-      GrpcMethod("PaymentService", methodName)(
+      GrpcMethod('PaymentService', methodName)(
         constructor.prototype[methodName],
         methodName,
         descriptor,
@@ -265,7 +268,7 @@ export function PaymentServiceControllerMethods() {
         constructor.prototype,
         methodName,
       );
-      GrpcStreamMethod("PaymentService", methodName)(
+      GrpcStreamMethod('PaymentService', methodName)(
         constructor.prototype[methodName],
         methodName,
         descriptor,
@@ -274,4 +277,4 @@ export function PaymentServiceControllerMethods() {
   };
 }
 
-export const PAYMENT_SERVICE_NAME = "PaymentService";
+export const PAYMENT_SERVICE_NAME = 'PaymentService';

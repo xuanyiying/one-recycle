@@ -212,17 +212,17 @@ export const mockUpdateOrderStatus = async (orderId: string, status: string): Pr
   return createMockResponse(true, true, '订单状态更新成功')
 }
 
-// Mock创建京东快递订单
-export const mockCreateJdExpressOrder = async (orderData: any): Promise<MockResponse<any>> => {
-  const jdOrder = {
-    id: `jd_order_${MockDataGenerator.generateId()}`,
-    expressNumber: `JD${Date.now()}`,
+// Mock创建快递订单
+export const mockCreateExpressOrder = async (orderData: any): Promise<MockResponse<any>> => {
+  const expressOrder = {
+    id: `express_order_${MockDataGenerator.generateId()}`,
+    expressNumber: `EXP${Date.now()}`,
     ...orderData,
     status: 'created',
     createdAt: MockDataGenerator.generateTimestamp()
   }
   
-  return createMockResponse(jdOrder, true, '京东快递订单创建成功')
+  return createMockResponse(expressOrder, true, '快递订单创建成功')
 }
 
 // Mock获取用户统计信息
@@ -266,7 +266,7 @@ export const orderMockData = {
   getOrderDetail: mockGetOrderDetail,
   cancelOrder: mockCancelOrder,
   updateOrderStatus: mockUpdateOrderStatus,
-  createJdExpressOrder: mockCreateJdExpressOrder,
+  createExpressOrder: mockCreateExpressOrder,
   getUserStatistics: mockGetUserStatistics,
   confirmOrder: mockConfirmOrder
 }

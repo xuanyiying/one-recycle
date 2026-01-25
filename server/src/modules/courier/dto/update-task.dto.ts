@@ -21,4 +21,3 @@ export class UpdateTaskStatusDto {
   @IsNumber()
   actualDuration?: number;
 }
-

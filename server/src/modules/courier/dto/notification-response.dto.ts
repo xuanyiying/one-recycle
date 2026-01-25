@@ -7,4 +7,3 @@ export class NotificationResponseDto {
   @IsOptional()
   reason?: string;
 }
-

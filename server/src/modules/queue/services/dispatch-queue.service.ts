@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue, JobOptions } from 'bull';
-import { QUEUE_NAMES } from '../queue.module';
+import type { Queue, JobOptions } from 'bull';
+import { QUEUE_NAMES } from '../queue.constants';
 import {
   AutoDispatchEventDto,
   ManualDispatchEventDto,
@@ -19,7 +19,10 @@ export class DispatchQueueService {
   /**
    * 自动派单
    */
-  async autoDispatch(data: AutoDispatchEventDto, delayMs: number = 0): Promise<void> {
+  async autoDispatch(
+    data: AutoDispatchEventDto,
+    delayMs: number = 0,
+  ): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 9,
@@ -31,13 +34,24 @@ export class DispatchQueueService {
         delay: delayMs,
       };
 
-      const job = await this.dispatchQueue.add('auto-dispatch', data, jobOptions);
+      const job = await this.dispatchQueue.add(
+        'auto-dispatch',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Auto dispatch queued: Order ${data.orderId}, Delay: ${delayMs}ms, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue auto dispatch: ${error.message}`, error.stack);
+      if (error instanceof Error) {
+        this.logger.error(
+          `Failed to queue auto dispatch: ${(error as Error).message}`,
+          (error as Error).stack,
+        );
+      } else {
+        this.logger.error(`Failed to queue auto dispatch: ${String(error)}`);
+      }
       throw error;
     }
   }
@@ -56,13 +70,20 @@ export class DispatchQueueService {
         },
       };
 
-      const job = await this.dispatchQueue.add('manual-dispatch', data, jobOptions);
+      const job = await this.dispatchQueue.add(
+        'manual-dispatch',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Manual dispatch queued: Order ${data.orderId}, Courier: ${data.courierId}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue manual dispatch: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue manual dispatch: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -81,13 +102,20 @@ export class DispatchQueueService {
         },
       };
 
-      const job = await this.dispatchQueue.add('reassign-courier', data, jobOptions);
+      const job = await this.dispatchQueue.add(
+        'reassign-courier',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Courier reassignment queued: Order ${data.orderId}, ${data.oldCourierId} -> ${data.newCourierId}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue courier reassignment: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue courier reassignment: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -95,7 +123,10 @@ export class DispatchQueueService {
   /**
    * 批量自动派单
    */
-  async batchAutoDispatch(orderIds: string[], delayMs: number = 0): Promise<void> {
+  async batchAutoDispatch(
+    orderIds: string[],
+    delayMs: number = 0,
+  ): Promise<void> {
     try {
       const jobs = orderIds.map((orderId) =>
         this.autoDispatch({ orderId }, delayMs),
@@ -105,7 +136,10 @@ export class DispatchQueueService {
 
       this.logger.log(`Batch auto dispatch queued: ${orderIds.length} orders`);
     } catch (error) {
-      this.logger.error(`Failed to queue batch auto dispatch: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue batch auto dispatch: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -116,18 +150,23 @@ export class DispatchQueueService {
   async cancelDispatch(orderId: string): Promise<void> {
     try {
       const jobs = await this.dispatchQueue.getJobs(['delayed', 'waiting']);
-      
+
       for (const job of jobs) {
         if (
           (job.name === 'auto-dispatch' || job.name === 'manual-dispatch') &&
           job.data.orderId === orderId
         ) {
           await job.remove();
-          this.logger.log(`Cancelled dispatch task for order: ${orderId}, Job ID: ${job.id}`);
+          this.logger.log(
+            `Cancelled dispatch task for order: ${orderId}, Job ID: ${job.id}`,
+          );
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to cancel dispatch task: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to cancel dispatch task: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -142,22 +181,31 @@ export class DispatchQueueService {
     scheduledTime?: Date;
   }> {
     try {
-      const jobs = await this.dispatchQueue.getJobs(['delayed', 'waiting', 'active']);
-      
+      const jobs = await this.dispatchQueue.getJobs([
+        'delayed',
+        'waiting',
+        'active',
+      ]);
+
       for (const job of jobs) {
         if (job.data.orderId === orderId) {
           return {
             pending: true,
             jobId: job.id.toString(),
             jobType: job.name,
-            scheduledTime: job.processedOn ? new Date(job.processedOn) : undefined,
+            scheduledTime: job.processedOn
+              ? new Date(job.processedOn)
+              : undefined,
           };
         }
       }
-      
+
       return { pending: false };
     } catch (error) {
-      this.logger.error(`Failed to get dispatch status: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get dispatch status: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -193,7 +241,10 @@ export class DispatchQueueService {
         paused: isPaused,
       };
     } catch (error) {
-      this.logger.error(`Failed to get queue stats: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get queue stats: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -206,7 +257,7 @@ export class DispatchQueueService {
       await this.dispatchQueue.pause();
       this.logger.log('Dispatch queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${error.message}`, error.stack);
+      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -219,7 +270,10 @@ export class DispatchQueueService {
       await this.dispatchQueue.resume();
       this.logger.log('Dispatch queue resumed');
     } catch (error) {
-      this.logger.error(`Failed to resume queue: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to resume queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

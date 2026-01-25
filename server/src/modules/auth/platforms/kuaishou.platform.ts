@@ -13,14 +13,15 @@ export class KuaishouPlatform {
   private readonly appSecret: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.appId = this.configService.get<string>('KUAISHOU_APP_ID');
-    this.appSecret = this.configService.get<string>('KUAISHOU_APP_SECRET');
+    this.appId = this.configService.get<string>('KUAISHOU_APP_ID') || '';
+    this.appSecret =
+      this.configService.get<string>('KUAISHOU_APP_SECRET') || '';
   }
 
   async code2Session(code: string): Promise<KuaishouUserInfo> {
     try {
       const url = 'https://open.kuaishou.com/oauth2/mp/code2session';
-      
+
       const response = await axios.post(url, {
         app_id: this.appId,
         app_secret: this.appSecret,

@@ -1,16 +1,24 @@
-import { IsString, IsOptional, IsEnum, IsNumber, IsBoolean, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsBoolean,
+  IsObject,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum CategoryType {
   RECYCLE = 'recycle',
   SALE = 'sale',
-  BOTH = 'both'
+  BOTH = 'both',
 }
 
 export enum PriceType {
   FIXED = 'fixed',
   RANGE = 'range',
-  NEGOTIABLE = 'negotiable'
+  NEGOTIABLE = 'negotiable',
 }
 
 export class PriceInfoDto {

@@ -6,6 +6,7 @@ import { getActiveCategories, getCategoryDetail } from '@/services/category'
 import { Category } from '@/types/category'
 import './index.scss'
 import { Button } from '@nutui/nutui-react-taro'
+import { WEIGHT_OPTIONS, PICKUP_TIME_OPTIONS } from '@/config/constants'
 
 interface WeightOption {
   label: string;
@@ -21,32 +22,17 @@ export default function Pricing() {
   const [selectedWeightIndex, setSelectedWeightIndex] = useState(0);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
   const [doorToDoorService, setDoorToDoorService] = useState(true);
-  const [pickupTime, setPickupTime] = useState('9-12点');
+  const [pickupTime, setPickupTime] = useState(PICKUP_TIME_OPTIONS[0]);
   const [loading, setLoading] = useState(true);
 
   // 根据分类获取重量选项
   const getWeightOptionsByCategory = useCallback((categoryName?: string): WeightOption[] => {
     if (categoryName?.includes('旧衣') || categoryName?.includes('衣物')) {
-      return [
-        { label: '3~5kg', value: '3-5', price: '2.40-4.00' },
-        { label: '5~10kg', value: '5-10', price: '4.74-7.90' },
-        { label: '10~30kg', value: '10-30', price: '30-75' },
-        { label: '30kg以上', value: '30+', price: '75+' }
-      ];
+      return WEIGHT_OPTIONS.CLOTHING;
     } else if (categoryName?.includes('数码') || categoryName?.includes('电子')) {
-      return [
-        { label: '手机', value: 'phone', price: '50-500' },
-        { label: '平板', value: 'tablet', price: '100-800' },
-        { label: '笔记本', value: 'laptop', price: '200-2000' },
-        { label: '其他数码', value: 'other', price: '20-300' }
-      ];
+      return WEIGHT_OPTIONS.DIGITAL;
     } else {
-      return [
-        { label: '1kg以下', value: '0-1', price: '5-15' },
-        { label: '1-5kg', value: '1-5', price: '15-50' },
-        { label: '5-10kg', value: '5-10', price: '50-100' },
-        { label: '10kg以上', value: '10+', price: '100+' }
-      ];
+      return WEIGHT_OPTIONS.DEFAULT;
     }
   }, []);
 
@@ -125,7 +111,7 @@ export default function Pricing() {
       }
     };
 
-    initializeData().then(r => console.log(r));
+    initializeData();
   }, [getWeightOptionsByCategory, calculatePrice]);
 
   // 重量选择变化
@@ -143,9 +129,8 @@ export default function Pricing() {
   }, []);
 
   // 时间选择
-  const timeOptions = ['9-12点', '12-15点', '15-18点', '18-21点'];
   const onTimeChange = useCallback((e: any) => {
-    const selectedTime = timeOptions[e.detail.value];
+    const selectedTime = PICKUP_TIME_OPTIONS[e.detail.value];
     setPickupTime(selectedTime);
   }, []);
 
@@ -296,8 +281,8 @@ export default function Pricing() {
               <Text className='time-label'>上门时间</Text>
               <Picker 
                 mode='selector'
-                range={timeOptions}
-                value={timeOptions.indexOf(pickupTime)}
+                range={PICKUP_TIME_OPTIONS}
+                value={PICKUP_TIME_OPTIONS.indexOf(pickupTime)}
                 onChange={onTimeChange}
               >
                 <View className='time-picker'>

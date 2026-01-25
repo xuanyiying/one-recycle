@@ -1,29 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { NotFoundException, ValidationException } from '@one-recycle/shared';
-import { UserRole } from '@one-recycle/shared';
+import { PrismaService } from '@/prisma/prisma.service';
+import {
+  NotFoundException,
+  ValidationException,
+} from '@/common/exceptions/business.exception';
 import {
   CreateUserDto,
   UpdateUserDto,
   UserResponseDto,
   UserListResponseDto,
-  QueryUserDto
-} from '../dto';
-
-// 添加 BigInt 序列化支持
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
+  QueryUserDto,
+} from '@/modules/user/dto';
+import { UserRole } from '@/common/types/auth.types';
+import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // 检查手机号是否已存在
     if (createUserDto.mobile) {
       const existingUser = await this.prisma.user.findUnique({
-        where: { mobile: createUserDto.mobile }
+        where: { mobile: createUserDto.mobile },
       });
 
       if (existingUser) {
@@ -44,8 +43,8 @@ export class UserService {
         avatarUrl: true,
         status: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     return this.mapToUserResponse(user);
@@ -61,8 +60,8 @@ export class UserService {
         avatarUrl: true,
         status: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     if (!user) {
@@ -73,10 +72,16 @@ export class UserService {
   }
 
   async findMany(query: QueryUserDto): Promise<UserListResponseDto> {
-    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', ...filters } = query;
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      ...filters
+    } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
 
     if (filters.mobile) {
       where.mobile = { contains: filters.mobile };
@@ -100,28 +105,31 @@ export class UserService {
           avatarUrl: true,
           status: true,
           createdAt: true,
-          updatedAt: true
+          updatedAt: true,
         },
         skip,
         take: limit,
-        orderBy: { [sortBy]: sortOrder }
+        orderBy: { [sortBy]: sortOrder },
       }),
-      this.prisma.user.count({ where })
+      this.prisma.user.count({ where }),
     ]);
 
     return {
-      items: users.map((user: any) => this.mapToUserResponse(user)),
+      items: users.map((user) => this.mapToUserResponse(user)),
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
     // 检查用户是否存在
     const existingUser = await this.prisma.user.findUnique({
-      where: { id: BigInt(id) }
+      where: { id: BigInt(id) },
     });
 
     if (!existingUser) {
@@ -129,10 +137,9 @@ export class UserService {
     }
 
     // 如果更新手机号，检查是否已被其他用户使用
-    const updateData = updateUserDto as any;
-    if (updateData.mobile && updateData.mobile !== existingUser.mobile) {
+    if (updateUserDto.mobile && updateUserDto.mobile !== existingUser.mobile) {
       const userWithMobile = await this.prisma.user.findUnique({
-        where: { mobile: updateData.mobile }
+        where: { mobile: updateUserDto.mobile },
       });
 
       if (userWithMobile) {
@@ -150,8 +157,8 @@ export class UserService {
         avatarUrl: true,
         status: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     return this.mapToUserResponse(user);
@@ -159,7 +166,7 @@ export class UserService {
 
   async remove(id: string): Promise<void> {
     const user = await this.prisma.user.findUnique({
-      where: { id: BigInt(id) }
+      where: { id: BigInt(id) },
     });
 
     if (!user) {
@@ -167,7 +174,7 @@ export class UserService {
     }
 
     await this.prisma.user.delete({
-      where: { id: BigInt(id) }
+      where: { id: BigInt(id) },
     });
   }
 
@@ -181,18 +188,21 @@ export class UserService {
         avatarUrl: true,
         status: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+      },
     });
 
     return user ? this.mapToUserResponse(user) : null;
   }
 
-  async findByIdentity(provider: string, openid: string): Promise<UserResponseDto | null> {
+  async findByIdentity(
+    provider: string,
+    openid: string,
+  ): Promise<UserResponseDto | null> {
     const identity = await this.prisma.userIdentity.findFirst({
       where: {
         provider,
-        openid
+        openid,
       },
       include: {
         user: {
@@ -203,10 +213,10 @@ export class UserService {
             avatarUrl: true,
             status: true,
             createdAt: true,
-            updatedAt: true
-          }
-        }
-      }
+            updatedAt: true,
+          },
+        },
+      },
     });
 
     return identity ? this.mapToUserResponse(identity.user) : null;
@@ -214,11 +224,16 @@ export class UserService {
 
   async createOrUpdateIdentity(
     userId: string,
-    identityData: { provider: string; openid: string; unionid?: string; appId: string }
+    identityData: {
+      provider: string;
+      openid: string;
+      unionid?: string;
+      appId: string;
+    },
   ): Promise<void> {
     // 验证用户是否存在
     const user = await this.prisma.user.findUnique({
-      where: { id: BigInt(userId) }
+      where: { id: BigInt(userId) },
     });
 
     if (!user) {
@@ -230,34 +245,36 @@ export class UserService {
       where: {
         provider_openid: {
           provider: identityData.provider,
-          openid: identityData.openid
-        }
+          openid: identityData.openid,
+        },
       },
       update: {
         userId: BigInt(userId),
         appId: identityData.appId,
-        unionid: identityData.unionid
+        unionid: identityData.unionid,
       },
       create: {
         userId: BigInt(userId),
         provider: identityData.provider,
         openid: identityData.openid,
         appId: identityData.appId,
-        unionid: identityData.unionid
-      }
+        unionid: identityData.unionid,
+      },
     });
   }
 
-  private mapToUserResponse(data: any): UserResponseDto {
+  private mapToUserResponse(
+    data: Pick<User, 'id' | 'mobile' | 'nickname' | 'avatarUrl' | 'status' | 'createdAt' | 'updatedAt'>
+  ): UserResponseDto {
     return {
       id: data.id.toString(),
-      mobile: data.mobile,
-      nickname: data.nickname,
-      avatarUrl: data.avatarUrl,
+      mobile: data.mobile || undefined,
+      nickname: data.nickname || undefined,
+      avatarUrl: data.avatarUrl || undefined,
       role: UserRole.USER, // 默认角色，因为数据库中没有role字段
       status: data.status,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt
+      createdAt: data.createdAt.toISOString(),
+      updatedAt: data.updatedAt.toISOString(),
     };
   }
 }

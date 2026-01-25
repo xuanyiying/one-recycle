@@ -1,4 +1,9 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
@@ -6,7 +11,8 @@ import { tap } from 'rxjs/operators';
 export class RpcPerformanceInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const now = Date.now();
-    const handler = context.getClass().name + '.' + (context.getHandler()?.name || 'unknown');
+    const handler =
+      context.getClass().name + '.' + (context.getHandler()?.name || 'unknown');
     return next.handle().pipe(
       tap(() => {
         const cost = Date.now() - now;
@@ -17,4 +23,3 @@ export class RpcPerformanceInterceptor implements NestInterceptor {
     );
   }
 }
-

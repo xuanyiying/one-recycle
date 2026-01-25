@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, JobOptions } from 'bull';
-import { QUEUE_NAMES } from '../queue.module';
+import { QUEUE_NAMES } from '../queue.constants';
 import {
   OrderCreatedEventDto,
   OrderStatusChangedEventDto,
@@ -13,9 +13,7 @@ import {
 export class OrderQueueService {
   private readonly logger = new Logger(OrderQueueService.name);
 
-  constructor(
-    @InjectQueue(QUEUE_NAMES.ORDER) private orderQueue: Queue,
-  ) {}
+  constructor(@InjectQueue(QUEUE_NAMES.ORDER) private orderQueue: Queue) {}
 
   /**
    * 处理订单创建事件
@@ -34,7 +32,9 @@ export class OrderQueueService {
       // 添加订单处理任务
       const job = await this.orderQueue.add('order-created', data, jobOptions);
 
-      this.logger.log(`Order created event queued: ${data.orderId}, Job ID: ${job.id}`);
+      this.logger.log(
+        `Order created event queued: ${data.orderId}, Job ID: ${job.id}`,
+      );
 
       // 添加派单任务（延迟5分钟执行，给用户修改时间）
       const dispatchJob = await this.orderQueue.add(
@@ -51,9 +51,14 @@ export class OrderQueueService {
         },
       );
 
-      this.logger.log(`Dispatch order task scheduled: ${data.orderId}, Job ID: ${dispatchJob.id}`);
+      this.logger.log(
+        `Dispatch order task scheduled: ${data.orderId}, Job ID: ${dispatchJob.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to queue order created event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue order created event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -61,7 +66,9 @@ export class OrderQueueService {
   /**
    * 处理订单状态变更事件
    */
-  async handleOrderStatusChanged(data: OrderStatusChangedEventDto): Promise<void> {
+  async handleOrderStatusChanged(
+    data: OrderStatusChangedEventDto,
+  ): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 7,
@@ -72,13 +79,20 @@ export class OrderQueueService {
         },
       };
 
-      const job = await this.orderQueue.add('order-status-changed', data, jobOptions);
+      const job = await this.orderQueue.add(
+        'order-status-changed',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Order status changed event queued: ${data.orderId} (${data.oldStatus} -> ${data.newStatus}), Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue order status changed event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue order status changed event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -97,14 +111,21 @@ export class OrderQueueService {
         },
       };
 
-      const job = await this.orderQueue.add('order-completed', data, jobOptions);
+      const job = await this.orderQueue.add(
+        'order-completed',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Order completed event queued: ${data.orderId}, ` +
-        `User: ${data.userId}, Amount: ${data.settlementAmount}, Job ID: ${job.id}`
+          `User: ${data.userId}, Amount: ${data.settlementAmount}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue order completed event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue order completed event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -123,11 +144,20 @@ export class OrderQueueService {
         },
       };
 
-      const job = await this.orderQueue.add('order-cancelled', data, jobOptions);
+      const job = await this.orderQueue.add(
+        'order-cancelled',
+        data,
+        jobOptions,
+      );
 
-      this.logger.log(`Order cancelled event queued: ${data.orderId}, Job ID: ${job.id}`);
+      this.logger.log(
+        `Order cancelled event queued: ${data.orderId}, Job ID: ${job.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to queue order cancelled event: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue order cancelled event: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -138,7 +168,7 @@ export class OrderQueueService {
   async cancelDispatchTask(orderId: string): Promise<void> {
     try {
       const jobs = await this.orderQueue.getJobs(['delayed', 'waiting']);
-      
+
       for (const job of jobs) {
         if (job.name === 'dispatch-order' && job.data.orderId === orderId) {
           await job.remove();
@@ -146,7 +176,10 @@ export class OrderQueueService {
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to cancel dispatch task: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to cancel dispatch task: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -182,7 +215,10 @@ export class OrderQueueService {
         paused: isPaused,
       };
     } catch (error) {
-      this.logger.error(`Failed to get queue stats: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get queue stats: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -195,7 +231,10 @@ export class OrderQueueService {
       await this.orderQueue.clean(grace, 'completed');
       this.logger.log(`Cleaned completed jobs older than ${grace}ms`);
     } catch (error) {
-      this.logger.error(`Failed to clean completed jobs: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to clean completed jobs: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -208,7 +247,7 @@ export class OrderQueueService {
       await this.orderQueue.pause();
       this.logger.log('Order queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${error.message}`, error.stack);
+      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -221,7 +260,10 @@ export class OrderQueueService {
       await this.orderQueue.resume();
       this.logger.log('Order queue resumed');
     } catch (error) {
-      this.logger.error(`Failed to resume queue: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to resume queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

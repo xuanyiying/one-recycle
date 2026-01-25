@@ -20,7 +20,11 @@ export const convertServiceToUICategory = (serviceCategory: ServiceCategory): UI
     isActive: serviceCategory.status === 'active',
     createdAt: serviceCategory.createdAt,
     updatedAt: serviceCategory.updatedAt,
-    subCategories: [], // 根据需要填充子分类
+    subCategories: serviceCategory.children ? serviceCategory.children.map(child => ({
+      id: child.id,
+      name: child.name,
+      basePrice: child.priceInfo?.unitPrice || 0
+    })) : [],
     priceFactors: []   // 根据需要填充价格因子
   }
 }

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsObject,
+} from 'class-validator';
 
 export enum NotificationPriority {
   HIGH = 'high',
@@ -77,5 +83,9 @@ export class BatchNotificationEventDto {
   type: 'sms' | 'push' | 'email';
 
   @IsObject({ each: true })
-  notifications: Array<SmsNotificationEventDto | PushNotificationEventDto | EmailNotificationEventDto>;
+  notifications: Array<
+    | SmsNotificationEventDto
+    | PushNotificationEventDto
+    | EmailNotificationEventDto
+  >;
 }

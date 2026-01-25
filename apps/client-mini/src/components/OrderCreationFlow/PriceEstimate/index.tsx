@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { Item, OrderPricing } from '../../../types/order'
 import { calculateOrderPricing, formatPriceRange, formatPrice } from '../../../utils/priceCalculation'
-import { estimateItemPrices } from '../../../services/priceEstimationService'
+import { estimateItemPrices } from '../../../services/pricing'
 import './index.scss'
 
 // ============================================================================

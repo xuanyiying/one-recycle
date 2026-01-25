@@ -7,7 +7,7 @@
 
 import { View, Text, Button } from '@tarojs/components'
 import { DraftOrder } from '../../../types/order'
-import { getDraftOrderTimeRemainingFormatted } from '../../../services/draftOrderService'
+import { getDraftOrderTimeRemainingFormatted } from '../../../services/draftOrder'
 import './index.scss'
 
 // ============================================================================

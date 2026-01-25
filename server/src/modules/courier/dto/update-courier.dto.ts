@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsArray, IsEmail, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsEmail,
+  IsNumber,
+} from 'class-validator';
 
 export class UpdateCourierDto {
   @IsOptional()
@@ -27,4 +33,3 @@ export class UpdateCourierDto {
   @IsNumber()
   rating?: number;
 }
-

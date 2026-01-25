@@ -3,6 +3,7 @@
 .address-select-page {
   min-height: 100vh;
   background: $bg-secondary;
+  @include responsive-page-padding;
 
   .loading-container {
     display: flex;

@@ -1,5 +1,4 @@
-@use '../../styles/variables.scss' as *;
-@use '../../styles/ios.scss' as *;
+@use '../../styles/global.scss' as *;
 
 // ==================== iOS 协议页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -9,13 +8,12 @@
   background-color: var(--ios-system-background);
   display: flex;
   flex-direction: column;
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
+  @include responsive-page-padding;
 }
 
 // iOS 导航头部
 .agreement-header {
-  @extend .ios-navigation-bar;
+  @include ios-navigation-bar;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -30,20 +28,20 @@
     position: relative;
 
     .back-button {
-      @extend .ios-button-text;
+      @include ios-button-text;
       padding: $spacing-8; // 8pt
       margin-left: -$spacing-8; // -8pt 扩大触摸区域
       display: flex;
       align-items: center;
 
       .back-icon {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-blue);
         margin-right: $spacing-4; // 4pt
       }
 
       .back-text {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-blue);
       }
 
@@ -53,7 +51,7 @@
     }
 
     .page-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
       position: absolute;
       left: 50%;
@@ -96,7 +94,7 @@
       }
 
       .nav-text {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-label);
         white-space: nowrap;
         transition: color 0.2s ease;
@@ -119,7 +117,7 @@
   margin-bottom: $spacing-32; // 32pt
 
   .section-title {
-    @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+    @include ios-title2; // 使用 iOS Title 2 样式 (44rpx)
     font-weight: $font-weight-bold;
     margin-bottom: $spacing-16; // 16pt
     padding-bottom: $spacing-8; // 8pt
@@ -129,7 +127,7 @@
 
   .section-content {
     .paragraph {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       line-height: $line-height-relaxed;
       color: var(--ios-label);
       margin-bottom: $spacing-16; // 16pt
@@ -138,14 +136,14 @@
     }
 
     .sub-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
       margin: $spacing-24 0 $spacing-12; // 24pt 0 12pt
       display: block;
     }
 
     .list-item {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       line-height: $line-height-relaxed;
       color: var(--ios-label);
       margin-bottom: $spacing-8; // 8pt
@@ -178,14 +176,14 @@
       border-radius: $border-radius-sm; // 8pt
 
       .note-title {
-        @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+        @include ios-callout; // 使用 iOS Callout 样式 (32rpx)
         font-weight: $font-weight-semibold;
         color: #FF9500; // iOS 橙色
         margin-bottom: $spacing-8; // 8pt
       }
 
       .note-content {
-        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
         line-height: $line-height-relaxed;
         color: var(--ios-label);
       }
@@ -195,13 +193,13 @@
 
 // 联系信息卡片
 .contact-info {
-  @extend .ios-card;
+  @include ios-card;
   margin-top: $spacing-32; // 32pt
   background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
   color: white;
 
   .contact-title {
-    @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+    @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
     font-weight: $font-weight-bold;
     margin-bottom: $spacing-16; // 16pt
     color: white;
@@ -227,7 +225,7 @@
     }
 
     .contact-text {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       color: white;
       line-height: $line-height-normal;
     }
@@ -253,7 +251,7 @@
       }
 
       text {
-        @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+        @include ios-callout; // 使用 iOS Callout 样式 (32rpx)
         color: white;
         font-weight: $font-weight-medium;
       }
@@ -269,12 +267,12 @@
   margin-top: $spacing-32; // 32pt
 
   .updated-text {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: var(--ios-secondary-label);
   }
 
   .updated-date {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: var(--ios-blue);
     font-weight: $font-weight-medium;
     margin-top: $spacing-4; // 4pt

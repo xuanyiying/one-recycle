@@ -1,7 +1,13 @@
-import { Processor, Process, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueActive,
+  OnQueueCompleted,
+  OnQueueFailed,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
-import { QUEUE_NAMES } from '../queue.constants';
+import type { Job } from 'bull';
+import { QUEUE_NAMES } from '@/common';
 import {
   SmsNotificationEventDto,
   PushNotificationEventDto,
@@ -12,15 +18,13 @@ import {
   WithdrawalCreatedEventDto,
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
-import {NotificationService} from "../../notification/notification/services/notification.service";
+import { NotificationService } from '@/modules/notification/services/notification.service';
 
 @Processor(QUEUE_NAMES.NOTIFICATION)
 export class NotificationProcessor {
   private readonly logger = new Logger(NotificationProcessor.name);
 
-  constructor(
-    private readonly notificationService: NotificationService,
-  ) {}
+  constructor(private readonly notificationService: NotificationService) {}
 
   /**
    * 处理短信通知
@@ -29,7 +33,9 @@ export class NotificationProcessor {
   async handleSendSms(job: Job<SmsNotificationEventDto>): Promise<any> {
     const { phone, template, params, priority } = job.data;
 
-    this.logger.log(`Processing SMS notification: ${phone}, Template: ${template}, Priority: ${priority}`);
+    this.logger.log(
+      `Processing SMS notification: ${phone}, Template: ${template}, Priority: ${priority}`,
+    );
 
     try {
       // 1. 验证手机号格式
@@ -46,7 +52,9 @@ export class NotificationProcessor {
       });
 
       // 3. 记录发送日志
-      this.logger.log(`SMS sent successfully to: ${phone}, MessageId: ${result.messageId}`);
+      this.logger.log(
+        `SMS sent successfully to: ${phone}, MessageId: ${result.messageId}`,
+      );
 
       return {
         success: true,
@@ -55,13 +63,16 @@ export class NotificationProcessor {
         sentAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to send SMS to ${phone}: ${error.message}`, error.stack);
-      
+      this.logger.error(
+        `Failed to send SMS to ${phone}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+
       // 如果是速率限制错误，延迟重试
-      if (error.message.includes('rate limit')) {
+      if ((error as Error).message.includes('rate limit')) {
         throw new Error('Rate limit exceeded, will retry later');
       }
-      
+
       throw error;
     }
   }
@@ -73,11 +84,15 @@ export class NotificationProcessor {
   async handleSendPush(job: Job<PushNotificationEventDto>): Promise<any> {
     const { userId, title, content, data, priority } = job.data;
 
-    this.logger.log(`Processing push notification: ${userId}, Title: ${title}, Priority: ${priority}`);
+    this.logger.log(
+      `Processing push notification: ${userId}, Title: ${title}, Priority: ${priority}`,
+    );
 
     try {
       // 1. 调用通知服务API发送推送
-      this.logger.log(`Sending push notification via notification service to user: ${userId}`);
+      this.logger.log(
+        `Sending push notification via notification service to user: ${userId}`,
+      );
       const result = await this.notificationService.sendPush({
         userId,
         title,
@@ -98,7 +113,10 @@ export class NotificationProcessor {
         sentAt: result.sentAt,
       };
     } catch (error) {
-      this.logger.error(`Failed to send push notification to ${userId}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send push notification to ${userId}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -110,7 +128,9 @@ export class NotificationProcessor {
   async handleSendEmail(job: Job<EmailNotificationEventDto>): Promise<any> {
     const { to, subject, content, template, params, priority } = job.data;
 
-    this.logger.log(`Processing email notification: ${to}, Subject: ${subject}, Priority: ${priority}`);
+    this.logger.log(
+      `Processing email notification: ${to}, Subject: ${subject}, Priority: ${priority}`,
+    );
 
     try {
       // 1. 验证邮箱格式
@@ -129,7 +149,9 @@ export class NotificationProcessor {
       });
 
       // 3. 记录发送日志
-      this.logger.log(`Email sent successfully to: ${to}, MessageId: ${result.messageId}`);
+      this.logger.log(
+        `Email sent successfully to: ${to}, MessageId: ${result.messageId}`,
+      );
 
       return {
         success: true,
@@ -138,7 +160,10 @@ export class NotificationProcessor {
         sentAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send email to ${to}: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -147,15 +172,24 @@ export class NotificationProcessor {
    * 处理批量通知
    */
   @Process({ name: 'batch-notification', concurrency: 3 })
-  async handleBatchNotification(job: Job<BatchNotificationEventDto>): Promise<any> {
+  async handleBatchNotification(
+    job: Job<BatchNotificationEventDto>,
+  ): Promise<any> {
     const { type, notifications } = job.data;
 
-    this.logger.log(`Processing batch notification: Type ${type}, Count: ${notifications.length}`);
+    this.logger.log(
+      `Processing batch notification: Type ${type}, Count: ${notifications.length}`,
+    );
 
     try {
       // 调用通知服务的批量发送API
-      this.logger.log(`Sending batch ${type} notifications: ${notifications.length} items`);
-      const result = await this.notificationService.sendBatch(type, notifications);
+      this.logger.log(
+        `Sending batch ${type} notifications: ${notifications.length} items`,
+      );
+      const result = await this.notificationService.sendBatch(
+        type,
+        notifications,
+      );
 
       const successCount = result.successCount || 0;
       const failedCount = result.failedCount || 0;
@@ -173,7 +207,10 @@ export class NotificationProcessor {
         processedAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to process batch notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to process batch notification: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -182,8 +219,11 @@ export class NotificationProcessor {
    * 处理提现申请创建通知
    */
   @Process({ name: 'withdrawal-created', concurrency: 5 })
-  async handleWithdrawalCreated(job: Job<WithdrawalCreatedEventDto>): Promise<any> {
-    const { withdrawalId, userId, amount, provider, outTradeNo, createdAt } = job.data;
+  async handleWithdrawalCreated(
+    job: Job<WithdrawalCreatedEventDto>,
+  ): Promise<any> {
+    const { withdrawalId, userId, amount, provider, outTradeNo, createdAt } =
+      job.data;
 
     this.logger.log(
       `Processing withdrawal created notification: ${withdrawalId}, User: ${userId}, Amount: ${amount}`,
@@ -192,10 +232,12 @@ export class NotificationProcessor {
     try {
       // 1. 获取用户手机号
       const userPhone = await this.notificationService.getUserPhone(userId);
-      
+
       // 2. 发送短信通知用户提现申请已提交
       if (userPhone) {
-        this.logger.log(`Sending SMS notification for withdrawal created: ${withdrawalId}`);
+        this.logger.log(
+          `Sending SMS notification for withdrawal created: ${withdrawalId}`,
+        );
         await this.notificationService.sendSms({
           phone: userPhone,
           template: 'WITHDRAWAL_CREATED',
@@ -209,7 +251,9 @@ export class NotificationProcessor {
       }
 
       // 3. 发送推送通知
-      this.logger.log(`Sending push notification for withdrawal created: ${withdrawalId}`);
+      this.logger.log(
+        `Sending push notification for withdrawal created: ${withdrawalId}`,
+      );
       await this.notificationService.sendPush({
         userId,
         title: '提现申请已提交',
@@ -221,7 +265,9 @@ export class NotificationProcessor {
         },
       });
 
-      this.logger.log(`Withdrawal created notification sent successfully: ${withdrawalId}`);
+      this.logger.log(
+        `Withdrawal created notification sent successfully: ${withdrawalId}`,
+      );
 
       return {
         success: true,
@@ -233,7 +279,7 @@ export class NotificationProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to send withdrawal created notification: ${withdrawalId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -243,9 +289,18 @@ export class NotificationProcessor {
    * 处理提现完成通知
    */
   @Process({ name: 'withdrawal-completed', concurrency: 5 })
-  async handleWithdrawalCompleted(job: Job<WithdrawalCompletedEventDto>): Promise<any> {
-    const { withdrawalId, userId, amount, status, transactionId, rejectedReason, completedAt } =
-      job.data;
+  async handleWithdrawalCompleted(
+    job: Job<WithdrawalCompletedEventDto>,
+  ): Promise<any> {
+    const {
+      withdrawalId,
+      userId,
+      amount,
+      status,
+      transactionId,
+      rejectedReason,
+      completedAt,
+    } = job.data;
 
     this.logger.log(
       `Processing withdrawal completed notification: ${withdrawalId}, Status: ${status}`,
@@ -308,7 +363,9 @@ export class NotificationProcessor {
 
       // 2. 发送短信通知
       if (userPhone) {
-        this.logger.log(`Sending SMS notification for withdrawal ${status}: ${withdrawalId}`);
+        this.logger.log(
+          `Sending SMS notification for withdrawal ${status}: ${withdrawalId}`,
+        );
         await this.notificationService.sendSms({
           phone: userPhone,
           template: smsTemplate,
@@ -317,7 +374,9 @@ export class NotificationProcessor {
       }
 
       // 3. 发送推送通知
-      this.logger.log(`Sending push notification for withdrawal ${status}: ${withdrawalId}`);
+      this.logger.log(
+        `Sending push notification for withdrawal ${status}: ${withdrawalId}`,
+      );
       await this.notificationService.sendPush({
         userId,
         title,
@@ -330,7 +389,9 @@ export class NotificationProcessor {
         },
       });
 
-      this.logger.log(`Withdrawal completed notification sent successfully: ${withdrawalId}`);
+      this.logger.log(
+        `Withdrawal completed notification sent successfully: ${withdrawalId}`,
+      );
 
       return {
         success: true,
@@ -343,7 +404,7 @@ export class NotificationProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to send withdrawal completed notification: ${withdrawalId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -371,8 +432,8 @@ export class NotificationProcessor {
   @OnQueueFailed()
   onFailed(job: Job, error: Error): void {
     this.logger.error(
-      `Job ${job.id} failed with error: ${error.message}`,
-      error.stack,
+      `Job ${job.id} failed with error: ${(error as Error).message}`,
+      (error as Error).stack,
     );
   }
 

@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback } from 'react'
-import { View, Text, Button, ScrollView, Checkbox } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Checkbox, CheckboxGroup } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { Item, Address, TimeSlot, OrderSubmission } from '../../../types/order'
 import { calculateOrderPricing, formatPriceRange, formatPrice } from '../../../utils/priceCalculation'
@@ -84,9 +84,6 @@ export default function OrderConfirmation({
     // Event Handlers
     // ============================================================================
 
-    const handleNotesChange = useCallback((value: string) => {
-        setNotes(value)
-    }, [])
 
     const handleTermsChange = useCallback((checked: boolean) => {
         setAgreedToTerms(checked)
@@ -339,11 +336,13 @@ export default function OrderConfirmation({
                 {/* Terms Agreement Section */}
                 <View className='form-section'>
                     <View className='terms-agreement'>
-                        <Checkbox
-                            className='terms-checkbox'
-                            checked={agreedToTerms}
-                            onChange={(e) => handleTermsChange(e.detail.value)}
-                        />
+                        <CheckboxGroup onChange={(e) => handleTermsChange(e.detail.value.includes('agreed'))}>
+                            <Checkbox
+                                className='terms-checkbox'
+                                value='agreed'
+                                checked={agreedToTerms}
+                            />
+                        </CheckboxGroup>
                         <Text className='terms-text'>
                             我已阅读并同意
                             <Text className='terms-link'>《服务条款》</Text>

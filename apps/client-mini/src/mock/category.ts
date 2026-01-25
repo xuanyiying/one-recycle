@@ -40,7 +40,7 @@ const mockBanners: Banner[] = [
   {
     id: 1,
     title: '旧书回收，绿色生活',
-    imageUrl: 'https://via.placeholder.com/800x300?text=旧书回收',
+    imageUrl: 'https://placehold.co/800x300/png?text=%E6%97%A7%E4%B9%A6%E5%9B%9E%E6%94%B6',
     linkUrl: '/category/1',
     sortOrder: 1,
     isActive: true,
@@ -49,8 +49,8 @@ const mockBanners: Banner[] = [
   },
   {
     id: 2,
-    title: '废纸回收，价格优惠',
-    imageUrl: 'https://via.placeholder.com/800x300?text=废纸回收',
+    title: '旧衣回收，价格优惠',
+    imageUrl: 'https://placehold.co/800x300/png?text=%E5%BA%9F%E7%BA%B8%E5%9B%9E%E6%94%B6',
     linkUrl: '/category/1',
     sortOrder: 2,
     isActive: true,
@@ -60,7 +60,7 @@ const mockBanners: Banner[] = [
   {
     id: 3,
     title: '电子产品回收专场',
-    imageUrl: 'https://via.placeholder.com/800x300?text=电子回收',
+    imageUrl: 'https://placehold.co/800x300/png?text=%E7%94%B5%E5%AD%90%E5%9B%9E%E6%94%B6',
     linkUrl: '/category/4',
     sortOrder: 3,
     isActive: true,
@@ -76,7 +76,7 @@ const mockArticles: Article[] = [
     title: '如何正确分类回收废品',
     content: '废品分类回收是环保的重要环节...',
     summary: '学习正确的废品分类方法，提高回收效率',
-    imageUrl: 'https://via.placeholder.com/400x200?text=分类回收',
+    imageUrl: 'https://placehold.co/400x200/png?text=%E5%88%86%E7%B1%BB%E5%9B%9E%E6%94%B6',
     categoryId: 1,
     author: '环保专家',
     publishedAt: '2024-01-10T10:00:00Z',
@@ -90,7 +90,7 @@ const mockArticles: Article[] = [
     title: '废纸回收的经济价值',
     content: '废纸回收不仅环保，还有很好的经济效益...',
     summary: '了解废纸回收的经济价值和市场前景',
-    imageUrl: 'https://via.placeholder.com/400x200?text=废纸价值',
+    imageUrl: 'https://placehold.co/400x200/png?text=%E5%BA%9F%E7%BA%B8%E4%BB%B7%E5%80%BC',
     categoryId: 1,
     author: '回收专家',
     publishedAt: '2024-01-12T14:30:00Z',
@@ -104,7 +104,7 @@ const mockArticles: Article[] = [
     title: '电子产品回收注意事项',
     content: '电子产品回收需要注意数据安全和环保处理...',
     summary: '电子产品回收的安全须知和环保要求',
-    imageUrl: 'https://via.placeholder.com/400x200?text=电子回收',
+    imageUrl: 'https://placehold.co/400x200/png?text=%E7%94%B5%E5%AD%90%E5%9B%9E%E6%94%B6',
     categoryId: 4,
     author: '技术专家',
     publishedAt: '2024-01-14T09:15:00Z',
@@ -119,119 +119,6 @@ const mockArticles: Article[] = [
 const mockCategories: Category[] = [
   {
     id: 1,
-    name: '废纸类',
-    description: '各种废纸制品回收',
-    type: CategoryType.RECYCLE,
-    status: CategoryStatus.ACTIVE,
-    priceInfo: {
-      type: PriceType.FIXED,
-      unitPrice: 1.2,
-      unit: 'kg',
-      currency: 'CNY'
-    },
-    level: 0,
-    path: '1',
-    sortOrder: 1,
-    isVisible: true,
-    isFeatured: true,
-    seo: {
-      slug: 'paper'
-    },
-    icon: {
-      url: 'https://via.placeholder.com/64x64?text=纸',
-      filename: 'paper.png',
-      uploadedAt: '2024-01-01T00:00:00Z'
-    },
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    name: '塑料类',
-    description: '各种塑料制品回收',
-    type: CategoryType.RECYCLE,
-    status: CategoryStatus.ACTIVE,
-    priceInfo: {
-      type: PriceType.FIXED,
-      unitPrice: 2.5,
-      unit: 'kg',
-      currency: 'CNY'
-    },
-    level: 0,
-    path: '2',
-    sortOrder: 2,
-    isVisible: true,
-    isFeatured: true,
-    seo: {
-      slug: 'plastic'
-    },
-    icon: {
-      url: 'https://via.placeholder.com/64x64?text=塑',
-      filename: 'plastic.png',
-      uploadedAt: '2024-01-01T00:00:00Z'
-    },
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 3,
-    name: '金属类',
-    description: '各种金属制品回收',
-    type: CategoryType.RECYCLE,
-    status: CategoryStatus.ACTIVE,
-    priceInfo: {
-      type: PriceType.FIXED,
-      unitPrice: 15.0,
-      unit: 'kg',
-      currency: 'CNY'
-    },
-    level: 0,
-    path: '3',
-    sortOrder: 3,
-    isVisible: true,
-    isFeatured: false,
-    seo: {
-      slug: 'metal'
-    },
-    icon: {
-      url: 'https://via.placeholder.com/64x64?text=金',
-      filename: 'metal.png',
-      uploadedAt: '2024-01-01T00:00:00Z'
-    },
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 4,
-    name: '电子产品',
-    description: '废旧电子设备回收',
-    type: CategoryType.RECYCLE,
-    status: CategoryStatus.ACTIVE,
-    priceInfo: {
-      type: PriceType.RANGE,
-      minPrice: 10,
-      maxPrice: 1000,
-      unit: '台',
-      currency: 'CNY'
-    },
-    level: 0,
-    path: '4',
-    sortOrder: 4,
-    isVisible: true,
-    isFeatured: true,
-    seo: {
-      slug: 'electronics'
-    },
-    icon: {
-      url: 'https://via.placeholder.com/64x64?text=电',
-      filename: 'electronics.png',
-      uploadedAt: '2024-01-01T00:00:00Z'
-    },
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 5,
     name: '衣服',
     description: '各种衣服回收',
     type: CategoryType.RECYCLE,
@@ -251,8 +138,36 @@ const mockCategories: Category[] = [
       slug: 'clothing'
     },
     icon: {
-      url: 'https://via.placeholder.com/64x64?text=衣',
+      url: 'https://placehold.co/64x64/png?text=%E8%A1%A3',
       filename: 'clothing.png',
+      uploadedAt: '2024-01-01T00:00:00Z'
+    },
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 2,
+    name: '旧书',
+    description: '各类旧书回收',
+    type: CategoryType.RECYCLE,
+    status: CategoryStatus.ACTIVE,
+    priceInfo: {
+      type: PriceType.FIXED,
+      unitPrice: 0.8,
+      unit: 'kg',
+      currency: 'CNY'
+    },
+    level: 0,
+    path: '6',
+    sortOrder: 6,
+    isVisible: true,
+    isFeatured: true,
+    seo: {
+      slug: 'books'
+    },
+    icon: {
+      url: 'https://placehold.co/64x64/png?text=%E4%B9%A6',
+      filename: 'books.png',
       uploadedAt: '2024-01-01T00:00:00Z'
     },
     createdAt: '2024-01-01T00:00:00Z',

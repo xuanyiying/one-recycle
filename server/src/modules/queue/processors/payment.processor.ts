@@ -1,7 +1,13 @@
-import { Processor, Process, OnQueueActive, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueActive,
+  OnQueueCompleted,
+  OnQueueFailed,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
-import { QUEUE_NAMES } from '../queue.module';
+import { QUEUE_NAMES } from '../queue.constants';
 import {
   PaymentCallbackEventDto,
   PaymentSuccessEventDto,
@@ -11,11 +17,10 @@ import {
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
 import { NotificationQueueService } from '../services/notification-queue.service';
-import { OrderService } from '../../order/services/order.service';
-import { PaymentService } from '../../payment/payment.service';
-import { PaymentStatus, PaymentProvider } from '@prisma/client';
+import { OrderServiceClient } from '../clients/order-service.client';
+import { PaymentServiceClient } from '../clients/payment-service.client';
 
-
+type PaymentCallbackStatus = 'success' | 'failed';
 
 @Processor(QUEUE_NAMES.PAYMENT)
 export class PaymentProcessor {
@@ -23,16 +28,19 @@ export class PaymentProcessor {
 
   constructor(
     private readonly notificationQueueService: NotificationQueueService,
-    private readonly orderService: OrderService,
-    private readonly paymentService: PaymentService,
-  ) { }
+    private readonly orderServiceClient: OrderServiceClient,
+    private readonly paymentServiceClient: PaymentServiceClient,
+  ) {}
 
   /**
    * 处理支付回调
    */
   @Process({ name: 'process-payment-callback', concurrency: 5 })
   async handlePaymentCallback(job: Job<PaymentCallbackEventDto>): Promise<any> {
-    const { transactionId, orderId, amount, status, provider, rawData } = job.data;
+    const { transactionId, orderId, amount, status, provider, rawData } =
+      job.data;
+
+    const normalizedStatus = status as PaymentCallbackStatus;
 
     this.logger.log(
       `Processing payment callback: Transaction ${transactionId}, Order ${orderId}, Status: ${status}`,
@@ -40,9 +48,12 @@ export class PaymentProcessor {
 
     try {
       // 1. 幂等性检查 - 使用数据库
-      const isProcessed = await this.paymentService.isTransactionProcessed(transactionId);
+      const isProcessed =
+        await this.paymentServiceClient.isTransactionProcessed(transactionId);
       if (isProcessed) {
-        this.logger.warn(`Transaction ${transactionId} already processed, skipping`);
+        this.logger.warn(
+          `Transaction ${transactionId} already processed, skipping`,
+        );
         return {
           success: true,
           duplicate: true,
@@ -52,29 +63,35 @@ export class PaymentProcessor {
 
       // 2. 获取订单信息
       this.logger.log(`Fetching order details for: ${orderId}`);
-      const order = await this.orderService.findById(Number(orderId));
+      const order = await this.orderServiceClient.getOrder(orderId);
 
-      // 3. 验证金额是否匹配订单金额
-      if (!order) {
-        throw new Error(`Order not found: ${orderId}`);
-      }
+      // 3. 验证金额
       this.logger.log(`Verifying payment amount for order: ${orderId}`);
-      if (Math.abs(amount - (order.settlementAmount ?? order.payAmount ?? 0)) > 0.01) {
+      if (Math.abs(amount - order.totalAmount) > 0.01) {
         throw new Error(
-          `Amount mismatch for order ${orderId}: expected ${order.settlementAmount ?? order.payAmount ?? 0}, got ${amount}`,
+          `Amount mismatch for order ${orderId}: expected ${order.totalAmount}, got ${amount}`,
+        );
+      }
+
+      if (normalizedStatus !== 'success' && normalizedStatus !== 'failed') {
+        throw new Error(
+          `Unsupported payment status: ${status} for transaction ${transactionId}`,
         );
       }
 
       // 4. 根据支付状态触发后续流程
-      if (status === 'success') {
+      if (normalizedStatus === 'success') {
         this.logger.log(`Payment successful for order: ${orderId}`);
 
         // 更新订单状态为已支付
-        await this.orderService.update(Number(orderId), { status: 'PAID' as any } as any);
+        await this.orderServiceClient.updateOrderStatus(orderId, 'PAID', {
+          transactionId,
+          paidAt: new Date().toISOString(),
+        });
 
         // 发送支付成功通知
         await this.notificationQueueService.sendOrderStatusNotification(
-          String(order.userId),
+          order.userId,
           orderId,
           '支付成功',
         );
@@ -82,23 +99,30 @@ export class PaymentProcessor {
         this.logger.warn(`Payment failed for order: ${orderId}`);
 
         // 更新订单状态为支付失败
-        await this.orderService.update(Number(orderId), { status: 'PAYMENT_FAILED' as any } as any);
+        await this.orderServiceClient.updateOrderStatus(
+          orderId,
+          'PAYMENT_FAILED',
+          {
+            transactionId,
+            failReason: rawData?.message || 'Payment failed',
+          },
+        );
 
         // 发送支付失败通知
         await this.notificationQueueService.sendOrderStatusNotification(
-          String(order.userId),
+          order.userId,
           orderId,
           '支付失败',
         );
       }
 
       // 5. 记录支付日志到数据库
-      await this.paymentService.createPaymentLog({
+      await this.paymentServiceClient.createPaymentLog({
         orderId,
         transactionId,
-        status: status === 'success' ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
+        status: normalizedStatus,
         amount,
-        provider: provider as PaymentProvider,
+        provider: provider || 'unknown',
       });
 
       this.logger.log(
@@ -115,7 +139,7 @@ export class PaymentProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to process payment callback: ${transactionId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -128,32 +152,39 @@ export class PaymentProcessor {
   async handlePaymentSuccess(job: Job<PaymentSuccessEventDto>): Promise<any> {
     const { orderId, transactionId, amount, provider } = job.data;
 
-    this.logger.log(`Processing payment success: Order ${orderId}, Transaction ${transactionId}`);
+    this.logger.log(
+      `Processing payment success: Order ${orderId}, Transaction ${transactionId}`,
+    );
 
     try {
       // 1. 获取订单信息
-      const order = await this.orderService.findById(Number(orderId));
+      const order = await this.orderServiceClient.getOrder(orderId);
 
       // 2. 更新订单状态
       this.logger.log(`Updating order status to PAID: ${orderId}`);
-      await this.orderService.update(Number(orderId), { status: 'PAID' as any } as any);
+      await this.orderServiceClient.updateOrderStatus(orderId, 'PAID', {
+        transactionId,
+        paidAt: new Date().toISOString(),
+      });
 
       // 3. 记录支付成功日志
       this.logger.log(`Recording payment success: ${transactionId}`);
-      await this.paymentService.createPaymentLog({
+      await this.paymentServiceClient.createPaymentLog({
         orderId,
         transactionId,
-        status: PaymentStatus.SUCCESS,
+        status: 'success',
         amount,
-        provider: provider as PaymentProvider,
+        provider: provider || 'unknown',
       });
 
       // 4. 触发后续业务流程（如发货、积分奖励等）
-      this.logger.log(`Triggering post-payment workflows for order: ${orderId}`);
+      this.logger.log(
+        `Triggering post-payment workflows for order: ${orderId}`,
+      );
 
       // 5. 发送支付成功通知
       await this.notificationQueueService.sendOrderStatusNotification(
-        String(order.userId),
+        order.userId,
         orderId,
         '支付成功',
       );
@@ -165,7 +196,10 @@ export class PaymentProcessor {
         processedAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to process payment success: ${orderId}`, error.stack);
+      this.logger.error(
+        `Failed to process payment success: ${orderId}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -183,21 +217,27 @@ export class PaymentProcessor {
 
     try {
       // 1. 获取订单信息
-      const order = await this.orderService.findById(Number(orderId));
+      const order = await this.orderServiceClient.getOrder(orderId);
 
       // 2. 更新订单状态
       this.logger.log(`Updating order status to PAYMENT_FAILED: ${orderId}`);
-      await this.orderService.update(Number(orderId), { status: 'PAYMENT_FAILED' as any } as any);
+      await this.orderServiceClient.updateOrderStatus(
+        orderId,
+        'PAYMENT_FAILED',
+        {
+          transactionId,
+          failReason: reason,
+        },
+      );
 
       // 3. 记录支付失败日志
       this.logger.log(`Recording payment failure: ${transactionId}`);
-      await this.paymentService.createPaymentLog({
+      await this.paymentServiceClient.createPaymentLog({
         orderId,
         transactionId,
-        status: PaymentStatus.FAILED,
+        status: 'failed',
         amount: 0,
-        provider: provider as PaymentProvider,
-        rawData: { reason },
+        provider: provider || 'unknown',
       });
 
       // 4. 释放库存（如果已锁定）
@@ -206,7 +246,7 @@ export class PaymentProcessor {
 
       // 5. 发送支付失败通知
       await this.notificationQueueService.sendOrderStatusNotification(
-        String(order.userId),
+        order.userId,
         orderId,
         '支付失败',
       );
@@ -219,7 +259,10 @@ export class PaymentProcessor {
         processedAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to process payment failure: ${orderId}`, error.stack);
+      this.logger.error(
+        `Failed to process payment failure: ${orderId}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -237,31 +280,39 @@ export class PaymentProcessor {
 
     try {
       // 1. 获取订单信息
-      const order = await this.orderService.findById(Number(orderId));
+      const order = await this.orderServiceClient.getOrder(orderId);
 
       // 2. 调用支付服务发起退款
       this.logger.log(`Initiating refund for transaction: ${transactionId}`);
-      const payment = await this.paymentService.findByTransactionId(transactionId);
-      const refund = await this.paymentService.createRefund(String(payment.id), amount, reason);
+      const refundResult = await this.paymentServiceClient.initiateRefund({
+        orderId,
+        transactionId,
+        amount,
+        reason: reason || 'Refund requested',
+        requestedBy: job.data.requestedBy || 'system',
+      });
 
       // 3. 更新订单退款状态
       this.logger.log(`Updating refund status for order: ${orderId}`);
-      await this.orderService.update(Number(orderId), { status: 'REFUNDED' as any } as any);
+      await this.orderServiceClient.updateOrderStatus(orderId, 'REFUNDED', {
+        refundId: refundResult.refundId,
+        refundAmount: amount,
+        refundReason: reason,
+      });
 
       // 4. 记录退款日志
-      this.logger.log(`Recording refund: ${refund.id}`);
-      await this.paymentService.createPaymentLog({
+      this.logger.log(`Recording refund: ${refundResult.refundId}`);
+      await this.paymentServiceClient.createPaymentLog({
         orderId,
-        transactionId: String(refund.id),
-        status: PaymentStatus.REFUNDED,
+        transactionId: refundResult.refundId,
+        status: 'refunded',
         amount,
-        provider: PaymentProvider.BALANCE,
-        rawData: { reason },
+        provider: 'refund',
       });
 
       // 5. 发送退款成功通知
       await this.notificationQueueService.sendOrderStatusNotification(
-        String(order.userId),
+        order.userId,
         orderId,
         '退款成功',
       );
@@ -270,12 +321,12 @@ export class PaymentProcessor {
         success: true,
         orderId,
         transactionId,
-        refundId: String(refund.id),
+        refundId: refundResult.refundId,
         amount,
         processedAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to process refund: ${orderId}`, error.stack);
+      this.logger.error(`Failed to process refund: ${orderId}`, (error as Error).stack);
       throw error;
     }
   }
@@ -285,7 +336,9 @@ export class PaymentProcessor {
    * 转发到notification队列发送通知
    */
   @Process({ name: 'withdrawal-created', concurrency: 5 })
-  async handleWithdrawalCreated(job: Job<WithdrawalCreatedEventDto>): Promise<any> {
+  async handleWithdrawalCreated(
+    job: Job<WithdrawalCreatedEventDto>,
+  ): Promise<any> {
     const { withdrawalId, userId, amount } = job.data;
 
     this.logger.log(
@@ -294,9 +347,13 @@ export class PaymentProcessor {
 
     try {
       // 转发到notification队列发送通知
-      await this.notificationQueueService.sendWithdrawalCreatedNotification(job.data);
+      await this.notificationQueueService.sendWithdrawalCreatedNotification(
+        job.data,
+      );
 
-      this.logger.log(`Withdrawal created event processed successfully: ${withdrawalId}`);
+      this.logger.log(
+        `Withdrawal created event processed successfully: ${withdrawalId}`,
+      );
 
       return {
         success: true,
@@ -308,7 +365,7 @@ export class PaymentProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to process withdrawal created event: ${withdrawalId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -319,9 +376,10 @@ export class PaymentProcessor {
    * 转发到notification队列发送通知
    */
   @Process({ name: 'withdrawal-completed', concurrency: 5 })
-  async handleWithdrawalCompleted(job: Job<WithdrawalCompletedEventDto>): Promise<any> {
-    const { withdrawalId, userId, status } =
-      job.data;
+  async handleWithdrawalCompleted(
+    job: Job<WithdrawalCompletedEventDto>,
+  ): Promise<any> {
+    const { withdrawalId, userId, status } = job.data;
 
     this.logger.log(
       `Processing withdrawal completed event: ${withdrawalId}, Status: ${status}`,
@@ -329,9 +387,13 @@ export class PaymentProcessor {
 
     try {
       // 转发到notification队列发送通知
-      await this.notificationQueueService.sendWithdrawalCompletedNotification(job.data);
+      await this.notificationQueueService.sendWithdrawalCompletedNotification(
+        job.data,
+      );
 
-      this.logger.log(`Withdrawal completed event processed successfully: ${withdrawalId}`);
+      this.logger.log(
+        `Withdrawal completed event processed successfully: ${withdrawalId}`,
+      );
 
       return {
         success: true,
@@ -343,7 +405,7 @@ export class PaymentProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to process withdrawal completed event: ${withdrawalId}`,
-        error.stack,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -371,9 +433,8 @@ export class PaymentProcessor {
   @OnQueueFailed()
   onFailed(job: Job, error: Error): void {
     this.logger.error(
-      `Job ${job.id} failed with error: ${error.message}`,
-      error.stack,
+      `Job ${job.id} failed with error: ${(error as Error).message}`,
+      (error as Error).stack,
     );
   }
-
 }

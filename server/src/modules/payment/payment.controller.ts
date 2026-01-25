@@ -6,7 +6,7 @@ import { PaymentStatus, RefundStatus } from '@prisma/client';
 
 @Controller('payments')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @Post()
   create(@Body() createPaymentDto: CreatePaymentDto) {
@@ -16,35 +16,42 @@ export class PaymentController {
   @Put(':transactionId/status')
   updateStatus(
     @Param('transactionId') transactionId: string,
-    @Body('status') status: PaymentStatus
+    @Body('status') status: PaymentStatus,
   ) {
-    return this.paymentService.updatePaymentStatus(transactionId, status);
+    return this.paymentService.updatePaymentStatus(
+      BigInt(transactionId),
+      status,
+    );
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.paymentService.findOne(id);
+    return this.paymentService.findOne(BigInt(id));
   }
 
   @Get('order/:orderId')
   findByOrderId(@Param('orderId') orderId: string) {
-    return this.paymentService.findByOrderId(orderId);
+    return this.paymentService.findByOrderId(BigInt(orderId));
   }
 
   @Post(':paymentId/refunds')
   createRefund(
     @Param('paymentId') paymentId: string,
     @Body('refundAmount') refundAmount: number,
-    @Body('reason') reason?: string
+    @Body('reason') reason?: string,
   ) {
-    return this.paymentService.createRefund(paymentId, refundAmount, reason);
+    return this.paymentService.createRefund(
+      BigInt(paymentId),
+      refundAmount,
+      reason,
+    );
   }
 
   @Put('refunds/:refundId/status')
   updateRefundStatus(
     @Param('refundId') refundId: string,
-    @Body('status') status: RefundStatus
+    @Body('status') status: RefundStatus,
   ) {
-    return this.paymentService.updateRefundStatus(refundId, status);
+    return this.paymentService.updateRefundStatus(BigInt(refundId), status);
   }
 }

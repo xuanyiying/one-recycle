@@ -183,34 +183,53 @@ class PerformanceMonitor {
      * Get performance summary
      */
     getSummary() {
-        return {
-            pageLoads: {
-                count: this.pageLoadMetrics.length,
-                average: this.getAveragePageLoadTime(),
-                slowest: Math.max(...this.pageLoadMetrics.map(m => m.loadTime), 0)
-            },
-            apiRequests: {
-                count: this.apiMetrics.length,
-                average: this.getAverageAPIResponseTime(),
-                slowest: Math.max(...this.apiMetrics.map(m => m.duration), 0),
-                errors: this.apiMetrics.filter(m => m.status >= 400).length
-            },
-            interactions: {
-                count: this.interactionMetrics.length
-            }
-        };
+        try {
+            return {
+                pageLoads: {
+                    count: this.pageLoadMetrics.length,
+                    average: this.getAveragePageLoadTime(),
+                    slowest: Math.max(...this.pageLoadMetrics.map(m => m.loadTime), 0)
+                },
+                apiRequests: {
+                    count: this.apiMetrics.length,
+                    average: this.getAverageAPIResponseTime(),
+                    slowest: Math.max(...this.apiMetrics.map(m => m.duration), 0),
+                    errors: this.apiMetrics.filter(m => m.status >= 400).length
+                },
+                interactions: {
+                    count: this.interactionMetrics.length
+                }
+            };
+        } catch (error) {
+            console.error('[PerformanceMonitor] Failed to get summary:', error);
+            return {
+                pageLoads: { count: 0, average: 0, slowest: 0 },
+                apiRequests: { count: 0, average: 0, slowest: 0, errors: 0 },
+                interactions: { count: 0 }
+            };
+        }
     }
 
     /**
      * Export metrics for analysis
      */
     exportMetrics() {
-        return {
-            pageLoads: this.pageLoadMetrics,
-            apiRequests: this.apiMetrics,
-            interactions: this.interactionMetrics,
-            summary: this.getSummary()
-        };
+        try {
+            return {
+                pageLoads: this.pageLoadMetrics,
+                apiRequests: this.apiMetrics,
+                interactions: this.interactionMetrics,
+                summary: this.getSummary()
+            };
+        } catch (error) {
+            console.error('[PerformanceMonitor] Failed to export metrics:', error);
+            return {
+                pageLoads: [],
+                apiRequests: [],
+                interactions: [],
+                summary: this.getSummary()
+            };
+        }
     }
 
     /**
@@ -227,21 +246,14 @@ class PerformanceMonitor {
      * Send metrics to analytics service
      */
     async sendToAnalytics() {
-        const summary = this.getSummary();
+        try {
+            const summary = this.getSummary();
 
-        // In production, send to your analytics service
-        console.log('Performance Summary:', summary);
-
-        // Example: Send to backend
-        // try {
-        //   await Taro.request({
-        //     url: 'https://your-api.com/analytics/performance',
-        //     method: 'POST',
-        //     data: summary
-        //   });
-        // } catch (error) {
-        //   console.error('Failed to send analytics:', error);
-        // }
+            // In production, send to your analytics service
+            console.log('Performance Summary:', summary);
+        } catch (error) {
+            console.error('[PerformanceMonitor] Failed to send to analytics:', error);
+        }
     }
 }
 

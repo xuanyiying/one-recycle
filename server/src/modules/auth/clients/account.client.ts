@@ -50,10 +50,12 @@ export class AccountClient {
     openid: string,
   ): Promise<UserResponse | null> {
     try {
-      const response = await this.client.get(`/users/identity/${provider}/${openid}`);
+      const response = await this.client.get(
+        `/users/identity/${provider}/${openid}`,
+      );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 404) {
+      if ((error as any).response?.status === 404) {
         return null;
       }
       throw new BadRequestException('查询用户失败');
@@ -65,7 +67,7 @@ export class AccountClient {
       const response = await this.client.get(`/users/mobile/${mobile}`);
       return response.data;
     } catch (error) {
-      if (error.response?.status === 404) {
+      if ((error as any).response?.status === 404) {
         return null;
       }
       throw new BadRequestException('查询用户失败');
@@ -77,7 +79,7 @@ export class AccountClient {
       const response = await this.client.get(`/users/${userId}`);
       return response.data;
     } catch (error) {
-      if (error.response?.status === 404) {
+      if ((error as any).response?.status === 404) {
         return null;
       }
       throw new BadRequestException('查询用户失败');

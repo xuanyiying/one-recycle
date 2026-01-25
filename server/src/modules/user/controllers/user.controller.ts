@@ -8,7 +8,7 @@ import {
   Param,
   Query,
   UseInterceptors,
-  UseFilters
+  UseFilters,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import {
@@ -16,16 +16,15 @@ import {
   UpdateUserDto,
   QueryUserDto,
   UserResponseDto,
-  UserListResponseDto
+  UserListResponseDto,
 } from '../dto';
-import { ResponseInterceptor } from '../../../common/interceptors/response.interceptor';
-import { GlobalExceptionFilter } from '../../../common/filters/global-exception.filter';
+import { GlobalExceptionFilter, ResponseInterceptor } from '@/common';
 
 @Controller('users')
 @UseInterceptors(ResponseInterceptor)
 @UseFilters(GlobalExceptionFilter)
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -45,7 +44,7 @@ export class UserController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto
+    @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
   }
@@ -56,14 +55,16 @@ export class UserController {
   }
 
   @Get('mobile/:mobile')
-  async findByMobile(@Param('mobile') mobile: string): Promise<UserResponseDto | null> {
+  async findByMobile(
+    @Param('mobile') mobile: string,
+  ): Promise<UserResponseDto | null> {
     return this.userService.findByMobile(mobile);
   }
 
   @Get('identity/:provider/:openid')
   async findByIdentity(
     @Param('provider') provider: string,
-    @Param('openid') openid: string
+    @Param('openid') openid: string,
   ): Promise<UserResponseDto | null> {
     return this.userService.findByIdentity(provider, openid);
   }
@@ -71,7 +72,13 @@ export class UserController {
   @Post(':id/identities')
   async createIdentity(
     @Param('id') userId: string,
-    @Body() identityData: { provider: string; openid: string; unionid?: string; appId: string }
+    @Body()
+    identityData: {
+      provider: string;
+      openid: string;
+      unionid?: string;
+      appId: string;
+    },
   ): Promise<void> {
     return this.userService.createOrUpdateIdentity(userId, identityData);
   }

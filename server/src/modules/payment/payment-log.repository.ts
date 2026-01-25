@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { PaymentStatus, PaymentProvider } from '@prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+import {
+  PaymentProvider,
+  PaymentStatus,
+} from '@prisma/client';
 
 export interface PaymentLogData {
   transactionId: string;
-  orderId?: string;
+  orderId: string;
   amount: number;
   status: PaymentStatus;
   provider: PaymentProvider;
@@ -14,13 +17,13 @@ export interface PaymentLogData {
 
 @Injectable()
 export class PaymentLogRepository {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async createPaymentLog(data: PaymentLogData) {
     return this.prisma.paymentLog.create({
       data: {
-        transactionId: data.transactionId,
-        orderId: data.orderId ? BigInt(data.orderId) : undefined,
+        transactionId: BigInt(data.transactionId),
+        orderId: BigInt(data.orderId),
         amount: data.amount,
         status: data.status,
         provider: data.provider,
@@ -39,13 +42,13 @@ export class PaymentLogRepository {
 
   async findByTransactionId(transactionId: string) {
     return this.prisma.paymentLog.findFirst({
-      where: { transactionId },
+      where: { transactionId: BigInt(transactionId) },
     });
   }
 
   async isTransactionProcessed(transactionId: string): Promise<boolean> {
     const log = await this.prisma.paymentLog.findFirst({
-      where: { transactionId },
+      where: { transactionId: BigInt(transactionId) },
     });
     return !!log;
   }
@@ -64,13 +67,19 @@ export class PaymentLogRepository {
     });
 
     const totalTransactions = logs.length;
-    const successfulTransactions = logs.filter(log => log.status === PaymentStatus.SUCCESS).length;
-    const failedTransactions = logs.filter(log => log.status === PaymentStatus.FAILED).length;
-    const pendingTransactions = logs.filter(log => log.status === PaymentStatus.PENDING).length;
+    const successfulTransactions = logs.filter(
+      (log) => log.status === PaymentStatus.SUCCESS,
+    ).length;
+    const failedTransactions = logs.filter(
+      (log) => log.status === PaymentStatus.FAILED,
+    ).length;
+    const pendingTransactions = logs.filter(
+      (log) => log.status === PaymentStatus.PENDING,
+    ).length;
 
     const totalAmount = logs.reduce((sum, log) => sum + log.amount, 0);
     const successfulAmount = logs
-      .filter(log => log.status === PaymentStatus.SUCCESS)
+      .filter((log) => log.status === PaymentStatus.SUCCESS)
       .reduce((sum, log) => sum + log.amount, 0);
 
     return {

@@ -1,5 +1,4 @@
-@use '../../../styles/variables.scss' as *;
-@use '../../../styles/ios.scss' as *;
+@use '../../../styles/global.scss' as *;
 
 // ==================== iOS 个人资料编辑页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -7,14 +6,7 @@
 .profile-edit-page {
   min-height: 100vh;
   background-color: var(--ios-system-grouped-background);
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
-
-  // 确保在所有设备上的安全区域适配
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  @include responsive-page-padding;
 
   // ==================== 加载状态 ====================
   .loading-container {
@@ -31,7 +23,7 @@
     }
 
     .loading-text {
-      @extend .ios-footnote;
+      @include ios-footnote;
       color: var(--ios-secondary-label);
       text-align: center;
     }
@@ -39,12 +31,12 @@
 
   // ==================== 编辑区块 ====================
   .edit-section {
-    @extend .ios-card;
+    @include ios-card;
     margin: 0 $spacing-16 $spacing-20; // 0 16pt 20pt
     padding: $spacing-20; // 20pt
 
     .section-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
       color: var(--ios-label);
       display: block;
@@ -52,7 +44,7 @@
     }
 
     .section-desc {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
       display: block;
       margin-top: $spacing-12; // 12pt
@@ -104,7 +96,7 @@
       }
 
       .avatar-tip {
-        @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
         color: white;
         font-weight: $font-weight-medium;
       }
@@ -122,7 +114,7 @@
     align-items: center;
 
     .input-field {
-      @extend .ios-input;
+      @include ios-input;
       flex: 1;
       height: 88rpx; // 44pt iOS 标准输入框高度
       padding: 0 $spacing-16; // 0 16pt
@@ -148,7 +140,7 @@
     .input-counter {
       position: absolute;
       right: $spacing-16; // 16pt
-      @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+      @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
       color: var(--ios-tertiary-label);
       pointer-events: none;
     }
@@ -156,7 +148,7 @@
 
   // ==================== 错误提示 ====================
   .error-text {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: #FF3B30; // iOS 红色
     display: block;
     margin-top: $spacing-8; // 8pt
@@ -174,13 +166,13 @@
     border: 2rpx solid var(--ios-separator); // 1pt
 
     .phone-number {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       color: var(--ios-label);
       font-weight: $font-weight-medium;
     }
 
     .phone-status {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: #34C759; // iOS 绿色
       padding: $spacing-4 $spacing-8; // 4pt 8pt
       background-color: rgba(52, 199, 89, 0.15);
@@ -191,7 +183,7 @@
 
   // ==================== 绑定手机号按钮 ====================
   .bind-phone-btn {
-    @extend .ios-button-secondary;
+    @include ios-button-secondary;
     width: 100%;
     height: 88rpx; // 44pt iOS 标准按钮高度
     background-color: rgba(0, 122, 255, 0.15);
@@ -213,7 +205,7 @@
     margin: $spacing-32 $spacing-16 $spacing-20; // 32pt 16pt 20pt
 
     .save-btn {
-      @extend .ios-button-primary;
+      @include ios-button-primary;
       width: 100%;
       height: 96rpx; // 48pt iOS 标准按钮高度
       background-color: var(--ios-blue);
@@ -280,7 +272,7 @@
       background-color: var(--ios-secondary-system-grouped-background);
 
       .modal-title {
-        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
         font-weight: $font-weight-semibold;
         color: var(--ios-label);
       }
@@ -319,7 +311,7 @@
         }
 
         .form-label {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: var(--ios-label);
           font-weight: $font-weight-medium;
           display: block;
@@ -327,7 +319,7 @@
         }
 
         .form-input {
-          @extend .ios-input;
+          @include ios-input;
           width: 100%;
           height: 88rpx; // 44pt
           padding: 0 $spacing-16; // 0 16pt
@@ -360,7 +352,7 @@
           }
 
           .send-sms-btn {
-            @extend .ios-button-secondary;
+            @include ios-button-secondary;
             flex-shrink: 0;
             height: 88rpx; // 44pt
             padding: 0 $spacing-16; // 0 16pt
@@ -395,7 +387,7 @@
       background-color: var(--ios-secondary-system-grouped-background);
 
       .confirm-btn {
-        @extend .ios-button-primary;
+        @include ios-button-primary;
         width: 100%;
         height: 88rpx; // 44pt
         background-color: var(--ios-blue);

@@ -12,4 +12,3 @@ import { CourierModule } from '../courier/courier.module';
   exports: [DispatchService],
 })
 export class DispatchModule {}
-

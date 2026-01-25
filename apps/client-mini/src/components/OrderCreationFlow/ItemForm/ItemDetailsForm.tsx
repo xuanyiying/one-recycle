@@ -17,6 +17,7 @@ interface ItemDetailsFormProps {
     formData: {
         categoryId: string
         categoryName: string
+        categorySlug?: string
         brandModel: string
         condition: ItemCondition
         weight: number
@@ -115,7 +116,7 @@ export default function ItemDetailsForm({
     }
 
     // 获取当前分类的字段配置
-    const config = CATEGORY_FIELD_CONFIG[formData.categoryId] || CATEGORY_FIELD_CONFIG['other']
+    const config = CATEGORY_FIELD_CONFIG[formData.categorySlug || ''] || CATEGORY_FIELD_CONFIG['other']
 
     return (
         <View className='item-details-form'>

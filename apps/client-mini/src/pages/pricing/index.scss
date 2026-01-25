@@ -1,5 +1,4 @@
-@use '../../styles/variables.scss' as *;
-@use '../../styles/ios.scss' as *;
+@use '../../styles/global.scss' as *;
 
 // ==================== iOS 定价页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -7,8 +6,7 @@
 .pricing-page {
   min-height: 100vh;
   background-color: var(--ios-system-grouped-background);
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
+  @include responsive-page-padding;
   position: relative;
 
   // 不同分类的主题色
@@ -48,7 +46,7 @@
     min-height: 80vh;
 
     .loading-text {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       color: var(--ios-secondary-label);
     }
   }
@@ -63,7 +61,7 @@
 
   // iOS 导航栏
   .header {
-    @extend .ios-navigation-bar;
+    @include ios-navigation-bar;
     background: transparent;
     border-bottom: none;
     padding: $spacing-16 $page-padding; // 16pt
@@ -79,20 +77,20 @@
       align-items: center;
 
       .back-button {
-        @extend .ios-button-text;
+        @include ios-button-text;
         padding: $spacing-8; // 8pt
         margin-left: -$spacing-8; // -8pt 扩大触摸区域
         display: flex;
         align-items: center;
 
         .back-icon {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: white;
           margin-right: $spacing-4; // 4pt
         }
 
         .back-text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: white;
         }
 
@@ -102,7 +100,7 @@
       }
 
       .header-title {
-        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
         font-weight: $font-weight-semibold;
         color: white;
       }
@@ -112,7 +110,7 @@
         gap: $spacing-12; // 12pt
 
         .header-icon {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: white;
           padding: $spacing-8; // 8pt
           margin: -$spacing-8; // -8pt 扩大触摸区域
@@ -134,7 +132,7 @@
     text-align: center;
 
     .category-title {
-      @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+      @include ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
       font-weight: $font-weight-bold;
       color: white;
       margin-bottom: $spacing-8; // 8pt
@@ -142,14 +140,14 @@
     }
 
     .category-subtitle {
-      @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+      @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
       color: rgba(255, 255, 255, 0.9);
       margin-bottom: $spacing-8; // 8pt
       display: block;
     }
 
     .category-desc {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       color: rgba(255, 255, 255, 0.8);
       line-height: $line-height-relaxed;
       display: block;
@@ -167,7 +165,7 @@
 
 // iOS 信息卡片
 .recycle-info-card {
-  @extend .ios-card;
+  @include ios-card;
   margin-bottom: $spacing-20; // 20pt
   animation: ios-fade-in-up 0.3s ease-out;
 
@@ -175,14 +173,14 @@
     margin-bottom: $spacing-16; // 16pt
 
     .info-title {
-      @extend .ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+      @include ios-title2; // 使用 iOS Title 2 样式 (44rpx)
       font-weight: $font-weight-bold;
       margin-bottom: $spacing-4; // 4pt
       display: block;
     }
 
     .info-subtitle {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
       line-height: $line-height-relaxed;
       display: block;
@@ -192,7 +190,7 @@
   // 重量选择区域
   .weight-section {
     .section-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
       margin-bottom: $spacing-12; // 12pt
       display: block;
@@ -214,19 +212,19 @@
       }
 
       .picker-text {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         flex: 1;
       }
 
       .picker-price {
-        @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+        @include ios-callout; // 使用 iOS Callout 样式 (32rpx)
         color: var(--ios-blue);
         font-weight: $font-weight-semibold;
         margin-right: $spacing-8; // 8pt
       }
 
       .picker-arrow {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-tertiary-label);
       }
     }
@@ -235,7 +233,7 @@
 
 // 服务选项卡片
 .service-options {
-  @extend .ios-card;
+  @include ios-card;
   margin-bottom: $spacing-20; // 20pt
   padding: 0;
   animation: ios-fade-in-up 0.3s ease-out 0.1s both;
@@ -245,7 +243,7 @@
     border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
     .service-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
     }
   }
@@ -285,7 +283,7 @@
       }
 
       .service-text {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
       }
     }
 
@@ -322,7 +320,7 @@
 
 // 上门回收信息
 .pickup-info {
-  @extend .ios-card;
+  @include ios-card;
   margin-bottom: $spacing-20; // 20pt
   animation: ios-fade-in-up 0.3s ease-out 0.2s both;
 
@@ -330,14 +328,14 @@
     margin-bottom: $spacing-16; // 16pt
 
     .pickup-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       font-weight: $font-weight-semibold;
       margin-bottom: $spacing-4; // 4pt
       display: block;
     }
 
     .pickup-subtitle {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
       line-height: $line-height-relaxed;
       display: block;
@@ -357,7 +355,7 @@
       }
 
       .item-label {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         display: flex;
         align-items: center;
 
@@ -370,7 +368,7 @@
       }
 
       .item-value {
-        @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
         color: var(--ios-secondary-label);
         font-family: $font-family-number; // 使用数字字体
       }
@@ -409,7 +407,7 @@
 
 // 估价结果卡片
 .estimate-result {
-  @extend .ios-card;
+  @include ios-card;
   margin-bottom: $spacing-20; // 20pt
   text-align: center;
   background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
@@ -423,14 +421,14 @@
   }
 
   .result-label {
-    @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+    @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
     color: rgba(255, 255, 255, 0.9);
     margin-bottom: $spacing-8; // 8pt
     display: block;
   }
 
   .result-price {
-    @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+    @include ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
     font-weight: $font-weight-bold;
     color: white;
     margin-bottom: $spacing-8; // 8pt
@@ -438,7 +436,7 @@
   }
 
   .result-desc {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: rgba(255, 255, 255, 0.8);
     line-height: $line-height-relaxed;
   }
@@ -463,19 +461,19 @@
     margin-bottom: $spacing-12; // 12pt
 
     .summary-label {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       color: var(--ios-secondary-label);
     }
 
     .summary-price {
-      @extend .ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+      @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
       font-weight: $font-weight-bold;
       color: var(--ios-blue);
     }
   }
 
   .estimate-button {
-    @extend .ios-button-primary;
+    @include ios-button-primary;
     width: 100%;
     background-color: var(--ios-blue);
 
@@ -516,26 +514,26 @@
       border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
 
       .cancel-btn {
-        @extend .ios-button-text;
+        @include ios-button-text;
         padding: $spacing-8; // 8pt
         
         text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: var(--ios-blue);
         }
       }
 
       .picker-title {
-        @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
         font-weight: $font-weight-semibold;
       }
 
       .confirm-btn {
-        @extend .ios-button-text;
+        @include ios-button-text;
         padding: $spacing-8; // 8pt
         
         text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
           color: var(--ios-blue);
         }
       }
@@ -567,11 +565,11 @@
         }
 
         .option-text {
-          @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
         }
 
         .option-price {
-          @extend .ios-callout; // 使用 iOS Callout 样式 (32rpx)
+          @include ios-callout; // 使用 iOS Callout 样式 (32rpx)
           color: var(--ios-blue);
           font-weight: $font-weight-semibold;
         }

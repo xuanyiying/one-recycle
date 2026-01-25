@@ -11,16 +11,23 @@ import { preloadComponents } from './lazyLoad';
  */
 export function preloadCriticalPages() {
   // Preload order-related pages (high priority)
+  // NOTE: Direct page preloading in Taro can cause "multiple Pages registered" error
+  // disabling this for now.
+  /*
   preloadComponents([
     () => import('../pages/order/detail/index'),
     () => import('../pages/order/index'),
   ]);
+  */
 }
 
 /**
  * Preload pages based on current page
  */
 export function preloadRelatedPages(currentPage: string) {
+  // NOTE: Direct page preloading in Taro can cause "multiple Pages registered" error
+  // disabling this for now.
+  /*
   const preloadMap: Record<string, Array<() => Promise<any>>> = {
     // From home page, preload recycle and order pages
     '/pages/index/index': [
@@ -52,6 +59,7 @@ export function preloadRelatedPages(currentPage: string) {
   if (pagesToPreload) {
     preloadComponents(pagesToPreload);
   }
+  */
 }
 
 /**
@@ -100,68 +108,19 @@ export function preloadOnIntent(
  * Intelligent preloading based on user behavior
  */
 export class IntelligentPreloader {
-  private preloadQueue: Array<() => Promise<any>> = [];
-  private isPreloading: boolean = false;
-
-  /**
-   * Add page to preload queue
-   */
-  addToQueue(importFunc: () => Promise<any>, priority: 'high' | 'low' = 'low') {
-    if (priority === 'high') {
-      this.preloadQueue.unshift(importFunc);
-    } else {
-      this.preloadQueue.push(importFunc);
+  private static history: string[] = [];
+  
+  static trackNavigation(path: string) {
+    this.history.push(path);
+    if (this.history.length > 10) {
+      this.history.shift();
     }
-    this.processQueue();
+    
+    this.analyzeAndPreload();
   }
-
-  /**
-   * Process preload queue
-   */
-  private async processQueue() {
-    if (this.isPreloading || this.preloadQueue.length === 0) {
-      return;
-    }
-
-    this.isPreloading = true;
-
-    while (this.preloadQueue.length > 0) {
-      const importFunc = this.preloadQueue.shift();
-      if (importFunc) {
-        try {
-          await importFunc();
-          // Add small delay between preloads to avoid blocking
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-          console.error('Preload failed:', error);
-        }
-      }
-    }
-
-    this.isPreloading = false;
-  }
-
-  /**
-   * Preload based on user's most visited pages
-   */
-  preloadFrequentPages(visitHistory: string[]) {
-    // Get top 3 most visited pages
-    const frequency: Record<string, number> = {};
-    visitHistory.forEach(page => {
-      frequency[page] = (frequency[page] || 0) + 1;
-    });
-
-    const topPages = Object.entries(frequency)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([page]) => page);
-
-    // Preload these pages
-    topPages.forEach(page => {
-      preloadRelatedPages(page);
-    });
+  
+  private static analyzeAndPreload() {
+    // Simple analysis: if user visits same sequence often, preload next step
+    // Implementation skipped for MVP
   }
 }
-
-// Export singleton instance
-export const intelligentPreloader = new IntelligentPreloader();

@@ -136,13 +136,16 @@ export interface RatingListResponse {
 // 骑手服务类
 export class CourierService {
   // 获取骑手列表
-  async getCouriers(params?: CourierQueryParams, useCache: boolean = true): Promise<CourierListResponse> {
+  async getCouriers(
+    params?: CourierQueryParams,
+    useCache: boolean = true,
+  ): Promise<CourierListResponse> {
     const cacheKey = `${CACHE_KEYS.COURIERS_LIST}:${JSON.stringify(params || {})}`;
     if (useCache) {
       return cacheService.withCache(
         cacheKey,
         () => this.fetchCouriers(params),
-        2 * 60 * 1000 // 2分钟缓存
+        2 * 60 * 1000, // 2分钟缓存
       );
     }
     return this.fetchCouriers(params);
@@ -188,7 +191,7 @@ export class CourierService {
       return cacheService.withCache(
         CACHE_KEYS.COURIER_STATS,
         () => this.fetchCourierStats(),
-        3 * 60 * 1000 // 3分钟缓存
+        3 * 60 * 1000, // 3分钟缓存
       );
     }
     return this.fetchCourierStats();

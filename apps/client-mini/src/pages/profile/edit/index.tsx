@@ -3,9 +3,10 @@ import { View, Text, Button, Image, Input } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import { IconFont } from '@nutui/icons-react-taro'
 import { useAppContext } from '../../../store'
-import { getUserInfo, updateUserInfo } from '../../../services/user'
+import { getUserById, updateUserInfo } from '../../../services/user'
 import { useResponsive } from '../../../hooks/useResponsive'
 import AuthGuard from '../../../components/AuthGuard'
+import { REGEX, LIMITS } from '../../../config/constants'
 import './index.scss'
 
 // TypeScript interfaces for component state
@@ -104,7 +105,7 @@ export default function ProfileEdit(): JSX.Element {
         return
       }
 
-      const result = await getUserInfo(state.user.id)
+      const result = await getUserById(state.user.id)
       if (result.success && result.data) {
         const userData = {
           nickname: result.data.nickname || '',
@@ -255,18 +256,17 @@ export default function ProfileEdit(): JSX.Element {
       setValidationErrors(prev => ({ ...prev, nickname: '昵称不能为空' }))
       return false
     }
-    if (trimmedNickname.length < 2) {
-      setValidationErrors(prev => ({ ...prev, nickname: '昵称至少需要2个字符' }))
+    if (trimmedNickname.length < LIMITS.NICKNAME_MIN) {
+      setValidationErrors(prev => ({ ...prev, nickname: `昵称至少需要${LIMITS.NICKNAME_MIN}个字符` }))
       return false
     }
-    if (trimmedNickname.length > 20) {
-      setValidationErrors(prev => ({ ...prev, nickname: '昵称最多20个字符' }))
+    if (trimmedNickname.length > LIMITS.NICKNAME_MAX) {
+      setValidationErrors(prev => ({ ...prev, nickname: `昵称最多${LIMITS.NICKNAME_MAX}个字符` }))
       return false
     }
 
     // 检查特殊字符
-    const invalidChars = /[<>'"&]/
-    if (invalidChars.test(trimmedNickname)) {
+    if (REGEX.NICKNAME_INVALID_CHARS.test(trimmedNickname)) {
       setValidationErrors(prev => ({ ...prev, nickname: '昵称包含无效字符' }))
       return false
     }
@@ -298,8 +298,7 @@ export default function ProfileEdit(): JSX.Element {
     }
 
     // 中国大陆手机号正则表达式
-    const phoneRegex = /^1[3-9]\d{9}$/
-    if (!phoneRegex.test(trimmedPhone)) {
+    if (!REGEX.PHONE_CN.test(trimmedPhone)) {
       setValidationErrors(prev => ({ ...prev, phone: '请输入正确的手机号格式' }))
       return false
     }
@@ -310,7 +309,7 @@ export default function ProfileEdit(): JSX.Element {
 
   // 手机号输入处理
   const handlePhoneInput = useCallback((e: any) => {
-    const value = e.detail.value.replace(/\D/g, '') // 只保留数字
+    const value = e.detail.value.replace(REGEX.NUMERIC_ONLY, '') // 只保留数字
     setPhoneInput(value)
 
     if (value) {
@@ -329,12 +328,12 @@ export default function ProfileEdit(): JSX.Element {
       return false
     }
 
-    if (trimmedCode.length !== 6) {
-      setValidationErrors(prev => ({ ...prev, smsCode: '请输入6位验证码' }))
+    if (trimmedCode.length !== LIMITS.SMS_CODE_LENGTH) {
+      setValidationErrors(prev => ({ ...prev, smsCode: `请输入${LIMITS.SMS_CODE_LENGTH}位验证码` }))
       return false
     }
 
-    if (!/^\d{6}$/.test(trimmedCode)) {
+    if (!REGEX.SMS_CODE.test(trimmedCode)) {
       setValidationErrors(prev => ({ ...prev, smsCode: '验证码只能包含数字' }))
       return false
     }
@@ -388,7 +387,7 @@ export default function ProfileEdit(): JSX.Element {
 
   // 验证码输入处理
   const handleSmsCodeChange = useCallback((e: any) => {
-    const value = e.detail.value.replace(/\D/g, '') // 只保留数字
+    const value = e.detail.value.replace(REGEX.NUMERIC_ONLY, '') // 只保留数字
     setSmsState(prev => ({ ...prev, code: value }))
 
     if (value) {
@@ -570,7 +569,7 @@ export default function ProfileEdit(): JSX.Element {
           <View className='avatar-edit' onClick={handleChooseAvatar}>
             <Image
               className='avatar-preview'
-              src={formData.avatarUrl || 'https://via.placeholder.com/400x400/E5E5EA/8E8E93?text=头像'}
+              src={formData.avatarUrl || 'https://placehold.co/400x400/E5E5EA/8E8E93/png?text=%E5%A4%B4%E5%83%8F'}
               mode='aspectFill'
             />
             <View className='avatar-overlay'>
@@ -589,12 +588,12 @@ export default function ProfileEdit(): JSX.Element {
               className='input-field'
               type='text'
               value={formData.nickname}
-              placeholder='请输入昵称（2-20个字符）'
-              maxlength={20}
+              placeholder={`请输入昵称（${LIMITS.NICKNAME_MIN}-${LIMITS.NICKNAME_MAX}个字符）`}
+              maxlength={LIMITS.NICKNAME_MAX}
               onInput={handleNicknameChange}
               confirmType='done'
             />
-            <Text className='input-counter'>{formData.nickname.length}/20</Text>
+            <Text className='input-counter'>{formData.nickname.length}/{LIMITS.NICKNAME_MAX}</Text>
           </View>
           {validationErrors.nickname && (
             <Text className='error-text'>{validationErrors.nickname}</Text>

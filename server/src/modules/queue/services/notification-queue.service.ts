@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue, JobOptions } from 'bull';
-import { QUEUE_NAMES } from '../queue.module';
+import type { Queue, JobOptions } from 'bull';
+import { QUEUE_NAMES } from '../queue.constants';
 import {
   SmsNotificationEventDto,
   PushNotificationEventDto,
@@ -20,7 +20,7 @@ export class NotificationQueueService {
 
   constructor(
     @InjectQueue(QUEUE_NAMES.NOTIFICATION) private notificationQueue: Queue,
-  ) { }
+  ) {}
 
   /**
    * 发送短信通知
@@ -38,11 +38,20 @@ export class NotificationQueueService {
         },
       };
 
-      const job = await this.notificationQueue.add('send-sms', data, jobOptions);
+      const job = await this.notificationQueue.add(
+        'send-sms',
+        data,
+        jobOptions,
+      );
 
-      this.logger.log(`SMS notification queued: ${data.phone}, Job ID: ${job.id}`);
+      this.logger.log(
+        `SMS notification queued: ${data.phone}, Job ID: ${job.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to queue SMS notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue SMS notification: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -63,11 +72,20 @@ export class NotificationQueueService {
         },
       };
 
-      const job = await this.notificationQueue.add('send-push', data, jobOptions);
+      const job = await this.notificationQueue.add(
+        'send-push',
+        data,
+        jobOptions,
+      );
 
-      this.logger.log(`Push notification queued: ${data.userId}, Job ID: ${job.id}`);
+      this.logger.log(
+        `Push notification queued: ${data.userId}, Job ID: ${job.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to queue push notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue push notification: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -88,11 +106,20 @@ export class NotificationQueueService {
         },
       };
 
-      const job = await this.notificationQueue.add('send-email', data, jobOptions);
+      const job = await this.notificationQueue.add(
+        'send-email',
+        data,
+        jobOptions,
+      );
 
-      this.logger.log(`Email notification queued: ${data.to}, Job ID: ${job.id}`);
+      this.logger.log(
+        `Email notification queued: ${data.to}, Job ID: ${job.id}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to queue email notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue email notification: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -111,13 +138,20 @@ export class NotificationQueueService {
         },
       };
 
-      const job = await this.notificationQueue.add('batch-notification', data, jobOptions);
+      const job = await this.notificationQueue.add(
+        'batch-notification',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Batch notification queued: ${data.type}, Count: ${data.notifications.length}, Job ID: ${job.id}`,
       );
     } catch (error) {
-      this.logger.error(`Failed to queue batch notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to queue batch notification: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -153,7 +187,10 @@ export class NotificationQueueService {
 
       this.logger.log(`Order status notification sent for order: ${orderId}`);
     } catch (error) {
-      this.logger.error(`Failed to send order status notification: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send order status notification: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -204,7 +241,10 @@ export class NotificationQueueService {
         paused: isPaused,
       };
     } catch (error) {
-      this.logger.error(`Failed to get queue stats: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to get queue stats: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -217,7 +257,7 @@ export class NotificationQueueService {
       await this.notificationQueue.pause();
       this.logger.log('Notification queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${error.message}`, error.stack);
+      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
       throw error;
     }
   }
@@ -230,7 +270,10 @@ export class NotificationQueueService {
       await this.notificationQueue.resume();
       this.logger.log('Notification queue resumed');
     } catch (error) {
-      this.logger.error(`Failed to resume queue: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to resume queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -238,7 +281,9 @@ export class NotificationQueueService {
   /**
    * 发送提现创建通知
    */
-  async sendWithdrawalCreatedNotification(data: WithdrawalCreatedEventDto): Promise<void> {
+  async sendWithdrawalCreatedNotification(
+    data: WithdrawalCreatedEventDto,
+  ): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 9,
@@ -249,15 +294,19 @@ export class NotificationQueueService {
         },
       };
 
-      const job = await this.notificationQueue.add('withdrawal-created', data, jobOptions);
+      const job = await this.notificationQueue.add(
+        'withdrawal-created',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Withdrawal created notification queued: ${data.withdrawalId}, User: ${data.userId}, Job ID: ${job.id}`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to queue withdrawal created notification: ${error.message}`,
-        error.stack,
+        `Failed to queue withdrawal created notification: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw error;
     }
@@ -266,7 +315,9 @@ export class NotificationQueueService {
   /**
    * 发送提现完成通知
    */
-  async sendWithdrawalCompletedNotification(data: WithdrawalCompletedEventDto): Promise<void> {
+  async sendWithdrawalCompletedNotification(
+    data: WithdrawalCompletedEventDto,
+  ): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 10,
@@ -277,15 +328,19 @@ export class NotificationQueueService {
         },
       };
 
-      const job = await this.notificationQueue.add('withdrawal-completed', data, jobOptions);
+      const job = await this.notificationQueue.add(
+        'withdrawal-completed',
+        data,
+        jobOptions,
+      );
 
       this.logger.log(
         `Withdrawal completed notification queued: ${data.withdrawalId}, Status: ${data.status}, Job ID: ${job.id}`,
       );
     } catch (error) {
       this.logger.error(
-        `Failed to queue withdrawal completed notification: ${error.message}`,
-        error.stack,
+        `Failed to queue withdrawal completed notification: ${(error as Error).message}`,
+        (error as Error).stack,
       );
       throw error;
     }

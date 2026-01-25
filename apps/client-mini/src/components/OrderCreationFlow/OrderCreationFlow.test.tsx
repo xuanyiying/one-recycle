@@ -7,7 +7,9 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Item, Address, TimeSlot, ItemCondition, AddressLabel, DraftOrder } from '../../types/order'
-import { saveDraftOrder, getDraftOrder, deleteDraftOrder, isValidDraftOrder } from '../../services/draftOrderService'
+import { saveDraftOrder, getDraftOrder, deleteDraftOrder, isValidDraftOrder } from '../../services/draftOrder'
+
+type OrderStep = 1 | 2 | 3 | 4 | 'success'
 
 // ============================================================================
 // Mock Data
@@ -31,7 +33,10 @@ const mockAddress: Address = {
     id: 'addr_1',
     recipientName: 'John Doe',
     phoneNumber: '13800138000',
-    region: 'Beijing',
+    province: 'Beijing',
+    city: 'Beijing',
+    district: 'Chaoyang',
+    region: 'Beijing Beijing Chaoyang',
     detailedAddress: '123 Main St',
     label: AddressLabel.HOME,
     isDefault: true,
@@ -184,13 +189,18 @@ describe('OrderCreationFlow Integration', () => {
     })
 
     describe('Form State Management', () => {
-        it('should manage form state across steps', () => {
+        it('should manage form state across steps (string address ID)', () => {
             // Simulate form state progression
-            let formState = {
-                currentStep: 1 as const,
+            let formState: {
+                currentStep: OrderStep
+                items: Item[]
+                selectedAddressId?: string | number
+                selectedTimeSlotId?: string
+            } = {
+                currentStep: 1,
                 items: [] as Item[],
-                selectedAddressId: undefined as string | undefined,
-                selectedTimeSlotId: undefined as string | undefined,
+                selectedAddressId: undefined,
+                selectedTimeSlotId: undefined,
             }
 
             // Step 1: Add items
@@ -221,18 +231,69 @@ describe('OrderCreationFlow Integration', () => {
             expect(formState.selectedTimeSlotId).toBe('slot_1')
         })
 
+        it('should manage form state across steps (numeric address ID)', () => {
+            const numericAddressId = 12345
+            let formState: {
+                currentStep: OrderStep
+                items: Item[]
+                selectedAddressId?: string | number
+                selectedTimeSlotId?: string
+            } = {
+                currentStep: 1,
+                items: [] as Item[],
+                selectedAddressId: undefined,
+                selectedTimeSlotId: undefined,
+            }
+
+            // Step 1: Add items
+            formState = {
+                ...formState,
+                currentStep: 2,
+                items: [mockItem],
+            }
+
+            // Step 2: Select address with numeric ID
+            formState = {
+                ...formState,
+                currentStep: 3,
+                selectedAddressId: numericAddressId,
+            }
+            expect(formState.currentStep).toBe(3)
+            expect(formState.selectedAddressId).toBe(12345)
+            expect(typeof formState.selectedAddressId).toBe('number')
+
+            // Step 3: Select time slot
+            formState = {
+                ...formState,
+                currentStep: 4,
+                selectedTimeSlotId: mockTimeSlot.id,
+            }
+            expect(formState.currentStep).toBe(4)
+            expect(formState.selectedAddressId).toBe(12345)
+        })
+
         it('should preserve form state when navigating back', () => {
-            const formState = {
-                currentStep: 4 as const,
+            const formState: {
+                currentStep: OrderStep
+                items: Item[]
+                selectedAddressId?: string | number
+                selectedTimeSlotId?: string
+            } = {
+                currentStep: 4,
                 items: [mockItem],
                 selectedAddressId: mockAddress.id,
                 selectedTimeSlotId: mockTimeSlot.id,
             }
 
             // Navigate back to step 3
-            const previousState = {
+            const previousState: {
+                currentStep: OrderStep
+                items: Item[]
+                selectedAddressId?: string | number
+                selectedTimeSlotId?: string
+            } = {
                 ...formState,
-                currentStep: 3 as const,
+                currentStep: 3,
             }
 
             expect(previousState.items).toEqual(formState.items)
@@ -298,8 +359,7 @@ describe('OrderCreationFlow Integration', () => {
 
     describe('Draft Persistence', () => {
         it('should save draft order to local storage', () => {
-            // saveDraftOrder takes individual parameters, not a draft object
-            const draft = saveDraftOrder(
+            saveDraftOrder(
                 [mockItem],
                 mockAddress.id,
                 mockTimeSlot.id,
@@ -329,18 +389,12 @@ describe('OrderCreationFlow Integration', () => {
         })
 
         it('should delete draft order', () => {
-            const draft: DraftOrder = {
-                id: 'draft_1',
-                items: [mockItem],
-                selectedAddressId: mockAddress.id,
-                selectedTimeSlotId: mockTimeSlot.id,
-                notes: 'Test notes',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            }
-
-            saveDraftOrder(draft)
+            saveDraftOrder(
+                [mockItem],
+                mockAddress.id,
+                mockTimeSlot.id,
+                'Test notes'
+            )
             expect(getDraftOrder()).toBeDefined()
 
             deleteDraftOrder()
@@ -348,18 +402,12 @@ describe('OrderCreationFlow Integration', () => {
         })
 
         it('should clear draft after successful submission', () => {
-            const draft: DraftOrder = {
-                id: 'draft_1',
-                items: [mockItem],
-                selectedAddressId: mockAddress.id,
-                selectedTimeSlotId: mockTimeSlot.id,
-                notes: 'Test notes',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            }
-
-            saveDraftOrder(draft)
+            saveDraftOrder(
+                [mockItem],
+                mockAddress.id,
+                mockTimeSlot.id,
+                'Test notes'
+            )
             expect(getDraftOrder()).toBeDefined()
 
             // Simulate successful submission - clear draft
@@ -405,11 +453,16 @@ describe('OrderCreationFlow Integration', () => {
         })
 
         it('should prevent navigation without required data', () => {
-            const formState = {
-                currentStep: 1 as const,
+            const formState: {
+                currentStep: OrderStep
+                items: Item[]
+                selectedAddressId?: string | number
+                selectedTimeSlotId?: string
+            } = {
+                currentStep: 1,
                 items: [] as Item[],
-                selectedAddressId: undefined as string | undefined,
-                selectedTimeSlotId: undefined as string | undefined,
+                selectedAddressId: undefined,
+                selectedTimeSlotId: undefined,
             }
 
             // Cannot proceed from step 1 without items

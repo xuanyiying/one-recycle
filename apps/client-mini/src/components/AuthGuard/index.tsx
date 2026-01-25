@@ -37,6 +37,15 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     initAuth()
   }, [checkAuthStatus])
 
+  // 处理自动跳转
+  useEffect(() => {
+    if (!isChecking && !loading && !isLoggedIn && !fallback && !showLoginPrompt) {
+        Taro.redirectTo({
+            url: redirectTo
+        })
+    }
+  }, [isChecking, loading, isLoggedIn, fallback, showLoginPrompt, redirectTo])
+
   // 正在检查认证状态
   if (isChecking || loading) {
     return (
@@ -76,14 +85,9 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
       )
     }
 
-    // 直接跳转到登录页
-    Taro.redirectTo({
-      url: redirectTo
-    })
-
     return null
   }
-
+  
   // 已登录，渲染子组件
   return <>{children}</>
 }

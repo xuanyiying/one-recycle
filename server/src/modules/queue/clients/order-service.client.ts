@@ -1,23 +1,215 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios, { AxiosInstance } from 'axios';
+
+export type RemoteOrderStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'PAID'
+  | 'PAYMENT_FAILED'
+  | 'DISPATCHED'
+  | 'DISPATCH_FAILED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'REFUNDED'
+  | 'INVENTORY_INSUFFICIENT'
+  | 'PICKED_UP';
+
+export interface Order {
+  id: string;
+  userId: string;
+  status: RemoteOrderStatus | string;
+  items: OrderItem[];
+  address: Address;
+  totalAmount: number;
+  scheduledTime: string;
+  courierId?: string;
+  waybillNo?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  categoryId: string;
+  quantity: number;
+  estimatedPrice: number;
+  actualPrice?: number;
+  description?: string;
+}
+
+export interface Address {
+  id: string;
+  fullAddress: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  detail?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  contactName?: string;
+  contactPhone?: string;
+}
 
 @Injectable()
 export class OrderServiceClient {
-  async updateOrderStatus(orderId: string, status: string): Promise<void> {
-    // 在单体应用中，这将直接调用OrderService
-    console.log(`Updating order ${orderId} status to ${status}`);
+  private readonly logger = new Logger(OrderServiceClient.name);
+  private readonly httpClient: AxiosInstance;
+  private readonly baseURL: string;
+
+  constructor(private readonly configService: ConfigService) {
+    this.baseURL =
+      this.configService.get<string>('ORDER_SERVICE_URL') ||
+      'http://localhost:3003';
+
+    this.httpClient = axios.create({
+      baseURL: this.baseURL,
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // 请求拦截器
+    this.httpClient.interceptors.request.use(
+      (config) => {
+        this.logger.debug(
+          `Request: ${config.method?.toUpperCase()} ${config.url}`,
+        );
+        return config;
+      },
+      (error) => {
+        this.logger.error('Request error:', error);
+        return Promise.reject(error);
+      },
+    );
+
+    // 响应拦截器
+    this.httpClient.interceptors.response.use(
+      (response) => {
+        this.logger.debug(
+          `Response: ${response.status} ${response.config.url}`,
+        );
+        return response;
+      },
+      (error) => {
+        this.logger.error(`Response error: ${error.message}`);
+        return Promise.reject(error);
+      },
+    );
   }
 
-  async updateOrderAmount(orderId: string, amount: number): Promise<void> {
-    // 在单体应用中，这将直接调用OrderService
-    console.log(`Updating order ${orderId} amount to ${amount}`);
+  /**
+   * 获取订单详情
+   */
+  async getOrder(orderId: string): Promise<Order> {
+    try {
+      const response = await this.httpClient.get<Order>(`/orders/${orderId}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to get order ${orderId}:`, error);
+      throw error;
+    }
   }
 
-  async getOrder(orderId: string): Promise<any> {
-    console.log(`Fetching order ${orderId}`);
-    return { id: orderId, status: 'PENDING', address: {}, items: [], userId: '0' };
+  /**
+   * 更新订单状态
+   */
+  async updateOrderStatus(
+    orderId: string,
+    status: RemoteOrderStatus,
+    metadata?: Record<string, any>,
+  ): Promise<Order> {
+    try {
+      const response = await this.httpClient.patch<Order>(
+        `/orders/${orderId}/status`,
+        {
+          status,
+          ...metadata,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to update order status ${orderId}:`, error);
+      throw error;
+    }
   }
 
-  async assignCourier(orderId: string, courierId: string, waybillNo?: string): Promise<void> {
-    console.log(`Assign courier ${courierId} for order ${orderId} with waybill ${waybillNo}`);
+  /**
+   * 更新订单总价
+   */
+  async updateOrderAmount(
+    orderId: string,
+    totalAmount: number,
+  ): Promise<Order> {
+    try {
+      const response = await this.httpClient.patch<Order>(
+        `/orders/${orderId}`,
+        {
+          totalAmount,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to update order amount ${orderId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 分配快递员
+   */
+  async assignCourier(
+    orderId: string,
+    courierId: string,
+    waybillNo?: string,
+  ): Promise<Order> {
+    try {
+      const response = await this.httpClient.patch<Order>(
+        `/orders/${orderId}/assign`,
+        {
+          courierId,
+          waybillNo,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to assign courier to order ${orderId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 取消订单
+   */
+  async cancelOrder(orderId: string, reason: string): Promise<Order> {
+    try {
+      const response = await this.httpClient.post<Order>(
+        `/orders/${orderId}/cancel`,
+        {
+          reason,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to cancel order ${orderId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 检查订单是否已支付
+   */
+  async isOrderPaid(orderId: string): Promise<boolean> {
+    try {
+      const order = await this.getOrder(orderId);
+      return order.status === 'PAID' || order.status === 'COMPLETED';
+    } catch (error) {
+      this.logger.error(
+        `Failed to check payment status for order ${orderId}:`,
+        error,
+      );
+      return false;
+    }
   }
 }

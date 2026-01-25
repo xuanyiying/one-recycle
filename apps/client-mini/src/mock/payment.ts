@@ -51,20 +51,20 @@ export const mockPaymentMethods: PaymentMethod[] = [
     id: 'wechat-pay',
     type: 'wechat',
     name: '微信支付',
-    icon: 'https://via.placeholder.com/48x48?text=微信',
+    icon: 'https://placehold.co/48x48/png?text=%E5%BE%AE%E4%BF%A1',
     isDefault: true
   },
   {
     id: 'alipay',
     type: 'alipay',
     name: '支付宝',
-    icon: 'https://via.placeholder.com/48x48?text=支付宝'
+    icon: 'https://placehold.co/48x48/png?text=%E6%94%AF%E4%BB%98%E5%AE%9D'
   },
   {
     id: 'bankcard',
     type: 'bankcard',
     name: '银行卡',
-    icon: 'https://via.placeholder.com/48x48?text=银行卡'
+    icon: 'https://placehold.co/48x48/png?text=%E9%93%B6%E8%A1%8C%E5%8D%A1'
   }
 ]
 

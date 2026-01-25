@@ -58,7 +58,7 @@ export default function AddressCard({
                 {/* Header with Label and Default Badge */}
                 <View className='card-header'>
                     <View className='header-left'>
-                        <Text className='address-label'>{LABEL_DISPLAY[address.label]}</Text>
+                        <Text className='address-label'>{address.label ? LABEL_DISPLAY[address.label] : '其他'}</Text>
                         {address.isDefault && <Text className='default-badge'>默认</Text>}
                     </View>
                     <Text className='recipient-name'>{address.recipientName}</Text>

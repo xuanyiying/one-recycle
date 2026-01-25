@@ -4,10 +4,11 @@ import Taro from '@tarojs/taro'
 import AuthGuard from '@/components/AuthGuard'
 import { IconFont } from '@nutui/icons-react-taro'
 import './index.scss'
-import { AddressData, AddressService } from '@/services/addressService'
+import { AddressService } from '@/services/address'
+import { Address } from '@/types/address'
 
 export default function AddressSelect() {
-  const [addresses, setAddresses] = useState<AddressData[]>([])
+  const [addresses, setAddresses] = useState<Address[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -36,21 +37,15 @@ export default function AddressSelect() {
   }
 
   // 处理地址选择
-  const handleSelectAddress = useCallback(async (address: AddressData) => {
+  const handleSelectAddress = useCallback(async (address: Address) => {
     try {
       // 设置为默认地址
       if (address.id) {
         await AddressService.setDefaultAddress(address.id)
       }
 
-      // 构建完整地址字符串
-      const fullAddress = `${address.province}${address.city}${address.district}${address.detail}`
-
       // 通过事件总线传递选中的地址
-      Taro.eventCenter.trigger('addressSelected', {
-        ...address,
-        fullAddress
-      })
+      Taro.eventCenter.trigger('addressSelected', address)
 
       // 返回上一页
       Taro.navigateBack()
@@ -71,7 +66,7 @@ export default function AddressSelect() {
   }, [])
 
   // 编辑地址
-  const handleEditAddress = useCallback((e: any, address: AddressData) => {
+  const handleEditAddress = useCallback((e: any, address: Address) => {
     e.stopPropagation()
     Taro.navigateTo({
       url: `/pages/address/form/index?id=${address.id}`
@@ -112,8 +107,8 @@ export default function AddressSelect() {
                 >
                   <View className='address-info'>
                     <View className='address-header'>
-                      <Text className='name'>{address.name}</Text>
-                      <Text className='phone'>{address.phone}</Text>
+                      <Text className='name'>{address.recipientName}</Text>
+                      <Text className='phone'>{address.phoneNumber}</Text>
                       {address.isDefault && (
                         <View className='default-tag'>
                           <Text>默认</Text>
@@ -121,7 +116,7 @@ export default function AddressSelect() {
                       )}
                     </View>
                     <Text className='address-detail'>
-                      {address.province}{address.city}{address.district}{address.detail}
+                      {address.region || `${address.province}${address.city}${address.district}`}{address.detailedAddress}
                     </Text>
                   </View>
                   <View className='address-actions'>

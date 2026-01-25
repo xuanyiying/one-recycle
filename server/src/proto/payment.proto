@@ -11,20 +11,20 @@ service PaymentService {
 }
 
 message CreatePaymentRequest {
-  string orderId = 1;
+  int64 orderId = 1;
   double amount = 2;
   string provider = 3;
 }
 
 message CreatePaymentResponse {
   bool success = 1;
-  string paymentId = 2;
-  string transactionId = 3;
+  int64 paymentId = 2;
+  int64 transactionId = 3;
   string message = 4;
 }
 
 message GetPaymentRequest {
-  string paymentId = 1;
+  int64 paymentId = 1;
 }
 
 message GetPaymentResponse {
@@ -32,9 +32,9 @@ message GetPaymentResponse {
 }
 
 message Payment {
-  string id = 1;
-  string orderId = 2;
-  string transactionId = 3;
+  int64 id = 1;
+  int64 orderId = 2;
+  int64 transactionId = 3;
   double total = 4;
   string status = 5;
   string provider = 6;
@@ -43,7 +43,7 @@ message Payment {
 }
 
 message UpdatePaymentStatusRequest {
-  string transactionId = 1;
+  int64 transactionId = 1;
   string status = 2;
 }
 
@@ -53,20 +53,20 @@ message UpdatePaymentStatusResponse {
 }
 
 message CreateRefundRequest {
-  string paymentId = 1;
+  int64 paymentId = 1;
   double refundAmount = 2;
   string reason = 3;
 }
 
 message CreateRefundResponse {
   bool success = 1;
-  string refundId = 2;
+  int64 refundId = 2;
   string outRefundNo = 3;
   string message = 4;
 }
 
 message GetRefundRequest {
-  string refundId = 1;
+  int64 refundId = 1;
 }
 
 message GetRefundResponse {
@@ -74,8 +74,8 @@ message GetRefundResponse {
 }
 
 message Refund {
-  string id = 1;
-  string paymentId = 2;
+  int64 id = 1;
+  int64 paymentId = 2;
   string outRefundNo = 3;
   double refundAmount = 4;
   string status = 5;

@@ -43,7 +43,7 @@
 - ✓ 物品描述 (Input)
 - ✓ 上门地址选择 (Picker)
 - ✓ 预约时间选择 (Picker)
-- ✓ 京东快递开关 (Switch)
+- ✓ 快递回收开关 (Switch)
 - ✓ 直接提交订单
 ```
 
@@ -119,7 +119,7 @@ graph TD
 | 页面 | 功能完整性 | 缺失/问题 |
 |-----|-----------|----------|
 | `recycle/index` | 60% | 缺少图片上传、价格估算、联系电话、详细描述 |
-| `recycle/form` | 95% | 缺少京东快递选项（可选） |
+| `recycle/form` | 95% | 包含快递回收选项（可选） |
 | `pricing` | 70% | 缺少地址选择、图片上传，与回收流程脱节 |
 | `order/list` | 90% | 功能完善 |
 | `order/detail` | 95% | 功能完善，包含完整的订单信息和操作 |
@@ -219,7 +219,7 @@ graph TD
 - `PriceEstimator` - 价格估算器
 
 建议新增:
-- `JDExpressSelector` - 京东快递选项（从 `recycle/index` 提取）
+- `ExpressSelector` - 快递回收选项（从 `recycle/index` 提取）
 - `OrderSummary` - 订单摘要卡片（可复用）
 
 #### 2. 统一数据模型
@@ -237,7 +237,7 @@ export interface RecycleFormData {
   pickupTime: string
   contactPhone: string
   remarks: string
-  useJDExpress?: boolean  // 新增京东快递选项
+  useExpress?: boolean  // 新增快递回收选项
   estimatedPrice?: number // 新增预估价格
 }
 ```
@@ -252,7 +252,7 @@ export interface CreateOrderParams {
   addressId: number
   appointmentTime: string
   notes?: string
-  channel?: 'platform' | 'jd-express'
+  channel?: 'platform' | 'express'
   doorToDoorService: boolean
 }
 ```
@@ -292,7 +292,7 @@ export default {
 
 **工作量**: 2-3天
 
-1. ✅ 在 `recycle/form` 中添加京东快递功能
+1. ✅ 在 `recycle/form` 中添加快递回收功能
 2. ✅ 更新 `app.config.ts` Tab Bar 配置
 3. ✅ 更新所有跳转到 `recycle/index` 的路径
 4. ✅ 测试所有入口和流程

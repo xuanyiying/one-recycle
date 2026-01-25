@@ -1,5 +1,4 @@
-@use '../../styles/variables.scss' as *;
-@use '../../styles/ios.scss' as *;
+@use '../../styles/global.scss' as *;
 
 // ==================== iOS 登录页面样式 ====================
 // 严格遵循 Apple Human Interface Guidelines
@@ -10,9 +9,8 @@
   display: flex;
   flex-direction: column;
   
-  // iOS 安全区域适配
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
+  // iOS 安全区域适配与响应式边距
+  @include responsive-page-padding;
 }
 
 // ==================== 加载状态 ====================
@@ -22,7 +20,7 @@
   background-color: var(--ios-system-background);
   
   .loading-text {
-    @extend .ios-body;
+    @include ios-body;
     color: var(--ios-secondary-label);
   }
 }
@@ -32,7 +30,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: $spacing-40 $page-padding $spacing-32; // 40pt 16pt 32pt
+  padding: $spacing-40 0 $spacing-32; // 移除水平 padding
   width: 100%;
   flex-shrink: 0;
 
@@ -54,7 +52,7 @@
   }
 
   .welcome-text {
-    @extend .ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+    @include ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
     text-align: center;
     margin-top: $spacing-16; // 16pt
   }
@@ -66,7 +64,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 $page-padding $spacing-32; // 0 16pt 32pt
+  padding: 0 0 $spacing-32; // 移除水平 padding
   width: 100%;
   min-height: 0;
 }
@@ -109,7 +107,7 @@
   }
 
   .avatar-tip {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: var(--ios-secondary-label);
     text-align: center;
   }
@@ -125,7 +123,7 @@
     width: 100%;
     
     .nickname-input {
-      @extend .ios-input; // 使用 iOS 输入框样式
+      @include ios-input; // 使用 iOS 输入框样式
       width: 100%;
       
       &.error {
@@ -140,7 +138,7 @@
     padding: 0 $spacing-4; // 0 4pt
     
     text {
-      @extend .ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+      @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
       color: #FF3B30; // iOS 系统红色
     }
   }
@@ -154,13 +152,13 @@
   max-width: 520rpx;
 
   .description-title {
-    @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+    @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
     margin-bottom: $spacing-8; // 8pt
     display: block;
   }
 
   .description-content {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: var(--ios-secondary-label);
     line-height: $line-height-relaxed;
   }
@@ -176,7 +174,7 @@
   border-radius: $border-radius-sm; // 8pt 圆角
 
   .error-text {
-    @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+    @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
     color: #FF3B30; // iOS 系统红色
     text-align: center;
   }
@@ -188,7 +186,7 @@
   margin-bottom: $spacing-24; // 24pt
 
   .authorize-btn {
-    @extend .ios-button-primary; // 使用 iOS 主按钮样式
+    @include ios-button-primary; // 使用 iOS 主按钮样式
     width: 100%;
     margin-bottom: $spacing-16; // 16pt
     
@@ -213,7 +211,7 @@
   }
 
   .skip-btn {
-    @extend .ios-button-text; // 使用 iOS 文本按钮样式
+    @include ios-button-text; // 使用 iOS 文本按钮样式
     width: 100%;
   }
 }
@@ -250,7 +248,7 @@
     }
 
     .nut-checkbox__icon {
-      @extend .ios-body; // 使用 iOS Body 样式
+      @include ios-body; // 使用 iOS Body 样式
       color: white;
       font-weight: 600;
       line-height: 1;
@@ -266,13 +264,13 @@
     gap: $spacing-2; // 2pt
 
     .agreement-text {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
       line-height: $line-height-relaxed;
     }
 
     .agreement-link {
-      @extend .ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-blue); // iOS 系统蓝色
       text-decoration: underline;
       line-height: $line-height-relaxed;
@@ -315,7 +313,7 @@
     }
 
     .picker-title {
-      @extend .ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
       flex: 1;
       text-align: left;
     }
@@ -351,14 +349,14 @@
     }
 
     .option-text {
-      @extend .ios-body; // 使用 iOS Body 样式 (34rpx)
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
       flex: 1;
       text-align: left;
     }
   }
 
   .cancel-btn {
-    @extend .ios-button-secondary; // 使用 iOS 次要按钮样式
+    @include ios-button-secondary; // 使用 iOS 次要按钮样式
     width: 100%;
     margin-top: auto;
     margin-bottom: $spacing-12;

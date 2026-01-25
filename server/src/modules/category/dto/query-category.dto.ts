@@ -1,19 +1,19 @@
-import { 
-  IsString, 
-  IsOptional, 
-  IsNumber, 
-  IsBoolean, 
-  IsEnum, 
-  IsArray, 
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsEnum,
+  IsArray,
   IsDateString,
   ValidateNested,
   Min,
   Max,
-  MaxLength
+  MaxLength,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { CategoryType } from './create-category.dto';
-import { CategoryStatus, PaginationParams } from '@one-recycle/shared';
+import { CategoryStatus, PaginationParams } from '@/common';
 
 /**
  * 价格范围查询DTO
@@ -129,17 +129,24 @@ export class QueryCategoryDto implements PaginationParams {
 
   // 排序参数
   @IsOptional()
-  @IsEnum(['name', 'sortOrder', 'createdAt', 'updatedAt', 'level', 'totalOrders'])
+  @IsEnum([
+    'name',
+    'sortOrder',
+    'createdAt',
+    'updatedAt',
+    'level',
+    'totalOrders',
+  ])
   sortField?: string = 'sortOrder';
 
   @IsOptional()
   @IsEnum(['asc', 'desc'])
   sortDirection?: 'asc' | 'desc' = 'asc';
-  
+
   @IsOptional()
   @IsString()
   sortBy?: string;
-  
+
   @IsOptional()
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc';
@@ -198,7 +205,14 @@ export class BatchOperationDto {
   @Min(1, { each: true })
   ids: string[] = [];
 
-  @IsEnum(['activate', 'deactivate', 'archive', 'delete', 'updateParent', 'updateSort'])
+  @IsEnum([
+    'activate',
+    'deactivate',
+    'archive',
+    'delete',
+    'updateParent',
+    'updateSort',
+  ])
   operation: string = '';
 
   @IsOptional()
