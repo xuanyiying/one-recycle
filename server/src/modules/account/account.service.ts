@@ -1,12 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Account, Prisma } from '@prisma/client';
 
 @Injectable()
 export class AccountService {
   private readonly logger = new Logger(AccountService.name);
+  private readonly CARBON_SAVING_RATE: number;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.CARBON_SAVING_RATE = this.configService.get<number>(
+      'CARBON_SAVING_RATE',
+      0.02,
+    );
+  }
 
   /**
    * 创建新账户
@@ -70,7 +80,7 @@ export class AccountService {
       totalOrders,
       totalIncome: account.totalIncome,
       // 估算减碳量：假设每1元回收收益对应0.02kg碳减排
-      savedCarbon: account.totalIncome * 0.02,
+      savedCarbon: account.totalIncome * this.CARBON_SAVING_RATE,
     };
   }
 }

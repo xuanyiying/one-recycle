@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/common';
 
@@ -7,8 +8,8 @@ export interface HealthCheckResult {
   timestamp: string;
   uptime: number;
   checks: {
-    database: { status: 'up' | 'down'; responseTime?: number; error?: string };
-    redis: { status: 'up' | 'down'; responseTime?: number; error?: string };
+    database: { status: 'up' | 'down'; responseTime?: number; error?: string; warning?: string };
+    redis: { status: 'up' | 'down'; responseTime?: number; error?: string; warning?: string };
   };
 }
 
@@ -20,6 +21,7 @@ export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly configService: ConfigService,
   ) {}
 
   async check(): Promise<HealthCheckResult> {
@@ -62,14 +64,26 @@ export class HealthService {
     status: 'up' | 'down';
     responseTime?: number;
     error?: string;
+    warning?: string;
   }> {
     const start = Date.now();
+    const threshold = this.configService.get<number>('HEALTH_DB_THRESHOLD_MS', 1000);
+    
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return {
+      const responseTime = Date.now() - start;
+      const result: any = {
         status: 'up',
-        responseTime: Date.now() - start,
+        responseTime,
       };
+
+      if (responseTime > threshold) {
+        const msg = `Database response time (${responseTime}ms) exceeded threshold (${threshold}ms)`;
+        this.logger.warn(msg);
+        result.warning = msg;
+      }
+
+      return result;
     } catch (error) {
       this.logger.error('Database health check failed', error);
       return {
@@ -84,14 +98,26 @@ export class HealthService {
     status: 'up' | 'down';
     responseTime?: number;
     error?: string;
+    warning?: string;
   }> {
     const start = Date.now();
+    const threshold = this.configService.get<number>('HEALTH_REDIS_THRESHOLD_MS', 500);
+
     try {
       await this.redis.ping();
-      return {
+      const responseTime = Date.now() - start;
+      const result: any = {
         status: 'up',
-        responseTime: Date.now() - start,
+        responseTime,
       };
+
+      if (responseTime > threshold) {
+        const msg = `Redis response time (${responseTime}ms) exceeded threshold (${threshold}ms)`;
+        this.logger.warn(msg);
+        result.warning = msg;
+      }
+
+      return result;
     } catch (error) {
       this.logger.error('Redis health check failed', error);
       return {

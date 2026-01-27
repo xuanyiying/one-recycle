@@ -1,13 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { OrderStatus, OrderType } from '@/common';
+import { ConfigService } from '@nestjs/config';
+import { OrderStatus, OrderType, SnowflakeIdGenerator } from '@/common';
 import { CreateOrderDto, UpdateOrderDto } from '../dto';
 import { OrderFilters, DayTimeSlots } from '../interfaces/order.interface';
 import { Order, Prisma } from '@prisma/client';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly idGenerator: SnowflakeIdGenerator;
+
+  private readonly defaultTimeSlots = [
+    { start: '09:00', end: '11:00', quota: 5 },
+    { start: '11:00', end: '13:00', quota: 5 },
+    { start: '13:00', end: '15:00', quota: 5 },
+    { start: '15:00', end: '17:00', quota: 5 },
+    { start: '17:00', end: '19:00', quota: 5 },
+  ];
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.idGenerator = new SnowflakeIdGenerator({
+      workerId: this.configService.get<number>('ORDER_WORKER_ID', 6),
+      datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
+    });
+  }
 
   /**
    * 创建订单
@@ -18,7 +37,7 @@ export class OrderService {
     
     // 构造 Prisma 输入类型
     const createInput: Prisma.OrderCreateInput = {
-      orderNo: orderData.orderNo || `ORD${Date.now()}`,
+      orderNo: orderData.orderNo || `${this.configService.get<string>('ORDER_NUMBER_PREFIX', 'ORD')}${this.idGenerator.nextId()}`,
       user: { connect: { id: BigInt(orderData.userId) } },
       address: { connect: { id: BigInt(orderData.addressId) } },
       status: orderData.status || OrderStatus.PENDING,
@@ -218,13 +237,7 @@ export class OrderService {
       currentDate.setDate(start.getDate() + i);
       const dateStr = currentDate.toISOString().split('T')[0];
       
-      const timeRanges = [
-        { start: '09:00', end: '11:00', quota: 5 },
-        { start: '11:00', end: '13:00', quota: 5 },
-        { start: '13:00', end: '15:00', quota: 5 },
-        { start: '15:00', end: '17:00', quota: 5 },
-        { start: '17:00', end: '19:00', quota: 5 },
-      ];
+      const timeRanges = this.defaultTimeSlots;
 
       slots.push({
         date: dateStr,

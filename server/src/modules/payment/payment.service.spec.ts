@@ -1,10 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentService } from './payment.service';
 import { PrismaService } from '@/prisma/prisma.service';
-import { PaymentLogRepository } from './payment-log.repository';
+import { ConfigService } from '@nestjs/config';
 
 describe('PaymentService', () => {
   let service: PaymentService;
+
+  const mockConfigService = {
+    get: jest.fn((key, defaultValue) => defaultValue),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -17,10 +21,8 @@ describe('PaymentService', () => {
           },
         },
         {
-          provide: PaymentLogRepository,
-          useValue: {
-            // mock PaymentLogRepository methods here
-          },
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();

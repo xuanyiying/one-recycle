@@ -4,6 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import {
   PaymentProvider,
@@ -14,12 +15,17 @@ import { SnowflakeIdGenerator } from '@/common';
 
 @Injectable()
 export class PaymentService {
-  private readonly idGenerator = new SnowflakeIdGenerator({
-    workerId: 6,
-    datacenterId: 1,
-  });
+  private readonly idGenerator: SnowflakeIdGenerator;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.idGenerator = new SnowflakeIdGenerator({
+      workerId: this.configService.get<number>('PAYMENT_WORKER_ID', 9),
+      datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
+    });
+  }
 
   async create(createPaymentDto: CreatePaymentDto) {
     // 检查是否已有支付记录
@@ -38,7 +44,8 @@ export class PaymentService {
     // 生成交易号
     const id = this.idGenerator.nextId();
     const transactionId = BigInt(id);
-    const outTradeNo = `OUT${id}`;
+    const prefix = this.configService.get<string>('PAYMENT_NUMBER_PREFIX', 'OUT');
+    const outTradeNo = `${prefix}${id}`;
 
     return this.prisma.payment.create({
       data: {

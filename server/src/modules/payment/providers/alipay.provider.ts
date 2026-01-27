@@ -47,7 +47,7 @@ export class AlipayProvider implements IPaymentProvider {
   private readonly appId: string;
   private readonly privateKey: string;
   private readonly alipayPublicKey: string;
-  private readonly apiUrl = 'https://openapi.alipay.com/gateway.do';
+  private readonly apiUrl: string;
   private readonly idGenerator = new SnowflakeIdGenerator({
     workerId: 4,
     datacenterId: 1,
@@ -62,6 +62,10 @@ export class AlipayProvider implements IPaymentProvider {
       'ALIPAY_PUBLIC_KEY',
       '',
     );
+    this.apiUrl = this.configService.get<string>(
+      'ALIPAY_API_URL',
+      'https://openapi.alipay.com/gateway.do',
+    );
     this.isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
 
@@ -71,7 +75,7 @@ export class AlipayProvider implements IPaymentProvider {
 
     // 初始化HTTP客户端
     this.httpClient = axios.create({
-      timeout: 30000,
+      timeout: this.configService.get<number>('PAYMENT_TIMEOUT', 30000),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': 'OneRecycle-Alipay/1.0',

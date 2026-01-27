@@ -4,6 +4,7 @@ import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { SystemService } from './system.service';
 import { BannerResponseDto, ArticleResponseDto } from './dto';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
+import { CACHE_TTL } from '@/common';
 
 @ApiTags('system')
 @Controller('system')
@@ -13,7 +14,7 @@ export class SystemController {
 
   @Get('banners')
   @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300)
+  @CacheTTL(CACHE_TTL.SHORT)
   @ApiOperation({ summary: '获取轮播图列表' })
   @ApiResponse({ status: 200, type: [BannerResponseDto] })
   async getBanners(): Promise<BannerResponseDto[]> {
@@ -22,7 +23,7 @@ export class SystemController {
 
   @Get('articles')
   @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300)
+  @CacheTTL(CACHE_TTL.SHORT)
   @ApiOperation({ summary: '获取文章列表' })
   @ApiResponse({ status: 200, type: [ArticleResponseDto] })
   async getArticles(): Promise<ArticleResponseDto[]> {

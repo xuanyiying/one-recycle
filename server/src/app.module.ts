@@ -6,7 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 // 配置
-import { appConfig, databaseConfig } from './config';
+import { appConfig, databaseConfig, authConfig } from './config';
 
 // 核心模块
 import { PrismaModule } from './prisma/prisma.module';
@@ -35,7 +35,7 @@ import { HealthModule } from './modules/health/health.module';
     // 全局配置模块
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig],
+      load: [appConfig, databaseConfig, authConfig],
       envFilePath: ['.env', '.env.development', '.env.production'],
     }),
 

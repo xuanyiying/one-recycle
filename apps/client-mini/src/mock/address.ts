@@ -6,8 +6,11 @@ export interface Address {
   id: string | number
   userId: string
   name: string
-  phone: string
-  address: string
+  mobile: string
+  province: string
+  city: string
+  district: string
+  detail: string
   isDefault: boolean
   createdAt: string
   updatedAt: string
@@ -19,8 +22,11 @@ const mockAddresses: Address[] = [
     id: '1',
     userId: '1',
     name: '张三',
-    phone: '138****8888',
-    address: '北京市朝阳区某某小区1号楼101室',
+    mobile: '138****8888',
+    province: '北京市',
+    city: '北京市',
+    district: '朝阳区',
+    detail: '某某小区1号楼101室',
     isDefault: true,
     createdAt: '2024-01-01T10:00:00Z',
     updatedAt: '2024-01-01T10:00:00Z'
@@ -29,8 +35,11 @@ const mockAddresses: Address[] = [
     id: '2',
     userId: '1',
     name: '李四',
-    phone: '137****7777',
-    address: '上海市浦东新区某某路123号',
+    mobile: '137****7777',
+    province: '上海市',
+    city: '上海市',
+    district: '浦东新区',
+    detail: '某某路123号',
     isDefault: false,
     createdAt: '2024-01-05T15:30:00Z',
     updatedAt: '2024-01-05T15:30:00Z'
@@ -49,8 +58,11 @@ export const mockAddAddress = async (addressData: Partial<Address>): Promise<Moc
     id: MockDataGenerator.generateId(),
     userId: addressData.userId || '1',
     name: addressData.name || '',
-    phone: addressData.phone || '',
-    address: addressData.address || '',
+    mobile: addressData.mobile || '',
+    province: addressData.province || '',
+    city: addressData.city || '',
+    district: addressData.district || '',
+    detail: addressData.detail || '',
     isDefault: addressData.isDefault || false,
     createdAt: MockDataGenerator.generateTimestamp(),
     updatedAt: MockDataGenerator.generateTimestamp()

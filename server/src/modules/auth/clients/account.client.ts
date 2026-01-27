@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { ApiResponse } from '@/common/types/common.types';
 
 export interface CreateUserRequest {
   mobile?: string;
@@ -29,16 +30,18 @@ export interface UserResponse {
 export class AccountClient {
   private readonly client: AxiosInstance;
   private readonly accountServiceUrl: string;
+  private readonly timeout: number;
 
   constructor(private readonly configService: ConfigService) {
     this.accountServiceUrl = this.configService.get<string>(
       'ACCOUNT_SERVICE_URL',
-      'http://localhost:3001',
+      'http://localhost:3001/api',
     );
+    this.timeout = this.configService.get<number>('ACCOUNT_SERVICE_TIMEOUT', 5000);
 
     this.client = axios.create({
       baseURL: this.accountServiceUrl,
-      timeout: 5000,
+      timeout: this.timeout,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -50,10 +53,10 @@ export class AccountClient {
     openid: string,
   ): Promise<UserResponse | null> {
     try {
-      const response = await this.client.get(
+      const response = await this.client.get<ApiResponse<UserResponse>>(
         `/users/identity/${provider}/${openid}`,
       );
-      return response.data;
+      return response.data.data || null;
     } catch (error) {
       if ((error as any).response?.status === 404) {
         return null;
@@ -64,8 +67,8 @@ export class AccountClient {
 
   async findUserByMobile(mobile: string): Promise<UserResponse | null> {
     try {
-      const response = await this.client.get(`/users/mobile/${mobile}`);
-      return response.data;
+      const response = await this.client.get<ApiResponse<UserResponse>>(`/users/mobile/${mobile}`);
+      return response.data.data || null;
     } catch (error) {
       if ((error as any).response?.status === 404) {
         return null;
@@ -76,8 +79,8 @@ export class AccountClient {
 
   async findUserById(userId: string): Promise<UserResponse | null> {
     try {
-      const response = await this.client.get(`/users/${userId}`);
-      return response.data;
+      const response = await this.client.get<ApiResponse<UserResponse>>(`/users/${userId}`);
+      return response.data.data || null;
     } catch (error) {
       if ((error as any).response?.status === 404) {
         return null;
@@ -88,10 +91,13 @@ export class AccountClient {
 
   async createUser(data: CreateUserRequest): Promise<UserResponse> {
     try {
-      const response = await this.client.post('/users', data);
-      return response.data;
+      const response = await this.client.post<ApiResponse<UserResponse>>('/users', data);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.message || '创建用户失败');
+      }
+      return response.data.data;
     } catch (error) {
-      throw new BadRequestException('创建用户失败');
+      throw new BadRequestException(error);
     }
   }
 
@@ -100,9 +106,12 @@ export class AccountClient {
     identity: UserIdentityRequest,
   ): Promise<void> {
     try {
-      await this.client.post(`/users/${userId}/identities`, identity);
+      const response = await this.client.post<ApiResponse<void>>(`/users/${userId}/identities`, identity);
+      if (!response.data.success) {
+        throw new Error(response.data.message || '绑定用户身份失败');
+      }
     } catch (error) {
-      throw new BadRequestException('绑定用户身份失败');
+      throw new BadRequestException(error);
     }
   }
 
@@ -111,10 +120,13 @@ export class AccountClient {
     data: Partial<CreateUserRequest>,
   ): Promise<UserResponse> {
     try {
-      const response = await this.client.put(`/users/${userId}`, data);
-      return response.data;
-    } catch (error) {
-      throw new BadRequestException('更新用户失败');
+      const response = await this.client.put<ApiResponse<UserResponse>>(`/users/${userId}`, data);
+      if (!response.data.success || !response.data.data) {
+        throw new Error(response.data.message || '更新用户失败');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      throw new BadRequestException(error);
     }
   }
 }

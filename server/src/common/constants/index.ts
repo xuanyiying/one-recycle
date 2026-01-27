@@ -103,6 +103,15 @@ export const REGEX = {
   UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
 } as const;
 
+// Notification Costs
+export const NOTIFICATION_COSTS = {
+  SMS: 0.05,
+  EMAIL: 0.01,
+  PUSH: 0.001,
+  IN_APP: 0,
+  WEBHOOK: 0.002,
+} as const;
+
 // 错误消息
 export const ERROR_MESSAGES = {
   VALIDATION_FAILED: '数据验证失败',

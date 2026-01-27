@@ -33,10 +33,12 @@ export class WeChatPlatform {
       const { openid, unionid, session_key, errcode, errmsg } = response.data;
 
       if (errcode) {
+        console.error(`微信登录失败: errcode=${errcode}, errmsg=${errmsg}`);
         throw new BadRequestException(`微信登录失败: ${errmsg}`);
       }
 
       if (!openid) {
+        console.error('微信登录失败: openid缺失', response.data);
         throw new BadRequestException('获取微信用户信息失败');
       }
 

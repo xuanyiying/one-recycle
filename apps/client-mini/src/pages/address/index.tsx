@@ -121,8 +121,8 @@ const AddressPage = () => {
               >
                 <View className='address-info'>
                   <View className='address-header'>
-                    <Text className='address-name'>{address.recipientName}</Text>
-                    <Text className='address-phone'>{address.phoneNumber}</Text>
+                    <Text className='address-name'>{address.name}</Text>
+                    <Text className='address-phone'>{address.mobile}</Text>
                     {address.isDefault && (
                       <View className='default-tag'>
                         <Text>默认</Text>
@@ -134,7 +134,7 @@ const AddressPage = () => {
                       {address.province}
                       {address.city}
                       {address.district}
-                      {address.detailedAddress}
+                      {address.detail}
                     </Text>
                   </View>
                 </View>

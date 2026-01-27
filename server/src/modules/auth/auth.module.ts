@@ -10,9 +10,11 @@ import { AlipayPlatform } from '@/modules/auth/platforms';
 import { TikTokPlatform } from '@/modules/auth/platforms';
 import { KuaishouPlatform } from '@/modules/auth/platforms';
 import { AccountClient } from './clients/account.client';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {

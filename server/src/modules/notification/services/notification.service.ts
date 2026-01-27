@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import {
   INotificationService,
   SendNotificationData,
@@ -22,6 +23,7 @@ import {
   NotificationStatus,
   NotificationPriority,
 } from '../entities/notification.entity';
+import { NOTIFICATION_COSTS } from '@/common/constants';
 import { SnowflakeIdGenerator } from '@/common';
 
 @Injectable()
@@ -29,10 +31,13 @@ export class NotificationService implements INotificationService {
   private readonly logger = new Logger(NotificationService.name);
   private readonly idGenerator: SnowflakeIdGenerator;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
     this.idGenerator = new SnowflakeIdGenerator({
-      workerId: 10,
-      datacenterId: 1,
+      workerId: this.configService.get<number>('NOTIFICATION_WORKER_ID', 10),
+      datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
     });
   }
 
@@ -506,21 +511,24 @@ export class NotificationService implements INotificationService {
   }
 
   async getProviders(): Promise<NotificationProvider[]> {
-    // 在实际应用中，这可能来自数据库配置
+    // 在实际应用中，这可能来自数据库配置或ConfigService
     return [
       {
         name: 'sms-provider',
         type: NotificationType.SMS,
         isEnabled: true,
-        config: { apiKey: 'sms-api-key', endpoint: 'https://sms.example.com' },
+        config: {
+          apiKey: this.configService.get('SMS_API_KEY', 'mock-sms-key'),
+          endpoint: this.configService.get('SMS_ENDPOINT', 'https://sms.example.com'),
+        },
       },
       {
         name: 'email-provider',
         type: NotificationType.EMAIL,
         isEnabled: true,
         config: {
-          apiKey: 'email-api-key',
-          endpoint: 'https://email.example.com',
+          apiKey: this.configService.get('EMAIL_API_KEY', 'mock-email-key'),
+          endpoint: this.configService.get('EMAIL_ENDPOINT', 'https://email.example.com'),
         },
       },
       {
@@ -528,15 +536,18 @@ export class NotificationService implements INotificationService {
         type: NotificationType.PUSH,
         isEnabled: true,
         config: {
-          apiKey: 'push-api-key',
-          endpoint: 'https://push.example.com',
+          apiKey: this.configService.get('PUSH_API_KEY', 'mock-push-key'),
+          endpoint: this.configService.get('PUSH_ENDPOINT', 'https://push.example.com'),
         },
       },
       {
         name: 'webhook-provider',
         type: NotificationType.WEBHOOK,
         isEnabled: true,
-        config: { timeout: 30000, retries: 3 },
+        config: {
+          timeout: this.configService.get('WEBHOOK_TIMEOUT', 30000),
+          retries: this.configService.get('WEBHOOK_RETRIES', 3),
+        },
       },
     ];
   }
@@ -630,10 +641,10 @@ export class NotificationService implements INotificationService {
       }
 
       // 模拟发送延迟
-      await new Promise((resolve) => setTimeout(resolve, Math.random() * 1000));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // 模拟发送结果
-      const success = Math.random() > 0.1; // 90% 成功率
+      const success = true;
 
       if (success) {
         await this.prisma.notification.update({
@@ -781,14 +792,7 @@ export class NotificationService implements INotificationService {
   }
 
   private calculateCost(type: NotificationType): number {
-    const costs = {
-      [NotificationType.SMS]: 0.05,
-      [NotificationType.EMAIL]: 0.01,
-      [NotificationType.PUSH]: 0.001,
-      [NotificationType.IN_APP]: 0,
-      [NotificationType.WEBHOOK]: 0.002,
-    };
-    return costs[type] || 0;
+    return NOTIFICATION_COSTS[type] || 0;
   }
 
   private generateNotificationId(): string {

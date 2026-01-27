@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getBanners, getArticles } from '@/services/system'
 import './index.scss'
 import { useMenu } from './useMenu'
+import { useRecycleNavigation } from './useRecycleNavigation'
 import { Banner, Article } from '@/types'
 // 更加生动的图标
 import BookIcon from '@/assets/images/book-recycle.png'
@@ -17,6 +18,7 @@ import { getCdnUrl } from '@/utils/cdn'
 export default function Index() {
   const { user } = useAuth()
   const { features, handleFeatureClick } = useMenu()
+  const { handleRecycleClick } = useRecycleNavigation()
   const [currentCity, setCurrentCity] = useState('北京')
   const [banners, setBanners] = useState<Banner[]>([])
   const [articles, setArticles] = useState<Article[]>([])
@@ -48,12 +50,6 @@ export default function Index() {
       setLoading(false)
     }
   }
-
-  const handleRecycleClick = useCallback((type: 'book' | 'clothes') => {
-    Taro.navigateTo({
-      url: `/pages/recycle/index?category=${type}`
-    })
-  }, [])
 
   const handleCitySelect = useCallback(() => {
     Taro.showToast({ title: '城市选择功能开发中', icon: 'none' })
@@ -100,7 +96,7 @@ export default function Index() {
               <Text className='price'>1.2</Text>
               <Text className='unit'>元/kg</Text>
             </View>
-            <View className='action-btn'>立即回收</View>
+            <View className='action-btn'>立即预约</View>
           </View>
           <Image
             className='card-bg-img'
@@ -124,7 +120,7 @@ export default function Index() {
               <Text className='price'>0.8</Text>
               <Text className='unit'>元/kg</Text>
             </View>
-            <View className='action-btn'>立即回收</View>
+            <View className='action-btn'>立即预约</View>
           </View>
           <Image
             className='card-bg-img'

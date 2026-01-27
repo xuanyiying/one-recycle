@@ -16,14 +16,15 @@ export interface Coordinates {
 
 export interface Address {
   id?: string | number
-  recipientName: string
-  phoneNumber: string
+  name: string
+  mobile: string
   province: string
   city: string
   district: string
+  town?: string
   street?: string
-  detailedAddress: string
-  postalCode?: string
+  detail: string
+  zipCode?: string
   label?: AddressLabel
   isDefault?: boolean
   coordinates?: Coordinates

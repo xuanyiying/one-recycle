@@ -7,14 +7,14 @@ import { ENV_CONFIG } from '../config/env'
 export interface LoginParams {
   code: string
   nickname: string
-  avatar?: string
+  avatarUrl?: string
   platform: 'wechat' | 'alipay' | 'douyin'
-  uniqueId?: string
+  deviceFingerprint?: string
 }
 
 export interface SmsCodeParams {
-    phone: string
-    type?: 'login' | 'register' | 'reset'
+    mobile: string
+    type?: 'login' | 'register' | 'reset_password'
 }
 
 export interface LoginResponse {
@@ -25,8 +25,8 @@ export interface LoginResponse {
     user: {
       id: string
       nickname: string
-      avatar?: string
-      phone?: string
+      avatarUrl?: string
+      mobile: string
       [key: string]: any
     }
   }
@@ -38,8 +38,8 @@ export interface UserInfoResponse {
   data?: {
     id: string
     nickname: string
-    avatar?: string
-    phone?: string
+    avatarUrl?: string
+    mobile: string
     [key: string]: any
   }
   message?: string
@@ -69,60 +69,15 @@ export class AuthService {
      */
     static async login(params: LoginParams): Promise<LoginResponse> {
         try {
-            // 或者根据 params.platform 决定？
-            // 原 auth.ts 使用 `/auth/third-party/${params.platform}`
-            // 原 authService.ts 使用 `/account/auth/third-party-login` 并传 provider
-            
-            // 为了兼容性，我们构造一个符合后端预期的 payload
-            // 假设后端支持统一接口，或者我们需要在这里做适配
-            // 鉴于 authService.ts 是"更完善"的，我们优先使用它的路径，但需要确认 payload 结构
-            // authService.ts 传的是 { provider }
-            // auth.ts 传的是 { code, nickname, avatarUrl, deviceFingerprint }
-            
-            // 混合策略：使用 auth.ts 的 payload 结构，但统一路径（如果后端支持）
-            // 如果不确定，我们暂时保留 auth.ts 的路径逻辑，但在 Class 内部实现
-            
             const requestUrl = `/auth/third-party/${params.platform}`
             const payload = {
                 code: params.code,
                 nickname: params.nickname,
-                avatarUrl: params.avatar,
-                deviceFingerprint: params.uniqueId,
-                provider: params.platform // 冗余字段以防万一
+                avatarUrl: params.avatarUrl,
+                deviceFingerprint: params.deviceFingerprint,
             }
 
             const response = await post(requestUrl, payload)
-
-            // Mock模式支持
-            if (ENV_CONFIG.USE_MOCK_DATA && typeof response?.success !== 'undefined') {
-                 // 如果是 Mock 数据，直接返回
-                 // 确保 Mock 数据结构符合 LoginResponse
-                 if (response.success && response.data) {
-                     await this.saveLoginInfo(response.data.token, response.data.user)
-                 }
-                 return response
-            }
-
-            if (response?.tokens?.accessToken && response?.user) {
-                const accessToken = response.tokens.accessToken
-                const refreshToken = response.tokens.refreshToken
-
-                await this.saveLoginInfo(accessToken, response.user)
-                if (refreshToken) {
-                     try { Taro.setStorageSync('refreshToken', refreshToken) } catch (e) { /* ignore */ }
-                }
-
-                return {
-                    success: true,
-                    data: {
-                        token: accessToken,
-                        refreshToken,
-                        user: response.user
-                    }
-                }
-            }
-            
-            // 尝试适配 authService 的响应结构 (如果是直接返回 data)
             if (response.success && response.data?.token) {
                  await this.saveLoginInfo(response.data.token, response.data.user)
                  return response
@@ -130,7 +85,7 @@ export class AuthService {
 
             return {
                 success: false,
-                message: response.message || '登录响应格式不正确'
+                message: response.message || '登录失败'
             }
         } catch (error: any) {
             console.error('登录API调用失败:', error)
@@ -145,13 +100,11 @@ export class AuthService {
      * 快捷登录 (原 authService 方法)
      */
     static async quickLogin(provider: string): Promise<LoginResult> {
-         // 这是一个简化的登录，可能需要完善参数
-         // 这里保留原逻辑
         try {
             if (!this.isLoginMethodSupported(provider)) {
                 throw new Error(`当前平台不支持${provider}登录`)
             }
-            const response = await post('/account/auth/third-party-login', {provider})
+            const response = await post(`/auth/third-party/${provider}`, { provider })
             if (response.success) {
                 await this.saveLoginInfo(response.data.token, response.data.user)
                 return {
@@ -184,7 +137,7 @@ export class AuthService {
                 throw new Error('手机号格式不正确')
             }
 
-            const response = await post('/account/auth/phone-login', {phone, smsCode})
+            const response = await post('/auth/login', {mobile: phone, verificationCode: smsCode})
 
             if (response.success) {
                 await this.saveLoginInfo(response.data.token, response.data.user)
@@ -210,7 +163,7 @@ export class AuthService {
     static async getUserInfo(): Promise<UserInfoResponse> {
         try {
             if (ENV_CONFIG.USE_MOCK_DATA) {
-                const response = await post('/user/profile')
+                const response = await post('/user/me')
                 return response
             }
 
@@ -237,16 +190,16 @@ export class AuthService {
      */
     static async sendSmsCode(params: SmsCodeParams): Promise<{ success: boolean; message?: string }> {
         try {
-            if (!params.phone) {
+            if (!params.mobile) {
                 throw new Error('手机号不能为空')
             }
 
-            if (!this.validatePhone(params.phone)) {
+            if (!this.validatePhone(params.mobile)) {
                 throw new Error('手机号格式不正确')
             }
 
-            const response = await post('/account/auth/send-sms-code', {
-                phone: params.phone,
+            const response = await post('/auth/send-sms-code', {
+                mobile: params.mobile,
                 type: params.type || 'login'
             })
 
@@ -263,9 +216,45 @@ export class AuthService {
     }
 
     /**
+     * 刷新令牌
+     */
+    static async refreshToken(): Promise<{ success: boolean; token?: string }> {
+        try {
+            const refreshToken = Taro.getStorageSync('refreshToken')
+            if (!refreshToken) {
+                return { success: false }
+            }
+
+            // 使用 Taro.request 直接请求，避免循环依赖和拦截器干扰
+            const response = await Taro.request({
+                url: `${ENV_CONFIG.API_BASE_URL}/auth/refresh`,
+                method: 'POST',
+                header: { 'Content-Type': 'application/json' },
+                data: { refreshToken }
+            })
+
+            if (response.statusCode >= 200 && response.statusCode < 300) {
+                const data = response.data
+                const newToken = data.accessToken || data.token
+                
+                if (newToken) {
+                    // 更新本地存储
+                    Taro.setStorageSync('token', newToken)
+                    return { success: true, token: newToken }
+                }
+            }
+            
+            return { success: false }
+        } catch (error) {
+            console.error('刷新token失败:', error)
+            return { success: false }
+        }
+    }
+
+    /**
      * 微信小程序登录
      */
-    static async wechatLogin(params: { code: string; nickname: string; avatar?: string }): Promise<LoginResponse> {
+    static async wechatLogin(params: { code: string; nickname: string; avatarUrl?: string }): Promise<LoginResponse> {
         return this.login({
             ...params,
             platform: 'wechat'
@@ -275,7 +264,7 @@ export class AuthService {
     /**
      * 支付宝小程序登录
      */
-    static async alipayLogin(params: { code: string; nickname: string; avatar?: string }): Promise<LoginResponse> {
+    static async alipayLogin(params: { code: string; nickname: string; avatarUrl?: string }): Promise<LoginResponse> {
         return this.login({
             ...params,
             platform: 'alipay'
@@ -285,7 +274,7 @@ export class AuthService {
     /**
      * 抖音小程序登录
      */
-    static async douyinLogin(params: { code: string; nickname: string; avatar?: string }): Promise<LoginResponse> {
+    static async douyinLogin(params: { code: string; nickname: string; avatarUrl?: string }): Promise<LoginResponse> {
         return this.login({
             ...params,
             platform: 'douyin'
@@ -385,25 +374,6 @@ export class AuthService {
         }
     }
 
-    /**
-     * 刷新token
-     */
-    static async refreshToken(): Promise<{ success: boolean; token?: string }> {
-        try {
-            const currentToken = this.getToken()
-            if (!currentToken) {
-                return {success: false}
-            }
-            // TODO: 调用后端API刷新token
-            return {
-                success: true,
-                token: currentToken
-            }
-        } catch (error) {
-            console.error('刷新token失败:', error)
-            return {success: false}
-        }
-    }
 }
 
 // 导出单例对象（为了兼容性）

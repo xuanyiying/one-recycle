@@ -77,7 +77,7 @@ const appReducer = (state: AppState, action: Action): AppState => {
 export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [state, dispatch] = useReducer(appReducer, getInitialState())
 
-    // 监听 storage 变化（对于多标签页同步和 mock 登录很重要）
+    // 监听 storage 变化（对于多标签页同步很重要，仅 H5 有效）
     useEffect(() => {
         // H5 环境下的多标签页同步
         if (Taro.getEnv() === Taro.ENV_TYPE.WEB) {
@@ -102,48 +102,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             window.addEventListener('storage', handleStorageChange)
             return () => window.removeEventListener('storage', handleStorageChange)
         }
-
-        // 轮询检查（主要针对小程序环境下的 mock 登录或某些异步存储场景）
-        let count = 0
-        let isMounted = true
-        let timerId: ReturnType<typeof setTimeout> | null = null
-
-        const checkStorageAsync = async () => {
-            if (!isMounted) return
-
-            try {
-                // 使用异步方式获取，避免阻塞主线程
-                const user = await Taro.getStorage({ key: 'user' }).then(res => res.data).catch(() => null)
-                const token = await Taro.getStorage({ key: 'token' }).then(res => res.data).catch(() => null)
-                
-                if (!isMounted) return
-
-                if (user && token) {
-                    if (!state.user || !state.token) {
-                        dispatch({ type: 'LOGIN', payload: { user, token } })
-                    }
-                } else if (!user || !token) {
-                    if (state.user || state.token) {
-                        dispatch({ type: 'LOGOUT' })
-                    }
-                }
-            } catch (e) {
-                // Ignore
-            }
-
-            if (isMounted && count < 10) { // 限制轮询次数
-                count++
-                timerId = setTimeout(checkStorageAsync, 1000)
-            }
-        }
-
-        checkStorageAsync()
-
-        return () => {
-            isMounted = false
-            if (timerId) clearTimeout(timerId)
-        }
-    }, [dispatch, state.user, state.token])
+    }, [dispatch])
 
     return (
         <AppContext.Provider value={{ state, dispatch }}>

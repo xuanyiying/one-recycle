@@ -117,7 +117,7 @@ async function submitOrderRequest(orderData: OrderSubmission): Promise<CreateOrd
     }
 
     // Make API request
-    const response = await post('/order/orders', payload)
+    const response = await post('/orders', payload)
 
     if (!response || typeof response !== 'object') {
       throw new Error('Invalid response format from server')

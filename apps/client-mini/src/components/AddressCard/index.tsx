@@ -74,16 +74,16 @@ export default function AddressCard({
                         <Text className='address-label'>{address.label ? LABEL_DISPLAY[address.label] : '其他'}</Text>
                         {address.isDefault && <Text className='default-badge'>默认</Text>}
                     </View>
-                    <Text className='recipient-name'>{address.recipientName}</Text>
+                    <Text className='recipient-name'>{address.name}</Text>
                 </View>
 
                 {/* Phone Number */}
-                <Text className='phone-number'>{formatPhoneNumber(address.phoneNumber)}</Text>
+                <Text className='phone-number'>{formatPhoneNumber(address.mobile)}</Text>
 
                 {/* Address Details */}
                 <View className='address-details'>
                     <Text className='full-address'>
-                        {`${address.province}${address.city}${address.district}${address.street || ''} ${address.detailedAddress}`}
+                        {`${address.province}${address.city}${address.district}${address.street || ''} ${address.detail}`}
                     </Text>
                 </View>
             </View>

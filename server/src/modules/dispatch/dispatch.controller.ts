@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param } from '@nestjs/common';
 import { DispatchService } from './dispatch.service';
+import { TaskStatus } from '@prisma/client';
 
 @Controller('dispatch')
 export class DispatchController {
@@ -28,10 +29,11 @@ export class DispatchController {
   @Put('assignments/:id/status')
   async updateAssignmentStatus(
     @Param('id') id: string,
-    @Body() statusData: { status: string },
+    @Body() statusData: { status: TaskStatus },
   ) {
     return this.dispatchService.updateAssignmentStatus(id, statusData.status);
   }
+
 
   @Post('assignments/:id/accept')
   async acceptAssignment(@Param('id') id: string) {

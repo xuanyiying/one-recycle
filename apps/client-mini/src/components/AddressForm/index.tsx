@@ -38,13 +38,13 @@ export default function AddressForm({
 }: AddressFormProps) {
     // Form state
     const [formData, setFormData] = useState<AddressFormData>({
-        recipientName: initialData?.recipientName || '',
-        phoneNumber: initialData?.phoneNumber || '',
+        name: initialData?.name || '',
+        mobile: initialData?.mobile || '',
         province: initialData?.province || '',
         city: initialData?.city || '',
         district: initialData?.district || '',
-        detailedAddress: initialData?.detailedAddress || '',
-        postalCode: initialData?.postalCode || '',
+        detail: initialData?.detail || '',
+        zipCode: initialData?.zipCode || '',
         label: initialData?.label || AddressLabel.HOME,
     })
 
@@ -81,21 +81,21 @@ export default function AddressForm({
     // Validation
     const validate = () => {
         const newErrors: Record<string, string> = {}
-        if (!formData.recipientName.trim()) newErrors.recipientName = '请输入取件人姓名'
-        if (!formData.phoneNumber.trim()) {
-            newErrors.phoneNumber = '请输入电话号码'
-        } else if (!/^1[3-9]\d{9}$/.test(formData.phoneNumber)) {
-            newErrors.phoneNumber = '请输入有效的手机号码'
+        if (!formData.name.trim()) newErrors.name = '请输入取件人姓名'
+        if (!formData.mobile.trim()) {
+            newErrors.mobile = '请输入电话号码'
+        } else if (!/^1[3-9]\d{9}$/.test(formData.mobile)) {
+            newErrors.mobile = '请输入有效的手机号码'
         }
         if (!formData.province || !formData.city) newErrors.region = '请完整选择所在地区'
-        if (!formData.detailedAddress.trim()) {
-            newErrors.detailedAddress = '请输入详细地址'
-        } else if (formData.detailedAddress.length < 5) {
-            newErrors.detailedAddress = '详细地址不能少于5个字符'
+        if (!formData.detail.trim()) {
+            newErrors.detail = '请输入详细地址'
+        } else if (formData.detail.length < 5) {
+            newErrors.detail = '详细地址不能少于5个字符'
         }
 
-        if (formData.postalCode && !/^\d{6}$/.test(formData.postalCode)) {
-            newErrors.postalCode = '请输入有效的6位邮政编码'
+        if (formData.zipCode && !/^\d{6}$/.test(formData.zipCode)) {
+            newErrors.zipCode = '请输入有效的6位邮政编码'
         }
 
         setLocalErrors(newErrors)
@@ -106,23 +106,23 @@ export default function AddressForm({
     // Form Handlers
     // ============================================================================
 
-    const handleRecipientNameChange = useCallback((value: string) => {
+    const handleNameChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
-            recipientName: value,
+            name: value,
         }))
-        if (localErrors.recipientName) {
-            setLocalErrors(prev => ({ ...prev, recipientName: '' }))
+        if (localErrors.name) {
+            setLocalErrors(prev => ({ ...prev, name: '' }))
         }
     }, [localErrors])
 
-    const handlePhoneNumberChange = useCallback((value: string) => {
+    const handleMobileChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
-            phoneNumber: value,
+            mobile: value,
         }))
-        if (localErrors.phoneNumber) {
-            setLocalErrors(prev => ({ ...prev, phoneNumber: '' }))
+        if (localErrors.mobile) {
+            setLocalErrors(prev => ({ ...prev, mobile: '' }))
         }
     }, [localErrors])
 
@@ -132,30 +132,30 @@ export default function AddressForm({
             province: address.province || prev.province,
             city: address.city || prev.city,
             district: address.district || prev.district,
-            detailedAddress: address.detailedAddress || prev.detailedAddress,
+            detail: address.detail || prev.detail,
         }))
         if (address.coordinates) {
             setCoordinates(address.coordinates)
         }
-        if (localErrors.region || localErrors.detailedAddress) {
-            setLocalErrors(prev => ({ ...prev, region: '', detailedAddress: '' }))
+        if (localErrors.region || localErrors.detail) {
+            setLocalErrors(prev => ({ ...prev, region: '', detail: '' }))
         }
     }, [localErrors])
 
-    const handleDetailedAddressChange = useCallback((value: string) => {
+    const handleDetailChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
-            detailedAddress: value,
+            detail: value,
         }))
-        if (localErrors.detailedAddress) {
-            setLocalErrors(prev => ({ ...prev, detailedAddress: '' }))
+        if (localErrors.detail) {
+            setLocalErrors(prev => ({ ...prev, detail: '' }))
         }
     }, [localErrors])
 
-    const handlePostalCodeChange = useCallback((value: string) => {
+    const handleZipCodeChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
-            postalCode: value,
+            zipCode: value,
         }))
     }, [])
 
@@ -246,14 +246,14 @@ export default function AddressForm({
                             <Text className='required-mark'>*</Text>
                         </View>
                         <Input
-                            value={formData.recipientName}
-                            onChange={(value) => handleRecipientNameChange(value)}
+                            value={formData.name}
+                            onChange={(value) => handleNameChange(value)}
                             placeholder='请输入取件人姓名'
                             maxLength={20}
-                            className={combinedErrors.recipientName ? 'error' : ''}
+                            className={combinedErrors.name ? 'error' : ''}
                         />
-                        {combinedErrors.recipientName && (
-                            <Text className='error-text'>{combinedErrors.recipientName}</Text>
+                        {combinedErrors.name && (
+                            <Text className='error-text'>{combinedErrors.name}</Text>
                         )}
                     </View>
 
@@ -264,15 +264,15 @@ export default function AddressForm({
                             <Text className='required-mark'>*</Text>
                         </View>
                         <Input
-                            value={formData.phoneNumber}
-                            onChange={(value) => handlePhoneNumberChange(value)}
+                            value={formData.mobile}
+                            onChange={(value) => handleMobileChange(value)}
                             placeholder='请输入电话号码'
                             type='tel'
                             maxLength={11}
-                            className={combinedErrors.phoneNumber ? 'error' : ''}
+                            className={combinedErrors.mobile ? 'error' : ''}
                         />
-                        {combinedErrors.phoneNumber && (
-                            <Text className='error-text'>{combinedErrors.phoneNumber}</Text>
+                        {combinedErrors.mobile && (
+                            <Text className='error-text'>{combinedErrors.mobile}</Text>
                         )}
                     </View>
 
@@ -299,16 +299,16 @@ export default function AddressForm({
                             <Text className='required-mark'>*</Text>
                         </View>
                         <TextArea
-                            value={formData.detailedAddress}
-                            onChange={(value) => handleDetailedAddressChange(value)}
+                            value={formData.detail}
+                            onChange={(value) => handleDetailChange(value)}
                             placeholder='请输入详细地址（街道、门牌号等）'
                             maxLength={100}
                             autoSize
                             showCount
-                            className={`detailed-address-input ${combinedErrors.detailedAddress ? 'error' : ''}`}
+                            className={`detailed-address-input ${combinedErrors.detail ? 'error' : ''}`}
                         />
-                        {combinedErrors.detailedAddress && (
-                            <Text className='error-text'>{combinedErrors.detailedAddress}</Text>
+                        {combinedErrors.detail && (
+                            <Text className='error-text'>{combinedErrors.detail}</Text>
                         )}
                     </View>
 
@@ -318,15 +318,15 @@ export default function AddressForm({
                             <Text className='field-label'>邮政编码</Text>
                         </View>
                         <Input
-                            value={formData.postalCode}
-                            onChange={(value) => handlePostalCodeChange(value)}
+                            value={formData.zipCode}
+                            onChange={(value) => handleZipCodeChange(value)}
                             placeholder='请输入邮政编码'
                             type='number'
                             maxLength={6}
-                            className={combinedErrors.postalCode ? 'error' : ''}
+                            className={combinedErrors.zipCode ? 'error' : ''}
                         />
-                        {combinedErrors.postalCode && (
-                            <Text className='error-text'>{combinedErrors.postalCode}</Text>
+                        {combinedErrors.zipCode && (
+                            <Text className='error-text'>{combinedErrors.zipCode}</Text>
                         )}
                     </View>
 

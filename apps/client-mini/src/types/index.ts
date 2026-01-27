@@ -8,9 +8,8 @@ export * from './order'
 export interface User {
   id: number | string
   nickname: string
-  avatar: string
-  phone?: string
-  phoneNumber?: string
+  avatarUrl: string
+  mobile: string
   realName?: string
   openid?: string
   totalOrders?: number

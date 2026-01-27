@@ -163,7 +163,7 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
       province: suggestion.province || value?.province,
       city: suggestion.city || value?.city,
       district: suggestion.district || value?.district,
-      detailedAddress: suggestion.name || suggestion.address,
+      detail: suggestion.name || suggestion.address,
       coordinates: suggestion.coordinates,
       region: suggestion.province ? `${suggestion.province} ${suggestion.city} ${suggestion.district || ''}` : value.region
     })
@@ -182,7 +182,7 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
         province: info.province,
         city: info.city,
         district: info.district,
-        detailedAddress: info.name || info.address,
+        detail: info.name || info.address,
         coordinates: info.coordinates,
         region: `${info.province} ${info.city} ${info.district || ''}`
       })

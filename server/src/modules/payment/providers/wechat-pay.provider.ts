@@ -28,7 +28,7 @@ export class WeChatPayProvider implements IPaymentProvider {
   private readonly apiKey: string;
   private readonly certPath: string;
   private readonly keyPath: string;
-  private readonly apiUrl = 'https://api.mch.weixin.qq.com';
+  private readonly apiUrl: string;
   private readonly idGenerator = new SnowflakeIdGenerator({
     workerId: 5,
     datacenterId: 1,
@@ -42,6 +42,10 @@ export class WeChatPayProvider implements IPaymentProvider {
     this.apiKey = this.configService.get<string>('WECHAT_API_KEY', '');
     this.certPath = this.configService.get<string>('WECHAT_CERT_PATH', '');
     this.keyPath = this.configService.get<string>('WECHAT_KEY_PATH', '');
+    this.apiUrl = this.configService.get<string>(
+      'WECHAT_PAY_API_URL',
+      'https://api.mch.weixin.qq.com',
+    );
     this.isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
 
@@ -51,7 +55,7 @@ export class WeChatPayProvider implements IPaymentProvider {
 
     // 初始化HTTP客户端
     this.httpClient = axios.create({
-      timeout: 30000,
+      timeout: this.configService.get<number>('PAYMENT_TIMEOUT', 30000),
       headers: {
         'Content-Type': 'application/xml',
         'User-Agent': 'OneRecycle-WeChatPay/1.0',

@@ -1,6 +1,6 @@
 // 地址管理服务
 import Taro from '@tarojs/taro'
-import { get, post, put, del } from '../utils/request'
+import { get, post, put, del } from '@/utils/request'
 import { AuthService } from './auth'
 import { Address } from '@/types/address'
 
@@ -109,19 +109,10 @@ export class AddressService {
       Taro.hideLoading()
 
       if (response.success) {
-        // Transform backend data to frontend Address model
+        // Use backend data directly as it's now unified
         const addresses = (response.data || []).map((addr: any) => ({
-          id: addr.id,
-          recipientName: addr.name,
-          phoneNumber: addr.phone,
-          province: addr.province,
-          city: addr.city,
-          district: addr.area || addr.district,
-          detailedAddress: addr.detail,
-          isDefault: addr.isDefault,
-          label: addr.tag || addr.label,
-          coordinates: addr.coordinates,
-          region: `${addr.province} ${addr.city} ${addr.area || addr.district}`
+          ...addr,
+          region: `${addr.province} ${addr.city} ${addr.district}`
         }))
         return {
           success: true,
@@ -168,17 +159,9 @@ export class AddressService {
         }
       }
 
-      // Transform to backend format
+      // Use address directly as it's now unified with backend
       const requestData = {
-        name: address.recipientName,
-        phone: address.phoneNumber,
-        province: address.province,
-        city: address.city,
-        area: address.district,
-        detail: address.detailedAddress,
-        isDefault: address.isDefault,
-        tag: address.label,
-        coordinates: address.coordinates,
+        ...address,
         userId: user.id
       }
 
@@ -187,20 +170,11 @@ export class AddressService {
       Taro.hideLoading()
 
       if (response.success && response.data) {
-        // Transform backend data to unified format
+        // Return backend data directly
         const addr = response.data
         const transformed: Address = {
-          id: addr.id,
-          recipientName: addr.name,
-          phoneNumber: addr.phone,
-          province: addr.province,
-          city: addr.city,
-          district: addr.area || addr.district,
-          detailedAddress: addr.detail,
-          isDefault: addr.isDefault,
-          label: addr.tag || addr.label,
-          coordinates: addr.coordinates,
-          region: `${addr.province} ${addr.city} ${addr.area || addr.district}`
+          ...addr,
+          region: `${addr.province} ${addr.city} ${addr.district}`
         }
         return { success: true, data: transformed }
       } else {
@@ -217,16 +191,9 @@ export class AddressService {
    */
   static async updateAddress(id: string | number, address: Partial<Address>): Promise<ApiResponse<Address>> {
     try {
+      // Use address directly as it's now unified
       const requestData = {
-        name: address.recipientName,
-        phone: address.phoneNumber,
-        province: address.province,
-        city: address.city,
-        area: address.district,
-        detail: address.detailedAddress,
-        isDefault: address.isDefault,
-        tag: address.label,
-        coordinates: address.coordinates
+        ...address
       }
 
       Taro.showLoading({ title: '更新中...', mask: true })
@@ -234,20 +201,11 @@ export class AddressService {
       Taro.hideLoading()
 
       if (response.success && response.data) {
-        // Transform backend data to unified format
+        // Return backend data directly
         const addr = response.data
         const transformed: Address = {
-          id: addr.id,
-          recipientName: addr.name,
-          phoneNumber: addr.phone,
-          province: addr.province,
-          city: addr.city,
-          district: addr.area || addr.district,
-          detailedAddress: addr.detail,
-          isDefault: addr.isDefault,
-          label: addr.tag || addr.label,
-          coordinates: addr.coordinates,
-          region: `${addr.province} ${addr.city} ${addr.area || addr.district}`
+          ...addr,
+          region: `${addr.province} ${addr.city} ${addr.district}`
         }
         return { success: true, data: transformed }
       } else {
@@ -334,12 +292,12 @@ export class AddressService {
         const addr = response.data
         const address: Address = {
           id: addr.id,
-          recipientName: addr.name,
-          phoneNumber: addr.phone,
+          name: addr.name,
+          mobile: addr.phone,
           province: addr.province,
           city: addr.city,
           district: addr.area || addr.district,
-          detailedAddress: addr.detail,
+          detail: addr.detail,
           isDefault: addr.isDefault,
           label: addr.tag || addr.label,
           coordinates: addr.coordinates

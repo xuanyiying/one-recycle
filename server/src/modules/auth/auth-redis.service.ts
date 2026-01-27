@@ -18,8 +18,12 @@ import { AlipayPlatform } from './platforms/alipay.platform';
 import { TikTokPlatform } from './platforms/tiktok.platform';
 import { KuaishouPlatform } from './platforms/kuaishou.platform';
 import { AccountClient } from './clients/account.client';
-import axios from 'axios';
 import { UpdateUserDto } from '@/modules/user/dto';
+import { NotificationService } from '../notification/services/notification.service';
+import {
+  NotificationType,
+  NotificationPriority,
+} from '../notification/entities/notification.entity';
 
 export interface AuthResult {
   user: {
@@ -43,6 +47,7 @@ interface VerificationCodeData {
   phone: string;
   type: string;
   expiresAt: number;
+  lastSentAt: number;
   attempts: number;
   maxAttempts: number;
 }
@@ -65,10 +70,12 @@ interface RefreshTokenData {
 @Injectable()
 export class AuthRedisService {
   private readonly logger = new Logger(AuthRedisService.name);
-  private readonly CODE_EXPIRY_MINUTES = 5;
-  private readonly MAX_CODE_ATTEMPTS = 3;
-  private readonly TOKEN_EXPIRY_HOURS = 24;
-  private readonly REFRESH_TOKEN_EXPIRY_DAYS = 30;
+  private readonly CODE_EXPIRY_MINUTES: number;
+  private readonly CODE_RESEND_INTERVAL_SECONDS: number;
+  private readonly MAX_CODE_ATTEMPTS: number;
+  private readonly REFRESH_TOKEN_EXPIRY_DAYS: number;
+  private readonly accessTokenExpiresInSeconds: number;
+  private readonly sessionExpiresInSeconds: number;
   private readonly idGenerator: SnowflakeIdGenerator;
 
   constructor(
@@ -80,7 +87,34 @@ export class AuthRedisService {
     private readonly tiktokPlatform: TikTokPlatform,
     private readonly kuaishouPlatform: KuaishouPlatform,
     private readonly accountClient: AccountClient,
+    private readonly notificationService: NotificationService,
   ) {
+    this.CODE_EXPIRY_MINUTES = this.configService.get<number>(
+      'auth.codeExpiresMinutes',
+      5,
+    );
+    this.CODE_RESEND_INTERVAL_SECONDS = this.configService.get<number>(
+      'auth.codeResendIntervalSeconds',
+      60,
+    );
+    this.MAX_CODE_ATTEMPTS = this.configService.get<number>(
+      'auth.maxCodeAttempts',
+      3,
+    );
+    this.REFRESH_TOKEN_EXPIRY_DAYS = this.configService.get<number>(
+      'auth.refreshTokenExpiresDays',
+      30,
+    );
+    this.accessTokenExpiresInSeconds = this.configService.get<number>(
+      'auth.accessTokenExpiresInSeconds',
+      7200,
+    );
+    this.sessionExpiresInSeconds = this.configService.get<number>(
+      'auth.sessionExpiresInSeconds',
+      86400,
+    );
+
+    // TODO: move workerId to config
     this.idGenerator = new SnowflakeIdGenerator({
       workerId: 11,
       datacenterId: 1,
@@ -152,13 +186,14 @@ export class AuthRedisService {
 
     // 检查是否频繁发送
     const existingCode = await this.getVerificationCode(mobile);
-    if (existingCode && existingCode.expiresAt > Date.now()) {
-      const remainingTime = Math.ceil(
-        (existingCode.expiresAt - Date.now()) / 1000,
-      );
-      throw new BadRequestException(
-        `验证码仍然有效，请${remainingTime}秒后再试`,
-      );
+    if (existingCode) {
+      const timeSinceLastSent = (Date.now() - existingCode.lastSentAt) / 1000;
+      if (timeSinceLastSent < this.CODE_RESEND_INTERVAL_SECONDS) {
+        const remainingTime = Math.ceil(
+          this.CODE_RESEND_INTERVAL_SECONDS - timeSinceLastSent,
+        );
+        throw new BadRequestException(`请在${remainingTime}秒后再试`);
+      }
     }
 
     // 生成验证码
@@ -171,6 +206,7 @@ export class AuthRedisService {
       phone: mobile,
       type,
       expiresAt,
+      lastSentAt: Date.now(),
       attempts: 0,
       maxAttempts: this.MAX_CODE_ATTEMPTS,
     });
@@ -202,7 +238,7 @@ export class AuthRedisService {
     // 生成新的访问令牌
     const payload = { sub: user.id, phone: user.mobile, role: 'USER' };
     const accessToken = this.jwtService.sign(payload);
-    const expiresIn = this.TOKEN_EXPIRY_HOURS * 3600;
+    const expiresIn = this.accessTokenExpiresInSeconds;
 
     return {
       accessToken,
@@ -371,8 +407,10 @@ export class AuthRedisService {
     data: SessionData,
   ): Promise<void> {
     const key = `auth:session:${sessionId}`;
-    const ttl = this.TOKEN_EXPIRY_HOURS * 3600;
+    const ttl = this.sessionExpiresInSeconds;
     await this.redisService.set(key, data, ttl);
+
+
 
     // 同时维护用户的会话列表
     const userSessionsKey = `auth:user:sessions:${data.userId}`;
@@ -435,7 +473,6 @@ export class AuthRedisService {
     const key = `auth:refresh:${token}`;
     await this.redisService.del(key);
   }
-
   // ==================== 辅助方法 ====================
 
   private async generateTokens(
@@ -451,7 +488,7 @@ export class AuthRedisService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.idGenerator.nextId();
-    const expiresIn = this.TOKEN_EXPIRY_HOURS * 3600;
+    const expiresIn = this.accessTokenExpiresInSeconds;
 
     // 存储刷新令牌到Redis
     const refreshTokenExpiresAt =
@@ -483,7 +520,7 @@ export class AuthRedisService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.idGenerator.nextId();
-    const expiresIn = this.TOKEN_EXPIRY_HOURS * 3600;
+    const expiresIn = this.accessTokenExpiresInSeconds;
 
     // 存储刷新令牌
     const refreshTokenExpiresAt =
@@ -506,6 +543,13 @@ export class AuthRedisService {
   }
 
   private async verifyCode(phone: string, code: string): Promise<boolean> {
+    // 开发环境支持万能验证码
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    const isDevOrTest = nodeEnv === 'development' || nodeEnv === 'test';
+    if (isDevOrTest && code === '123456') {
+      return true;
+    }
+
     const codeData = await this.getVerificationCode(phone);
 
     if (!codeData) {
@@ -532,7 +576,7 @@ export class AuthRedisService {
 
     return true;
   }
-
+// 6位验证码， 60s 有效期
   private generateVerificationCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
@@ -547,19 +591,20 @@ export class AuthRedisService {
     type: string,
   ): Promise<void> {
     try {
-      const notificationServiceUrl = this.configService.get<string>(
-        'NOTIFICATION_SERVICE_URL',
-        'http://localhost:3008',
-      );
-
-      await axios.post(
-        `${notificationServiceUrl}/api/v1/notifications/send-sms`,
-        {
-          phone,
-          message: `您的验证码是：${code}，5分钟内有效。`,
-          type,
+      await this.notificationService.sendNotification({
+        type: NotificationType.SMS,
+        recipient: {
+          phoneNumber: phone,
         },
-      );
+        content: {
+          title: '验证码',
+          body: `您的验证码是：${code}，5分钟内有效。`,
+          data: { type },
+        },
+        priority: NotificationPriority.HIGH,
+      });
+
+      this.logger.log(`验证码已通过通知服务发送 (${phone})`);
     } catch (error) {
       this.logger.error('发送短信失败:', error);
       // 在开发环境中，可以将验证码打印到控制台

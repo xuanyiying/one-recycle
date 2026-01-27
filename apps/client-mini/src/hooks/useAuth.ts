@@ -66,6 +66,7 @@ export const useAuth = () => {
       // 先尝试从本地存储获取，以防全局状态还没更新
       const storedToken = Taro.getStorageSync('token')
       const storedUser = Taro.getStorageSync('user')
+      const refreshToken = Taro.getStorageSync('refreshToken')
       
       if (storedToken && storedUser) {
         if (!state.token || !state.user) {
@@ -75,6 +76,22 @@ export const useAuth = () => {
           })
         }
         return { isLoggedIn: true, user: storedUser, token: storedToken }
+      }
+      
+      // 如果没有有效token但有refreshToken，尝试刷新
+      if (!storedToken && refreshToken) {
+        console.log('检测到refreshToken，尝试自动刷新...')
+        const refreshResult = await AuthService.refreshToken()
+        if (refreshResult.success && refreshResult.token) {
+           const currentUser = storedUser || (await AuthService.getUserInfo()).data
+           if (currentUser) {
+             dispatch({
+               type: 'LOGIN',
+               payload: { user: currentUser, token: refreshResult.token }
+             })
+             return { isLoggedIn: true, user: currentUser, token: refreshResult.token }
+           }
+        }
       }
       
       const loginStatus = AuthService.checkLoginStatus()
@@ -95,6 +112,7 @@ export const useAuth = () => {
       setLoading(false)
     }
   }, [dispatch, state.token, state.user])
+
 
   // 登录
   const login = useCallback(async (userData: User, userToken: string, provider?: string) => {
@@ -155,6 +173,89 @@ export const useAuth = () => {
     }
   }, [dispatch, user])
 
+  // 发送验证码
+  const sendSmsCode = useCallback(async (mobile: string) => {
+    try {
+      setLoading(true)
+      const result = await AuthService.sendSmsCode({ mobile, type: 'login' })
+      return result
+    } catch (error: any) {
+      console.error('发送验证码失败:', error)
+      return { success: false, message: error.message || '发送失败' }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // 手机号登录
+  const loginWithPhone = useCallback(async (phone: string, code: string) => {
+    try {
+      setLoading(true)
+      const result = await AuthService.phoneLogin(phone, code)
+      if (result.success && result.token && result.user) {
+        await login(result.user, result.token, 'phone')
+        return { success: true }
+      }
+      return { success: false, message: result.error || '登录失败' }
+    } catch (error: any) {
+      console.error('手机号登录失败:', error)
+      return { success: false, message: error.message || '登录失败' }
+    } finally {
+      setLoading(false)
+    }
+  }, [login])
+
+  // 处理社交登录 (微信/支付宝)
+  const handleSocialLogin = useCallback(async (provider: 'wechat' | 'alipay') => {
+    try {
+      setLoading(true)
+      let result
+
+      if (provider === 'wechat') {
+        // 微信登录流程
+        const { code } = await Taro.login()
+        // 注意：getUserProfile 可能会被限制，这里作为可选信息获取
+        let userInfo = { nickName: '微信用户', avatarUrl: '' }
+        try {
+            // 尝试获取用户信息，如果失败则使用默认值
+            // 实际项目中通常在登录后引导用户完善信息
+            const profile = await Taro.getUserProfile({ desc: '用于完善会员资料' })
+           userInfo = profile.userInfo
+        } catch (e) {
+            console.log('获取微信用户信息失败或用户拒绝:', e)
+        }
+        
+        result = await AuthService.wechatLogin({
+          code,
+          nickname: userInfo.nickName,
+          avatarUrl: userInfo.avatarUrl
+        })
+      } else if (provider === 'alipay') {
+        // 支付宝登录流程
+        // @ts-ignore
+        const { authCode } = await Taro.getAuthCode({ scopes: 'auth_user' })
+        
+        result = await AuthService.alipayLogin({
+          code: authCode,
+          nickname: '支付宝用户'
+        })
+      }
+
+      if (result?.success && result.data) {
+        const { token, user } = result.data
+        await login(user, token, provider)
+        return { success: true }
+      } else {
+        throw new Error(result?.message || '登录失败')
+      }
+    } catch (error: any) {
+      console.error(`${provider}登录失败:`, error)
+      return { success: false, message: error.message || '登录失败' }
+    } finally {
+      setLoading(false)
+    }
+  }, [login])
+
   return {
     isLoggedIn,
     user,
@@ -163,6 +264,9 @@ export const useAuth = () => {
     checkAuthStatus,
     login,
     logout,
-    updateUser
+    updateUser,
+    sendSmsCode,
+    loginWithPhone,
+    handleSocialLogin
   }
 }

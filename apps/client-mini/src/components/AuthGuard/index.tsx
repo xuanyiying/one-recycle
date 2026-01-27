@@ -3,6 +3,7 @@ import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuth } from '@/hooks/useAuth'
 import './index.scss'
+import { Loading } from '@nutui/nutui-react-taro'
 interface AuthGuardProps {
   children: React.ReactNode
   fallback?: React.ReactNode
@@ -18,30 +19,40 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
   fallback,
   redirectTo = '/pages/login/index',
-  showLoginPrompt = true
+  showLoginPrompt = false // 默认为自动跳转，不显示提示
 }) => {
   const { isLoggedIn, loading, checkAuthStatus } = useAuth()
   const [isChecking, setIsChecking] = useState(true)
 
+  // 初始检查
   useEffect(() => {
     const initAuth = async () => {
-      try {
-        await checkAuthStatus()
-      } catch (error) {
-        console.error('认证检查失败:', error)
-      } finally {
-        setIsChecking(false)
+      // 如果已经有登录态，就不需要重新checkAuthStatus(会发请求)，除非强制检查
+      // 这里依赖 useAuth 的状态即可
+      if (!isLoggedIn) {
+          try {
+            await checkAuthStatus()
+          } catch (error) {
+            console.error('认证检查失败:', error)
+          }
       }
+      setIsChecking(false)
     }
 
     initAuth()
-  }, [checkAuthStatus])
+  }, [checkAuthStatus, isLoggedIn])
 
   // 处理自动跳转
   useEffect(() => {
     if (!isChecking && !loading && !isLoggedIn && !fallback && !showLoginPrompt) {
-        Taro.redirectTo({
-            url: redirectTo
+        // 保存当前页面路径作为登录后的重定向地址（可选，视需求而定）
+        // 这里简单处理，直接跳转登录页
+        Taro.navigateTo({
+            url: redirectTo,
+            fail: () => {
+                // 如果是 tabbar 页面或 navigateTo 失败，尝试 reLaunch
+                Taro.reLaunch({ url: redirectTo })
+            }
         })
     }
   }, [isChecking, loading, isLoggedIn, fallback, showLoginPrompt, redirectTo])
@@ -50,7 +61,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   if (isChecking || loading) {
     return (
       <View className="auth-guard-loading">
-        <Text className="loading-text">检查登录状态...</Text>
+        <Loading className="loading-text">加载中...</Loading> 
       </View>
     )
   }

@@ -83,7 +83,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('会话已过期或不存在');
       }
 
-      const session = JSON.parse(sessionData);
+      const session = sessionData;
 
       // 验证会话中的用户ID是否匹配
       if (session.userId !== user.id) {

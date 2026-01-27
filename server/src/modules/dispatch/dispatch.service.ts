@@ -1,15 +1,26 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { OrderService } from '../order/services/order.service';
 import { CourierService } from '../courier/courier.service';
+import { TaskStatus } from '@prisma/client';
+import { SnowflakeIdGenerator, OrderStatus } from '@/common';
 
 @Injectable()
 export class DispatchService {
+  private readonly idGenerator: SnowflakeIdGenerator;
+
   constructor(
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
     private readonly orderService: OrderService,
     private readonly courierService: CourierService,
-  ) {}
+  ) {
+    this.idGenerator = new SnowflakeIdGenerator({
+      workerId: this.configService.get<number>('SNOWFLAKE_WORKER_ID', 1),
+      datacenterId: this.configService.get<number>('SNOWFLAKE_DATACENTER_ID', 1),
+    });
+  }
 
   async assignOrder(orderId: string, courierId: string) {
     const order = await this.orderService.findById(Number(orderId));
@@ -20,11 +31,11 @@ export class DispatchService {
 
     const assignment = await this.prisma.courierAssignment.create({
       data: {
-        id: `assignment-${Date.now()}`,
+        id: this.idGenerator.nextId(),
         orderId: BigInt(orderId),
         orderNo: order.orderNo,
         courierId,
-        status: 'ASSIGNED' as any,
+        status: TaskStatus.ASSIGNED,
         pickupLocation: (order as any).address
           ? ({
               address: (order as any).address?.detail,
@@ -34,7 +45,7 @@ export class DispatchService {
     });
 
     await this.orderService.update(Number(orderId), {
-      status: 'CONFIRMED' as any,
+      status: OrderStatus.ASSIGNED,
     } as any);
     return { success: true, orderId, courierId, assignmentId: assignment.id };
   }
@@ -51,24 +62,24 @@ export class DispatchService {
     return a;
   }
 
-  async updateAssignmentStatus(id: string, status: string) {
+  async updateAssignmentStatus(id: string, status: TaskStatus) {
     return this.prisma.courierAssignment.update({
       where: { id },
-      data: { status: status as any },
+      data: { status },
     });
   }
 
   async acceptAssignment(id: string) {
     return this.prisma.courierAssignment.update({
       where: { id },
-      data: { status: 'ACCEPTED' as any, acceptedAt: new Date() },
+      data: { status: TaskStatus.ACCEPTED, acceptedAt: new Date() },
     });
   }
 
   async rejectAssignment(id: string) {
     return this.prisma.courierAssignment.update({
       where: { id },
-      data: { status: 'REJECTED' as any },
+      data: { status: TaskStatus.REJECTED },
     });
   }
 }

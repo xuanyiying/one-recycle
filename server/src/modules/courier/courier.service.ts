@@ -4,26 +4,39 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { CreateCourierDto } from './dto/create-courier.dto';
 import { UpdateCourierDto } from './dto/update-courier.dto';
 import { CreatePickupNotificationDto } from './dto/create-notification.dto';
 import { NotificationResponseDto } from './dto/notification-response.dto';
 import { UpdateTaskStatusDto } from './dto/update-task.dto';
+import { CourierStatus } from '@prisma/client';
+import { SnowflakeIdGenerator } from '@/common';
 
 @Injectable()
 export class CourierService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly idGenerator: SnowflakeIdGenerator;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.idGenerator = new SnowflakeIdGenerator({
+      workerId: this.configService.get<number>('COURIER_WORKER_ID', 8),
+      datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
+    });
+  }
 
   async createCourier(data: CreateCourierDto) {
     return this.prisma.courier.create({
       data: {
-        id: `courier-${Date.now()}`,
+        id: this.idGenerator.nextId().toString(),
         name: data.name,
         phone: data.phone,
         email: data.email,
         workingHours: (data.workingHours as any) || undefined,
         serviceAreas: data.serviceAreas || [],
-        status: 'OFFLINE' as any,
+        status: CourierStatus.OFFLINE,
       },
     });
   }
@@ -91,7 +104,7 @@ export class CourierService {
         latitude: location.latitude,
         longitude: location.longitude,
         address: location.address,
-        status: 'AVAILABLE' as any,
+        status: CourierStatus.AVAILABLE,
       },
     });
   }

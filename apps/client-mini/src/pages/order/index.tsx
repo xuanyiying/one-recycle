@@ -190,7 +190,7 @@ const OrderListPage: React.FC = () => {
   ), []);
 
   return (
-    <AuthGuard>
+    <AuthGuard redirectTo={`/pages/login/index?redirect=${encodeURIComponent('/pages/order/index')}`}>
       <View className="order-list-page">
         {/* 状态筛选标签 - 悬浮胶囊风格 */}
         <View className="tab-container">

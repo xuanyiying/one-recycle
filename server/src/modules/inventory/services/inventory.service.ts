@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   CreateInventoryItemData,
   CreateTransactionData,
@@ -30,7 +31,10 @@ import { InventoryItem } from '@prisma/client';
 
 @Injectable()
 export class InventoryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {}
 
   // 创建库存项目
   async createInventoryItem(
@@ -52,15 +56,31 @@ export class InventoryService {
         unitPrice: data.unitPrice,
         totalPrice: totalPrice,
         location: data.location,
-        status: data.status || InventoryStatus.IN_STOCK,
-        itemType: (data.itemType || ItemType.RECYCLED) as any,
-        condition: (data.condition || ItemCondition.GOOD) as any,
+        status:
+          data.status ||
+          this.configService.get<InventoryStatus>(
+            'INVENTORY_DEFAULT_STATUS',
+            InventoryStatus.IN_STOCK,
+          ),
+        itemType: (data.itemType ||
+          this.configService.get<ItemType>(
+            'INVENTORY_DEFAULT_ITEM_TYPE',
+            ItemType.RECYCLED,
+          )) as any,
+        condition: (data.condition ||
+          this.configService.get<ItemCondition>(
+            'INVENTORY_DEFAULT_CONDITION',
+            ItemCondition.GOOD,
+          )) as any,
         sourceOrderId: data.sourceOrderId
           ? BigInt(data.sourceOrderId as any)
           : null,
         qualityGrade: data.qualityGrade,
         processingStatus: (data.processingStatus ||
-          ProcessingStatus.RECEIVED) as any,
+          this.configService.get<ProcessingStatus>(
+            'INVENTORY_DEFAULT_PROCESSING_STATUS',
+            ProcessingStatus.RECEIVED,
+          )) as any,
         expiryDate: data.expiryDate,
         batchNumber: data.batchNumber,
         minStockLevel: data.minStockLevel,

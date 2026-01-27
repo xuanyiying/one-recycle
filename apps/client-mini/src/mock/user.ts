@@ -5,8 +5,8 @@ import { createMockResponse, MockDataGenerator, MockResponse } from './index'
 export interface UserProfile {
   id: string
   nickname: string
-  avatar: string
-  phone: string
+  avatarUrl: string
+  mobile: string
   email?: string
   realName?: string
   idCard?: string
@@ -19,8 +19,8 @@ export interface UserProfile {
 const mockUserProfile: UserProfile = {
   id: '1',
   nickname: '环保小达人',
-  avatar: '', 
-  phone: '138****8888',
+  avatarUrl: '', 
+  mobile: '138****8888',
   email: 'user@example.com',
   realName: '张三',
   idCard: '110101199001011234',

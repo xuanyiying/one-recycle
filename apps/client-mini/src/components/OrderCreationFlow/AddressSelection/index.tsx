@@ -160,12 +160,12 @@ export default function AddressSelection({
             
             // Map WeChat address to our format
             const newAddress: AddressFormData = {
-                recipientName: res.userName,
-                phoneNumber: res.telNumber,
+                name: res.userName,
+                mobile: res.telNumber,
                 province: res.provinceName,
                 city: res.cityName,
                 district: res.countyName,
-                detailedAddress: res.detailInfo,
+                detail: res.detailInfo,
                 region: `${res.provinceName} ${res.cityName} ${res.countyName}`,
                 label: AddressLabel.OTHER,
                 isDefault: false
@@ -266,7 +266,7 @@ export default function AddressSelection({
 
             if (!isInServiceArea) {
                 setErrors({
-                    detailedAddress: '该地址不在我们的服务范围内',
+                    detail: '该地址不在我们的服务范围内',
                 })
                 Taro.showToast({
                     title: '地址不在服务范围内',
@@ -279,12 +279,12 @@ export default function AddressSelection({
             try {
                 // Prepare data for API - matches Address model
                 const addressData: Omit<Address, 'id'> = {
-                    recipientName: formData.recipientName,
-                    phoneNumber: formData.phoneNumber,
+                    name: formData.name,
+                    mobile: formData.mobile,
                     province: formData.province,
                     city: formData.city,
                     district: formData.district,
-                    detailedAddress: formData.detailedAddress,
+                    detail: formData.detail,
                     isDefault: formData.isDefault,
                     label: formData.label,
                     coordinates: formData.coordinates

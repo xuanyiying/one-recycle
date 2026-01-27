@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AccountService } from './account.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 
 describe('AccountService', () => {
   let service: AccountService;
@@ -14,6 +15,13 @@ describe('AccountService', () => {
     },
   };
 
+  const mockConfigService = {
+    get: jest.fn((key, defaultValue) => {
+      if (key === 'CARBON_SAVING_RATE') return 0.02;
+      return defaultValue;
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -21,6 +29,10 @@ describe('AccountService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();

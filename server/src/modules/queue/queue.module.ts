@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OrderQueueService } from './services/order-queue.service';
 import { NotificationQueueService } from './services/notification-queue.service';
 import { PaymentQueueService } from './services/payment-queue.service';
@@ -24,18 +25,25 @@ import { QUEUE_NAMES } from '@/common';
 
 @Module({
   imports: [
+    ConfigModule,
     // Use forwardRef to prevent circular dependencies
     forwardRef(() => OrderModule),
     forwardRef(() => PaymentModule),
     forwardRef(() => NotificationModule),
-    BullModule.registerQueue(
+    BullModule.registerQueueAsync(
       { name: QUEUE_NAMES.ORDER },
       {
         name: QUEUE_NAMES.NOTIFICATION,
-        limiter: {
-          max: 100, // 每分钟最多100条
-          duration: 60000,
-        },
+        useFactory: async (configService: ConfigService) => ({
+          limiter: {
+            max: configService.get<number>('NOTIFICATION_QUEUE_LIMIT_MAX', 100),
+            duration: configService.get<number>(
+              'NOTIFICATION_QUEUE_LIMIT_DURATION',
+              60000,
+            ),
+          },
+        }),
+        inject: [ConfigService],
       },
       { name: QUEUE_NAMES.PAYMENT },
       { name: QUEUE_NAMES.DISPATCH },

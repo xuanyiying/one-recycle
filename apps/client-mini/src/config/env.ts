@@ -24,14 +24,14 @@ const developmentConfig: EnvConfig = {
 const productionConfig: EnvConfig = {
   API_TIMEOUT: 15000,
   USE_MOCK_DATA: process.env.TARO_APP_USE_MOCK_DATA === 'true',
-  API_BASE_URL: process.env.TARO_APP_API_BASE_URL || 'https://api.onerecycle.com'
+  API_BASE_URL: process.env.TARO_APP_API_BASE_URL || 'https://api.onerecycle.com/api'
 }
 
 // 测试环境配置
 const testConfig: EnvConfig = {
   API_TIMEOUT: 12000,
   USE_MOCK_DATA: process.env.TARO_APP_USE_MOCK_DATA !== 'false',
-  API_BASE_URL: process.env.TARO_APP_API_BASE_URL || 'https://test-api.onerecycle.com'
+  API_BASE_URL: process.env.TARO_APP_API_BASE_URL || 'https://test-api.onerecycle.com/api'
 }
 
 // 获取当前环境

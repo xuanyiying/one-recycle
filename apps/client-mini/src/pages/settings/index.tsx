@@ -3,6 +3,7 @@ import { View, Text, Image } from '@tarojs/components'
 import './index.scss'
 import { IconFont } from '@nutui/icons-react-taro'
 import logoIcon from '../../assets/icons/logo.png'
+import AuthGuard from '@/components/AuthGuard'
 
 interface SettingItem {
     id: string
@@ -66,7 +67,8 @@ const Settings = () => {
     const infoSettings = settings.filter(setting => setting.type === 'navigate')
 
     return (
-        <View className='settings-page'>
+        <AuthGuard>
+            <View className='settings-page'>
             <View className='settings-section'>
                 <View className='section-header'>
                     <Text>偏好设置</Text>
@@ -140,6 +142,7 @@ const Settings = () => {
                 <Text className='build-text'>为地球降温，从一次回收开始</Text>
             </View>
         </View>
+        </AuthGuard>
     )
 }
 

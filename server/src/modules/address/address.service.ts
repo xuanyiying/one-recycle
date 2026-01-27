@@ -1,19 +1,24 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
+import { UpdateAddressDto } from './dto/update-address.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Address, Region } from '@prisma/client';
 import { RedisService } from '../../common/redis/redis.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AddressService {
   private readonly logger = new Logger(AddressService.name);
   private readonly REGION_CACHE_KEY_PREFIX = 'region:children:';
-  private readonly CACHE_TTL = 86400 * 7; // 缓存一周
+  private readonly CACHE_TTL: number;
 
   constructor(
     private prisma: PrismaService,
-    private redis: RedisService
-  ) {}
+    private redis: RedisService,
+    private configService: ConfigService,
+  ) {
+    this.CACHE_TTL = this.configService.get<number>('REGION_CACHE_TTL', 86400 * 7);
+  }
 
   /**
    * 根据父级编码获取下级地区 (支持 Redis 缓存)
@@ -75,7 +80,7 @@ export class AddressService {
 
   async update(
     id: string | number,
-    updateData: Partial<CreateAddressDto>,
+    updateData: UpdateAddressDto,
   ): Promise<Address> {
     const address = await this.prisma.address.findUnique({
       where: { id: BigInt(id) },

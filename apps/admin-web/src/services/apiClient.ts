@@ -44,7 +44,7 @@ export class ApiClient {
     // 为不同服务添加正确的API路径前缀
     let fullBaseURL = baseURL;
     if (serviceName) {
-      fullBaseURL = `${baseURL}/api/v1`;
+      fullBaseURL = `${baseURL}/api`;
     }
 
     this.instance = axios.create({

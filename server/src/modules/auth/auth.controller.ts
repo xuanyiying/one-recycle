@@ -41,7 +41,7 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Post('send-code')
+  @Post('send-sms-code')
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '发送验证码' })

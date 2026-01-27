@@ -166,6 +166,105 @@
   }
 }
 
+// ==================== 手机号登录表单 ====================
+.phone-login-form {
+  width: 100%;
+  padding: 0 36rpx;
+  margin-bottom: $spacing-24;
+
+  .input-group {
+    margin-bottom: $spacing-16;
+    background: var(--ios-secondary-system-background);
+    border-radius: $border-radius-lg; // 12pt
+    overflow: hidden;
+    
+    &.code-group {
+      display: flex;
+      align-items: center;
+      padding-right: $spacing-12;
+      
+      .custom-input {
+        flex: 1;
+        background: transparent;
+      }
+
+      .code-btn {
+        margin: 0;
+        min-width: 180rpx;
+        font-size: 26rpx;
+      }
+    }
+
+    .custom-input {
+      width: 100%;
+      height: 96rpx; // 48pt standard height
+      padding: 0 $spacing-24;
+      background: transparent;
+      font-size: 32rpx;
+      color: var(--ios-label);
+      
+      &::placeholder {
+        color: var(--ios-placeholder-text);
+      }
+    }
+  }
+}
+
+// ==================== 一键登录区域 ====================
+.quick-login-section {
+  width: 100%;
+  padding: 0 36rpx;
+  margin-bottom: $spacing-24;
+}
+
+// ==================== 模式切换 ====================
+.switch-mode {
+  padding: $spacing-16;
+  margin-bottom: $spacing-32;
+  
+  .switch-text {
+    @include ios-body;
+    color: var(--ios-system-blue);
+    font-weight: 500;
+  }
+  
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+// ==================== 协议勾选区域 ====================
+.agreement-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-24;
+  width: 100%;
+  padding: 0 36rpx;
+
+  .agreement-text-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-left: $spacing-8;
+    
+    .agreement-text {
+      @include ios-caption1;
+      color: var(--ios-secondary-label);
+    }
+
+    .agreement-link {
+      @include ios-caption1;
+      color: var(--ios-system-blue);
+      font-weight: 500;
+      
+      &:active {
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
 // ==================== 提交错误信息 ====================
 .submit-error {
   width: 100%;
@@ -186,6 +285,7 @@
 .action-buttons {
   width: 100%;
   margin-bottom: $spacing-24; // 24pt
+  padding: 0 36rpx;
 
   .authorize-btn {
     @include ios-button-primary; // 使用 iOS 主按钮样式
@@ -201,210 +301,107 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 40rpx; // 20pt
-        height: 40rpx; // 20pt
-        margin: -20rpx 0 0 -20rpx;
-        border: 4rpx solid transparent;
-        border-top-color: white;
+        width: 32rpx;
+        height: 32rpx;
+        margin-top: -16rpx;
+        margin-left: -16rpx;
+        border: 4rpx solid #ffffff;
+        border-top-color: transparent;
         border-radius: 50%;
-        animation: spin 1s linear infinite;
+        animation: spin 0.8s linear infinite;
       }
     }
   }
 
   .skip-btn {
-    @include ios-button-text; // 使用 iOS 文本按钮样式
+    @include ios-button-secondary; // 使用 iOS 次要按钮样式
     width: 100%;
   }
 }
 
-// ==================== 用户协议同意区域 ====================
-.agreement-checkbox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+// ==================== 社交登录区域 ====================
+.social-login-section {
   width: 100%;
-  margin-bottom: $spacing-16; // 16pt
-  padding: 0 $spacing-4; // 0 4pt
-
-  .nut-checkbox {
-    width: 36rpx; // 18pt
-    height: 36rpx; // 18pt
-    border: 2rpx solid var(--ios-secondary-label); // 1pt 边框 - 与文字颜色一致
-    border-radius: $border-radius-xs; // 4pt
+  padding: 0 36rpx;
+  margin-top: $spacing-16;
+  padding-bottom: $spacing-32;
+  
+  .divider {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    margin-right: $spacing-8; // 8pt
-    background: transparent;
-    transition: all 0.2s ease;
-
-    &.nut-checkbox--checked {
-      background: var(--ios-blue); // iOS 系统蓝色
-      border-color: var(--ios-blue);
+    margin-bottom: $spacing-32;
+    
+    .line {
+      flex: 1;
+      height: 1px; // 1px separator
+      background: var(--ios-separator);
     }
-
-    &:active {
-      transform: scale(0.95);
-    }
-
-    .nut-checkbox__icon {
-      @include ios-body; // 使用 iOS Body 样式
-      color: white;
-      font-weight: 600;
-      line-height: 1;
+    
+    .text {
+      @include ios-caption1;
+      color: var(--ios-tertiary-label);
+      margin: 0 $spacing-16;
     }
   }
-
-  .agreement-text-wrapper {
-    flex: 1;
+  
+  .social-buttons {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-start;
-    gap: $spacing-2; // 2pt
-
-    .agreement-text {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-secondary-label);
-      line-height: $line-height-relaxed;
-    }
-
-    .agreement-link {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-blue); // iOS 系统蓝色
-      text-decoration: underline;
-      line-height: $line-height-relaxed;
-      padding: $spacing-2 $spacing-4; // 2pt 4pt
-      margin: -#{$spacing-2} 0; // -2pt 0 - 增加点击区域
-      border-radius: $border-radius-xs; // 4pt
-      transition: background-color 0.2s ease;
-
+    justify-content: space-around;
+    padding: 0 $spacing-40; // 增加内边距使按钮更集中
+    
+    .social-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $spacing-12;
+      transition: all 0.2s ease;
+      
       &:active {
-        background-color: rgba(0, 122, 255, 0.1); // iOS 蓝色背景
+        opacity: 0.7;
+        transform: scale(0.95);
+      }
+      
+      .icon {
+        width: 96rpx; // 48pt
+        height: 96rpx; // 48pt
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.08);
+        
+        &.wechat {
+          background-color: #07C160;
+        }
+        &.alipay {
+          background-color: #1677FF;
+        }
+        
+        // 图标可以使用图片或文字，这里预留文字颜色
+        color: #fff;
+        font-size: 40rpx; 
+        font-weight: bold;
+      }
+      
+      text {
+        @include ios-caption1;
+        color: var(--ios-secondary-label);
       }
     }
   }
 }
 
-// ==================== 头像选择器 ====================
-.avatar-picker-container {
-  width: 100%;
-  height: 100%;
-  background: var(--ios-secondary-system-grouped-background);
-  border-radius: $border-radius-lg $border-radius-lg 0 0; // 20pt 顶部圆角
-  overflow: hidden;
-  padding-bottom: constant(safe-area-inset-bottom); // iOS 11.0-11.2
-  padding-bottom: env(safe-area-inset-bottom); // iOS 11.2+
-  display: flex;
-  flex-direction: column;
-
-  .avatar-picker-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: $spacing-20 $spacing-16; // 20pt 16pt
-    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
-    background: transparent;
-    border: none;
-    width: 100%;
-
-    &:active {
-      background: var(--ios-tertiary-system-grouped-background);
-    }
-
-    .picker-title {
-      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
-      flex: 1;
-      text-align: left;
-    }
-
-    .option-icon {
-      width: 48rpx; // 24pt
-      height: 48rpx; // 24pt
-      margin-left: $spacing-12; // 12pt
-    }
-  }
-
-  .avatar-option {
-    display: flex;
-    align-items: center;
-    padding: $spacing-16; // 16pt
-    background: transparent;
-    border: none;
-    width: 100%;
-    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
-
-    &:active {
-      background: var(--ios-tertiary-system-grouped-background);
-    }
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .option-icon {
-      width: 48rpx; // 24pt
-      height: 48rpx; // 24pt
-      margin-right: $spacing-12; // 12pt
-    }
-
-    .option-text {
-      @include ios-body; // 使用 iOS Body 样式 (34rpx)
-      flex: 1;
-      text-align: left;
-    }
-  }
-
-  .cancel-btn {
-    @include ios-button-secondary; // 使用 iOS 次要按钮样式
-    width: 100%;
-    margin-top: auto;
-    margin-bottom: $spacing-12;
-    margin-left: $spacing-12;
-    margin-right: $spacing-12;
-  }
-}
-
-// ==================== iOS 动画 ====================
-@keyframes ios-fade-in {
-  from {
-    opacity: 0;
-  }
+@keyframes spin {
   to {
-    opacity: 1;
-  }
-}
-
-@keyframes ios-slide-in-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+    transform: rotate(360deg);
   }
 }
 
 @keyframes ios-shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-8rpx); // 4pt
-  }
-  75% {
-    transform: translateX(8rpx); // 4pt
-  }
-}
-
-@keyframes spin {
-  0% { 
-    transform: rotate(0deg); 
-  }
-  100% { 
-    transform: rotate(360deg); 
-  }
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10rpx); }
+  40% { transform: translateX(10rpx); }
+  60% { transform: translateX(-10rpx); }
+  80% { transform: translateX(10rpx); }
 }
