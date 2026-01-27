@@ -59,6 +59,20 @@ export interface OrderFilters {
   limit?: number;
 }
 
+export interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  quota: number;
+  remaining: number;
+}
+
+export interface DayTimeSlots {
+  date: string;
+  dayOfWeek: number;
+  slots: TimeSlot[];
+}
+
 export interface OrderStatistics {
   totalOrders: number;
   pendingOrders: number;

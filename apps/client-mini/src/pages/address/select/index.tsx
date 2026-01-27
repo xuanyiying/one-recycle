@@ -3,9 +3,10 @@ import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import AuthGuard from '@/components/AuthGuard'
 import { IconFont } from '@nutui/icons-react-taro'
-import './index.scss'
+import AddressCard from '@/components/AddressCard'
 import { AddressService } from '@/services/address'
 import { Address } from '@/types/address'
+import './index.scss'
 
 export default function AddressSelect() {
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -66,11 +67,32 @@ export default function AddressSelect() {
   }, [])
 
   // 编辑地址
-  const handleEditAddress = useCallback((e: any, address: Address) => {
-    e.stopPropagation()
-    Taro.navigateTo({
-      url: `/pages/address/form/index?id=${address.id}`
-    })
+  const handleEditAddress = useCallback((address: Address) => {
+    if (address.id) {
+        Taro.navigateTo({
+            url: `/pages/address/form/index?id=${address.id}`
+        })
+    }
+  }, [])
+  
+  // 删除地址 (占位，AddressCard 需要此 prop)
+  const handleDeleteAddress = useCallback(async (address: Address) => {
+      // 这里可以实现删除逻辑，或者如果此页面不支持直接删除，留空
+      // 考虑到用户体验，建议支持删除
+      Taro.showModal({
+          title: '删除地址',
+          content: '确定要删除这个地址吗？',
+          success: async (res) => {
+              if (res.confirm && address.id) {
+                  try {
+                      await AddressService.deleteAddress(String(address.id))
+                      loadAddresses() // 重新加载
+                  } catch (e) {
+                      Taro.showToast({ title: '删除失败', icon: 'none' })
+                  }
+              }
+          }
+      })
   }, [])
 
   if (loading) {
@@ -100,34 +122,15 @@ export default function AddressSelect() {
           <>
             <View className='address-list'>
               {addresses.map((address) => (
-                <View
-                  key={address.id}
-                  className={`address-item ${address.isDefault ? 'default' : ''}`}
-                  onClick={() => handleSelectAddress(address)}
-                >
-                  <View className='address-info'>
-                    <View className='address-header'>
-                      <Text className='name'>{address.recipientName}</Text>
-                      <Text className='phone'>{address.phoneNumber}</Text>
-                      {address.isDefault && (
-                        <View className='default-tag'>
-                          <Text>默认</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text className='address-detail'>
-                      {address.region || `${address.province}${address.city}${address.district}`}{address.detailedAddress}
-                    </Text>
+                  <View key={address.id} className="address-wrapper">
+                    <AddressCard
+                        address={address}
+                        isSelected={false} // 在选择列表中，通常不需要显示"已选中"状态，或者根据当前已选 ID 显示
+                        onSelect={() => handleSelectAddress(address)}
+                        onEdit={() => handleEditAddress(address)}
+                        onDelete={() => handleDeleteAddress(address)}
+                    />
                   </View>
-                  <View className='address-actions'>
-                    <View
-                      className='edit-btn'
-                      onClick={(e) => handleEditAddress(e, address)}
-                    >
-                      <IconFont name='edit' size='20' color='#666' />
-                    </View>
-                  </View>
-                </View>
               ))}
             </View>
             <View className='bottom-actions'>

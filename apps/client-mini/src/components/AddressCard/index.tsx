@@ -4,8 +4,8 @@
  */
 
 import { View, Text } from '@tarojs/components'
-import { Address, AddressLabel } from '../../../types/order'
-import './AddressCard.scss'
+import { Address, AddressLabel } from '../../types/order'
+import './index.scss'
 
 // ============================================================================
 // Types
@@ -28,6 +28,19 @@ const LABEL_DISPLAY: Record<AddressLabel, string> = {
     [AddressLabel.WORK]: '工作',
     [AddressLabel.SCHOOL]: '学校',
     [AddressLabel.OTHER]: '其他',
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+const formatPhoneNumber = (phone: string) => {
+    if (!phone) return ''
+    const cleaned = phone.replace(/\D/g, '')
+    if (cleaned.length === 11) {
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`
+    }
+    return phone
 }
 
 // ============================================================================
@@ -65,12 +78,13 @@ export default function AddressCard({
                 </View>
 
                 {/* Phone Number */}
-                <Text className='phone-number'>{address.phoneNumber}</Text>
+                <Text className='phone-number'>{formatPhoneNumber(address.phoneNumber)}</Text>
 
                 {/* Address Details */}
                 <View className='address-details'>
-                    <Text className='region'>{address.region}</Text>
-                    <Text className='detailed-address'>{address.detailedAddress}</Text>
+                    <Text className='full-address'>
+                        {`${address.province}${address.city}${address.district}${address.street || ''} ${address.detailedAddress}`}
+                    </Text>
                 </View>
             </View>
 

@@ -5,7 +5,7 @@
 
 import { useMemo } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
-import './DatePicker.scss'
+import './index.scss'
 
 // ============================================================================
 // Types
@@ -30,7 +30,7 @@ export default function DatePicker({
      * Generate array of dates for the next N days
      */
     const dates = useMemo(() => {
-        const result = []
+        const result : Date[] = []
         const today = new Date()
 
         for (let i = 0; i < daysCount; i++) {

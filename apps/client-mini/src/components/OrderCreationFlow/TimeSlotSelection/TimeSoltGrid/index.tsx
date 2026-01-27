@@ -4,8 +4,8 @@
  */
 
 import { View, Text } from '@tarojs/components'
-import { TimeSlot } from '../../../types/order'
-import './TimeSlotGrid.scss'
+import { TimeSlot } from '../../../../types/order'
+import './index.scss'
 
 // ============================================================================
 // Types

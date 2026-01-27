@@ -69,7 +69,7 @@ export default function OrderConfirmation({
         }
 
         if (!address) {
-            newErrors.address = '请选择收货地址'
+            newErrors.address = '请选择取货地址'
         }
 
         if (!timeSlot) {
@@ -242,7 +242,7 @@ export default function OrderConfirmation({
                 {/* Address Summary Section */}
                 <View className='form-section'>
                     <View className='section-header'>
-                        <Text className='section-title'>收货地址</Text>
+                        <Text className='section-title'>取货地址</Text>
                         {onEditAddress && (
                             <Button
                                 className='btn-edit'

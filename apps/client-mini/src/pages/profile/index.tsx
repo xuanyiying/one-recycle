@@ -2,24 +2,15 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 
-import { IconFont } from '@nutui/icons-react-taro'
-import { useAppContext } from '@/store'
+import { IconFont, Order, Location, Warning, ArrowRight, Service, Setting } from '@nutui/icons-react-taro'
+import { useAuth } from '@/hooks/useAuth'
 import accountService from '@/services/account'
 import type { Account } from '@/types/account'
 import AuthGuard from '@/components/AuthGuard'
-import { useResponsive } from '@/hooks/useResponsive'
-import { MockAutoLogin } from '@/mock'
 import './index.scss'
 import { Avatar } from '@nutui/nutui-react-taro'
 import { getUserById } from '@/services'
 import defaultAvatar from '@/assets/icons/default-avatar.png'
-
-// TypeScript interfaces for component state
-interface UserInfo {
-    avatarUrl: string
-    nickName: string
-    mobile: string
-}
 
 interface AccountStats {
     totalOrders: number
@@ -34,11 +25,8 @@ interface LoadingState {
 }
 
 export default function Profile(): JSX.Element {
-    const [userInfo, setUserInfo] = useState<UserInfo>({
-        avatarUrl: '',
-        nickName: '',
-        mobile: ''
-    })
+    const { user, updateUser, logout } = useAuth()
+    
     const [stats, setStats] = useState<AccountStats>({
         totalOrders: 0,
         totalAmount: 0,
@@ -50,9 +38,6 @@ export default function Profile(): JSX.Element {
         error: null,
         retryCount: 0
     })
-
-    const { state, dispatch } = useAppContext()
-    const screenSize = useResponsive()
 
     // Memoized computed values for performance optimization
     const formattedStats = useMemo(() => ({
@@ -75,7 +60,7 @@ export default function Profile(): JSX.Element {
                 retryCount: isRetry ? prev.retryCount + 1 : 0
             }))
 
-            if (!state.user?.id) {
+            if (!user?.id) {
                 setLoadingState(prev => ({
                     ...prev,
                     isLoading: false,
@@ -86,18 +71,16 @@ export default function Profile(): JSX.Element {
 
             // 并行请求优化性能
             const [userInfoResult, accountData, statsData] = await Promise.allSettled([
-                getUserById(state.user.id),
+                getUserById(user.id),
                 accountService.getMyAccount(),
                 accountService.getMyStats()
             ])
 
             // 处理用户信息
             if (userInfoResult.status === 'fulfilled' && userInfoResult.value.success && userInfoResult.value.data) {
-                setUserInfo({
-                    avatarUrl: userInfoResult.value.data.avatar || '',
-                    nickName: userInfoResult.value.data.nickname || '未设置昵称',
-                    mobile: userInfoResult.value.data.phone || '未绑定手机'
-                })
+                const freshUserData = userInfoResult.value.data
+                // 更新全局状态，保持数据一致性
+                updateUser(freshUserData)
             } else {
                 console.warn('获取用户信息失败:', userInfoResult.status === 'rejected' ? userInfoResult.reason : '数据格式错误')
             }
@@ -113,7 +96,6 @@ export default function Profile(): JSX.Element {
             if (statsData.status === 'fulfilled') {
                 const totalOrders = statsData.value.totalOrders || 0
                 const totalAmount = statsData.value.totalIncome || 0
-
                 setStats({
                     totalOrders,
                     totalAmount,
@@ -138,17 +120,9 @@ export default function Profile(): JSX.Element {
                 isLoading: false,
                 error: errorMessage
             }))
-
-            // 只在非重试情况下显示错误提示
-            if (!isRetry) {
-                Taro.showToast({
-                    title: '加载失败',
-                    icon: 'none',
-                    duration: 2000
-                })
-            }
         }
-    }, [state.user?.id])
+    }, [user?.id, updateUser])
+
 
     // 重试加载函数
     const retryLoad = useCallback(() => {
@@ -246,10 +220,10 @@ export default function Profile(): JSX.Element {
             confirmColor: '#FF3B30', // iOS 红色用于破坏性操作
             cancelText: '取消',
             cancelColor: '#007AFF', // iOS 蓝色
-            success: (res) => {
+            success: async (res) => {
                 if (res.confirm) {
                     try {
-                        dispatch({ type: 'LOGOUT' })
+                        await logout()
                         Taro.reLaunch({
                             url: '/pages/login/index'
                         })
@@ -271,7 +245,7 @@ export default function Profile(): JSX.Element {
                 })
             }
         })
-    }, [dispatch])
+    }, [logout])
 
     // iOS标准加载状态组件
     const LoadingComponent = useMemo(() => (
@@ -287,14 +261,12 @@ export default function Profile(): JSX.Element {
     const ErrorComponent = useMemo(() => (
         <View className='profile-page'>
             <View className='error-container'>
-                <IconFont name='warning' size='48' color='var(--ios-gray)'></IconFont>
+                <IconFont name='refresh' size='48' color='#B0BEC5'></IconFont>
                 <Text className='error-title'>加载失败</Text>
                 <Text className='error-message'>{loadingState.error}</Text>
                 {canRetry && (
-                    <View className='error-actions'>
-                        <View className='ios-button-primary retry-btn' onClick={retryLoad}>
-                            <Text>重试 ({3 - loadingState.retryCount})</Text>
-                        </View>
+                    <View className='retry-btn' onClick={retryLoad}>
+                        <Text>点击重试</Text>
                     </View>
                 )}
             </View>
@@ -312,138 +284,119 @@ export default function Profile(): JSX.Element {
     return (
         <AuthGuard>
             <View className='profile-page'>
-                {/* 用户信息卡片 */}
-                <View className={`user-section ${screenSize.screenType}`}>
-                    <View className='user-info'>
-                        <View className='user-avatar-container' onClick={onEditProfile}>
+                {/* 顶部沉浸式背景 */}
+                <View className='profile-bg' />
+
+                {/* 用户信息区域 - 开放式布局 */}
+                <View className='user-header'>
+                    <View className='user-info' onClick={onEditProfile}>
+                        <View className='avatar-ring'>
                             <Avatar
                                 className='user-avatar'
-                                src={userInfo.avatarUrl || defaultAvatar}
+                                src={user?.avatar || defaultAvatar}
                                 shape='round'
                             />
                         </View>
-                        <View className='user-details'>
-                            <Text className='user-nickname'>{userInfo.nickName || '未设置昵称'}</Text>
-                            <Text className='user-phone'>{userInfo.mobile || '未绑定手机'}</Text>
+                        <View className='user-text'>
+                            <Text className='user-nickname'>{user?.nickname || '点击登录'}</Text>
+                            <Text className='user-phone'>{user?.phone || '登录后查看更多信息'}</Text>
+                        </View>
+                    </View>
+                    <View className='settings-btn' onClick={onSettings}>
+                        <Setting name='setting' size='20' color='#282727ff' />
+                    </View>
+                </View>
+
+                {/* 悬浮统计卡片 */}
+                <View className='stats-card'>
+                    <View className='stats-row'>
+                        <View className='stat-item' onClick={handleViewOrders}>
+                            <Text className='stat-num'>{formattedStats.totalOrders}</Text>
+                            <Text className='stat-label'>全部订单</Text>
+                        </View>
+                        <View className='divider' />
+                        <View className='stat-item' onClick={handleViewBalance}>
+                            <Text className='stat-num'>
+                                <Text className='symbol'>¥</Text>
+                                {formattedStats.totalAmount}
+                            </Text>
+                            <Text className='stat-label'>累计收益</Text>
+                        </View>
+                        <View className='divider' />
+                        <View className='stat-item'>
+                            <Text className='stat-num carbon'>{formattedStats.savedCarbon}</Text>
+                            <Text className='stat-label'>减碳(kg)</Text>
                         </View>
                     </View>
                 </View>
 
-                {/* 统计信息 */}
-                <View className={`user-section ${screenSize.screenType}`}>
-                    <View className='stats-section'>
-                        <View className='stats-grid'>
-                            <View className='stat-item stat-orders' onClick={handleViewOrders}>
-                                <IconFont name='file' size='24' color='white'></IconFont>
-                                <Text className='stat-value'>{formattedStats.totalOrders}</Text>
-                                <Text className='stat-label'>累计订单</Text>
-                            </View>
-                            <View className='stat-item stat-earnings' onClick={handleViewBalance}>
-                                <IconFont name='money' size='24' color='white'></IconFont>
-                                <Text className='stat-value'>¥{formattedStats.totalAmount}</Text>
-                                <Text className='stat-label'>累计收益</Text>
-                            </View>
-                            <View className='stat-item stat-carbon'>
-                                <IconFont name='cloud' size='24' color='white'></IconFont>
-                                <Text className='stat-value'>{formattedStats.savedCarbon}kg</Text>
-                                <Text className='stat-label'>减碳贡献</Text>
-                            </View>
-                            <View className='stat-item stat-balance' onClick={handleViewBalance}>
-                                <IconFont name='wallet' size='24' color='white'></IconFont>
-                                <Text className='stat-value'>{formattedStats.availableBalance}</Text>
-                                <Text className='stat-label'>可用余额</Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {/* 账户余额和操作 */}
+                {/* 账户余额卡片 */}
                 {account && (
-                    <View className={`balance-section ${screenSize.screenType}`}>
-                        <View className='balance-header'>
-                            <Text className='balance-title'>账户余额</Text>
-                            <IconFont name='wallet' size='24' color='white'></IconFont>
+                    <View className='balance-card'>
+                        <View className='card-header'>
+                            <Text className='title'>我的钱包</Text>
+                            <Text className='detail-link' onClick={handleTransactions}>交易明细 ›</Text>
                         </View>
-                        <Text className='balance-amount'>
-                            {accountService.formatAmount(account.availableBalance)}
-                        </Text>
-                        <Text className='balance-desc'>可用余额</Text>
-                        <View className='balance-actions'>
-                            <View className='balance-btn' onClick={handleWithdraw}>
-                                <Text>提现</Text>
+                        <View className='balance-content'>
+                            <View className='balance-main'>
+                                <Text className='label'>可用余额</Text>
+                                <Text className='amount'>{accountService.formatAmount(account.availableBalance)}</Text>
                             </View>
-                            <View className='balance-btn' onClick={handleTransactions}>
-                                <Text>交易明细</Text>
+                            <View className='withdraw-btn' onClick={handleWithdraw}>
+                                <Text>去提现</Text>
                             </View>
                         </View>
                         {account.frozenBalance > 0 && (
-                            <View className='frozen-warning'>
-                                <IconFont name='warning' size='16' color='#FF9500'></IconFont>
-                                <Text className='frozen-text'>
-                                    冻结余额：{accountService.formatAmount(account.frozenBalance)}
-                                </Text>
+                            <View className='frozen-tip'>
+                                <Warning name='warning' size='12' color='#FF9800' />
+                                <Text className='tip-text'>冻结中：{accountService.formatAmount(account.frozenBalance)}</Text>
                             </View>
                         )}
                     </View>
                 )}
 
-                {/* 功能菜单 */}
-                <View className={`menu-section ${screenSize.screenType}`}>
+                {/* 功能菜单列表 - 圆角分组 */}
+                <View className='menu-group'>
                     <View className='menu-item' onClick={onAddressManage}>
-                        <View className='menu-content'>
-                            <View className='menu-icon'>
-                                <IconFont name='location' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                        <View className='left'>
+                            <View className='icon-box blue'>
+                                <Location size='18' color='#2979FF' />
                             </View>
-                            <Text className='menu-title'>地址管理</Text>
+                            <Text className='label'>地址管理</Text>
                         </View>
-                        <Text className='menu-arrow'>›</Text>
+                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
+                    </View>
+
+                    <View className='menu-item' onClick={handleTransactions}>
+                        <View className='left'>
+                            <View className='icon-box purple'>
+                                <Order name='order' size='18' color='#6C5CE7' />
+                            </View>
+                            <Text className='label'>交易明细</Text>
+                        </View>
+                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
                     </View>
 
                     <View className='menu-item' onClick={onContactService}>
-                        <View className='menu-content'>
-                            <View className='menu-icon'>
-                                <IconFont name='phone' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                        <View className='left'>
+                            <View className='icon-box green'>
+                                <Service name='service' size='18' color='#00C853' />
                             </View>
-                            <Text className='menu-title'>联系客服</Text>
+                            <Text className='label'>联系客服</Text>
                         </View>
-                        <Text className='menu-arrow'>›</Text>
+                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
                     </View>
-
-                    <View className='menu-item' onClick={onSettings}>
-                        <View className='menu-content'>
-                            <View className='menu-icon'>
-                                <IconFont name='settings' size='18' color='var(--ios-tertiary-label)'></IconFont>
+                    <View className='menu-item' onClick={handleLogout}>
+                        <View className='left'>
+                            <View className='icon-box red'>
+                                <IconFont name='logout' size={18} color='#FF3D00' />
                             </View>
-                            <Text className='menu-title'>设置</Text>
+                            <Text className='label'>退出登录</Text>
                         </View>
-                        <Text className='menu-arrow'>›</Text>
+                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
                     </View>
+                    
                 </View>
-
-                {/* 退出登录 */}
-                <View className={`logout-section ${screenSize.screenType}`}>
-                    <View className='logout-btn' onClick={handleLogout}>
-                        <Text>退出登录</Text>
-                    </View>
-                </View>
-
-                {/* 开发调试工具 */}
-                {process.env.NODE_ENV === 'development' && (
-                    <View className='debug-section'>
-                        <View className='debug-header'>
-                            <Text className='debug-title'>🔧 开发调试模式</Text>
-                        </View>
-                        <View className='debug-content'>
-                            <View className='debug-row'>
-                                <Text className='debug-label'>当前环境</Text>
-                                <Text className='debug-value'>{process.env.NODE_ENV}</Text>
-                            </View>
-                             <View className='debug-btn' onClick={() => MockAutoLogin.switchUser()}>
-                                <Text>切换测试账号</Text>
-                            </View>
-                        </View>
-                    </View>
-                )}
             </View>
         </AuthGuard>
     )

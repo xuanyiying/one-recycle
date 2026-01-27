@@ -72,7 +72,7 @@ async function main() {
                 code: item.code.substring(0, 12), // 数据库保留 12 位完整码
                 name: item.name,
                 level: item.level,
-                parentCode: item.parent_code ? item.parent_code.substring(0, 12) : null,
+                parentCode: item.parent_code ? item.parent_code.substring(0, 6) : null,
                 pinyin: item.pinyin || null,
                 abbr: item.abbr || null
             }));

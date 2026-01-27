@@ -1,0 +1,23 @@
+import { Controller, Get, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { OrderService } from './services/order.service';
+
+@ApiTags('time-slots')
+@Controller('order')
+export class TimeSlotController {
+  constructor(private readonly orderService: OrderService) {}
+
+  @Get('time-slots/batch')
+  @ApiOperation({ summary: '批量获取可用时间段' })
+  @ApiQuery({ name: 'startDate', required: true, type: String, description: '开始日期 (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'daysCount', required: true, type: Number, description: '获取天数' })
+  @ApiQuery({ name: 'addressId', required: false, type: String, description: '地址ID' })
+  @ApiResponse({ status: 200, description: '获取时间段列表成功' })
+  async getBatchTimeSlots(
+    @Query('startDate') startDate: string,
+    @Query('daysCount', ParseIntPipe) daysCount: number,
+    @Query('addressId') addressId?: string,
+  ) {
+    return this.orderService.getBatchTimeSlots(startDate, daysCount, addressId);
+  }
+}

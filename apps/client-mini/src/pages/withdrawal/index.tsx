@@ -3,9 +3,10 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { Button, Popup, Input } from '@nutui/nutui-react-taro'
 import { IconFont, ArrowRight, Order } from '@nutui/icons-react-taro'
+import { useAuth } from '@/hooks/useAuth'
 import accountService from '@/services/account'
 import withdrawalService from '@/services/withdrawal'
-import { Account } from '@/types/account'
+import { Account, Transaction } from '@/types/account'
 import { WithdrawalProvider } from '@/types/withdrawal'
 import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
@@ -16,13 +17,16 @@ const Money = ({ size = 20, color = 'currentColor' }) => (
 )
 
 export default function WalletPage() {
+  const { user } = useAuth()
   const [account, setAccount] = useState<Account | null>(null)
   const [showWithdraw, setShowWithdraw] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [loading, setLoading] = useState(false)
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
 
   useEffect(() => {
     loadData()
+    loadRecentTransactions()
   }, [])
 
   const loadData = async () => {
@@ -34,7 +38,24 @@ export default function WalletPage() {
     }
   }
 
+  const loadRecentTransactions = async () => {
+    try {
+      const { transactions } = await accountService.getMyTransactions({
+        page: 1,
+        limit: 3,
+      })
+      setRecentTransactions(transactions)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const handleWithdraw = async () => {
+    if (!user) {
+      Taro.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+
     if (!withdrawAmount || parseFloat(withdrawAmount) < 10) {
       Taro.showToast({ title: '最低提现10元', icon: 'none' })
       return
@@ -45,7 +66,10 @@ export default function WalletPage() {
       await withdrawalService.createWithdrawal({
         amount: parseFloat(withdrawAmount),
         provider: WithdrawalProvider.WECHAT,
-        accountInfo: { openid: 'mock_openid', realName: '张三' }
+        accountInfo: { 
+          openid: user.openid || 'mock_openid', 
+          realName: user.realName || user.nickname || '用户' 
+        }
       })
       Taro.showToast({ title: '提现申请已提交', icon: 'success' })
       setShowWithdraw(false)
@@ -61,7 +85,10 @@ export default function WalletPage() {
   return (
     <AuthGuard>
       <ScrollView className='wallet-page' scrollY>
-        {/* 资产卡片 */}
+        <View className='wallet-header'>
+          <Text className='header-title'>我的钱包</Text>
+        </View>
+
         <View className='asset-card'>
           <View className='card-header'>
             <Text className='label'>当前余额</Text>
@@ -95,23 +122,21 @@ export default function WalletPage() {
           </View>
         </View>
 
-        {/* 常用功能 */}
         <View className='menu-grid'>
-          <View className='menu-item'>
+          <View className='menu-item' onClick={() => Taro.navigateTo({ url: '/pages/transaction/list' })}>
             <View className='icon-box blue'><Money size={20} /></View>
             <Text>收支明细</Text>
           </View>
-          <View className='menu-item'>
+          <View className='menu-item' onClick={() => Taro.navigateTo({ url: '/pages/withdrawal/list' })}>
             <View className='icon-box orange'><Order size={20} /></View>
             <Text>提现记录</Text>
           </View>
-          <View className='menu-item'>
+          <View className='menu-item' onClick={() => Taro.showToast({ title: '客服即将接入', icon: 'none' })}>
             <View className='icon-box green'><IconFont name='service' size={20} /></View>
             <Text>联系客服</Text>
           </View>
         </View>
 
-        {/* 最近明细 */}
         <View className='transaction-section'>
           <View className='section-header'>
             <Text className='title'>最近明细</Text>
@@ -120,27 +145,33 @@ export default function WalletPage() {
               <ArrowRight size={12} color='#999' />
             </View>
           </View>
-          
+
           <View className='transaction-list'>
-            {/* 模拟数据 */}
-            <View className='trans-item'>
-              <View className='info'>
-                <Text className='name'>旧书回收</Text>
-                <Text className='date'>2025-10-01 14:30</Text>
+            {recentTransactions.length === 0 ? (
+              <View className='empty-state'>
+                <Text className='empty-text'>暂无明细记录</Text>
               </View>
-              <Text className='amount plus'>+¥30.00</Text>
-            </View>
-            <View className='trans-item'>
-              <View className='info'>
-                <Text className='name'>提现到微信</Text>
-                <Text className='date'>2025-09-28 09:15</Text>
-              </View>
-              <Text className='amount minus'>-¥100.00</Text>
-            </View>
+            ) : (
+              recentTransactions.map(transaction => (
+                <View className='trans-item' key={transaction.id}>
+                  <View className='info'>
+                    <Text className='name'>{accountService.getTransactionTypeText(transaction.type)}</Text>
+                    <Text className='date'>
+                      {new Date(transaction.createdAt).toLocaleString('zh-CN')}
+                    </Text>
+                  </View>
+                  <Text
+                    className={`amount ${accountService.getTransactionAmountSign(transaction.type) === '+' ? 'plus' : 'minus'}`}
+                  >
+                    {accountService.getTransactionAmountSign(transaction.type)}
+                    {accountService.formatAmount(transaction.amount)}
+                  </Text>
+                </View>
+              ))
+            )}
           </View>
         </View>
 
-        {/* 提现弹窗 */}
         <Popup 
           visible={showWithdraw} 
           position='bottom' 

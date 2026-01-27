@@ -6,15 +6,18 @@ export * from './order'
 
 // 用户相关类型
 export interface User {
-  id: number
+  id: number | string
   nickname: string
   avatar: string
-  phone: string
-  totalOrders: number
-  totalEarnings: number
-  memberLevel: string
-  joinDate: string
-  carbonReduction: number
+  phone?: string
+  phoneNumber?: string
+  realName?: string
+  openid?: string
+  totalOrders?: number
+  totalEarnings?: number
+  memberLevel?: string
+  joinDate?: string
+  carbonReduction?: number
 }
 
 export interface UserStatistics {

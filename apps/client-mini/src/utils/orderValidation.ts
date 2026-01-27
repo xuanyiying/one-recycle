@@ -85,12 +85,24 @@ export const validateAddress = (address: Address): ValidationError[] => {
     errors.push({ field: 'phoneNumber', message: 'Valid phone number is required' })
   }
 
-  if (!address.region || address.region.trim() === '') {
-    errors.push({ field: 'region', message: 'Region is required' })
+  if (!address.province || address.province.trim() === '') {
+    errors.push({ field: 'province', message: 'Province is required' })
+  }
+
+  if (!address.city || address.city.trim() === '') {
+    errors.push({ field: 'city', message: 'City is required' })
+  }
+
+  if (!address.district || address.district.trim() === '') {
+    errors.push({ field: 'district', message: 'District is required' })
   }
 
   if (!address.detailedAddress || address.detailedAddress.trim() === '') {
     errors.push({ field: 'detailedAddress', message: 'Detailed address is required' })
+  }
+
+  if (address.postalCode && !/^\d{6}$/.test(address.postalCode)) {
+    errors.push({ field: 'postalCode', message: 'Valid 6-digit postal code is required' })
   }
 
   return errors

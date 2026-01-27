@@ -1,3 +1,5 @@
+@use '../../../../styles/variables' as *;
+
 /**
  * ItemList Component Styles
  * Enhanced with smooth animations for item add/remove
@@ -53,22 +55,22 @@
   width: 100%;
 
   .item-card {
-    margin-bottom: 12px;
-    padding: 12px;
-    background-color: #f9f9f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    margin-bottom: $spacing-md;
+    padding: $spacing-md;
+    background-color: $bg-secondary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius-lg;
     overflow: hidden;
     animation: slideInUp 0.3s ease-out;
-    transition: all 0.3s ease;
+    transition: all $transition-base;
 
     &:last-child {
       margin-bottom: 0;
     }
 
     &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      border-color: #d0d0d0;
+      box-shadow: $box-shadow-base;
+      border-color: darken($border-color, 5%);
     }
 
     // ============================================================================
@@ -79,32 +81,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: $spacing-md;
+      padding-bottom: $spacing-md;
+      border-bottom: 1px solid $border-color;
 
       .item-info {
         flex: 1;
 
         .item-number {
           display: block;
-          font-size: 12px;
-          color: #999;
-          margin-bottom: 2px;
+          font-size: $font-size-sm;
+          color: $text-tertiary;
+          margin-bottom: 4rpx;
         }
 
         .item-category {
           display: block;
-          font-size: 14px;
-          font-weight: 600;
-          color: #333;
+          font-size: $font-size-body;
+          font-weight: $font-weight-semibold;
+          color: $text-color;
         }
       }
 
       .item-price {
-        font-size: 14px;
-        font-weight: 600;
-        color: #4CAF50;
+        font-size: $font-size-body;
+        font-weight: $font-weight-semibold;
+        color: $primary-color;
         text-align: right;
         animation: scaleIn 0.4s ease-out;
       }
@@ -116,14 +118,14 @@
 
     .item-photos {
       display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: $spacing-sm;
+      margin-bottom: $spacing-md;
       overflow-x: auto;
 
       .photo-thumbnail {
-        width: 60px;
-        height: 60px;
-        border-radius: 4px;
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: $border-radius-sm;
         flex-shrink: 0;
         object-fit: cover;
         animation: scaleIn 0.3s ease-out;
@@ -135,10 +137,10 @@
       }
 
       .photo-more {
-        width: 60px;
-        height: 60px;
-        border-radius: 4px;
-        background-color: #e0e0e0;
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: $border-radius-sm;
+        background-color: $bg-tertiary;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -146,9 +148,8 @@
         animation: fadeIn 0.3s ease-out;
 
         .more-count {
-          font-size: 14px;
-          font-weight: 600;
-          color: #666;
+          font-size: $font-size-body;
+          color: $text-secondary;
         }
       }
     }
@@ -158,29 +159,25 @@
     // ============================================================================
 
     .item-details {
-      margin-bottom: 12px;
-      animation: fadeIn 0.4s ease-out;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-sm;
+      margin-bottom: $spacing-md;
 
-      .detail-row {
+      .detail-item {
         display: flex;
-        margin-bottom: 8px;
-        font-size: 13px;
-        transition: all 0.2s ease;
-
-        &:last-child {
-          margin-bottom: 0;
-        }
+        flex-direction: column;
 
         .detail-label {
-          min-width: 80px;
-          color: #666;
-          font-weight: 500;
+          font-size: $font-size-sm;
+          color: $text-tertiary;
+          margin-bottom: 4rpx;
         }
 
         .detail-value {
-          flex: 1;
-          color: #333;
-          word-break: break-word;
+          font-size: $font-size-sm;
+          color: $text-secondary;
+          word-break: break-all;
         }
       }
     }
@@ -191,49 +188,33 @@
 
     .item-actions {
       display: flex;
-      gap: 8px;
-      padding-top: 12px;
-      border-top: 1px solid #e0e0e0;
-      animation: fadeIn 0.4s ease-out 0.1s both;
+      justify-content: flex-end;
+      gap: $spacing-md;
+      padding-top: $spacing-md;
+      border-top: 1px solid $border-light;
 
-      .btn-edit,
-      .btn-remove {
-        flex: 1;
-        height: 32px;
-        font-size: 12px;
-        border-radius: 4px;
-        border: none;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-weight: 500;
+      .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 4rpx;
+        font-size: $font-size-sm;
+        padding: $spacing-xs $spacing-sm;
+        border-radius: $border-radius-base;
+        transition: all 0.2s ease;
 
-        &:active:not(:disabled) {
-          transform: scale(0.98);
+        &.edit {
+          color: $primary-color;
+          background-color: rgba($primary-color, 0.1);
         }
 
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        &.remove {
+          color: $error-color;
+          background-color: rgba($error-color, 0.1);
         }
-      }
 
-      .btn-edit {
-        background-color: #2196F3;
-        color: #fff;
-        box-shadow: 0 1px 3px rgba(33, 150, 243, 0.2);
-
-        &:active:not(:disabled) {
-          box-shadow: 0 2px 6px rgba(33, 150, 243, 0.3);
-        }
-      }
-
-      .btn-remove {
-        background-color: #f0f0f0;
-        color: #ff4444;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-        &:active:not(:disabled) {
-          background-color: #e8e8e8;
+        &:active {
+          opacity: 0.7;
+          transform: translateY(2rpx);
         }
       }
     }
@@ -241,13 +222,14 @@
 }
 
 .item-list-empty {
-  padding: 40px 16px;
+  padding: $spacing-xl $spacing-md;
   text-align: center;
   animation: fadeIn 0.3s ease-out;
 
   .empty-message {
     display: block;
-    font-size: 14px;
-    color: #999;
+    font-size: $font-size-body;
+    color: $text-tertiary;
+    margin-bottom: $spacing-md;
   }
 }

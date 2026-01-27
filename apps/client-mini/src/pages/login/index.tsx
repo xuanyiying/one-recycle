@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Taro from '@tarojs/taro'
-import { useAppContext } from '@/store'
-import { login, getUserInfo } from '@/services/auth'
+import { useAuth } from '@/hooks/useAuth'
+import { login as apiLogin, getUserInfo } from '@/services/auth'
 import './index.scss'
 import {Button, Input, Checkbox, Avatar} from '@nutui/nutui-react-taro'
 import {View, Text, Image} from "@tarojs/components"
@@ -9,9 +9,6 @@ import {View, Text, Image} from "@tarojs/components"
 // 导入图片资源
 import logoIcon from '../../assets/icons/logo.png'
 import defaultAvatar from '../../assets/icons/default-avatar.png'
-import wechatAvatar from '../../assets/icons/wechat-avatar.png'
-import albumIcon from '../../assets/icons/album.png'
-import cameraIcon from '../../assets/icons/camera.png'
 
 // 常量定义
 const NICKNAME_MIN_LENGTH = 2
@@ -24,6 +21,7 @@ interface LoginForm {
 }
 
 export default function Login() {
+  const { checkAuthStatus, login: authLogin } = useAuth()
   const [form, setForm] = useState<LoginForm>({
     nickname: '',
     avatar: '',
@@ -35,41 +33,19 @@ export default function Login() {
   const [checkingLoginStatus, setCheckingLoginStatus] = useState(true)
   const [avatar, setAvatar] = useState<string>('')
 
-  const { dispatch } = useAppContext()
-
   // 检查登录状态
   useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const token = Taro.getStorageSync('token')
-        if (token) {
-          // 验证token有效性
-          const userInfoResult = await getUserInfo()
-          if (userInfoResult.success && userInfoResult.data) {
-            // 用户已登录，更新全局状态并跳转首页
-            dispatch({
-              type: 'SET_USER',
-              payload: {
-                ...userInfoResult.data,
-                avatar: userInfoResult.data.avatar || defaultAvatar
-              }
-            })
-            await Taro.reLaunch({
-              url: '/pages/index/index'
-            })
-            return
-          }
-        }
-      } catch (error) {
-        console.log('检查登录状态失败:', error)
-        // 清除无效token
-        Taro.removeStorageSync('token')
-      } finally {
-        setCheckingLoginStatus(false)
+    const initCheck = async () => {
+      const status = await checkAuthStatus()
+      if (status.isLoggedIn) {
+        await Taro.reLaunch({
+          url: '/pages/index/index'
+        })
       }
+      setCheckingLoginStatus(false)
     }
-    checkLoginStatus()
-  }, [dispatch])
+    initCheck()
+  }, [checkAuthStatus])
 
   // 移除图片预加载，避免在某些环境下 getImageInfo 报错导致渲染层网络错误
   useEffect(() => {
@@ -184,7 +160,7 @@ export default function Login() {
       // 获取用户唯一标识
       const uniqueId = await getUserUniqueId()
       // 调用登录API
-      const authResult = await login({
+      const authResult = await apiLogin({
         code: loginResult.code,
         nickname: form.nickname.trim(),
         avatar: form.avatar,
@@ -196,20 +172,10 @@ export default function Login() {
         // 存储用户信息
         const { token, refreshToken, user } = authResult.data
         setAvatar(authResult.data.user.avatar || '/assets/icons/default-avatar.png')
-        // 存储token和刷新令牌
-          Taro.setStorageSync('token', token)
-        if (refreshToken) {
-          Taro.setStorageSync('refreshToken', refreshToken)
-        }
-        // 存储用户信息到本地，便于跨会话读取
-        Taro.setStorageSync('user', user)
-
-        // 更新全局状态
-        dispatch({
-          type: 'SET_USER',
-          payload: user
-        })
-
+        
+        // 使用 hook 更新全局状态
+        await authLogin(user, token, 'wechat')
+        
         // 跳转到首页
         await Taro.reLaunch({
           url: '/pages/index/index'
@@ -282,8 +248,8 @@ export default function Login() {
 
       {/* 主要内容区域 */}
       <View className="main-content">
-        {/* 头像区域 */}
         <View className="avatar-section">
+          <View className="avatar-container">
             {avatar ? (
               <Avatar
                 src={avatar}
@@ -291,13 +257,13 @@ export default function Login() {
                 size="large"
               />
             ) : (
-              <View className="default-avatar">
-                <Avatar
-                  src={defaultAvatar}
-                  className="avatar-icon"
-                />
-              </View>
+              <Avatar
+                src={defaultAvatar}
+                className="avatar-icon"
+              />
             )}
+          </View>
+          <Text className="avatar-tip">选择头像，让朋友一眼认出你</Text>
         </View>
 
         {/* 昵称输入区域 */}

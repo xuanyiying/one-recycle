@@ -1,288 +1,360 @@
 @use '../../styles/global.scss' as *;
 
-// ==================== iOS 个人中心页面样式 ====================
-// 严格遵循 Apple Human Interface Guidelines
+// ==================== 现代化个人中心样式 ====================
 
 .profile-page {
-  min-height: 100vh;
-  background-color: var(--ios-system-grouped-background);
-  
-  // 使用响应式混合宏处理安全区域和边距
-  @include responsive-page-padding;
-
-  .content-container {
     min-height: 100vh;
-    padding-top: $spacing-20;
-    padding-bottom: $spacing-20;
-  }
+    background-color: #F7F8FA;
+    position: relative;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 180rpx); // 增加底部内边距，防止被底部导航栏遮挡
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 
-  // ==================== 用户信息区域 ====================
-  .user-section {
-    @include ios-card;
-    margin-bottom: $spacing-20;
+    // 顶部沉浸式背景
+    .profile-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 520rpx;
+        background: linear-gradient(180deg, #E8F5E9 0%, #F7F8FA 100%);
+        z-index: 0;
+        border-bottom-left-radius: 60rpx;
+        border-bottom-right-radius: 60rpx;
+        overflow: hidden;
 
-    .user-info {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: $spacing-20;
-      min-height: 160rpx;
+        &::after {
+            content: '';
+            position: absolute;
+            top: -100rpx;
+            right: -100rpx;
+            width: 450rpx;
+            height: 450rpx;
+            background: radial-gradient(circle, rgba(76, 175, 80, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+            border-radius: 50%;
+            filter: blur(20px);
+        }
 
-      .user-avatar-container {
+        &::before {
+            content: '';
+            position: absolute;
+            top: 100rpx;
+            left: -80rpx;
+            width: 300rpx;
+            height: 300rpx;
+            background: radial-gradient(circle, rgba(33, 150, 243, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+            border-radius: 50%;
+            filter: blur(30px);
+        }
+    }
+
+    // 用户信息区域
+    .user-header {
         position: relative;
-        width: 140rpx;
-        height: 140rpx;
-        margin-right: $spacing-20;
-        flex-shrink: 0;
-        
-        .user-avatar {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-          border: 4rpx solid var(--ios-separator);
-          background-color: var(--ios-secondary-system-background);
-        }
-      }
-
-      .user-details {
-        flex: 1;
+        z-index: 1;
+        padding: $spacing-24 $page-padding 0;
+        padding-top: calc(env(safe-area-inset-top) + 100rpx);
         display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 140rpx;
-        padding-top: $spacing-8;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 50rpx;
 
-        .user-nickname {
-          @include ios-title2;
-          font-weight: $font-weight-bold;
-          margin-bottom: $spacing-8;
-          display: block;
-        }
+        .user-info {
+            display: flex;
+            align-items: center;
 
-        .user-phone {
-          @include ios-footnote;
-          color: var(--ios-secondary-label);
-          display: block;
-        }
-      }
-    }
+            .avatar-ring {
+                width: 140rpx;
+                height: 140rpx;
+                padding: 6rpx;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 50%;
+                box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+                margin-right: 32rpx;
+                position: relative;
+                backdrop-filter: blur(5px);
+                border: 1px solid rgba(255, 255, 255, 0.5);
 
-    // ==================== 统计区域 ====================
-    .stats-section {
-        margin-top: $spacing-20;
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: $spacing-12;
-            
-            .stat-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                padding: $spacing-12;
-                border-radius: $border-radius-base;
-                
-                &.stat-orders { background-color: var(--ios-blue); }
-                &.stat-earnings { background-color: var(--ios-green); }
-                &.stat-carbon { background-color: var(--ios-teal); }
-                &.stat-balance { background-color: var(--ios-indigo); }
-                
-                .stat-value {
-                    color: white;
-                    font-size: 32rpx;
-                    font-weight: $font-weight-bold;
-                    margin-bottom: 4rpx;
+                .user-avatar {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    object-fit: cover;
                 }
                 
-                .stat-label {
-                    color: rgba(255, 255, 255, 0.9);
+                // 在线状态指示点
+                &::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 10rpx;
+                    right: 10rpx;
+                    width: 24rpx;
+                    height: 24rpx;
+                    background: #00C853;
+                    border: 4rpx solid #fff;
+                    border-radius: 50%;
+                    box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.1);
+                }
+            }
+
+            .user-text {
+                .user-nickname {
+                    font-size: 44rpx;
+                    font-weight: 800;
+                    color: $text-color;
+                    display: block;
+                    margin-bottom: 12rpx;
+                    text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05);
+                }
+
+                .user-phone {
                     font-size: 24rpx;
+                    color: $text-secondary;
+                    background: rgba(255, 255, 255, 0.7);
+                    padding: 6rpx 20rpx;
+                    border-radius: 30rpx;
+                    display: inline-flex;
+                    align-items: center;
+                    border: 1px solid rgba(0, 0, 0, 0.05);
+                    backdrop-filter: blur(4px);
+                    font-weight: 500;
                 }
             }
         }
-    }
-  }
 
-  // ==================== 账户余额区域 ====================
-  .balance-section {
-    @include ios-card;
-    margin-bottom: $spacing-20;
-    
-    .balance-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: $spacing-20;
-        
-        .balance-title {
-            @include ios-headline;
-        }
-    }
-    
-    .balance-amount {
-        font-size: 64rpx;
-        font-weight: $font-weight-bold;
-        color: var(--ios-label);
-        display: block;
-        margin-bottom: $spacing-4;
-    }
-    
-    .balance-desc {
-        font-size: 28rpx;
-        color: var(--ios-secondary-label);
-        margin-bottom: $spacing-24;
-        display: block;
-    }
-    
-    .balance-actions {
-        display: flex;
-        gap: $spacing-20;
-        
-        .balance-btn {
-            flex: 1;
-            height: 88rpx;
-            background-color: var(--ios-secondary-system-background);
-            border-radius: $border-radius-base;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30rpx;
-            font-weight: $font-weight-semibold;
-            color: var(--ios-label);
-            
+        .settings-btn {
+            width: 64rpx;
+            height: 64rpx;
+            border-radius: 50%;
+            @include flex-center;
+            backdrop-filter: blur(10px);
+
             &:active {
-                opacity: 0.7;
+                opacity: 0.8;
             }
         }
     }
 
-    .frozen-warning {
-        margin-top: $spacing-20;
-        display: flex;
-        align-items: center;
-        gap: $spacing-8;
-        
-        .frozen-text {
-            font-size: 26rpx;
-            color: #FF9500;
-        }
-    }
-  }
+    // 悬浮统计卡片
+    .stats-card {
+        position: relative;
+        z-index: 2;
+        margin: 0 $page-padding $spacing-24;
+        background: #fff;
+        border-radius: 32rpx;
+        padding: 32rpx 0;
+        box-shadow: $box-shadow-float; // High shadow
 
-  // ==================== 菜单列表区域 ====================
-  .menu-section {
-    @include ios-card;
-    padding: 0; // 列表样式通常不需要内边距，或者是内部Item有边框
-    margin-bottom: $spacing-20;
-    overflow: hidden; // 圆角
-    
-    .menu-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: $spacing-20;
-        background-color: var(--ios-secondary-system-grouped-background);
-        border-bottom: 1rpx solid var(--ios-separator);
-        
-        &:last-child {
-            border-bottom: none;
-        }
-        
-        &:active {
-            background-color: var(--ios-tertiary-system-grouped-background);
-        }
-        
-        .menu-content {
+        .stats-row {
             display: flex;
             align-items: center;
-            gap: $spacing-16;
-            
-            .menu-title {
-                font-size: 32rpx;
-                color: var(--ios-label);
+            justify-content: space-around;
+
+            .stat-item {
+                @include flex-column;
+                align-items: center;
+                flex: 1;
+
+                .stat-num {
+                    font-size: 40rpx;
+                    font-weight: 800;
+                    color: $text-color;
+                    margin-bottom: 8rpx;
+                    font-family: $font-family-number;
+
+                    &.carbon {
+                        color: $success-color;
+                    }
+
+                    .symbol {
+                        font-size: 24rpx;
+                        margin-right: 4rpx;
+                    }
+                }
+
+                .stat-label {
+                    font-size: 24rpx;
+                    color: $text-secondary;
+                }
+            }
+
+            .divider {
+                width: 1px;
+                height: 40rpx;
+                background: $border-color;
             }
         }
-        
-        .menu-arrow {
-            font-size: 32rpx;
-            color: var(--ios-tertiary-label);
-        }
-    }
-  }
-
-  // ==================== 退出登录 ====================
-  .logout-section {
-    margin-bottom: $spacing-40;
-    
-    .logout-btn {
-        background-color: var(--ios-secondary-system-grouped-background);
-        height: 100rpx;
-        border-radius: $border-radius-base;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32rpx;
-        color: #FF3B30; // iOS Red
-        font-weight: $font-weight-medium;
-        
-        &:active {
-            opacity: 0.7;
-        }
-    }
-  }
-
-  // ==================== 调试区域 ====================
-  .debug-section {
-    @include ios-card;
-    margin-top: $spacing-20;
-    margin-bottom: $spacing-40 + 100rpx; // 底部留出足够空间给TabBar
-
-    .debug-header {
-        border-bottom: 1rpx solid var(--ios-separator);
-        padding-bottom: $spacing-12;
-        margin-bottom: $spacing-12;
-        
-        .debug-title {
-            @include ios-headline;
-            font-size: 32rpx;
-            color: #FF9500; // iOS Orange
-        }
     }
 
-    .debug-content {
-        .debug-row {
+    // 钱包卡片
+    .balance-card {
+        margin: 0 $page-padding $spacing-24;
+        background: #fff;
+        border-radius: 32rpx;
+        padding: 32rpx;
+        box-shadow: $box-shadow-sm;
+
+        .card-header {
+            @include flex-between;
+            margin-bottom: 24rpx;
+
+            .title {
+                font-size: 32rpx;
+                font-weight: 700;
+                color: $text-color;
+            }
+
+            .detail-link {
+                font-size: 24rpx;
+                color: $text-secondary;
+            }
+        }
+
+        .balance-content {
+            @include flex-between;
+            align-items: flex-end;
+
+            .balance-main {
+                .label {
+                    font-size: 24rpx;
+                    color: $text-tertiary;
+                    margin-bottom: 4rpx;
+                    display: block;
+                }
+
+                .amount {
+                    font-size: 56rpx;
+                    font-weight: 800;
+                    color: $text-color;
+                    font-family: $font-family-number;
+                }
+            }
+
+            .withdraw-btn {
+                background: $text-color; // Black button for contrast
+                color: #fff;
+                padding: 12rpx 32rpx;
+                border-radius: 40rpx;
+                font-size: 26rpx;
+                font-weight: 600;
+                box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+
+                &:active {
+                    transform: scale(0.96);
+                    opacity: 0.9;
+                }
+            }
+        }
+
+        .frozen-tip {
+            margin-top: 24rpx;
+            display: flex;
+            align-items: center;
+            background: #FFF8E1;
+            padding: 8rpx 16rpx;
+            border-radius: 12rpx;
+            display: inline-flex;
+
+            .tip-text {
+                font-size: 22rpx;
+                color: #FF8F00;
+                margin-left: 8rpx;
+            }
+        }
+    }
+
+    // 菜单组
+    .menu-group {
+        margin: 90rpx $page-padding $spacing-40;
+        background: #fff;
+        border-radius: 40rpx;
+        padding: 8rpx 24rpx;
+        box-shadow: $box-shadow-sm;
+
+
+        .menu-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: $spacing-16;
-            
-            .debug-label {
-                font-size: 28rpx;
-                color: var(--ios-secondary-label);
-            }
-            
-            .debug-value {
-                font-size: 28rpx;
-                color: var(--ios-label);
-                font-family: monospace;
-            }
-        }
+            padding: 28rpx 0;
+            border-bottom: 1px dashed $border-color;
 
-        .debug-btn {
-            background-color: var(--ios-secondary-system-background);
-            padding: $spacing-12;
-            border-radius: $border-radius-base;
-            text-align: center;
-            color: var(--ios-blue);
-            font-size: 30rpx;
-            font-weight: $font-weight-semibold;
-            transition: opacity 0.2s;
-            
+            &:last-child {
+                border-bottom: none;
+            }
+
             &:active {
                 opacity: 0.6;
             }
+
+            .left {
+                display: flex;
+                align-items: center;
+                flex: 1; // 占据剩余空间
+                overflow: hidden; // 防止溢出
+
+                .icon-box {
+                    width: 64rpx;
+                    height: 64rpx;
+                    border-radius: 20rpx;
+                    @include flex-center;
+                    margin-right: 24rpx;
+                    flex-shrink: 0; // 防止图标被压缩
+
+                    &.blue {
+                        background: rgba(41, 121, 255, 0.1);
+                    }
+
+                    &.purple {
+                        background: rgba(108, 92, 231, 0.1);
+                    }
+
+                    &.green {
+                        background: rgba(0, 200, 83, 0.1);
+                    }
+
+                    &.red {
+                        background: rgba(255, 61, 0, 0.1);
+                    }
+                }
+
+                .label {
+                    font-size: 30rpx;
+                    color: $text-color;
+                    font-weight: 500;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
         }
     }
-  }
+}
+
+// 错误状态
+.error-container {
+    @include flex-center;
+    flex-direction: column;
+    padding-top: 200rpx;
+
+    .error-title {
+        font-size: 32rpx;
+        font-weight: 600;
+        color: $text-color;
+        margin: 24rpx 0 8rpx;
+    }
+
+    .error-message {
+        font-size: 24rpx;
+        color: $text-tertiary;
+        margin-bottom: 32rpx;
+    }
+
+    .retry-btn {
+        padding: 16rpx 48rpx;
+        background: $border-light;
+        border-radius: 40rpx;
+        font-size: 26rpx;
+        color: $text-secondary;
+    }
 }

@@ -7,7 +7,7 @@
  */
 
 import { post } from '../utils/request'
-import { Item, OrderPricing, PriceEstimationRequest, PriceEstimationResponse } from '../types/order'
+import { Item, OrderPricing, PriceEstimationRequest } from '../types/order'
 import errorHandler, { retryWithBackoff, RetryOptions } from '../utils/errorHandler'
 
 /**

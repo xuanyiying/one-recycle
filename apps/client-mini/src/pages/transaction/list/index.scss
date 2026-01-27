@@ -86,7 +86,7 @@
 
   .stats-card {
     @include ios-card;
-    background: linear-gradient(135deg, var(--ios-blue) 0%, #5AC8FA 100%);
+    background: $gradient-primary;
     color: white;
 
     .stats-header {
@@ -151,6 +151,10 @@
       @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
       color: var(--ios-secondary-label);
     }
+  }
+
+  .list-scroll {
+    min-height: 600rpx;
   }
 
   .transaction-item {

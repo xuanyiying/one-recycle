@@ -47,29 +47,29 @@ export interface NotificationSettings {
 // Mock通知数据
 const mockNotifications: Notification[] = [
   {
-    id: 'notif_001',
-    userId: 'user_001',
+    id: '1',
+    userId: '1',
     type: NotificationType.ORDER,
     title: '订单状态更新',
-    content: '您的订单 #order_001 已完成回收，收益已到账',
+    content: '您的订单 #1 已完成回收，收益已到账',
     status: NotificationStatus.UNREAD,
-    relatedId: 'order_001',
+    relatedId: '1',
     createdAt: '2024-01-15T16:30:00Z'
   },
   {
-    id: 'notif_002',
-    userId: 'user_001',
+    id: '2',
+    userId: '1',
     type: NotificationType.PAYMENT,
     title: '支付成功',
     content: '您的提现申请已处理，100元已转入您的微信钱包',
     status: NotificationStatus.READ,
-    relatedId: 'payment_002',
+    relatedId: '2',
     readAt: '2024-01-10T10:15:00Z',
     createdAt: '2024-01-10T09:30:00Z'
   },
   {
-    id: 'notif_003',
-    userId: 'user_001',
+    id: '3',
+    userId: '1',
     type: NotificationType.SYSTEM,
     title: '系统维护通知',
     content: '系统将于今晚23:00-01:00进行维护升级，期间可能影响部分功能使用',
@@ -79,8 +79,8 @@ const mockNotifications: Notification[] = [
     createdAt: '2024-01-08T12:00:00Z'
   },
   {
-    id: 'notif_004',
-    userId: 'user_001',
+    id: '4',
+    userId: '1',
     type: NotificationType.PROMOTION,
     title: '新用户福利',
     content: '恭喜您成为我们的新用户！首次回收可享受价格上浮10%的优惠',
@@ -89,20 +89,20 @@ const mockNotifications: Notification[] = [
     createdAt: '2024-01-01T10:00:00Z'
   },
   {
-    id: 'notif_005',
-    userId: 'user_001',
+    id: '5',
+    userId: '1',
     type: NotificationType.ORDER,
     title: '回收员已接单',
     content: '回收员李师傅已接受您的订单，预计明天下午2点上门回收',
     status: NotificationStatus.UNREAD,
-    relatedId: 'order_002',
+    relatedId: '2',
     createdAt: '2024-01-18T15:45:00Z'
   }
 ]
 
 // Mock通知设置数据
 const mockNotificationSettings: NotificationSettings = {
-  userId: 'user_001',
+  userId: '1',
   orderNotifications: true,
   paymentNotifications: true,
   systemNotifications: true,

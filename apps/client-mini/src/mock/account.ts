@@ -27,8 +27,8 @@ export interface Transaction {
 
 // Mock钱包数据
 const mockWallet: Wallet = {
-  id: 'wallet_001',
-  userId: 'user_001',
+  id: '1',
+  userId: '1',
   balance: 156.78,
   frozenAmount: 0,
   totalEarnings: 1234.56,
@@ -39,18 +39,18 @@ const mockWallet: Wallet = {
 // Mock交易记录数据
 const mockTransactions: Transaction[] = [
   {
-    id: 'trans_001',
-    userId: 'user_001',
+    id: '1',
+    userId: '1',
     type: 'income',
     amount: 11.49,
     description: '订单收益 - 废纸类回收',
-    orderId: 'order_001',
+    orderId: '1',
     status: 'completed',
     createdAt: '2024-01-15T16:30:00Z'
   },
   {
-    id: 'trans_002',
-    userId: 'user_001',
+    id: '2',
+    userId: '1',
     type: 'withdrawal',
     amount: 100.00,
     description: '提现到微信钱包',
@@ -58,12 +58,12 @@ const mockTransactions: Transaction[] = [
     createdAt: '2024-01-10T09:15:00Z'
   },
   {
-    id: 'trans_003',
-    userId: 'user_001',
+    id: '3',
+    userId: '1',
     type: 'income',
     amount: 22.5,
     description: '订单收益 - 金属类回收',
-    orderId: 'order_002',
+    orderId: '2',
     status: 'pending',
     createdAt: '2024-01-18T14:20:00Z'
   }
@@ -76,7 +76,7 @@ export const mockGetWallet = async (userId: string): Promise<MockResponse<Wallet
 }
 
 // Mock获取我的账户信息 (适配 Account Service)
-export const mockGetMyAccount = async (userId: string = 'user_001'): Promise<MockResponse<Account>> => {
+export const mockGetMyAccount = async (userId: string = '1'): Promise<MockResponse<Account>> => {
   const account: Account = {
     id: mockWallet.id,
     userId: userId,
@@ -92,7 +92,7 @@ export const mockGetMyAccount = async (userId: string = 'user_001'): Promise<Moc
 }
 
 // Mock获取我的账户统计 (适配 Account Service)
-export const mockGetMyStats = async (userId: string = 'user_001'): Promise<MockResponse<AccountStats>> => {
+export const mockGetMyStats = async (userId: string = '1'): Promise<MockResponse<AccountStats>> => {
   void userId
   const stats: AccountStats = {
     totalIncome: mockWallet.totalEarnings,

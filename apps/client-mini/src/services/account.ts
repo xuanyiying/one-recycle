@@ -19,7 +19,7 @@ class AccountService {
   async getMyAccount(): Promise<Account> {
     try {
       // Fetch from API
-      const result = await get('/api/accounts/me', undefined, { cache: true, cacheTTL: CacheTTL.MEDIUM });
+      const result = await get('/accounts/me', undefined, { cache: true, cacheTTL: CacheTTL.MEDIUM });
       // Unwrap response if needed
       const account = result.success && result.data ? result.data : result;
       
@@ -63,7 +63,7 @@ class AccountService {
       params.limit = filters.limit;
     }
 
-    const result = await get('/api/accounts/me/transactions', params);
+    const result = await get('/accounts/me/transactions', params);
     return result.success && result.data ? result.data : result;
   }
 
@@ -72,7 +72,7 @@ class AccountService {
    * GET /api/accounts/me/stats
    */
   async getMyStats(): Promise<AccountStats> {
-    const result = await get('/api/accounts/me/stats');
+    const result = await get('/accounts/me/stats');
     return result.success && result.data ? result.data : result;
   }
 

@@ -9,7 +9,7 @@ import { LoginParams, LoginResponse, UserInfoResponse } from '@/services/auth'
  */
 export const mockUsers = [
   {
-    id: 'user_001',
+    id: '1',
     nickname: '环保小达人',
     avatar: 'https://placehold.co/100x100/png?text=User1',
     phone: '138****8888',
@@ -19,7 +19,7 @@ export const mockUsers = [
     registerTime: '2024-01-15T08:30:00Z'
   },
   {
-    id: 'user_002',
+    id: '2',
     nickname: '绿色生活家',
     avatar: 'https://placehold.co/100x100/png?text=User2',
     phone: '139****9999',
@@ -149,7 +149,7 @@ export class MockAutoLogin {
       const mockToken = `mock_token_${MockDataGenerator.generateId()}`
       const mockUser = {
         ...mockUsers[0], // 使用第一个mock用户
-        id: mockUsers[0].id,
+        id: '1', // 强制设置为 1 以适配后端
         loginTime: new Date().toISOString(),
         platform: 'mock'
       }

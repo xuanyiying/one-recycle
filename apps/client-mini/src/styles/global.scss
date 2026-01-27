@@ -115,12 +115,12 @@
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: $touch-target-min;
-  
+
   &:active {
     transform: scale(0.95);
     opacity: 0.8;
   }
-  
+
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
@@ -132,7 +132,7 @@
   @include ios-button-base;
   background-color: var(--ios-blue);
   color: #FFFFFF;
-  
+
   &:hover {
     background-color: var(--ios-blue-dark);
   }
@@ -142,7 +142,7 @@
   @include ios-button-base;
   background-color: rgba(0, 122, 255, 0.15);
   color: var(--ios-blue);
-  
+
   &:hover {
     background-color: rgba(0, 122, 255, 0.25);
   }
@@ -152,7 +152,7 @@
   @include ios-button-base;
   background-color: transparent;
   color: var(--ios-blue);
-  
+
   &:hover {
     background-color: rgba(0, 122, 255, 0.1);
   }
@@ -162,7 +162,7 @@
   @include ios-button-base;
   background-color: #FF3B30;
   color: #FFFFFF;
-  
+
   &:hover {
     background-color: #D70015;
   }
@@ -180,17 +180,17 @@
   font-family: $font-family-primary;
   font-size: $font-size-body;
   color: var(--ios-label);
-  
+
   &::placeholder {
     color: var(--ios-tertiary-label);
   }
-  
+
   &:focus {
     outline: none;
     border-color: var(--ios-blue);
     background-color: var(--ios-system-background);
   }
-  
+
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
@@ -229,11 +229,11 @@
   padding: 0 $list-item-padding;
   border-bottom: 1rpx solid var(--ios-separator);
   background-color: var(--ios-secondary-system-grouped-background);
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   &:active {
     background-color: var(--ios-tertiary-system-background);
   }
@@ -347,6 +347,7 @@
 
 // ==================== Global Styles Generator ====================
 @mixin ios-global-styles {
+
   // ==================== iOS 颜色系统 (from ios.scss) ====================
   // iOS 系统颜色 - 支持深色模式
   :root {
@@ -354,7 +355,7 @@
     --ios-blue: #007AFF;
     --ios-blue-light: #5AC8FA;
     --ios-blue-dark: #0051D5;
-    
+
     // iOS 系统灰色
     --ios-gray: #8E8E93;
     --ios-gray2: #AEAEB2;
@@ -362,23 +363,23 @@
     --ios-gray4: #D1D1D6;
     --ios-gray5: #E5E5EA;
     --ios-gray6: #F2F2F7;
-    
+
     // iOS 标签颜色
     --ios-label: #000000;
     --ios-secondary-label: rgba(60, 60, 67, 0.6);
     --ios-tertiary-label: rgba(60, 60, 67, 0.3);
     --ios-quaternary-label: rgba(60, 60, 67, 0.18);
-    
+
     // iOS 背景颜色
     --ios-system-background: #FFFFFF;
     --ios-secondary-system-background: #F2F2F7;
     --ios-tertiary-system-background: #FFFFFF;
-    
+
     // iOS 分组背景
     --ios-system-grouped-background: #F2F2F7;
     --ios-secondary-system-grouped-background: #FFFFFF;
     --ios-tertiary-system-grouped-background: #F2F2F7;
-    
+
     // iOS 分隔线
     --ios-separator: rgba(60, 60, 67, 0.29);
     --ios-opaque-separator: #C6C6C8;
@@ -390,27 +391,27 @@
       --ios-blue: #0A84FF;
       --ios-blue-light: #64D2FF;
       --ios-blue-dark: #0040DD;
-      
+
       --ios-gray: #8E8E93;
       --ios-gray2: #636366;
       --ios-gray3: #48484A;
       --ios-gray4: #3A3A3C;
       --ios-gray5: #2C2C2E;
       --ios-gray6: #1C1C1E;
-      
+
       --ios-label: #FFFFFF;
       --ios-secondary-label: rgba(235, 235, 245, 0.6);
       --ios-tertiary-label: rgba(235, 235, 245, 0.3);
       --ios-quaternary-label: rgba(235, 235, 245, 0.16);
-      
+
       --ios-system-background: #000000;
       --ios-secondary-system-background: #1C1C1E;
       --ios-tertiary-system-background: #2C2C2E;
-      
+
       --ios-system-grouped-background: #000000;
       --ios-secondary-system-grouped-background: #1C1C1E;
       --ios-tertiary-system-grouped-background: #2C2C2E;
-      
+
       --ios-separator: rgba(84, 84, 88, 0.65);
       --ios-opaque-separator: #38383A;
 
@@ -431,24 +432,70 @@
   }
 
   // ==================== iOS 文本样式 (from ios.scss) ====================
-  .ios-large-title { @include ios-large-title; }
-  .ios-title1 { @include ios-title1; }
-  .ios-title2 { @include ios-title2; }
-  .ios-title3 { @include ios-title3; }
-  .ios-headline { @include ios-headline; }
-  .ios-body { @include ios-body; }
-  .ios-callout { @include ios-callout; }
-  .ios-subheadline { @include ios-subheadline; }
-  .ios-footnote { @include ios-footnote; }
-  .ios-caption1 { @include ios-caption1; }
-  .ios-caption2 { @include ios-caption2; }
+  .ios-large-title {
+    @include ios-large-title;
+  }
+
+  .ios-title1 {
+    @include ios-title1;
+  }
+
+  .ios-title2 {
+    @include ios-title2;
+  }
+
+  .ios-title3 {
+    @include ios-title3;
+  }
+
+  .ios-headline {
+    @include ios-headline;
+  }
+
+  .ios-body {
+    @include ios-body;
+  }
+
+  .ios-callout {
+    @include ios-callout;
+  }
+
+  .ios-subheadline {
+    @include ios-subheadline;
+  }
+
+  .ios-footnote {
+    @include ios-footnote;
+  }
+
+  .ios-caption1 {
+    @include ios-caption1;
+  }
+
+  .ios-caption2 {
+    @include ios-caption2;
+  }
 
   // ==================== iOS 按钮样式 (from ios.scss) ====================
-  .ios-button { @include ios-button-base; }
-  .ios-button-primary { @include ios-button-primary; }
-  .ios-button-secondary { @include ios-button-secondary; }
-  .ios-button-text { @include ios-button-text; }
-  .ios-button-destructive { @include ios-button-destructive; }
+  .ios-button {
+    @include ios-button-base;
+  }
+
+  .ios-button-primary {
+    @include ios-button-primary;
+  }
+
+  .ios-button-secondary {
+    @include ios-button-secondary;
+  }
+
+  .ios-button-text {
+    @include ios-button-text;
+  }
+
+  .ios-button-destructive {
+    @include ios-button-destructive;
+  }
 
   // 按钮尺寸变体
   .ios-button-small {
@@ -464,41 +511,43 @@
   }
 
   // ==================== iOS 输入框样式 (from ios.scss) ====================
-  .ios-input { @include ios-input; }
+  .ios-input {
+    @include ios-input;
+  }
 
   // ==================== iOS 列表样式 (from ios.scss) ====================
   .ios-list {
     @include ios-list;
-    
+
     .ios-list-section {
       @include ios-list-section;
-      
+
       .ios-list-header {
         @include ios-list-header;
       }
-      
+
       .ios-list-group {
         @include ios-list-group;
-        
+
         .ios-list-item {
           @include ios-list-item;
-          
+
           .ios-list-item-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            
+
             .ios-list-item-title {
               @include ios-body;
             }
-            
+
             .ios-list-item-subtitle {
               @include ios-footnote;
               margin-top: $spacing-2;
             }
           }
-          
+
           .ios-list-item-accessory {
             margin-left: $spacing-8;
             color: var(--ios-tertiary-label);
@@ -506,7 +555,7 @@
           }
         }
       }
-      
+
       .ios-list-footer {
         @include ios-list-footer;
       }
@@ -516,23 +565,23 @@
   // ==================== iOS 卡片样式 (from ios.scss) ====================
   .ios-card {
     @include ios-card;
-    
+
     .ios-card-header {
       @include ios-card-header;
-      
+
       .ios-card-title {
         @include ios-card-title;
       }
-      
+
       .ios-card-subtitle {
         @include ios-card-subtitle;
       }
     }
-    
+
     .ios-card-content {
       @include ios-card-content;
     }
-    
+
     .ios-card-footer {
       @include ios-card-footer;
     }
@@ -541,7 +590,7 @@
   // ==================== iOS 导航栏样式 (from ios.scss) ====================
   .ios-navigation-bar {
     @include ios-navigation-bar;
-    
+
     .ios-nav-back-button {
       display: flex;
       align-items: center;
@@ -549,24 +598,24 @@
       margin-left: -$spacing-8;
       color: var(--ios-blue);
       font-size: $font-size-body;
-      
+
       &:active {
         opacity: 0.3;
       }
     }
-    
+
     .ios-nav-title {
       flex: 1;
       text-align: center;
       @include ios-headline;
     }
-    
+
     .ios-nav-action {
       padding: $spacing-8;
       margin-right: -$spacing-8;
       color: var(--ios-blue);
       font-size: $font-size-body;
-      
+
       &:active {
         opacity: 0.3;
       }
@@ -576,7 +625,7 @@
   // ==================== iOS 标签栏样式 (from ios.scss) ====================
   .ios-tab-bar {
     @include ios-tab-bar;
-    
+
     .ios-tab-item {
       flex: 1;
       display: flex;
@@ -584,24 +633,24 @@
       align-items: center;
       justify-content: center;
       padding: $spacing-4 $spacing-8;
-      
+
       .ios-tab-icon {
         width: 48rpx; // 24pt
         height: 48rpx; // 24pt
         margin-bottom: $spacing-2;
       }
-      
+
       .ios-tab-label {
         font-size: $font-size-caption2;
         color: var(--ios-secondary-label);
         text-align: center;
       }
-      
+
       &.active {
         .ios-tab-icon {
           color: var(--ios-blue);
         }
-        
+
         .ios-tab-label {
           color: var(--ios-blue);
         }
@@ -620,9 +669,11 @@
 
   .ios-responsive-text {
     font-size: $font-size-body;
+
     @media (max-width: 375px) {
       font-size: $font-size-callout;
     }
+
     @media (min-width: 430px) {
       font-size: $font-size-headline;
     }
@@ -630,9 +681,11 @@
 
   .ios-responsive-spacing {
     padding: $spacing-16;
+
     @media (max-width: 375px) {
       padding: $spacing-12;
     }
+
     @media (min-width: 430px) {
       padding: $spacing-24;
     }
@@ -641,12 +694,15 @@
   .ios-touch-feedback {
     transition: all 0.2s ease;
     cursor: pointer;
+
     &:active {
       transform: scale(0.95);
       opacity: 0.8;
     }
+
     @media (prefers-reduced-motion: reduce) {
       transition: none;
+
       &:active {
         transform: none;
         opacity: 0.7;
@@ -656,6 +712,7 @@
 
   .ios-card-shadow {
     box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.1);
+
     @media (prefers-color-scheme: dark) {
       box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.3);
     }
@@ -673,9 +730,17 @@
     margin-bottom: $section-margin;
   }
 
-  .ios-page { @include ios-page; }
-  .ios-content { @include ios-content; }
-  .ios-section { @include ios-section; }
+  .ios-page {
+    @include ios-page;
+  }
+
+  .ios-content {
+    @include ios-content;
+  }
+
+  .ios-section {
+    @include ios-section;
+  }
 
   // ==================== iOS 动画 (from ios.scss) ====================
   @keyframes ios-fade-in {
@@ -683,6 +748,7 @@
       opacity: 0;
       transform: translateY(20rpx);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -693,6 +759,7 @@
     from {
       transform: translateX(100%);
     }
+
     to {
       transform: translateX(0);
     }
@@ -702,6 +769,7 @@
     from {
       transform: translateX(0);
     }
+
     to {
       transform: translateX(100%);
     }
@@ -729,51 +797,74 @@
     background-color: var(--ios-system-grouped-background);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    
+
     // iOS 移动端优化
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
-    
+
     // iOS 滚动优化
     -webkit-overflow-scrolling: touch;
   }
 
   // 重置默认样式
-  page, view, text, image, button, input, textarea, scroll-view, picker, picker-view, radio, checkbox, switch, slider {
+  page,
+  view,
+  text,
+  image,
+  button,
+  input,
+  textarea,
+  scroll-view,
+  picker,
+  picker-view,
+  radio,
+  checkbox,
+  switch,
+  slider {
     box-sizing: border-box;
   }
 
   // 数字字体优化
-  .number, .price, .amount {
+  .number,
+  .price,
+  .amount {
     font-family: $font-family-number;
   }
 
   // ==================== iOS 组件样式 ====================
 
   // iOS 卡片样式 - 遵循 iOS 设计规范
-  .card, .item-card, .status-card, .article-card, .recycle-info-card {
+  .card,
+  .item-card,
+  .status-card,
+  .article-card,
+  .recycle-info-card {
     background-color: var(--ios-secondary-system-grouped-background);
     border-radius: $card-radius; // 12pt (24rpx)
     padding: $card-padding; // 16pt (32rpx)
     margin-bottom: $spacing-16; // 16pt (32rpx)
-    
+
     // iOS 卡片不使用阴影，使用背景色区分
     border: none;
-    box-shadow: none;
+    box-shadow: $box-shadow-sm; // 启用柔和阴影
 
     &.card-hover {
-      transition: background-color 0.2s ease;
-      
+      transform: translateY(-2rpx);
+      box-shadow: $box-shadow-base;
+      transition: all 0.3s ease;
+
       &:active {
-        background-color: var(--ios-tertiary-system-grouped-background);
+        transform: scale(0.98);
+        box-shadow: $box-shadow-sm;
       }
     }
   }
 
   // iOS 加载状态
-  .loading, .loading-container {
+  .loading,
+  .loading-container {
     @include flex-center;
     padding: $spacing-32; // 32pt (64rpx)
     color: var(--ios-secondary-label);
@@ -793,7 +884,9 @@
   }
 
   // iOS 空状态
-  .empty, .empty-state, .empty-container {
+  .empty,
+  .empty-state,
+  .empty-container {
     @include flex-center;
     flex-direction: column;
     padding: $spacing-40; // 40pt (80rpx)
@@ -823,7 +916,8 @@
   }
 
   // iOS 错误状态
-  .error, .error-container {
+  .error,
+  .error-container {
     @include flex-center;
     flex-direction: column;
     padding: $spacing-40; // 40pt (80rpx)

@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
-import { View, Text, Switch } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import './index.scss'
 import { IconFont } from '@nutui/icons-react-taro'
+import logoIcon from '../../assets/icons/logo.png'
 
 interface SettingItem {
     id: string
@@ -61,51 +62,82 @@ const Settings = () => {
     }, [])
 
 
+    const preferenceSettings = settings.filter(setting => setting.type === 'switch')
+    const infoSettings = settings.filter(setting => setting.type === 'navigate')
+
     return (
         <View className='settings-page'>
             <View className='settings-section'>
-                {settings.map(setting => (
-                    <View
-                        className='setting-item'
-                        key={setting.id}
-                        onClick={() => setting.type === 'navigate' && onNavigate(setting.id)}
-                    >
-                        <View className='setting-info'>
-                            <Text className='setting-title'>
-                                <IconFont name={setting.id} size='18' color='#636e72'></IconFont>
-                                <Text style={{ marginLeft: '8px' }}>{setting.title}</Text>
-                            </Text>
-                            {setting.description && (
-                                <Text className='setting-description'>{setting.description}</Text>
-                            )}
+                <View className='section-header'>
+                    <Text>偏好设置</Text>
+                </View>
+                <View className='settings-group'>
+                    {preferenceSettings.map(setting => (
+                        <View
+                            className='setting-item'
+                            key={setting.id}
+                        >
+                            <View className='setting-content'>
+                                <View className={`setting-icon ${setting.id}`}>
+                                    <IconFont name={setting.id} size='18' color='#fff'></IconFont>
+                                </View>
+                                <View className='setting-info'>
+                                    <Text className='setting-title'>{setting.title}</Text>
+                                    {setting.description && (
+                                        <Text className='setting-description'>{setting.description}</Text>
+                                    )}
+                                </View>
+                                <View
+                                    className={`setting-switch ${setting.value ? 'on' : ''}`}
+                                    onClick={() => onSwitchChange(setting.id, !setting.value)}
+                                >
+                                    <View className='switch-thumb' />
+                                </View>
+                            </View>
                         </View>
-
-                        {setting.type === 'switch' ? (
-                            <Switch
-                                checked={setting.value}
-                                onChange={(e) => onSwitchChange(setting.id, e.detail.value)}
-                            />
-                        ) : (
-                            <Text className='arrow'>›</Text>
-                        )}
-                    </View>
-                ))}
+                    ))}
+                </View>
             </View>
 
             <View className='settings-section'>
-                <View className='setting-item' onClick={clearCache}>
-                    <View className='setting-info'>
-                        <Text className='setting-title'>
-                            <IconFont name='trash' size='18' color='#636e72'></IconFont>
-                            <Text style={{ marginLeft: '8px' }}>清除缓存</Text>
-                        </Text>
+                <View className='section-header'>
+                    <Text>服务与关于</Text>
+                </View>
+                <View className='settings-group'>
+                    {infoSettings.map(setting => (
+                        <View
+                            className='setting-item'
+                            key={setting.id}
+                            onClick={() => onNavigate(setting.id)}
+                        >
+                            <View className='setting-content'>
+                                <View className={`setting-icon ${setting.id}`}>
+                                    <IconFont name={setting.id} size='18' color='#fff'></IconFont>
+                                </View>
+                                <View className='setting-info'>
+                                    <Text className='setting-title'>{setting.title}</Text>
+                                </View>
+                                <Text className='arrow'>›</Text>
+                            </View>
+                        </View>
+                    ))}
+                </View>
+            </View>
+
+            <View className='danger-section'>
+                <View className='danger-item' onClick={clearCache}>
+                    <View className='danger-content'>
+                        <IconFont name='trash' size='20' color='#FF3B30'></IconFont>
+                        <Text className='danger-text'>清除缓存</Text>
                     </View>
-                    <Text className='arrow'>›</Text>
                 </View>
             </View>
 
             <View className='version-section'>
-                <Text className='version-text'>版本号: 1.0.0</Text>
+                <Image className='app-logo' src={logoIcon} mode='aspectFill' />
+                <Text className='app-name'>爱回收</Text>
+                <Text className='version-text'>版本号 1.0.0</Text>
+                <Text className='build-text'>为地球降温，从一次回收开始</Text>
             </View>
         </View>
     )

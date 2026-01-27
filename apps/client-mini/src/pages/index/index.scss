@@ -29,37 +29,64 @@
     padding-top: calc(constant(safe-area-inset-top) + #{$page-margin-top});
     padding-top: calc(env(safe-area-inset-top) + #{$page-margin-top});
 
-    .location-weather {
+    .header-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: $spacing-base;
+      margin-bottom: $spacing-24;
 
-      .location {
+      .location-pill {
         @include flex-center;
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.9);
         padding: 12rpx 24rpx;
-        border-radius: 32rpx;
-        
+        border-radius: $border-radius-pill;
+        box-shadow: $box-shadow-sm;
+
         .city-name {
-          font-size: 32rpx;
-          font-weight: $font-weight-bold;
+          font-size: 30rpx;
+          font-weight: 600;
           color: $text-color;
-          margin: 0 8rpx;
+          margin-left: 8rpx;
         }
       }
 
-      .weather-tip {
-        @include flex-center;
-        background: rgba(46, 125, 50, 0.1);
+      .weather-pill {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.6);
         padding: 12rpx 24rpx;
-        border-radius: 32rpx;
+        border-radius: $border-radius-pill;
 
-        .tip-text {
-          font-size: 24rpx;
-          color: $primary-color;
-          margin-left: 8rpx;
+        .weather-text {
+          font-size: 26rpx;
+          color: $text-color;
+          margin-right: 8rpx;
+          font-weight: 500;
         }
+
+        .weather-desc {
+          font-size: 24rpx;
+          color: $text-secondary;
+        }
+      }
+    }
+
+    .hello-text {
+      margin-bottom: $spacing-24;
+
+      .title {
+        font-size: 48rpx;
+        font-weight: 800; // ExtraBold
+        color: $text-color;
+        display: block;
+        margin-bottom: 8rpx;
+        letter-spacing: -1rpx;
+      }
+
+      .subtitle {
+        font-size: 30rpx;
+        color: $text-secondary;
+        font-weight: 500;
       }
     }
   }
@@ -74,117 +101,147 @@
     margin-bottom: $spacing-lg;
 
     .action-card {
-      width: 48%;
-      height: 240rpx;
-      border-radius: 24rpx;
-      background: #fff;
-      padding: $spacing-base;
+      width: 48%; // Slightly less than half
+      height: 380rpx; // Taller for more impact
+      border-radius: 40rpx; // Organic shape
+      padding: $spacing-24;
       box-sizing: border-box;
       position: relative;
-      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
       overflow: hidden;
-      transition: all 0.2s ease;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); // Bouncy spring
+      border: 1px solid rgba(255, 255, 255, 0.6); // Subtle frosted border
+
+      // Backgrounds defined specifically for each card type
+      &.book-card {
+        background: linear-gradient(135deg, #E3F2FD 0%, #FFFFFF 100%);
+        box-shadow: 0 16rpx 32rpx rgba(33, 150, 243, 0.15); // Blue tint shadow
+
+        .action-btn {
+          background: #2196F3;
+        }
+      }
+
+      &.clothes-card {
+        background: linear-gradient(135deg, #E8F5E9 0%, #FFFFFF 100%);
+        box-shadow: 0 16rpx 32rpx rgba(76, 175, 80, 0.15); // Green tint shadow
+
+        .action-btn {
+          background: #4CAF50;
+        }
+      }
 
       &.card-hover {
-        transform: scale(0.98);
-        opacity: 0.9;
-        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+        transform: scale(0.96);
+        box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.1);
       }
 
       .card-content {
         position: relative;
         z-index: 2;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
 
         .card-title {
-          font-size: 36rpx;
-          font-weight: 600;
+          font-size: 40rpx; // Larger
+          font-weight: 800;
           color: $text-color;
           display: block;
           margin-bottom: 8rpx;
         }
 
-        .title-area {
-           display: flex;
-           align-items: center;
-           margin-bottom: 8rpx;
-           
-           .card-icon {
-             margin-right: 8rpx;
-           }
-        }
-
         .card-desc {
           font-size: 24rpx;
           color: $text-secondary;
-          display: block;
           margin-bottom: 24rpx;
+          font-weight: 500;
         }
 
-        .price-tag {
+        .price-pill {
           display: inline-flex;
           align-items: baseline;
-          background: rgba(255, 255, 255, 0.9);
-          padding: 4rpx 12rpx;
-          border-radius: 8rpx;
-          
-          .price {
-            font-size: 32rpx;
-            font-weight: bold;
-            color: #E65100; // 橙色强调价格
-          }
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(10px);
+          padding: 8rpx 20rpx;
+          border-radius: 20rpx;
+          margin-bottom: auto; // Push button to bottom
 
           .unit {
-            font-size: 20rpx;
-            color: #E65100;
-            margin-left: 4rpx;
+            font-size: 22rpx;
+            color: $text-secondary;
           }
+
+          .price {
+            font-size: 36rpx;
+            font-weight: 800;
+            color: $text-color; // Dark text for price, cleaner
+            margin: 0 4rpx;
+            font-family: 'DIN Alternate', sans-serif;
+          }
+        }
+
+        .action-btn {
+          align-self: flex-start;
+          padding: 12rpx 32rpx;
+          border-radius: 24rpx;
+          color: white;
+          font-size: 26rpx;
+          font-weight: 600;
+          box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
         }
       }
 
       .card-bg-img {
         position: absolute;
-        right: -20rpx;
-        bottom: -20rpx;
-        width: 160rpx;
-        height: 160rpx;
-        opacity: 0.8;
+        right: -30rpx;
+        bottom: -30rpx;
+        width: 240rpx; // Much larger image
+        height: 240rpx;
+        object-fit: contain;
         z-index: 1;
+        transform: rotate(-10deg); // Minimal rotation for dynamic feel
+        opacity: 0.9;
       }
     }
   }
 
-  // 功能栏
+  // 功能栏 - 浮动 Dock 风格
   .feature-bar {
     position: relative;
     z-index: 1;
     display: flex;
     justify-content: space-between;
-    padding: $spacing-base $spacing-lg;
-    background: #fff;
+    padding: 32rpx 48rpx;
+    background: rgba(255, 255, 255, 0.95);
     margin: 0 $spacing-base $spacing-lg;
-    border-radius: 24rpx;
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.02);
+    border-radius: 40rpx; // Pill shape
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.03);
+    backdrop-filter: blur(20px); // Glass effect
 
     .feature-item {
       @include flex-column;
       align-items: center;
-      transition: opacity 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
       &.feature-item-hover {
-        opacity: 0.7;
+        transform: translateY(-4rpx);
+        opacity: 0.8;
       }
 
       .icon-box {
-        width: 88rpx;
-        height: 88rpx;
-        border-radius: 24rpx;
+        width: 96rpx;
+        height: 96rpx;
+        border-radius: 32rpx; // Soft square
         @include flex-center;
-        margin-bottom: 12rpx;
+        margin-bottom: 16rpx;
+        box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.05);
       }
 
       .feature-name {
-        font-size: 24rpx;
+        font-size: 26rpx;
         color: $text-color;
+        font-weight: 500;
+        letter-spacing: 0.5px;
       }
     }
   }
@@ -195,18 +252,21 @@
     margin-bottom: $spacing-lg;
 
     .banner-swiper {
-      height: 240rpx;
-      border-radius: 24rpx;
+      height: 320rpx; // Slightly taller
+      border-radius: 32rpx;
       overflow: hidden;
-      transform: translateY(0); // Fix iOS radius overflow
+      transform: translateY(0);
+      box-shadow: 0 16rpx 32rpx rgba(0, 0, 0, 0.08);
 
       .banner-item {
         width: 100%;
         height: 100%;
+        position: relative; // For overlay if needed
 
         .banner-image {
           width: 100%;
           height: 100%;
+          border-radius: 32rpx;
         }
       }
     }
@@ -253,7 +313,7 @@
         padding: 24rpx;
         border-radius: 16rpx;
         margin-bottom: 20rpx;
-        
+
         .article-image {
           width: 200rpx;
           height: 140rpx;
@@ -280,8 +340,9 @@
 
           .article-meta {
             @include flex-between;
-            
-            .article-date, .article-views {
+
+            .article-date,
+            .article-views {
               font-size: 22rpx;
               color: $text-tertiary;
             }

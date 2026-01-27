@@ -2,6 +2,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
 import { Button, Tag } from '@nutui/nutui-react-taro'
+import { useAuth } from '@/hooks/useAuth'
 import withdrawalService from '@/services/withdrawal'
 import { WithdrawalStatus } from '@/types/withdrawal'
 import type { Withdrawal } from '@/types/withdrawal'
@@ -9,13 +10,14 @@ import AuthGuard from '@/components/AuthGuard'
 import './index.scss'
 
 export default function WithdrawalList() {
+    const { user } = useAuth()
     const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
     const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
 
     const loadWithdrawals = async (pageNum: number = 1, append: boolean = false) => {
-        if (loading) return
+        if (loading || !user) return
 
         try {
             setLoading(true)
@@ -80,9 +82,22 @@ export default function WithdrawalList() {
     return (
         <AuthGuard>
             <View className="withdrawal-list-page">
+                <View className="page-header">
+                    <View className="header-content">
+                        <View className="back-btn" onClick={() => Taro.navigateBack()}>
+                            <Text>返回</Text>
+                        </View>
+                        <Text className="header-title">提现记录</Text>
+                        <View className="header-count">
+                            <Text>{withdrawals.length} 笔</Text>
+                        </View>
+                    </View>
+                </View>
+
                 {withdrawals.length === 0 && !loading ? (
                     <View className="empty-state">
-                        <Text className="empty-text">暂无提现记录</Text>
+                        <Text className="empty-title">暂无提现记录</Text>
+                        <Text className="empty-text">当你发起提现后，记录会展示在这里</Text>
                     </View>
                 ) : (
                     <ScrollView className="withdrawal-list" scrollY>

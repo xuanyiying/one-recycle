@@ -6,8 +6,8 @@
  */
 
 import { View, Text, Input, Picker } from '@tarojs/components'
-import { ItemCondition } from '../../../types/order'
-import './ItemDetailsForm.scss'
+import { ItemCondition } from '../../../../types/order'
+import './index.scss'
 
 // ============================================================================
 // Types

@@ -12,7 +12,7 @@ import { TimeSlot, TimeSlotReservation } from '../../../types/order'
 import { useOrderStore } from '../../../store/orderStore'
 import { fetchAvailableTimeSlots, fetchTimeSlotsBatch, releaseTimeSlot } from '../../../services/timeSlot'
 import DatePicker from './DatePicker'
-import TimeSlotGrid from './TimeSlotGrid'
+import TimeSlotGrid from './TimeSoltGrid'
 import './index.scss'
 
 // ============================================================================

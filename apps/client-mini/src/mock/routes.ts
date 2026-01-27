@@ -54,60 +54,56 @@ export const registerAllMockRoutes = () => {
 
   // 订单相关路由
   mockManager.registerRoute('POST /orders', async (data) => orderMockData.createOrder(data))
-  mockManager.registerRoute('GET /orders', async (data) => orderMockData.getUserOrders(data?.userId || 'user_001'))
-  mockManager.registerRoute('GET /orders/:id', async (_, params) => orderMockData.getOrderDetail(params?.id || ''))
-  mockManager.registerRoute('PUT /orders/:id/cancel', async (_, params) => orderMockData.cancelOrder(params?.id || ''))
-  mockManager.registerRoute('PUT /orders/:id/status', async (data, params) => orderMockData.updateOrderStatus(params?.id || '', data?.status || 'confirmed'))
-  mockManager.registerRoute('POST /orders/:id/express', async (data, params) => orderMockData.createExpressOrder({ orderId: params?.id, ...(data || {}) }))
-  mockManager.registerRoute('GET /users/statistics', async (data) => orderMockData.getUserStatistics(data?.userId || 'user_001'))
-  mockManager.registerRoute('PUT /orders/:id/confirm', async (_, params) => orderMockData.confirmOrder(params?.id || ''))
+  mockManager.registerRoute('GET /orders', async (data) => orderMockData.getUserOrders(data?.userId || '1'))
+  mockManager.registerRoute('GET /orders/:id', async (_, params) => orderMockData.getOrderDetail(params?.id || '1'))
+  mockManager.registerRoute('PUT /orders/:id/cancel', async (_, params) => orderMockData.cancelOrder(params?.id || '1'))
+  mockManager.registerRoute('PUT /orders/:id/status', async (data, params) => orderMockData.updateOrderStatus(params?.id || '1', data?.status || 'confirmed'))
+  mockManager.registerRoute('POST /orders/:id/express', async (data, params) => orderMockData.createExpressOrder({ orderId: params?.id || '1', ...(data || {}) }))
+  mockManager.registerRoute('GET /orders/user/:userId/statistics', async (_, params) => orderMockData.getUserStatistics(params?.userId || '1'))
+  mockManager.registerRoute('GET /orders/user/:userId', async (_, params) => orderMockData.getUserOrders(params?.userId || '1'))
+  mockManager.registerRoute('PUT /orders/:id/confirm', async (_, params) => orderMockData.confirmOrder(params?.id || '1'))
 
-  // 适配新的 Service 路由 (namespaced - Order)
-  mockManager.registerRoute('POST /order/orders', async (data) => orderMockData.createOrder(data))
-  mockManager.registerRoute('GET /order/orders/user/:userId', async (_, params) => orderMockData.getUserOrders(params?.userId || 'user_001'))
-  // 兼容 userId 为空的情况
-  mockManager.registerRoute('GET /order/orders/user/', async () => orderMockData.getUserOrders('user_001'))
-  
-  mockManager.registerRoute('GET /order/orders/:id', async (_, params) => orderMockData.getOrderDetail(params?.id || ''))
-  mockManager.registerRoute('PUT /order/orders/:id/cancel', async (_, params) => orderMockData.cancelOrder(params?.id || ''))
-  mockManager.registerRoute('PUT /order/orders/:id/status', async (data, params) => orderMockData.updateOrderStatus(params?.id || '', data?.status || 'confirmed'))
-  mockManager.registerRoute('GET /order/orders/user/:userId/statistics', async (_, params) => orderMockData.getUserStatistics(params?.userId || 'user_001'))
-  // 兼容 userId 为空的情况
-  mockManager.registerRoute('GET /order/orders/user//statistics', async () => orderMockData.getUserStatistics('user_001'))
-
-  mockManager.registerRoute('PUT /order/orders/:id/confirm', async (_, params) => orderMockData.confirmOrder(params?.id || ''))
+  // 适配调度服务路由
   mockManager.registerRoute('POST /dispatch/express/orders', async (data) => orderMockData.createExpressOrder(data))
 
   // 账户相关路由
-  mockManager.registerRoute('GET /user/addresses', async (data) => addressMockData.getUserAddresses(data?.userId || 'user_001'))
+  mockManager.registerRoute('GET /user/addresses', async (data) => addressMockData.getUserAddresses(data?.userId || '1'))
   mockManager.registerRoute('POST /user/addresses', async (data) => addressMockData.addAddress(data))
-  mockManager.registerRoute('PUT /user/addresses/:id', async (data, params) => addressMockData.updateAddress(params?.id || '', data))
-  mockManager.registerRoute('DELETE /user/addresses/:id', async (_, params) => addressMockData.deleteAddress(params?.id || ''))
-  mockManager.registerRoute('GET /user/profile', async (data) => userMockData.getUserProfile(data?.userId || 'user_001'))
-  mockManager.registerRoute('PUT /user/profile', async (data) => userMockData.updateUserProfile(data?.userId || 'user_001', data))
+  mockManager.registerRoute('PUT /user/addresses/:id', async (data, params) => addressMockData.updateAddress(params?.id || '1', data))
+  mockManager.registerRoute('DELETE /user/addresses/:id', async (_, params) => addressMockData.deleteAddress(params?.id || '1'))
+  mockManager.registerRoute('GET /user/profile', async (data) => userMockData.getUserProfile(data?.userId || '1'))
+  mockManager.registerRoute('PUT /user/profile', async (data) => userMockData.updateUserProfile(data?.userId || '1', data))
   
   // 适配新的 Service 路由 (namespaced - Account)
   mockManager.registerRoute('GET /api/accounts/me', async () => accountMockData.getMyAccount())
   mockManager.registerRoute('GET /api/accounts/me/stats', async () => accountMockData.getMyStats())
   
-  mockManager.registerRoute('GET /addresses/user/:userId', async (_, params) => addressMockData.getUserAddresses(params?.userId || 'user_001'))
+  mockManager.registerRoute('GET /addresses/user/:userId', async (_, params) => addressMockData.getUserAddresses(params?.userId || '1'))
     mockManager.registerRoute('GET /addresses/regions/:parentCode', async (_, params) => addressMockData.getRegions(params?.parentCode || '000000'))
     mockManager.registerRoute('POST /addresses', async (data) => addressMockData.addAddress(data))
-    mockManager.registerRoute('PUT /addresses/:id', async (data, params) => addressMockData.updateAddress(params?.id || '', data))
-    mockManager.registerRoute('DELETE /addresses/:id', async (_, params) => addressMockData.deleteAddress(params?.id || ''))
+    mockManager.registerRoute('PUT /addresses/:id', async (data, params) => addressMockData.updateAddress(params?.id || '1', data))
+    mockManager.registerRoute('DELETE /addresses/:id', async (_, params) => addressMockData.deleteAddress(params?.id || '1'))
     
     // 保留旧的路径以防万一
-    mockManager.registerRoute('GET /account/addresses/user/:userId', async (_, params) => addressMockData.getUserAddresses(params?.userId || 'user_001'))
+    mockManager.registerRoute('GET /account/addresses/user/:userId', async (_, params) => addressMockData.getUserAddresses(params?.userId || '1'))
     mockManager.registerRoute('POST /account/addresses', async (data) => addressMockData.addAddress(data))
-    mockManager.registerRoute('PUT /account/addresses/:id', async (data, params) => addressMockData.updateAddress(params?.id || '', data))
-    mockManager.registerRoute('PUT /account/addresses/:id/delete', async (_, params) => addressMockData.deleteAddress(params?.id || ''))
-  mockManager.registerRoute('GET /account/users/:id', async (_, params) => userMockData.getUserProfile(params?.id || 'user_001'))
-  mockManager.registerRoute('PUT /account/users/:id', async (data, params) => userMockData.updateUserProfile(params?.id || 'user_001', data))
+    mockManager.registerRoute('PUT /account/addresses/:id', async (data, params) => addressMockData.updateAddress(params?.id || '1', data))
+    mockManager.registerRoute('PUT /account/addresses/:id/delete', async (_, params) => addressMockData.deleteAddress(params?.id || '1'))
+  
+  // User Routes (New Standard)
+  mockManager.registerRoute('GET /users/:id', async (_, params) => userMockData.getUserProfile(params?.id || '1'))
+  mockManager.registerRoute('PUT /users/:id', async (data, params) => userMockData.updateUserProfile(params?.id || '1', data))
+  mockManager.registerRoute('POST /users', async (data) => userMockData.createUser(data))
+  mockManager.registerRoute('GET /users/:userId/balance', async (_, params) => accountMockData.getWallet(params?.userId || '1'))
+  
+  // Legacy User Routes
+  mockManager.registerRoute('GET /account/users/:id', async (_, params) => userMockData.getUserProfile(params?.id || '1'))
+  mockManager.registerRoute('PUT /account/users/:id', async (data, params) => userMockData.updateUserProfile(params?.id || '1', data))
 
-  mockManager.registerRoute('GET /user/wallet', async (data) => accountMockData.getWallet(data?.userId || 'user_001'))
-  mockManager.registerRoute('GET /user/transactions', async (data) => accountMockData.getTransactions(data?.userId || 'user_001', data?.page, data?.limit))
-  mockManager.registerRoute('POST /user/withdrawal', async (data) => accountMockData.requestWithdrawal(data?.userId || 'user_001', data?.amount))
-  mockManager.registerRoute('POST /user/verify', async (data) => userMockData.verifyIdentity(data?.userId || 'user_001', data?.realName, data?.idCard))
+  mockManager.registerRoute('GET /user/wallet', async (data) => accountMockData.getWallet(data?.userId || '1'))
+  mockManager.registerRoute('GET /user/transactions', async (data) => accountMockData.getTransactions(data?.userId || '1', data?.page, data?.limit))
+  mockManager.registerRoute('POST /user/withdrawal', async (data) => accountMockData.requestWithdrawal(data?.userId || '1', data?.amount))
+  mockManager.registerRoute('POST /user/verify', async (data) => userMockData.verifyIdentity(data?.userId || '1', data?.realName, data?.idCard))
 
   // 支付相关路由
   mockManager.registerRoute('POST /payments', async (data) => paymentMockData.createOrder(
@@ -122,21 +118,21 @@ export const registerAllMockRoutes = () => {
     Number(data?.amount ?? 0)
   ))
   mockManager.registerRoute('GET /refunds/:id/status', async (_, params) => paymentMockData.getRefundStatus(params?.id || ''))
-  mockManager.registerRoute('GET /user/bank-cards', async (data) => paymentMockData.getBankCards(data?.userId || 'user_001'))
+  mockManager.registerRoute('GET /user/bank-cards', async (data) => paymentMockData.getBankCards(data?.userId || '1'))
   mockManager.registerRoute('POST /user/bank-cards', async (data) => paymentMockData.addBankCard(data))
   mockManager.registerRoute('DELETE /user/bank-cards/:id', async (_, params) => paymentMockData.deleteBankCard(params?.id || ''))
   mockManager.registerRoute('POST /payments/wechat', async (data) => paymentMockData.wechatPay(data))
   mockManager.registerRoute('POST /payments/alipay', async (data) => paymentMockData.alipayPay(data))
 
   // 通知相关路由
-  mockManager.registerRoute('GET /notifications', async (data) => notificationMockData.getNotifications(data?.userId || 'user_001', data?.type, data?.status, data?.page, data?.limit))
-  mockManager.registerRoute('GET /notifications/unread-count', async (data) => notificationMockData.getUnreadCount(data?.userId || 'user_001'))
-  mockManager.registerRoute('PUT /notifications/:id/read', async (_, params) => notificationMockData.markAsRead(params?.id || ''))
-  mockManager.registerRoute('PUT /notifications/read-all', async (data) => notificationMockData.markAllAsRead(data?.userId || 'user_001'))
-  mockManager.registerRoute('DELETE /notifications/:id', async (_, params) => notificationMockData.deleteNotification(params?.id || ''))
-  mockManager.registerRoute('DELETE /notifications', async (data) => notificationMockData.clearAllNotifications(data?.userId || 'user_001'))
-  mockManager.registerRoute('GET /notifications/settings', async (data) => notificationMockData.getNotificationSettings(data?.userId || 'user_001'))
-  mockManager.registerRoute('PUT /notifications/settings', async (data) => notificationMockData.updateNotificationSettings(data?.userId || 'user_001', data?.settings || data))
+  mockManager.registerRoute('GET /notifications', async (data) => notificationMockData.getNotifications(data?.userId || '1', data?.type, data?.status, data?.page, data?.limit))
+  mockManager.registerRoute('GET /notifications/unread-count', async (data) => notificationMockData.getUnreadCount(data?.userId || '1'))
+  mockManager.registerRoute('PUT /notifications/:id/read', async (_, params) => notificationMockData.markAsRead(params?.id || '1'))
+  mockManager.registerRoute('PUT /notifications/read-all', async (data) => notificationMockData.markAllAsRead(data?.userId || '1'))
+  mockManager.registerRoute('DELETE /notifications/:id', async (_, params) => notificationMockData.deleteNotification(params?.id || '1'))
+  mockManager.registerRoute('DELETE /notifications', async (data) => notificationMockData.clearAllNotifications(data?.userId || '1'))
+  mockManager.registerRoute('GET /notifications/settings', async (data) => notificationMockData.getNotificationSettings(data?.userId || '1'))
+  mockManager.registerRoute('PUT /notifications/settings', async (data) => notificationMockData.updateNotificationSettings(data?.userId || '1', data?.settings || data))
   mockManager.registerRoute('POST /notifications', async (data) => notificationMockData.sendNotification(data))
   mockManager.registerRoute('GET /notifications/:id', async (_, params) => notificationMockData.getNotificationDetail(params?.id || ''))
 
@@ -149,10 +145,10 @@ export const registerAllMockRoutes = () => {
   mockManager.registerRoute('GET /system/version', async () => systemMockData.getVersionInfo())
   mockManager.registerRoute('GET /system/update', async (data) => systemMockData.checkUpdate(data?.currentVersion || '1.0.0'))
   mockManager.registerRoute('POST /system/feedback', async (data) => systemMockData.submitFeedback(data))
-  mockManager.registerRoute('GET /user/feedbacks', async (data) => systemMockData.getUserFeedbacks(data?.userId || 'user_001'))
+  mockManager.registerRoute('GET /user/feedbacks', async (data) => systemMockData.getUserFeedbacks(data?.userId || '1'))
   mockManager.registerRoute('GET /system/faqs', async (data) => systemMockData.getFAQs(data?.category))
   mockManager.registerRoute('GET /system/faq-categories', async () => systemMockData.getFAQCategories())
-  mockManager.registerRoute('GET /system/announcements', async (data) => systemMockData.getAnnouncements(data?.userId || 'user_001'))
+  mockManager.registerRoute('GET /system/announcements', async (data) => systemMockData.getAnnouncements(data?.userId || '1'))
   mockManager.registerRoute('GET /system/customer-service', async () => systemMockData.getCustomerService())
   mockManager.registerRoute('POST /system/upload', async (data) => systemMockData.uploadImage(data))
 

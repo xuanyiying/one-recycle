@@ -6,9 +6,9 @@
  */
 
 import { View, Text, Image, Button } from '@tarojs/components'
-import { Item } from '../../../types/order'
-import { formatPriceRange } from '../../../utils/priceCalculation'
-import './ItemList.scss'
+import { Item } from '../../../../types/order'
+import { formatPriceRange } from '../../../../utils/priceCalculation'
+import './index.scss'
 
 // ============================================================================
 // Types

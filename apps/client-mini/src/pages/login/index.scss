@@ -5,7 +5,7 @@
 
 .login-container {
   min-height: 100vh;
-  background-color: var(--ios-system-background);
+  background: $gradient-bg;
   display: flex;
   flex-direction: column;
   
@@ -78,11 +78,13 @@
   width: 100%;
 
   .avatar-container {
-    height: 240rpx; // 80pt
+    width: 240rpx;
+    height: 240rpx;
     overflow: hidden;
     margin-bottom: $spacing-12; // 12pt
     background: var(--ios-secondary-system-background);
     border: 4rpx solid var(--ios-separator); // 2pt 边框
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;

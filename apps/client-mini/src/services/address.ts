@@ -186,8 +186,23 @@ export class AddressService {
       const response = await post('/addresses', requestData)
       Taro.hideLoading()
 
-      if (response.success) {
-        return { success: true, data: response.data }
+      if (response.success && response.data) {
+        // Transform backend data to unified format
+        const addr = response.data
+        const transformed: Address = {
+          id: addr.id,
+          recipientName: addr.name,
+          phoneNumber: addr.phone,
+          province: addr.province,
+          city: addr.city,
+          district: addr.area || addr.district,
+          detailedAddress: addr.detail,
+          isDefault: addr.isDefault,
+          label: addr.tag || addr.label,
+          coordinates: addr.coordinates,
+          region: `${addr.province} ${addr.city} ${addr.area || addr.district}`
+        }
+        return { success: true, data: transformed }
       } else {
         throw new Error(response.message || '保存失败')
       }
@@ -218,7 +233,26 @@ export class AddressService {
       const response = await put(`/addresses/${id}`, requestData)
       Taro.hideLoading()
 
-      return response
+      if (response.success && response.data) {
+        // Transform backend data to unified format
+        const addr = response.data
+        const transformed: Address = {
+          id: addr.id,
+          recipientName: addr.name,
+          phoneNumber: addr.phone,
+          province: addr.province,
+          city: addr.city,
+          district: addr.area || addr.district,
+          detailedAddress: addr.detail,
+          isDefault: addr.isDefault,
+          label: addr.tag || addr.label,
+          coordinates: addr.coordinates,
+          region: `${addr.province} ${addr.city} ${addr.area || addr.district}`
+        }
+        return { success: true, data: transformed }
+      } else {
+        throw new Error(response.message || '更新失败')
+      }
     } catch (error: any) {
       Taro.hideLoading()
       return { success: false, error: error.message }

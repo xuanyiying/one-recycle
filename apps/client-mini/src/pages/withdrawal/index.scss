@@ -5,6 +5,14 @@
   background-color: $bg-color;
   @include responsive-page-padding;
   // padding: $spacing-base; // responsive-page-padding handles padding
+  
+  .wallet-header {
+    padding: 0 $page-padding $spacing-12;
+    
+    .header-title {
+      @include ios-large-title;
+    }
+  }
 
   // 资产卡片
   .asset-card {
@@ -114,8 +122,7 @@
       margin-bottom: 30rpx;
 
       .title {
-        font-size: 32rpx;
-        font-weight: 600;
+        @include ios-title3;
       }
 
       .more {
@@ -126,6 +133,14 @@
     }
 
     .transaction-list {
+      .empty-state {
+        padding: 40rpx 0;
+        text-align: center;
+        .empty-text {
+          @include ios-footnote;
+          color: $text-tertiary;
+        }
+      }
       .trans-item {
         @include flex-between;
         padding: 24rpx 0;

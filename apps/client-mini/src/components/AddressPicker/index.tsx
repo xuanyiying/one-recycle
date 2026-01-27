@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
 import { Cascader, Popup, SearchBar } from '@nutui/nutui-react-taro'
@@ -45,23 +45,33 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
     }
   }, [])
 
-  const handleLazyLoad = useCallback(async (node: any, resolve: (children: any[]) => void) => {
+  const handleLazyLoad = useCallback((node: any, resolve?: (children: any[]) => void) => {
     const { value, level } = node
-    try {
-      // level 0: Province -> City
-      // level 1: City -> District
-      // level 2: District -> Street (optional)
-      const nextLevel = (parseInt(level) + 2).toString() 
-      const areas = await AddressDataService.getAreas(nextLevel, value)
-      const children = areas.map(a => ({
-        value: a.code,
-        label: a.name,
-        leaf: parseInt(nextLevel) >= 4 // Use 4 as leaf level to include streets
-      }))
-      resolve(children)
-    } catch (error) {
-      resolve([])
-    }
+    // level 0: Province -> City
+    // level 1: City -> District
+    // level 2: District -> Street (optional)
+    const nextLevel = (parseInt(level) + 2).toString() 
+    
+    const promise = AddressDataService.getAreas(nextLevel, value)
+      .then(areas => {
+        const children = areas.map(a => ({
+          value: a.code,
+          label: a.name,
+          leaf: parseInt(nextLevel) >= 4 // Use 4 as leaf level to include streets
+        }))
+        if (typeof resolve === 'function') {
+          resolve(children)
+        }
+        return children
+      })
+      .catch(() => {
+        if (typeof resolve === 'function') {
+          resolve([])
+        }
+        return []
+      })
+
+    return promise
   }, [])
 
   const handleFallback = useCallback(() => {
@@ -243,15 +253,19 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
       </View>
 
       {/* Region Cascader Popup */}
-      <Popup visible={showCascader} position='bottom' onClose={() => setShowCascader(false)}>
-        {cascaderData.length > 0 ? (
+      <Popup visible={showCascader} position='bottom' className='region-popup' onClose={() => setShowCascader(false)}>
+        {isLoadingData ? (
+          <View className='loading-container'>
+            <View className='loading-spinner' />
+            <Text>正在加载地区数据...</Text>
+          </View>
+        ) : cascaderData.length > 0 ? (
           <Cascader
             title='选择地区'
             visible={showCascader}
             options={cascaderData}
             lazy
             onLoad={handleLazyLoad}
-            onClose={() => setShowCascader(false)}
             onChange={handleRegionChange}
           />
         ) : (

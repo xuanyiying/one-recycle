@@ -55,6 +55,29 @@
     }
   }
 
+  // Ensure popup content is visible and styled
+  .region-popup {
+    .nut-popup {
+      background: #fff;
+    }
+    
+    .nut-cascader {
+      .nut-tabs__titles-item {
+        color: $text-color;
+        &.active {
+          color: $primary-color;
+        }
+      }
+      
+      .nut-cascader-item {
+        color: $text-color;
+        &.active {
+          color: $primary-color;
+        }
+      }
+    }
+  }
+
   .position-actions {
     display: flex;
     align-items: center;
@@ -92,6 +115,52 @@
       background: rgba(0, 0, 0, 0.05);
       margin: 0 32rpx;
     }
+  }
+
+  .empty-cascader,
+  .loading-container {
+    padding: 100rpx 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 28rpx;
+
+    .loading-spinner {
+      width: 48rpx;
+      height: 48rpx;
+      border: 4rpx solid #eee;
+      border-top-color: $primary-color;
+      border-radius: 50%;
+      margin-bottom: 24rpx;
+      animation: spin 1s linear infinite;
+    }
+
+    button {
+      margin-top: 32rpx;
+    }
+  }
+}
+
+.region-popup {
+  background: #fff;
+  color: #333;
+
+  text {
+    color: #333;
+  }
+
+  .nut-cascader,
+  .nut-cascader__bar,
+  .nut-cascader__title,
+  .nut-cascader__pane,
+  .nut-cascader__menu,
+  .nut-cascader__item,
+  .nut-cascader__step,
+  .nut-cascader__close,
+  .nut-cascader__indicator {
+    color: #333;
   }
 }
 

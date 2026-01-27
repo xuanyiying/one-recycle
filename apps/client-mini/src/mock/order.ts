@@ -53,8 +53,8 @@ export interface UserStatistics {
 // Mock订单数据
 const mockOrders: Order[] = [
   {
-    id: 'order_001',
-    userId: 'user_001',
+    id: '1',
+    userId: '1',
     status: OrderStatus.COMPLETED,
     items: [
       {
@@ -75,7 +75,7 @@ const mockOrders: Order[] = [
     totalWeight: 7.3,
     totalAmount: 11.49,
     address: {
-      id: 'addr_001',
+      id: '1',
       name: '张三',
       phone: '138****8888',
       address: '北京市朝阳区某某小区1号楼101室',
@@ -83,7 +83,7 @@ const mockOrders: Order[] = [
     },
     pickupTime: '2024-01-15T14:00:00Z',
     courierInfo: {
-      id: 'courier_001',
+      id: '1',
       name: '李师傅',
       phone: '139****9999'
     },
@@ -91,64 +91,43 @@ const mockOrders: Order[] = [
     updatedAt: '2024-01-15T16:30:00Z'
   },
   {
-    id: 'order_002',
-    userId: 'user_001',
+    id: '2',
+    userId: '1',
     status: OrderStatus.CONFIRMED,
     items: [
       {
         categoryId: 3,
         categoryName: '金属类',
         weight: 1.5,
-        unitPrice: 15.0,
-        amount: 22.5
+        unitPrice: 4.5,
+        amount: 6.75
       }
     ],
     totalWeight: 1.5,
-    totalAmount: 22.5,
+    totalAmount: 6.75,
     address: {
-      id: 'addr_001',
-      name: '张三',
-      phone: '138****8888',
-      address: '北京市朝阳区某某小区1号楼101室',
-      isDefault: true
-    },
-    pickupTime: '2024-01-20T10:00:00Z',
-    createdAt: '2024-01-18T09:15:00Z',
-    updatedAt: '2024-01-18T09:15:00Z'
-  },
-  {
-    id: 'order_003',
-    userId: 'user_001',
-    status: OrderStatus.PENDING,
-    items: [
-      {
-        categoryId: 4,
-        categoryName: '电子产品',
-        weight: 1,
-        unitPrice: 50.0,
-        amount: 50.0
-      }
-    ],
-    totalWeight: 1,
-    totalAmount: 50.0,
-    address: {
-      id: 'addr_002',
+      id: '2',
       name: '李四',
       phone: '137****7777',
       address: '上海市浦东新区某某路123号',
       isDefault: false
     },
-    pickupTime: '2024-01-25T15:30:00Z',
-    createdAt: '2024-01-22T11:20:00Z',
-    updatedAt: '2024-01-22T11:20:00Z'
+    pickupTime: '2024-01-20T10:00:00Z',
+    courierInfo: {
+      id: '1',
+      name: '李师傅',
+      phone: '139****9999'
+    },
+    createdAt: '2024-01-18T09:00:00Z',
+    updatedAt: '2024-01-18T09:00:00Z'
   }
 ]
 
 // Mock创建订单
 export const mockCreateOrder = async (orderData: any): Promise<MockResponse<Order>> => {
   const newOrder: Order = {
-    id: `order_${MockDataGenerator.generateId()}`,
-    userId: orderData.userId || 'user_001',
+    id: MockDataGenerator.generateId(),
+    userId: orderData.userId || '1',
     status: OrderStatus.PENDING,
     items: orderData.items || [],
     totalWeight: orderData.totalWeight || 0,

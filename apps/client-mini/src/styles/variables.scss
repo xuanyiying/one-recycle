@@ -1,46 +1,46 @@
-// 主题色彩
-$primary-color: #2E7D32; // 森林绿 - 品牌主色
-$primary-light: #4CAF50;
-$primary-dark: #1B5E20;
+// 主题色彩 - 更加年轻活跃的绿色
+$primary-color: #00C853; // 鲜艳的自然绿
+$primary-light: #69F0AE;
+$primary-dark: #009624;
 
-// 微信小程序标准色
-$wechat-primary: #1AAD19;
-$wechat-secondary: #07C160;
+// 微信小程序标准色 (兼容性)
+$wechat-primary: #07C160;
+$wechat-secondary: #06AD56;
 
 // 辅助色彩
-$secondary-color: #795548; // 大地褐 - 辅助色
-$success-color: #2E7D32;   // 同主色
-$warning-color: #FBC02D;   // 警示黄
-$error-color: #D63031;     // 错误红
-$info-color: #0984E3;      // 信息蓝
-$jd-red: #E1251B;          // 京东红
+$secondary-color: #FF6D00; // 活力橙 - 强调行动
+$success-color: #00C853;
+$warning-color: #FFD600;
+$error-color: #FF3D00;
+$info-color: #2979FF;
 
-// 中性色彩
-$text-color: #2D3436;      // 深灰 - 主要文字
-$text-secondary: #636E72;  // 中灰 - 次要文字
-$text-tertiary: #B2BEC3;   // 浅灰 - 占位符/禁用
-$text-disabled: #DFE6E9;
+// 中性色彩 - 更加柔和
+$text-color: #263238; // 蓝灰深色 - 比纯黑更柔和
+$text-primary: $text-color; // 别名适配
+$text-secondary: #546E7A; // 蓝灰中色
+$text-tertiary: #90A4AE; // 蓝灰浅色
+$text-disabled: #CFD8DC;
 
 // 背景色彩
-$bg-color: #F5F5F0;        // 米白色 - 页面背景
-$bg-secondary: #FFFFFF;    // 纯白 - 卡片背景
-$bg-tertiary: #F0F0F0;
-$bg-disabled: #E6E6E6;
+$bg-color: #F7F8FA; // 极浅蓝灰 - 通透感
+$bg-secondary: #FFFFFF;
+$bg-tertiary: #FAFAFA;
+$bg-disabled: #ECEFF1;
 
 // 边框色彩
-$border-color: #DFE6E9;
-$border-light: #F0F0F0;
-$border-dark: #B2BEC3;
+$border-color: #ECEFF1; // 极浅
+$border-light: #F5F5F5;
+$border-dark: #CFD8DC;
 
-// 阴影色彩
-$shadow-light: rgba(46, 125, 50, 0.04);
-$shadow-medium: rgba(46, 125, 50, 0.08);
-$shadow-dark: rgba(46, 125, 50, 0.16);
+// 阴影色彩 - 现代柔和阴影
+$shadow-light: rgba(0, 200, 83, 0.08);
+$shadow-medium: rgba(0, 0, 0, 0.05); // 通用柔和阴影
+$shadow-dark: rgba(0, 0, 0, 0.1);
 
 // 渐变色彩
-$gradient-primary: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
-$gradient-secondary: linear-gradient(135deg, #795548 0%, #8D6E63 100%);
-$gradient-bg: linear-gradient(180deg, #F5F5F0 0%, #FFFFFF 100%);
+$gradient-primary: linear-gradient(135deg, #00C853 0%, #64DD17 100%); // 更加明亮的渐变
+$gradient-secondary: linear-gradient(135deg, #FF6D00 0%, #FF9100 100%);
+$gradient-bg: linear-gradient(180deg, #F0F4C3 0%, #F7F8FA 100%); // 顶部微带暖色
 
 // ==================== iOS 字体规范 (适老化调整) ====================
 // iOS 系统字体家族
@@ -51,12 +51,12 @@ $font-family-number: 'SF Mono', 'Consolas', monospace;
 $font-size-caption2: 20rpx; // 10px
 $font-size-caption1: 24rpx; // 12px - 辅助文字
 $font-size-footnote: 28rpx; // 14px - 说明文字
-$font-size-body: 32rpx;     // 16px - 正文 (加大)
+$font-size-body: 32rpx; // 16px - 正文 (加大)
 $font-size-subheadline: 32rpx;
 $font-size-callout: 32rpx;
 $font-size-headline: 36rpx; // 18px - 标题
-$font-size-title3: 40rpx;   // 20px - 大标题
-$font-size-title2: 48rpx;   // 24px - 超大标题
+$font-size-title3: 40rpx; // 20px - 大标题
+$font-size-title2: 48rpx; // 24px - 超大标题
 $font-size-title1: 56rpx;
 $font-size-large-title: 64rpx;
 
@@ -100,40 +100,41 @@ $breakpoint-xs: 375px;
 $breakpoint-sm: 576px;
 
 // ==================== 间距规范 ====================
-$spacing-xs: 8rpx;   // 4px
-$spacing-sm: 16rpx;  // 8px
-$spacing-md: 24rpx;  // 12px
-$spacing-base: 32rpx;// 16px
-$spacing-lg: 40rpx;  // 20px
-$spacing-xl: 48rpx;  // 24px
+$spacing-xs: 8rpx; // 4px
+$spacing-sm: 16rpx; // 8px
+$spacing-md: 24rpx; // 12px
+$spacing-base: 32rpx; // 16px
+$spacing-lg: 40rpx; // 20px
+$spacing-xl: 48rpx; // 24px
 $spacing-xxl: 64rpx; // 32px
 
-// ==================== 组件尺寸 ====================
+// ==================== 组件尺寸 ====================// 组件尺寸
 $button-height-sm: 64rpx;
-$button-height-md: 88rpx;
-$button-height-lg: 96rpx;
-$button-radius: 12rpx;
-$border-radius-sm: 8rpx;
-$border-radius-base: 12rpx;
-$border-radius-md: 24rpx;
-$border-radius-lg: 32rpx;
-$border-radius-xl: 40rpx;
-$border-radius-xs: 4rpx;
-$touch-target-min: 88rpx;
-$input-height: 88rpx;
-$input-radius: 12rpx;
-$section-margin: 32rpx;
-$card-radius: 16rpx;
-$cell-height-md: 88rpx;
+$button-height-md: 96rpx; // 加大按钮更易触控
+$button-height-lg: 112rpx;
+$button-radius: 48rpx; // 全圆角按钮
+$border-radius-sm: 12rpx;
+$border-radius-base: 24rpx; // 更加圆润
+$border-radius-md: 32rpx; // 卡片圆角
+$border-radius-lg: 40rpx;
+$border-radius-xl: 48rpx;
+$border-radius-xs: 8rpx;
+$touch-target-min: 96rpx;
+$input-height: 96rpx;
+$input-radius: 24rpx;
+$section-margin: 40rpx;
+$card-radius: 32rpx; // 卡片统一大圆角
+$cell-height-md: 112rpx;
 $list-item-padding: 32rpx;
-$card-padding: $spacing-16;
-$page-padding: $spacing-16;
-$page-margin-top: $spacing-16;
+$card-padding: 40rpx;
+$page-padding: 40rpx;
+$page-margin-top: 32rpx;
 $border-radius-pill: 999rpx;
 
 // 动效与阴影
-$transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-$box-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-$box-shadow-base: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-$box-shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
-
+$transition-fast: 0.2s ease;
+$transition-base: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+$box-shadow-sm: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+$box-shadow-base: 0 8rpx 20rpx rgba(0, 0, 0, 0.04);
+$box-shadow-lg: 0 16rpx 40rpx rgba(0, 0, 0, 0.08);
+$box-shadow-float: 0 20rpx 60rpx rgba(0, 200, 83, 0.15); // 悬浮投影

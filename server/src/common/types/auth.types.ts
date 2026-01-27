@@ -1,3 +1,5 @@
+import type { Request } from 'express';
+
 /**
  * 认证相关类型定义
  */
@@ -141,3 +143,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.COURIER]: [Permission.ORDER_READ, Permission.ORDER_WRITE],
   [UserRole.USER]: [Permission.ORDER_READ, Permission.PAYMENT_READ],
 };
+
+// 认证后的请求对象
+export interface RequestWithUser extends Request {
+  user: {
+    id: string;
+    phone: string;
+    role: string;
+    sessionId: string;
+  };
+}

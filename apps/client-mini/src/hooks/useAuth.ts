@@ -3,6 +3,7 @@ import Taro from '@tarojs/taro'
 import { useAppContext } from '@/store'
 import { AuthService } from '@/services/auth'
 import { MockAutoLogin } from '@/mock'
+import { User } from '@/types'
 
 export const useAuth = () => {
   const { state, dispatch } = useAppContext()
@@ -96,7 +97,7 @@ export const useAuth = () => {
   }, [dispatch, state.token, state.user])
 
   // 登录
-  const login = useCallback(async (userData: any, userToken: string, provider?: string) => {
+  const login = useCallback(async (userData: User, userToken: string, provider?: string) => {
     try {
       setLoading(true)
       await AuthService.saveLoginInfo(userToken, userData)
@@ -131,6 +132,29 @@ export const useAuth = () => {
     }
   }, [dispatch])
 
+  // 更新用户信息
+  const updateUser = useCallback(async (newUserData: any) => {
+    try {
+      if (!user) return { success: false, message: '用户未登录' }
+      
+      const updatedUser = { ...user, ...newUserData }
+      
+      // 更新本地存储
+      Taro.setStorageSync('user', updatedUser)
+      
+      // 更新全局状态
+      dispatch({
+        type: 'UPDATE_USER',
+        payload: updatedUser
+      })
+      
+      return { success: true, user: updatedUser }
+    } catch (error) {
+      console.error('更新用户信息失败:', error)
+      return { success: false, message: '更新失败' }
+    }
+  }, [dispatch, user])
+
   return {
     isLoggedIn,
     user,
@@ -138,6 +162,7 @@ export const useAuth = () => {
     loading,
     checkAuthStatus,
     login,
-    logout
+    logout,
+    updateUser
   }
 }

@@ -28,7 +28,7 @@ const generateCacheKey = (url: string, method: string, data?: any): string => {
 let refreshing = false
 let refreshPromise: Promise<string | null> | null = null
 
-const attemptTokenRefresh = async (): Promise<string | null> => {
+export const attemptTokenRefresh = async (): Promise<string | null> => {
     const refreshToken = Taro.getStorageSync('refreshToken')
     if (!refreshToken) return null
 

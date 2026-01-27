@@ -16,8 +16,8 @@ export interface Address {
 // Mock地址数据
 const mockAddresses: Address[] = [
   {
-    id: 'addr_001',
-    userId: 'user_001',
+    id: '1',
+    userId: '1',
     name: '张三',
     phone: '138****8888',
     address: '北京市朝阳区某某小区1号楼101室',
@@ -26,8 +26,8 @@ const mockAddresses: Address[] = [
     updatedAt: '2024-01-01T10:00:00Z'
   },
   {
-    id: 'addr_002',
-    userId: 'user_001',
+    id: '2',
+    userId: '1',
     name: '李四',
     phone: '137****7777',
     address: '上海市浦东新区某某路123号',
@@ -46,8 +46,8 @@ export const mockGetUserAddresses = async (userId: string): Promise<MockResponse
 // Mock添加地址
 export const mockAddAddress = async (addressData: Partial<Address>): Promise<MockResponse<Address>> => {
   const newAddress: Address = {
-    id: `addr_${MockDataGenerator.generateId()}`,
-    userId: addressData.userId || 'user_001',
+    id: MockDataGenerator.generateId(),
+    userId: addressData.userId || '1',
     name: addressData.name || '',
     phone: addressData.phone || '',
     address: addressData.address || '',

@@ -237,8 +237,8 @@ const mockVersionInfo: VersionInfo = {
 // Mock反馈数据
 const mockFeedbacks: Feedback[] = [
   {
-    id: 'feedback_001',
-    userId: 'user_001',
+    id: '1',
+    userId: '1',
     type: 'suggestion',
     title: '希望增加夜间回收服务',
     content: '建议增加夜间回收服务，方便上班族用户',
@@ -249,8 +249,8 @@ const mockFeedbacks: Feedback[] = [
     updatedAt: '2024-01-21T09:15:00Z'
   },
   {
-    id: 'feedback_002',
-    userId: 'user_001',
+    id: '2',
+    userId: '1',
     type: 'bug',
     title: '支付页面加载缓慢',
     content: '支付页面经常加载很慢，有时候会卡住',

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { AccountService } from '@/modules/account/account.service';
 import {
   NotFoundException,
   ValidationException,
@@ -16,7 +17,10 @@ import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly accountService: AccountService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // 检查手机号是否已存在
@@ -30,21 +34,30 @@ export class UserService {
       }
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        mobile: createUserDto.mobile,
-        nickname: createUserDto.nickname,
-        avatarUrl: createUserDto.avatarUrl,
-      },
-      select: {
-        id: true,
-        mobile: true,
-        nickname: true,
-        avatarUrl: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    // 使用事务确保用户和账户同时创建
+    const user = await this.prisma.$transaction(async (tx) => {
+      // 1. 创建用户
+      const newUser = await tx.user.create({
+        data: {
+          mobile: createUserDto.mobile,
+          nickname: createUserDto.nickname,
+          avatarUrl: createUserDto.avatarUrl,
+        },
+        select: {
+          id: true,
+          mobile: true,
+          nickname: true,
+          avatarUrl: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      // 2. 自动创建关联账户
+      await this.accountService.createAccount(newUser.id, tx);
+
+      return newUser;
     });
 
     return this.mapToUserResponse(user);

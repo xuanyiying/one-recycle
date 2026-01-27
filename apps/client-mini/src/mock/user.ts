@@ -17,7 +17,7 @@ export interface UserProfile {
 
 // Mock用户资料数据
 const mockUserProfile: UserProfile = {
-  id: 'user_001',
+  id: '1',
   nickname: '环保小达人',
   avatar: '', 
   phone: '138****8888',
@@ -59,8 +59,21 @@ export const mockVerifyIdentity = async (userId: string, realName: string, idCar
   return createMockResponse(true, true, '实名认证成功')
 }
 
+// Mock创建用户
+export const mockCreateUser = async (userData: any): Promise<MockResponse<UserProfile>> => {
+  const newUser = {
+    ...mockUserProfile,
+    ...userData,
+    id: MockDataGenerator.generateId(),
+    createdAt: MockDataGenerator.generateTimestamp(),
+    updatedAt: MockDataGenerator.generateTimestamp()
+  }
+  return createMockResponse(newUser, true, '用户创建成功')
+}
+
 export const userMockData = {
   getUserProfile: mockGetUserProfile,
   updateUserProfile: mockUpdateUserProfile,
-  verifyIdentity: mockVerifyIdentity
+  verifyIdentity: mockVerifyIdentity,
+  createUser: mockCreateUser
 }

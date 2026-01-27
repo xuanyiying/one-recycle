@@ -44,6 +44,7 @@ export default function AddressForm({
         city: initialData?.city || '',
         district: initialData?.district || '',
         detailedAddress: initialData?.detailedAddress || '',
+        postalCode: initialData?.postalCode || '',
         label: initialData?.label || AddressLabel.HOME,
     })
 
@@ -91,6 +92,10 @@ export default function AddressForm({
             newErrors.detailedAddress = '请输入详细地址'
         } else if (formData.detailedAddress.length < 5) {
             newErrors.detailedAddress = '详细地址不能少于5个字符'
+        }
+
+        if (formData.postalCode && !/^\d{6}$/.test(formData.postalCode)) {
+            newErrors.postalCode = '请输入有效的6位邮政编码'
         }
 
         setLocalErrors(newErrors)
@@ -146,6 +151,13 @@ export default function AddressForm({
             setLocalErrors(prev => ({ ...prev, detailedAddress: '' }))
         }
     }, [localErrors])
+
+    const handlePostalCodeChange = useCallback((value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            postalCode: value,
+        }))
+    }, [])
 
     const handleLabelChange = useCallback((label: AddressLabel) => {
         setFormData((prev) => ({
@@ -273,6 +285,7 @@ export default function AddressForm({
                         <AddressPicker 
                             value={formData}
                             onChange={handleAddressPickerChange}
+                            errors={combinedErrors}
                         />
                         {combinedErrors.region && (
                             <Text className='error-text'>{combinedErrors.region}</Text>
@@ -296,6 +309,24 @@ export default function AddressForm({
                         />
                         {combinedErrors.detailedAddress && (
                             <Text className='error-text'>{combinedErrors.detailedAddress}</Text>
+                        )}
+                    </View>
+
+                    {/* Postal Code */}
+                    <View className='form-field'>
+                        <View className='field-header'>
+                            <Text className='field-label'>邮政编码</Text>
+                        </View>
+                        <Input
+                            value={formData.postalCode}
+                            onChange={(value) => handlePostalCodeChange(value)}
+                            placeholder='请输入邮政编码'
+                            type='number'
+                            maxLength={6}
+                            className={combinedErrors.postalCode ? 'error' : ''}
+                        />
+                        {combinedErrors.postalCode && (
+                            <Text className='error-text'>{combinedErrors.postalCode}</Text>
                         )}
                     </View>
 

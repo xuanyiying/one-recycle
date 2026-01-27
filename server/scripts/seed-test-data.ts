@@ -22,7 +22,7 @@ async function main() {
   try {
     // 创建一个测试用户，ID 固定为 1
     const testUserId = BigInt(1);
-    
+
     console.log('--- 开始初始化测试数据 ---');
 
     // 1. 确保测试用户存在
@@ -76,6 +76,13 @@ async function main() {
       detail: '腾讯大厦 20 层',
       isDefault: true,
     };
+
+    // 类型验证
+    if (typeof addressData.userId !== 'bigint') {
+      throw new Error(
+        `userId 必须是 bigint 类型，当前类型: ${typeof addressData.userId}`,
+      );
+    }
 
     const existingAddress = await prisma.address.findFirst({
       where: { userId: testUserId, detail: addressData.detail },

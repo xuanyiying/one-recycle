@@ -1,6 +1,5 @@
 import { Component, PropsWithChildren, lazy, Suspense } from 'react'
 import { AppProvider } from './store'
-import { setupNavigationPreload, preloadCriticalPages } from './utils/preloadPages'
 import { AddressDataService } from './services/address-data-service'
 import { performanceMonitor } from './utils/performanceMonitor'
 import networkStatusManager from './utils/networkStatus'
@@ -19,19 +18,15 @@ class App extends Component<PropsWithChildren> {
 
     async componentDidMount() {
         // Initialize network status monitoring
-        networkStatusManager.initialize();
+        await networkStatusManager.initialize();
 
         // Initialize mock auto login in development
         if (process.env.NODE_ENV === 'development') {
              await MockAutoLogin.initialize();
         }
 
-        // Setup navigation-based preloading
-        setupNavigationPreload();
-
         // Preload critical pages after a short delay
         setTimeout(() => {
-            preloadCriticalPages();
             // Preload core address data
             AddressDataService.preloadCoreProvinces();
         }, 2000);
@@ -43,19 +38,11 @@ class App extends Component<PropsWithChildren> {
             }, 5 * 60 * 1000);
         }
     }
-
-    componentDidShow() { }
-
-    componentDidHide() { }
-
     componentWillUnmount() {
         if (this.performanceInterval) {
             clearInterval(this.performanceInterval);
         }
     }
-
-    componentDidCatchError() { }
-
     // this.props.children 是将要会渲染的页面
     render() {
         return (

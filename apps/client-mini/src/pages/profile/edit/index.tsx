@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, Button, Image, Input } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import { IconFont } from '@nutui/icons-react-taro'
-import { useAppContext } from '../../../store'
+import { useAuth } from '../../../hooks/useAuth'
 import { getUserById, updateUserInfo } from '../../../services/user'
 import { useResponsive } from '../../../hooks/useResponsive'
 import AuthGuard from '../../../components/AuthGuard'
@@ -35,7 +35,7 @@ interface ValidationErrors {
 }
 
 export default function ProfileEdit(): JSX.Element {
-  const { state } = useAppContext()
+  const { user, updateUser } = useAuth()
   const screenSize = useResponsive()
 
   const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -96,7 +96,7 @@ export default function ProfileEdit(): JSX.Element {
         retryCount: isRetry ? prev.retryCount + 1 : 0
       }))
 
-      if (!state.user?.id) {
+      if (!user?.id) {
         setLoadingState(prev => ({
           ...prev,
           isLoading: false,
@@ -105,7 +105,7 @@ export default function ProfileEdit(): JSX.Element {
         return
       }
 
-      const result = await getUserById(state.user.id)
+      const result = await getUserById(user.id)
       if (result.success && result.data) {
         const userData = {
           nickname: result.data.nickname || '',
@@ -114,6 +114,9 @@ export default function ProfileEdit(): JSX.Element {
         }
         setFormData(userData)
         setOriginalData(userData)
+
+        // 同时更新全局状态，确保一致性
+        updateUser(result.data)
 
         setLoadingState(prev => ({
           ...prev,
@@ -142,7 +145,7 @@ export default function ProfileEdit(): JSX.Element {
         })
       }
     }
-  }, [state.user?.id])
+  }, [user?.id, updateUser])
 
   // 重试加载函数
   const retryLoad = useCallback(() => {
@@ -472,7 +475,7 @@ export default function ProfileEdit(): JSX.Element {
         mask: true
       })
 
-      if (state.user?.id) {
+      if (user?.id) {
         const updateData: any = {}
 
         if (formData.nickname !== originalData.nickname) {
@@ -486,11 +489,14 @@ export default function ProfileEdit(): JSX.Element {
           updateData.avatar = formData.avatarUrl
         }
 
-        const result = await updateUserInfo(state.user.id, updateData)
+        const result = await updateUserInfo(user.id, updateData)
 
         if (result.success) {
           // 更新原始数据
           setOriginalData(formData)
+          
+          // 更新全局状态
+          updateUser(updateData)
 
           Taro.hideLoading()
           Taro.showToast({
@@ -522,7 +528,7 @@ export default function ProfileEdit(): JSX.Element {
     } finally {
       setSaving(false)
     }
-  }, [formData, originalData, state.user?.id, validateNickname, hasChanges])
+  }, [formData, originalData, user?.id, validateNickname, hasChanges, updateUser])
 
   // iOS标准加载状态组件
   const LoadingComponent = useMemo(() => (

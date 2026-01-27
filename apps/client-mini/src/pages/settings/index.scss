@@ -7,12 +7,7 @@
   min-height: 100vh;
   background-color: var(--ios-system-grouped-background);
   @include responsive-page-padding;
-  padding-bottom: 0; // responsive-page-padding handles bottom, but if we need 0 specific override
-  // Actually responsive-page-padding adds bottom padding. settings-page originally had padding: $spacing-20 0;
-  // This means vertical padding 20pt.
-  // We should keep the vertical spacing intent but use safe area.
-  // responsive-page-padding adds safe area + margin.
-  // We can just add padding-top/bottom via mixin and let it be.
+  padding-bottom: 0;
 }
 
 // iOS 设置分组
@@ -63,6 +58,7 @@
 
           // 不同设置项的图标颜色
           &.notifications { background-color: #FF3B30; } // iOS 红色
+          &.location { background-color: #00C853; }
           &.privacy { background-color: #007AFF; } // iOS 蓝色
           &.account { background-color: #34C759; } // iOS 绿色
           &.help { background-color: #FF9500; } // iOS 橙色

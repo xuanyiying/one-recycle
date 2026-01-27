@@ -32,7 +32,7 @@ import TimeSlotSelection from './TimeSlotSelection'
 import OrderConfirmation from './OrderConfirmation'
 import OrderSuccess from './OrderSuccess'
 import DraftRecoveryModal from './DraftRecoveryModal'
-import './OrderCreationFlow.scss'
+import './index.scss'
 
 // ============================================================================
 // Types

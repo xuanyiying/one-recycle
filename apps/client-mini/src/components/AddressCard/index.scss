@@ -1,3 +1,5 @@
+@use '../../styles/variables.scss' as *;
+
 /**
  * AddressCard Component Styles
  * Enhanced with smooth animations and visual feedback
@@ -56,9 +58,9 @@
   }
 
   &.selected {
-    border-color: #007aff;
-    background: #f0f7ff;
-    box-shadow: 0 4rpx 12rpx rgba(0, 122, 255, 0.15);
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.05);
+    box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.15);
     animation: scaleIn 0.3s ease-out;
   }
 
@@ -86,10 +88,10 @@
       transition: all 0.3s ease;
 
       &.checked {
-        border-color: #007aff;
-        background: #007aff;
+        border-color: $primary-color;
+        background: $primary-color;
         animation: scaleIn 0.3s ease-out;
-        box-shadow: 0 2rpx 6rpx rgba(0, 122, 255, 0.3);
+        box-shadow: 0 2rpx 6rpx rgba($primary-color, 0.3);
 
         .radio-dot {
           width: 8rpx;
@@ -159,21 +161,15 @@
     }
 
     .address-details {
-      display: flex;
-      flex-direction: column;
-      gap: 4rpx;
+      display: block;
+      margin-top: 8rpx;
 
-      .region {
+      .full-address {
         display: block;
-        font-size: 24rpx;
-        color: #666;
-      }
-
-      .detailed-address {
-        display: block;
-        font-size: 24rpx;
-        color: #999;
-        word-break: break-word;
+        font-size: 26rpx;
+        color: #333;
+        line-height: 1.5;
+        word-break: break-all;
       }
     }
   }

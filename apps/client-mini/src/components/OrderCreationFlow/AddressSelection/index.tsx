@@ -12,7 +12,7 @@ import { Address } from '@/types/order'
 import { AddressLabel, AddressFormData } from '@/types/address'
 import { validateAddress, validateAddressInServiceArea } from '../../../utils/orderValidation'
 import { useOrderStore } from '../../../store/orderStore'
-import AddressCard from './AddressCard'
+import AddressCard from '../../AddressCard'
 import AddressForm from '@/components/AddressForm'
 import './index.scss'
 import { AddressService } from '@/services/address'
@@ -39,13 +39,15 @@ export default function AddressSelection({
     serviceAreaBoundary,
 }: AddressSelectionProps) {
     // State management
-    const { state, selectAddress, addAddress, updateAddress } = useOrderStore()
-    const [selectedAddressId, setSelectedAddressId] = useState<string | number | undefined>(
-        initialAddress?.id ?? state.selectedAddressId
+    const { state, setAddresses, selectAddress, addAddress, updateAddress } = useOrderStore()
+    const normalizeAddressId = (id?: string | number) => (id !== undefined && id !== null ? String(id) : undefined)
+    const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(
+        normalizeAddressId(initialAddress?.id ?? state.selectedAddressId)
     )
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [editingAddressId, setEditingAddressId] = useState<string | number | undefined>()
-    const [isLoading, setIsLoading] = useState(false)
+    const [isLoading, setIsLoading] = useState(true) // Start with loading true
+    const [hasFetched, setHasFetched] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
 
     // Get addresses from store
@@ -58,37 +60,86 @@ export default function AddressSelection({
     // Load addresses from API on mount
     useEffect(() => {
         const loadAddresses = async () => {
+            // If already fetching, don't fetch again
+            // But if we haven't fetched yet (even if isLoading is true initially), we should proceed
+            // However, we need to distinguish between "initial loading state" and "actual fetching"
+            // Let's simplify: always set isLoading to true before fetch, and false after.
+            
             try {
                 const response = await AddressService.getUserAddresses()
                 if (response.success && response.data) {
-                    // Add addresses to store
-                    response.data.forEach(addr => addAddress(addr))
+                    // Update all addresses in store at once
+                    setAddresses(response.data)
+                    
+                    // Auto-select default address if none selected
+                    const normalizedSelectedId = normalizeAddressId(selectedAddressId)
+                    const hasSelected = normalizedSelectedId && response.data.some((addr) => String(addr.id) === normalizedSelectedId)
+                    if (!hasSelected) {
+                        const defaultAddr = response.data.find(addr => addr.isDefault) || response.data[0]
+                        if (defaultAddr && defaultAddr.id !== undefined) {
+                            const id = String(defaultAddr.id)
+                            setSelectedAddressId(id)
+                            selectAddress(id)
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load addresses:', error)
+                Taro.showToast({
+                    title: '获取地址列表失败',
+                    icon: 'none'
+                })
+            } finally {
+                setIsLoading(false)
+                setHasFetched(true)
             }
         }
 
-        // Only load if store is empty
-        if (addresses.length === 0) {
+        // Load addresses if we haven't loaded them yet or if the store is empty
+        if (addresses.length === 0 && !hasFetched) {
             loadAddresses()
+        } else {
+             // If we already have addresses (e.g. from store), we don't need to load, but we should turn off loading state
+             setIsLoading(false)
+             setHasFetched(true)
         }
-    }, []) // Run once on mount
+    }, [setAddresses, selectAddress, selectedAddressId, addresses.length, hasFetched])
 
-    // If no addresses exist, show form automatically
     useEffect(() => {
-        if (addresses.length === 0 && !showAddressForm) {
+        if (addresses.length === 0) return
+        
+        const normalizedSelectedId = normalizeAddressId(selectedAddressId)
+        // Check if current selection is valid (exists in the list)
+        const hasSelected = normalizedSelectedId && addresses.some((addr) => String(addr.id) === normalizedSelectedId)
+        
+        // If we have a valid selection, we don't need to do anything
+        if (hasSelected) return
+
+        // If no valid selection, find default or first available
+        const defaultAddr = addresses.find((addr) => addr.isDefault) || addresses[0]
+        if (defaultAddr && defaultAddr.id !== undefined) {
+            const id = String(defaultAddr.id)
+            // Update both local state and store
+            setSelectedAddressId(id)
+            selectAddress(id)
+        }
+    }, [addresses, selectedAddressId, selectAddress])
+
+    // If no addresses exist after fetch, show form automatically
+    useEffect(() => {
+        if (!isLoading && hasFetched && addresses.length === 0 && !showAddressForm) {
             setShowAddressForm(true)
         }
-    }, [addresses.length, showAddressForm])
+    }, [isLoading, hasFetched, addresses.length, showAddressForm])
 
     // ============================================================================
     // Address Selection Handlers
     // ============================================================================
 
     const handleSelectAddress = useCallback((addressId: string | number) => {
-        setSelectedAddressId(addressId)
-        selectAddress(addressId)
+        const normalizedId = String(addressId)
+        setSelectedAddressId(normalizedId)
+        selectAddress(normalizedId)
         setErrors({})
     }, [selectAddress])
 
@@ -305,7 +356,7 @@ export default function AddressSelection({
         }
 
         // Get selected address
-        const selected = addresses.find((addr) => addr.id === selectedAddressId)
+        const selected = addresses.find((addr) => String(addr.id) === String(selectedAddressId))
         if (!selected) {
             Taro.showToast({
                 title: '地址不存在',
@@ -321,6 +372,16 @@ export default function AddressSelection({
     // ============================================================================
     // Render
     // ============================================================================
+
+    // Show loading state
+    if (isLoading && addresses.length === 0) {
+        return (
+            <View className='address-selection loading'>
+                <View className='loading-spinner' />
+                <Text>正在加载地址...</Text>
+            </View>
+        )
+    }
 
     // Show address form if editing or adding
     if (showAddressForm) {

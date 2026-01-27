@@ -1,27 +1,27 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    Table, 
-    Button, 
-    Select, 
-    Space, 
-    Tag, 
-    Alert, 
-    Tooltip, 
-    Popconfirm, 
-    Input, 
-    Spin, 
+import {
+    Table,
+    Button,
     Modal,
     Form,
+    Input,
+    Select,
+    Space,
+    Tag,
+    message,
+    Spin,
+    Alert,
     Card,
     Row,
     Col,
     Statistic,
-    message,
     Pagination,
+    Tooltip,
+    Popconfirm,
 } from 'antd';
-import { 
+import {
     PlusOutlined,
     EditOutlined,
     DeleteOutlined,
@@ -45,13 +45,10 @@ import type {
     CreateUserRequest,
     UpdateUserRequest,
 } from '../../services/userService';
-import { 
-    userService, 
-    UserStatus as UserStatusEnum, 
-    UserRole as UserRoleEnum 
-} from '../../services/userService';
+import { userService, UserStatus as UserStatusEnum, UserRole as UserRoleEnum } from '../../services/userService';
 
 const { Option } = Select;
+const { Search } = Input;
 
 // 本地用户接口，添加key字段用于Table组件
 interface LocalUser extends User {
@@ -482,7 +479,7 @@ const UsersPage: React.FC = () => {
             {/* 操作栏 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Space>
-                    <Input.Search
+                    <Search
                         placeholder="搜索用户名、邮箱或手机号"
                         allowClear
                         onSearch={handleSearch}
@@ -552,72 +549,89 @@ const UsersPage: React.FC = () => {
                 />
             </Spin>
 
-            {/* 编辑/添加用户模态框 */}
+            {/* 添加/编辑用户模态框 */}
             <Modal
-                title={editingUser ? '编辑用户' : '添加用户'}
+                title={editingUser ? "编辑用户" : "添加用户"}
                 open={isModalVisible}
                 onOk={handleModalOk}
                 onCancel={handleModalCancel}
-                destroyOnClose
+                okText="确定"
+                cancelText="取消"
+                width={600}
             >
-                <Form
-                    form={form}
-                    layout="vertical"
-                >
-                    <Form.Item
-                        label="用户名"
-                        name="username"
-                        rules={[{ required: true, message: '请输入用户名' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        label="姓名"
-                        name="fullName"
-                        rules={[{ required: true, message: '请输入姓名' }]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        label="邮箱"
-                        name="email"
-                        rules={[
-                            { required: true, message: '请输入邮箱' },
-                            { type: 'email', message: '邮箱格式不正确' }
-                        ]}
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        label="手机号"
-                        name="phone"
-                    >
-                        <Input />
-                    </Form.Item>
-                    <Form.Item
-                        label="角色"
-                        name="role"
-                        rules={[{ required: true, message: '请选择角色' }]}
-                    >
-                        <Select>
-                            <Option value={UserRoleEnum.ADMIN}>管理员</Option>
-                            <Option value={UserRoleEnum.MANAGER}>经理</Option>
-                            <Option value={UserRoleEnum.OPERATOR}>操作员</Option>
-                            <Option value={UserRoleEnum.CUSTOMER}>客户</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item
-                        label="状态"
-                        name="status"
-                        rules={[{ required: true, message: '请选择状态' }]}
-                    >
-                        <Select>
-                            <Option value={UserStatusEnum.ACTIVE}>活跃</Option>
-                            <Option value={UserStatusEnum.INACTIVE}>非活跃</Option>
-                            <Option value={UserStatusEnum.SUSPENDED}>暂停</Option>
-                            <Option value={UserStatusEnum.PENDING}>待激活</Option>
-                        </Select>
-                    </Form.Item>
+                <Form form={form} layout="vertical">
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="username"
+                                label="用户名"
+                                rules={[{ required: true, message: '请输入用户名' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="fullName"
+                                label="姓名"
+                                rules={[{ required: true, message: '请输入姓名' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="email"
+                                label="邮箱"
+                                rules={[
+                                    { required: true, message: '请输入邮箱' },
+                                    { type: 'email', message: '请输入有效的邮箱地址' }
+                                ]}
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="phone"
+                                label="手机号"
+                            >
+                                <Input />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                name="role"
+                                label="角色"
+                                rules={[{ required: true, message: '请选择角色' }]}
+                            >
+                                <Select>
+                                    <Option value={UserRoleEnum.ADMIN}>管理员</Option>
+                                    <Option value={UserRoleEnum.MANAGER}>经理</Option>
+                                    <Option value={UserRoleEnum.OPERATOR}>操作员</Option>
+                                    <Option value={UserRoleEnum.CUSTOMER}>客户</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                name="status"
+                                label="状态"
+                                rules={[{ required: true, message: '请选择状态' }]}
+                            >
+                                <Select>
+                                    <Option value={UserStatusEnum.ACTIVE}>活跃</Option>
+                                    <Option value={UserStatusEnum.INACTIVE}>非活跃</Option>
+                                    <Option value={UserStatusEnum.SUSPENDED}>暂停</Option>
+                                    <Option value={UserStatusEnum.PENDING}>待激活</Option>
+                                </Select>
+                            </Form.Item>
+                        </Col>
+                    </Row>
                 </Form>
             </Modal>
 
@@ -625,22 +639,42 @@ const UsersPage: React.FC = () => {
             <Modal
                 title="用户详情"
                 open={isDetailModalVisible}
-                footer={null}
                 onCancel={handleDetailModalCancel}
-                destroyOnClose
+                footer={[
+                    <Button key="close" onClick={handleDetailModalCancel}>
+                        关闭
+                    </Button>
+                ]}
+                width={800}
             >
                 {selectedUser && (
                     <div>
-                        <p><strong>用户名:</strong> {selectedUser.username}</p>
-                        <p><strong>姓名:</strong> {selectedUser.fullName}</p>
-                        <p><strong>邮箱:</strong> {selectedUser.email}</p>
-                        <p><strong>手机号:</strong> {selectedUser.phone || '-'}</p>
-                        <p><strong>角色:</strong> {renderRoleTag(selectedUser.role)}</p>
-                        <p><strong>状态:</strong> {renderStatusTag(selectedUser.status)}</p>
-                        <p><strong>注册时间:</strong> {new Date(selectedUser.createdAt).toLocaleString()}</p>
-                        <p><strong>最后登录:</strong> {selectedUser.lastLoginAt ? new Date(selectedUser.lastLoginAt).toLocaleString() : '-'}</p>
-                        <p><strong>邮箱已验证:</strong> {selectedUser.isEmailVerified ? '是' : '否'}</p>
-                        <p><strong>手机已验证:</strong> {selectedUser.isPhoneVerified ? '是' : '否'}</p>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <p><strong>用户名:</strong> {selectedUser.username}</p>
+                                <p><strong>姓名:</strong> {selectedUser.fullName}</p>
+                                <p><strong>邮箱:</strong> {selectedUser.email}</p>
+                                <p><strong>手机号:</strong> {selectedUser.phone || '-'}</p>
+                            </Col>
+                            <Col span={12}>
+                                <p><strong>角色:</strong> {renderRoleTag(selectedUser.role)}</p>
+                                <p><strong>状态:</strong> {renderStatusTag(selectedUser.status)}</p>
+                                <p><strong>注册时间:</strong> {new Date(selectedUser.createdAt).toLocaleString()}</p>
+                                <p><strong>最后登录:</strong> {selectedUser.lastLoginAt ? new Date(selectedUser.lastLoginAt).toLocaleString() : '-'}</p>
+                            </Col>
+                        </Row>
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <p><strong>邮箱验证:</strong> {selectedUser.isEmailVerified ? '已验证' : '未验证'}</p>
+                                <p><strong>手机验证:</strong> {selectedUser.isPhoneVerified ? '已验证' : '未验证'}</p>
+                            </Col>
+                        </Row>
+                        {selectedUser.address && (
+                            <div>
+                                <h4>地址信息</h4>
+                                <p>{selectedUser.address.street}, {selectedUser.address.city}, {selectedUser.address.state} {selectedUser.address.zipCode}, {selectedUser.address.country}</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>

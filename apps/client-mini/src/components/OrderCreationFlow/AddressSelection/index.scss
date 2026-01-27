@@ -1,3 +1,5 @@
+@use '../../../styles/variables' as *;
+
 /**
  * AddressSelection Component Styles
  * Enhanced with smooth animations and visual feedback
@@ -8,18 +10,14 @@
 // ============================================================================
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(20rpx);
+    transform: translateY($spacing-20);
   }
   to {
     opacity: 1;
@@ -30,7 +28,7 @@
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10rpx);
+    transform: translateY(-$spacing-8);
   }
   to {
     opacity: 1;
@@ -50,23 +48,44 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .address-selection {
   width: 100%;
   height: 100%;
-  background: #f5f5f5;
+  background: $bg-color;
 
   .address-selection-container {
-    padding: 32rpx 24rpx;
+    padding: $spacing-xl $spacing-md;
     min-height: 100vh;
     animation: fadeIn 0.3s ease-out;
+  }
+
+  &.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 200rpx;
+    color: $text-tertiary;
+    font-size: $font-size-footnote;
+    gap: $spacing-20;
+
+    .loading-spinner {
+      width: 40rpx;
+      height: 40rpx;
+      border: 4rpx solid $bg-disabled;
+      border-top: 4rpx solid $primary-color;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
   }
 
   // ============================================================================
@@ -74,21 +93,21 @@
   // ============================================================================
 
   .form-header {
-    margin-bottom: 40rpx;
+    margin-bottom: $spacing-xl;
     animation: slideInUp 0.4s ease-out;
 
     .form-title {
       display: block;
-      font-size: 36rpx;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 8rpx;
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $text-color;
+      margin-bottom: $spacing-8;
     }
 
     .form-subtitle {
       display: block;
-      font-size: 24rpx;
-      color: #999;
+      font-size: $font-size-sm;
+      color: $text-tertiary;
     }
   }
 
@@ -101,29 +120,29 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 80rpx 32rpx;
+    padding: 80rpx $spacing-base;
     text-align: center;
     animation: fadeIn 0.3s ease-out;
 
     .empty-icon {
       font-size: 80rpx;
-      margin-bottom: 24rpx;
+      margin-bottom: $spacing-md;
       animation: slideDown 0.4s ease-out;
     }
 
     .empty-title {
       display: block;
-      font-size: 32rpx;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 12rpx;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $text-color;
+      margin-bottom: $spacing-12;
     }
 
     .empty-description {
       display: block;
-      font-size: 24rpx;
-      color: #999;
-      margin-bottom: 40rpx;
+      font-size: $font-size-sm;
+      color: $text-tertiary;
+      margin-bottom: $spacing-xl;
     }
 
     .btn-primary {
@@ -138,21 +157,21 @@
   // ============================================================================
 
   .form-section {
-    margin-bottom: 32rpx;
+    margin-bottom: $spacing-base;
     animation: slideInUp 0.4s ease-out;
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+      box-shadow: $box-shadow-sm;
     }
 
     .section-title {
       display: block;
-      font-size: 28rpx;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 20rpx;
-      padding: 0 8rpx;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-semibold;
+      color: $text-color;
+      margin-bottom: $spacing-20;
+      padding: 0 $spacing-8;
     }
   }
 
@@ -163,8 +182,8 @@
   .addresses-list {
     display: flex;
     flex-direction: column;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
+    gap: $spacing-md;
+    margin-bottom: $spacing-md;
 
     > * {
       animation: slideInUp 0.3s ease-out;
@@ -176,9 +195,9 @@
   // ============================================================================
 
   .add-address-section {
-    margin-top: 24rpx;
+    margin-top: $spacing-md;
     display: flex;
-    gap: 16rpx;
+    gap: $spacing-md;
     animation: slideInUp 0.4s ease-out 0.1s both;
 
     .btn-secondary, .btn-wechat {
@@ -191,21 +210,22 @@
     }
 
     .btn-wechat {
-      background: #07c160;
+      background: $wechat-primary;
       color: #fff;
       border: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28rpx;
+      font-size: $font-size-footnote;
+      border-radius: $border-radius-sm;
 
       .icon {
-        margin-right: 8rpx;
-        font-size: 32rpx;
+        margin-right: $spacing-8;
+        font-size: $font-size-subheadline;
       }
 
       &:active:not(:disabled) {
-        background: darken(#07c160, 5%);
+        background: $wechat-secondary;
       }
     }
   }
@@ -216,18 +236,18 @@
 
   .form-actions {
     display: flex;
-    gap: 16rpx;
-    margin-top: 40rpx;
-    padding-bottom: 40rpx;
+    gap: $spacing-md;
+    margin-top: $spacing-xl;
+    padding-bottom: $spacing-xl;
     animation: slideInUp 0.3s ease-out;
 
     .btn-primary,
     .btn-secondary {
       flex: 1;
       min-height: 88rpx;
-      font-size: 28rpx;
-      font-weight: 600;
-      border-radius: 12rpx;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-semibold;
+      border-radius: $border-radius-sm;
       border: none;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -245,24 +265,25 @@
     }
 
     .btn-primary {
-      background: #007aff;
+      background: $primary-color;
       color: #fff;
-      box-shadow: 0 2rpx 4rpx rgba(0, 122, 255, 0.2);
+      box-shadow: $box-shadow-sm;
 
       &:active:not(:disabled) {
-        background: #0051d5;
-        box-shadow: 0 4rpx 8rpx rgba(0, 122, 255, 0.3);
+        background: $primary-dark;
+        box-shadow: $box-shadow-base;
       }
     }
 
     .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-      box-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+      background: $bg-disabled;
+      color: $text-color;
+      box-shadow: $box-shadow-sm;
 
       &:active:not(:disabled) {
-        background: #e0e0e0;
+        background: $border-dark;
       }
     }
   }
 }
+

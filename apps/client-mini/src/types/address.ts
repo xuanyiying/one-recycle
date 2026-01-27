@@ -23,6 +23,7 @@ export interface Address {
   district: string
   street?: string
   detailedAddress: string
+  postalCode?: string
   label?: AddressLabel
   isDefault?: boolean
   coordinates?: Coordinates

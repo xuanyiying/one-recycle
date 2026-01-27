@@ -1,6 +1,7 @@
-    import { View, Text } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
+import { useAuth } from '@/hooks/useAuth'
 import withdrawalService from '@/services/withdrawal'
 import { WithdrawalStatus } from '@/types/withdrawal'
 import type { Withdrawal } from '@/types/withdrawal'
@@ -11,14 +12,15 @@ import { Tag } from '@nutui/nutui-react-taro'
 export default function WithdrawalDetail() {
     const router = useRouter()
     const { id } = router.params
+    const { user } = useAuth()
     const [withdrawal, setWithdrawal] = useState<Withdrawal | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        if (id) {
+        if (id && user) {
             loadWithdrawal(id)
         }
-    }, [id])
+    }, [id, user])
 
     const loadWithdrawal = async (withdrawalId: string) => {
         try {
@@ -49,7 +51,9 @@ export default function WithdrawalDetail() {
     if (loading) {
         return (
             <View className="withdrawal-detail-page">
-                <Text>加载中...</Text>
+                <View className="state-card">
+                    <Text className="state-text">加载中...</Text>
+                </View>
             </View>
         )
     }
@@ -57,7 +61,9 @@ export default function WithdrawalDetail() {
     if (!withdrawal) {
         return (
             <View className="withdrawal-detail-page">
-                <Text>提现记录不存在</Text>
+                <View className="state-card">
+                    <Text className="state-text">提现记录不存在</Text>
+                </View>
             </View>
         )
     }
@@ -65,7 +71,16 @@ export default function WithdrawalDetail() {
     return (
         <AuthGuard>
             <View className="withdrawal-detail-page">
-                {/* Status Card */}
+                <View className="page-header">
+                    <View className="header-content">
+                        <View className="back-btn" onClick={() => Taro.navigateBack()}>
+                            <Text>返回</Text>
+                        </View>
+                        <Text className="header-title">提现详情</Text>
+                        <View className="header-placeholder" />
+                    </View>
+                </View>
+
                 <View className="status-card">
                     <Tag color={getStatusColor(withdrawal.status)}>
                         {withdrawalService.getStatusText(withdrawal.status)}
@@ -75,7 +90,6 @@ export default function WithdrawalDetail() {
                     </Text>
                 </View>
 
-                {/* Detail Info */}
                 <View className="detail-section">
                     <View className="detail-item">
                         <Text className="detail-label">提现方式</Text>

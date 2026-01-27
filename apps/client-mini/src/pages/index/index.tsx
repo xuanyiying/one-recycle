@@ -1,26 +1,27 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
+import { useAuth } from '@/hooks/useAuth'
 import { getBanners, getArticles } from '@/services/system'
 import './index.scss'
 import { useMenu } from './useMenu'
 import { Banner, Article } from '@/types'
-import { 
-  Location, 
-  Notice, 
-  Star, 
-  ArrowDown, 
-  Edit 
+// 更加生动的图标
+import BookIcon from '@/assets/images/book-recycle.png'
+import ClothesIcon from '@/assets/images/clothes-recycle.png'
+import {
+  Location
 } from '@nutui/icons-react-taro'
 import { getCdnUrl } from '@/utils/cdn'
 
 export default function Index() {
+  const { user } = useAuth()
   const { features, handleFeatureClick } = useMenu()
   const [currentCity, setCurrentCity] = useState('北京')
   const [banners, setBanners] = useState<Banner[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
-loading
+  loading
   useEffect(() => {
     initPageData()
     // 模拟定位
@@ -64,68 +65,71 @@ loading
       <View className='nav-bg' />
 
       {/* 顶部区域 */}
+      {/* 顶部沉浸式区域 */}
       <View className='header'>
-        <View className='location-weather'>
-          <View className='location' onClick={handleCitySelect}>
-            <Location size={16} color='#2D3436' />
+        <View className='header-content'>
+          <View className='location-pill' onClick={handleCitySelect}>
+            <Location size={14} color='#263238' />
             <Text className='city-name'>{currentCity}</Text>
-            <ArrowDown size={10} color='#2D3436' />
           </View>
-          <View className='weather-tip'>
-            <Notice size={14} color='#2E7D32' />
-            <Text className='tip-text'>今日适宜整理心情</Text>
+          <View className='weather-pill'>
+            <Text className='weather-text'>🌤️ 24°C</Text>
+            <Text className='weather-desc'>适合整理</Text>
           </View>
+        </View>
+        <View className='hello-text'>
+          <Text className='title'>Hi, {user?.nickname || '环保达人'}</Text>
+          <Text className='subtitle'>今天想回收什么？</Text>
         </View>
       </View>
 
       {/* 核心操作区 (双卡片) */}
+      {/* 核心操作区 (大卡片) */}
       <View className='core-action-area'>
-        <View 
+        <View
           className='action-card book-card'
           onClick={() => handleRecycleClick('book')}
           hoverClass='card-hover'
           hoverStayTime={100}
         >
           <View className='card-content'>
-            <View className='title-area'>
-               <Edit size={20} color='#2E7D32' className='card-icon' />
-               <Text className='card-title'>旧书回收</Text>
-            </View>
-            <Text className='card-desc'>知识循环</Text>
-            <View className='price-tag'>
-              <Text className='price'>0.8</Text>
+            <Text className='card-title'>旧书回收</Text>
+            <Text className='card-desc'>无需分拣 · 免费上门</Text>
+            <View className='price-pill'>
+              <Text className='unit'>最高</Text>
+              <Text className='price'>1.2</Text>
               <Text className='unit'>元/kg</Text>
             </View>
+            <View className='action-btn'>立即回收</View>
           </View>
-          <Image 
-            className='card-bg-img' 
-            src={getCdnUrl('https://img12.360buyimg.com/img/s160x160_jfs/t1/192028/25/25459/6075/629f2716E2e83d844/9247656828555365.png', { w: 160, h: 160, fmt: 'webp', q: 80 })} 
+          <Image
+            className='card-bg-img'
+            src={BookIcon}
             mode='aspectFit'
             lazyLoad
           />
         </View>
 
-        <View 
+        <View
           className='action-card clothes-card'
           onClick={() => handleRecycleClick('clothes')}
           hoverClass='card-hover'
           hoverStayTime={100}
         >
           <View className='card-content'>
-            <View className='title-area'>
-               <Star size={20} color='#2E7D32' className='card-icon' />
-               <Text className='card-title'>旧衣回收</Text>
-            </View>
-            <Text className='card-desc'>衣旧情深</Text>
-            <View className='price-tag'>
-              <Text className='price'>0.5</Text>
+            <Text className='card-title'>旧衣回收</Text>
+            <Text className='card-desc'>统统回收 · 公益环保</Text>
+            <View className='price-pill'>
+              <Text className='unit'>最高</Text>
+              <Text className='price'>0.8</Text>
               <Text className='unit'>元/kg</Text>
             </View>
+            <View className='action-btn'>立即回收</View>
           </View>
-          <Image 
-            className='card-bg-img' 
-            src={getCdnUrl('https://placehold.co/160x160/e8f5e9/2e7d32.png?text=Clothes', { w: 160, h: 160, fmt: 'webp', q: 80 })} 
-            mode='aspectFit' 
+          <Image
+            className='card-bg-img'
+            src={ClothesIcon}
+            mode='aspectFit'
             lazyLoad
           />
         </View>
@@ -134,9 +138,9 @@ loading
       {/* 功能栏 */}
       <View className='feature-bar'>
         {features.map((item) => (
-          <View 
-            key={item.key} 
-            className='feature-item' 
+          <View
+            key={item.key}
+            className='feature-item'
             onClick={() => handleFeatureClick(item)}
             hoverClass='feature-item-hover'
             hoverStayTime={100}
