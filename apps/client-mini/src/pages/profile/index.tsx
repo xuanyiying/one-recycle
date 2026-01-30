@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 
-import { IconFont, Order, Location, Warning, ArrowRight, Service, Setting } from '@nutui/icons-react-taro'
+import { IconFont, Order, Location, ArrowRight, Service, Setting } from '@nutui/icons-react-taro'
 import { useAuth } from '@/hooks/useAuth'
+import { useSafeArea } from '@/hooks/useSafeArea'
 import accountService from '@/services/account'
 import type { Account } from '@/types/account'
 import AuthGuard from '@/components/AuthGuard'
@@ -26,6 +27,7 @@ interface LoadingState {
 
 export default function Profile(): JSX.Element {
     const { user, updateUser, logout } = useAuth()
+    const { top: safeAreaTop } = useSafeArea()
     
     // 使用 Ref 跟踪最新的 user 状态，用于数据对比
     const userRef = useRef(user)
@@ -297,7 +299,12 @@ export default function Profile(): JSX.Element {
                     <View className='profile-bg' />
 
                     {/* 用户信息区域 - 开放式布局 */}
-                    <View className='user-header'>
+                    <View 
+                        className='user-header'
+                        style={{ 
+                            paddingTop: safeAreaTop ? `calc(${safeAreaTop}px + 100rpx)` : undefined 
+                        }}
+                    >
                         <View className='user-info' onClick={onEditProfile}>
                             <View className='avatar-ring'>
                                 <Avatar

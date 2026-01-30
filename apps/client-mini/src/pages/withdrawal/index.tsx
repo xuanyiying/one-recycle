@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro'
 import { Button, Popup, Input } from '@nutui/nutui-react-taro'
 import { IconFont, ArrowRight, Order } from '@nutui/icons-react-taro'
 import { useAuth } from '@/hooks/useAuth'
+import { useSafeArea } from '@/hooks/useSafeArea'
 import accountService from '@/services/account'
 import withdrawalService from '@/services/withdrawal'
 import { Account, Transaction } from '@/types/account'
@@ -18,6 +19,7 @@ const Money = ({ size = 20, color = 'currentColor' }) => (
 
 export default function WalletPage() {
   const { user } = useAuth()
+  const { bottom: safeAreaBottom } = useSafeArea()
   const [account, setAccount] = useState<Account | null>(null)
   const [showWithdraw, setShowWithdraw] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -44,9 +46,10 @@ export default function WalletPage() {
         page: 1,
         limit: 3,
       })
-      setRecentTransactions(transactions)
+      setRecentTransactions(transactions || [])
     } catch (error) {
       console.error(error)
+      setRecentTransactions([])
     }
   }
 
@@ -147,12 +150,12 @@ export default function WalletPage() {
           </View>
 
           <View className='transaction-list'>
-            {recentTransactions.length === 0 ? (
+            {recentTransactions?.length === 0 ? (
               <View className='empty-state'>
                 <Text className='empty-text'>暂无明细记录</Text>
               </View>
             ) : (
-              recentTransactions.map(transaction => (
+              recentTransactions?.map(transaction => (
                 <View className='trans-item' key={transaction.id}>
                   <View className='info'>
                     <Text className='name'>{accountService.getTransactionTypeText(transaction.type)}</Text>
@@ -179,7 +182,7 @@ export default function WalletPage() {
           round
           closeable
         >
-          <View className='withdraw-popup'>
+          <View className='withdraw-popup' style={{ paddingBottom: safeAreaBottom > 0 ? `${safeAreaBottom}px` : undefined }}>
             <Text className='popup-title'>提现到微信零钱</Text>
             
             <View className='amount-input-box'>
