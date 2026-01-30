@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import Taro from '@tarojs/taro'
 import { authMockData, mockUsers, MockAutoLogin } from './auth'
-import { ENV_CONFIG } from '@/config/env'
 
 // Mock Taro
 vi.mock('@tarojs/taro', () => ({
@@ -34,7 +33,7 @@ describe('Mock Auth Module', () => {
       
       expect(response.success).toBe(true)
       expect(response.data?.user.nickname).toBe(mockUsers[0].nickname)
-      expect(response.data?.token).toContain('mock_token_')
+      expect(response.data?.tokens).toContain('mock_token_')
     })
 
     it('mockGetUserInfo should return success response with mock user', async () => {
@@ -50,7 +49,7 @@ describe('Mock Auth Module', () => {
       
       expect(response.success).toBe(true)
       expect(response.data?.user.nickname).toBe('New User')
-      expect(response.data?.token).toContain('wechat_token_')
+      expect(response.data?.tokens).toContain('wechat_token_')
     })
   })
 

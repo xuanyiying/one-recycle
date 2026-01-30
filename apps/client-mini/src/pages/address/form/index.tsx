@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react'
 import Taro, { useRouter } from '@tarojs/taro'
 import { View } from '@tarojs/components'
 import AddressForm from '@/components/AddressForm'
-import { AddressService } from '@/services/address'
-import { Address, AddressFormData } from '@/types/address'
+import { AddressService, ApiResponse} from '@/services/address'
+import {Address, AddressFormData} from '@/types/address'
 import './index.scss'
 
 const AddressFormPage: React.FC = () => {
   const router = useRouter()
-  const { id } = router.params
+  const {id} = router.params
   const isEdit = !!id
 
   const [initialData, setInitialData] = useState<Address | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors] = useState<Record<string, string>>({})
 
   // Load address data if editing
   useEffect(() => {
@@ -28,18 +28,18 @@ const AddressFormPage: React.FC = () => {
       if (response.success && response.data) {
         setInitialData(response.data)
       } else {
-        Taro.showToast({ title: response.error || '加载地址失败', icon: 'none' })
+        Taro.showToast({title: response.error || '加载地址失败', icon: 'none'})
       }
     } catch (error) {
       console.error('加载地址失败:', error)
-      Taro.showToast({ title: '加载地址失败', icon: 'none' })
+      Taro.showToast({title: '加载地址失败', icon: 'none'})
     }
   }
 
   const handleSave = async (data: AddressFormData & { isDefault: boolean, coordinates?: any }) => {
     setIsLoading(true)
     try {
-      let response
+      let response: ApiResponse<Address>
       if (isEdit && id) {
         response = await AddressService.updateAddress(id, data)
       } else {
