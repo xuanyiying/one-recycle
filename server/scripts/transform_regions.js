@@ -14,15 +14,17 @@ const targetStaticFile = path.join(__dirname, '../../apps/client-mini/src/data/r
 
 async function main() {
     const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-        console.error('❌ DATABASE_URL 未在 .env 文件中设置');
-        process.exit(1);
-    }
+    let prisma = null;
+    let pool = null;
 
-    // 创建 PostgreSQL 连接池和适配器 (Prisma 7 最佳实践)
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
-    const prisma = new PrismaClient({ adapter });
+    if (!connectionString) {
+        console.warn('⚠️ DATABASE_URL 未设置，将跳过数据库同步，仅生成静态文件');
+    } else {
+        // 创建 PostgreSQL 连接池和适配器 (Prisma 7 最佳实践)
+        pool = new Pool({ connectionString });
+        const adapter = new PrismaPg(pool);
+        prisma = new PrismaClient({ adapter });
+    }
 
     try {
         console.log('🚀 开始数据处理流水线...');
@@ -41,11 +43,11 @@ async function main() {
         
         allItems.forEach(item => {
             if (item.level <= 2) {
-                const parentCode = item.parent_code ? item.parent_code.substring(0, 6) : "000000";
+                // 使用完整 12 位编码
+                const parentCode = item.parent_code || "000000";
                 
-                // 统一 6 位编码用于静态文件
-                const normalizedParent = parentCode === "000000" ? "000000" : parentCode;
-                const normalizedCode = item.code.substring(0, 6);
+                const normalizedParent = parentCode;
+                const normalizedCode = item.code;
 
                 if (!regionMap[normalizedParent]) regionMap[normalizedParent] = {};
                 
@@ -61,36 +63,40 @@ async function main() {
         console.log('✅ 静态文件 region.json 已更新');
 
         // --- 2. 数据库入库处理 (All Levels) ---
-        console.log('🗄️  正在同步数据到数据库 (PostgreSQL)...');
-        
-        // 分批处理以防止内存溢出或数据库压力过大
-        const BATCH_SIZE = 500; // 降低批次大小以提高稳定性
-        let processedCount = 0;
+        if (prisma) {
+            console.log('🗄️  正在同步数据到数据库 (PostgreSQL)...');
+            
+            // 分批处理以防止内存溢出或数据库压力过大
+            const BATCH_SIZE = 500; // 降低批次大小以提高稳定性
+            let processedCount = 0;
 
-        for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
-            const batch = allItems.slice(i, i + BATCH_SIZE).map(item => ({
-                code: item.code.substring(0, 12), // 数据库保留 12 位完整码
-                name: item.name,
-                level: item.level,
-                parentCode: item.parent_code ? item.parent_code.substring(0, 6) : null,
-                pinyin: item.pinyin || null,
-                abbr: item.abbr || null
-            }));
+            for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
+                const batch = allItems.slice(i, i + BATCH_SIZE).map(item => ({
+                    code: item.code, // 数据库保留 12 位完整码
+                    name: item.name,
+                    level: item.level,
+                    parentCode: item.parent_code || null,
+                    pinyin: item.pinyin || null,
+                    abbr: item.abbr || null
+                }));
 
-            // 使用 upsert 确保数据存在则更新，不存在则插入
-            await Promise.all(batch.map(data => 
-                prisma.region.upsert({
-                    where: { code: data.code },
-                    update: data,
-                    create: data
-                })
-            ));
+                // 使用 upsert 确保数据存在则更新，不存在则插入
+                await Promise.all(batch.map(data => 
+                    prisma.region.upsert({
+                        where: { code: data.code },
+                        update: data,
+                        create: data
+                    })
+                ));
 
-            processedCount += batch.length;
-            process.stdout.write(`\r进度: ${processedCount}/${allItems.length} (${Math.round(processedCount/allItems.length*100)}%)`);
+                processedCount += batch.length;
+                process.stdout.write(`\r进度: ${processedCount}/${allItems.length} (${Math.round(processedCount/allItems.length*100)}%)`);
+            }
+            
+            console.log('\n✅ 数据库同步完成');
+        } else {
+            console.log('⚠️ 跳过数据库同步');
         }
-        
-        console.log('\n✅ 数据库同步完成');
 
         // --- 3. 缓存预热提示 ---
         console.log('💡 提示: Redis 缓存将在 API 首次请求或通过后台任务预热。');
@@ -100,8 +106,8 @@ async function main() {
     } catch (error) {
         console.error('\n❌ 处理失败:', error);
     } finally {
-        await prisma.$disconnect();
-        await pool.end();
+        if (prisma) await prisma.$disconnect();
+        if (pool) await pool.end();
     }
 }
 

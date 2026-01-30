@@ -17,8 +17,16 @@ export const useRecycleNavigation = () => {
         if (process.env.NODE_ENV === 'development') {
           console.log('[Home] User is logged in, proceeding to recycle page')
         }
+        
+        // Map simplified types to category slugs
+        const categoryMap: Record<string, string> = {
+          'book': 'books',
+          'clothes': 'clothing'
+        }
+        const categorySlug = categoryMap[type] || type
+
         Taro.navigateTo({
-          url: `/pages/recycle/index?category=${type}`
+          url: `/pages/recycle/index?category=${categorySlug}`
         })
       } else {
         if (process.env.NODE_ENV === 'development') {

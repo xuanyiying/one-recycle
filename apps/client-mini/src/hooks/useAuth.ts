@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Taro from '@tarojs/taro'
 import { useAppContext } from '@/store'
 import { AuthService } from '@/services/auth'
@@ -13,6 +13,12 @@ export const useAuth = () => {
   const isLoggedIn = !!state.token && !!state.user
   const user = state.user
   const token = state.token
+  
+  // 使用 Ref 保持 user 的最新引用，解决 updateUser 的依赖循环问题
+  const userRef = useRef(user)
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
 
   // 初始化时检查本地存储的登录状态
   useEffect(() => {
@@ -68,6 +74,12 @@ export const useAuth = () => {
       const storedUser = Taro.getStorageSync('user')
       const refreshToken = Taro.getStorageSync('refreshToken')
       
+      // 1. 如果全局状态已经完整，直接返回（优化点：减少重复检查）
+      if (state.token && state.user) {
+        return { isLoggedIn: true, user: state.user, token: state.token }
+      }
+
+      // 2. 如果本地存储完整，同步到全局状态
       if (storedToken && storedUser) {
         if (!state.token || !state.user) {
           dispatch({
@@ -78,7 +90,7 @@ export const useAuth = () => {
         return { isLoggedIn: true, user: storedUser, token: storedToken }
       }
       
-      // 如果没有有效token但有refreshToken，尝试刷新
+      // 3. 如果没有有效token但有refreshToken，尝试刷新
       if (!storedToken && refreshToken) {
         console.log('检测到refreshToken，尝试自动刷新...')
         const refreshResult = await AuthService.refreshToken()
@@ -92,8 +104,12 @@ export const useAuth = () => {
              return { isLoggedIn: true, user: currentUser, token: refreshResult.token }
            }
         }
+        // 刷新失败，确保登出清理
+        dispatch({ type: 'LOGOUT' })
+        return { isLoggedIn: false }
       }
       
+      // 4. 最后尝试通过API检查登录状态（通常是Session Cookie方式，这里作为兜底）
       const loginStatus = AuthService.checkLoginStatus()
       if (loginStatus.isLoggedIn && loginStatus.token && loginStatus.user) {
         dispatch({
@@ -107,6 +123,7 @@ export const useAuth = () => {
       }
     } catch (error) {
       console.error('检查认证状态失败:', error)
+      dispatch({ type: 'LOGOUT' })
       return { isLoggedIn: false }
     } finally {
       setLoading(false)
@@ -153,9 +170,10 @@ export const useAuth = () => {
   // 更新用户信息
   const updateUser = useCallback(async (newUserData: any) => {
     try {
-      if (!user) return { success: false, message: '用户未登录' }
+      const currentUser = userRef.current
+      if (!currentUser) return { success: false, message: '用户未登录' }
       
-      const updatedUser = { ...user, ...newUserData }
+      const updatedUser = { ...currentUser, ...newUserData }
       
       // 更新本地存储
       Taro.setStorageSync('user', updatedUser)
@@ -171,7 +189,7 @@ export const useAuth = () => {
       console.error('更新用户信息失败:', error)
       return { success: false, message: '更新失败' }
     }
-  }, [dispatch, user])
+  }, [dispatch])
 
   // 发送验证码
   const sendSmsCode = useCallback(async (mobile: string) => {
@@ -241,8 +259,9 @@ export const useAuth = () => {
         })
       }
 
-      if (result?.success && result.data) {
-        const { token, user } = result.data
+      if (result?.success && result.data?.tokens?.accessToken) {
+        const { user } = result.data
+        const token = result.data.tokens.accessToken
         await login(user, token, provider)
         return { success: true }
       } else {

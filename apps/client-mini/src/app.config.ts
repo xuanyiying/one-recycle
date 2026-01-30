@@ -16,6 +16,7 @@ export default {
         'pages/withdrawal/list/index',
         'pages/withdrawal/detail/index',
         'pages/transaction/list/index',
+        'pages/rank/index',
     ],
     subpackages: [
         {

@@ -16,26 +16,6 @@ export interface ApiResponse<T = any> {
  * 地址管理服务类
  */
 export class AddressService {
-  /**
-   * 检查用户认证状态
-   */
-  private static checkAuth(): boolean {
-    const isLoggedIn = AuthService.isLoggedIn()
-    if (!isLoggedIn) {
-      Taro.showToast({
-        title: '请先登录',
-        icon: 'error'
-      })
-      // 跳转到登录页
-      setTimeout(() => {
-        Taro.navigateTo({
-          url: '/pages/login/index'
-        })
-      }, 1500)
-      return false
-    }
-    return true
-  }
 
   /**
    * 检查地址是否在配送范围内
@@ -83,10 +63,10 @@ export class AddressService {
   static async getUserAddresses(): Promise<ApiResponse<Address[]>> {
     try {
       // 检查认证状态
-      if (!this.checkAuth()) {
+      if (!AuthService.isLoggedIn()) {
         return {
           success: false,
-          error: '用户未登录'
+          error: '请登录后重试'
         }
       }
 
@@ -144,10 +124,10 @@ export class AddressService {
   static async createAddress(address: Omit<Address, 'id'>): Promise<ApiResponse<Address>> {
     try {
       // 检查认证状态
-      if (!this.checkAuth()) {
+      if (!AuthService.isLoggedIn()) {
         return {
           success: false,
-          error: '用户未登录'
+          error: '请登录后重试'
         }
       }
 
@@ -243,7 +223,7 @@ export class AddressService {
    */
   static async setDefaultAddress(id: string | number): Promise<ApiResponse<boolean>> {
     try {
-      if (!this.checkAuth()) return { success: false, error: '用户未登录' }
+      if (!AuthService.isLoggedIn()) return { success: false, error: '请登录后重试' }
       if (!id) return { success: false, error: '地址ID不能为空' }
 
       Taro.showLoading({ title: '设置中...', mask: true })
@@ -283,7 +263,7 @@ export class AddressService {
    */
   static async getAddressById(id: string | number): Promise<ApiResponse<Address | null>> {
     try {
-      if (!this.checkAuth()) return { success: false, error: '用户未登录' }
+      if (!AuthService.isLoggedIn()) return { success: false, error: '请登录后重试' }
       if (!id) return { success: false, error: '地址ID不能为空' }
 
       const response = await get(`/addresses/${id}`)

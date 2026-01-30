@@ -31,13 +31,13 @@ const mockItem: Item = {
 
 const mockAddress: Address = {
     id: 'addr_1',
-    recipientName: 'John Doe',
-    phoneNumber: '13800138000',
+    name: 'John Doe',
+    mobile: '13800138000',
     province: 'Beijing',
     city: 'Beijing',
     district: 'Chaoyang',
     region: 'Beijing Beijing Chaoyang',
-    detailedAddress: '123 Main St',
+    detail: '123 Main St',
     label: AddressLabel.HOME,
     isDefault: true,
     createdAt: new Date().toISOString(),
@@ -133,7 +133,7 @@ describe('OrderCreationFlow Integration', () => {
         it('should support selecting an address', () => {
             const selectedAddress: Address = mockAddress
             expect(selectedAddress.id).toBe('addr_1')
-            expect(selectedAddress.recipientName).toBe('John Doe')
+            expect(selectedAddress.name).toBe('John Doe')
         })
 
         it('should preserve address through flow steps', () => {
@@ -141,14 +141,14 @@ describe('OrderCreationFlow Integration', () => {
             const addressForConfirmation = selectedAddress
 
             expect(addressForConfirmation).toEqual(selectedAddress)
-            expect(addressForConfirmation.phoneNumber).toBe('13800138000')
+            expect(addressForConfirmation.mobile).toBe('13800138000')
         })
 
         it('should support multiple addresses', () => {
             const address2: Address = {
                 ...mockAddress,
                 id: 'addr_2',
-                recipientName: 'Jane Doe',
+                name: 'Jane Doe',
                 label: AddressLabel.WORK,
             }
 
@@ -505,14 +505,12 @@ describe('OrderCreationFlow Integration', () => {
                 items: [mockItem],
                 address: mockAddress,
                 timeSlot: mockTimeSlot,
-                agreedToTerms: true,
             }
 
             const isValid =
                 orderData.items.length > 0 &&
                 orderData.address &&
-                orderData.timeSlot &&
-                orderData.agreedToTerms
+                orderData.timeSlot 
 
             expect(isValid).toBe(true)
         })
@@ -522,7 +520,6 @@ describe('OrderCreationFlow Integration', () => {
                 items: [] as Item[],
                 address: mockAddress,
                 timeSlot: mockTimeSlot,
-                agreedToTerms: true,
             }
 
             const isValid = orderData.items.length > 0
@@ -534,7 +531,6 @@ describe('OrderCreationFlow Integration', () => {
                 items: [mockItem],
                 address: null as any,
                 timeSlot: mockTimeSlot,
-                agreedToTerms: true,
             }
 
             const isValid = orderData.address !== null
@@ -550,18 +546,6 @@ describe('OrderCreationFlow Integration', () => {
             }
 
             const isValid = orderData.timeSlot !== null
-            expect(isValid).toBe(false)
-        })
-
-        it('should reject submission without terms agreement', () => {
-            const orderData = {
-                items: [mockItem],
-                address: mockAddress,
-                timeSlot: mockTimeSlot,
-                agreedToTerms: false,
-            }
-
-            const isValid = orderData.agreedToTerms === true
             expect(isValid).toBe(false)
         })
     })
@@ -619,14 +603,12 @@ describe('OrderCreationFlow Integration', () => {
                     items: [mockItem],
                     address: mockAddress,
                     timeSlot: mockTimeSlot,
-                    agreedToTerms: true,
                 },
             }
 
             expect(dataFlow.step1.items).toHaveLength(1)
             expect(dataFlow.step2.address).toBeDefined()
             expect(dataFlow.step3.timeSlot).toBeDefined()
-            expect(dataFlow.step4.agreedToTerms).toBe(true)
         })
     })
 })

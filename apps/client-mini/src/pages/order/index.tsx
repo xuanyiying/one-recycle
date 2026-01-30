@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, Button, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,21 +19,11 @@ const OrderListPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | OrderStatus>('all');
   const [showCategorySelect, setShowCategorySelect] = useState(false);
 
-  // 监听页面显示，检查是否有来自其他页面的跳转参数，并触发数据加载
-  Taro.useDidShow(() => {
-    const targetTab = Taro.getStorageSync('ORDER_ACTIVE_TAB')
-    if (targetTab) {
-      setActiveTab(targetTab as any)
-      Taro.removeStorageSync('ORDER_ACTIVE_TAB')
-    }
-    loadOrderList()
-  })
-
-
-  const loadOrderList = async () => {
+  const loadOrderList = useCallback(async () => {
+    if (!user?.id) return;
     try {
       setLoading(true);
-      const result = await getUserOrders(user?.id || '');
+      const result = await getUserOrders(user.id);
       if (result.success && result.data) {
         // 处理分页结果
         if (Array.isArray(result.data)) {
@@ -53,7 +43,22 @@ const OrderListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  // 监听用户登录状态变化，一旦获取到用户信息（登录成功），立即加载订单
+  useEffect(() => {
+    loadOrderList();
+  }, [loadOrderList]);
+
+  // 监听页面显示，检查是否有来自其他页面的跳转参数，并触发数据加载
+  Taro.useDidShow(() => {
+    const targetTab = Taro.getStorageSync('ORDER_ACTIVE_TAB')
+    if (targetTab) {
+      setActiveTab(targetTab as any)
+      Taro.removeStorageSync('ORDER_ACTIVE_TAB')
+    }
+    loadOrderList()
+  })
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -190,7 +195,7 @@ const OrderListPage: React.FC = () => {
   ), []);
 
   return (
-    <AuthGuard redirectTo={`/pages/login/index?redirect=${encodeURIComponent('/pages/order/index')}`}>
+    <AuthGuard>
       <View className="order-list-page">
         {/* 状态筛选标签 - 悬浮胶囊风格 */}
         <View className="tab-container">

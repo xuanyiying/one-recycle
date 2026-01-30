@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum, IsUrl } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@/common/types/auth.types';
 
 export class CreateUserDto {
@@ -13,12 +13,19 @@ export class CreateUserDto {
   @IsOptional()
   nickname?: string;
 
-  @ApiPropertyOptional({ description: '头像URL', example: 'https://example.com/avatar.jpg' })
+  @ApiPropertyOptional({
+    description: '头像URL',
+    example: 'https://example.com/avatar.jpg',
+  })
   @IsUrl()
   @IsOptional()
   avatarUrl?: string;
 
-  @ApiPropertyOptional({ description: '用户角色', enum: UserRole, default: UserRole.USER })
+  @ApiPropertyOptional({
+    description: '用户角色',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
@@ -28,7 +35,10 @@ export class CreateUserDto {
   @IsOptional()
   provider?: string;
 
-  @ApiPropertyOptional({ description: '第三方OpenID', example: 'openid_123456' })
+  @ApiPropertyOptional({
+    description: '第三方OpenID',
+    example: 'openid_123456',
+  })
   @IsString()
   @IsOptional()
   openid?: string;
@@ -38,7 +48,10 @@ export class CreateUserDto {
   @IsOptional()
   appId?: string;
 
-  @ApiPropertyOptional({ description: '第三方UnionID', example: 'unionid_123456' })
+  @ApiPropertyOptional({
+    description: '第三方UnionID',
+    example: 'unionid_123456',
+  })
   @IsString()
   @IsOptional()
   unionid?: string;

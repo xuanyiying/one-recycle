@@ -247,7 +247,10 @@ export class OrderQueueService {
       await this.orderQueue.pause();
       this.logger.log('Order queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to pause queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

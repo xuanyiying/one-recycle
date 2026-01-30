@@ -13,21 +13,17 @@ export class UserGrpcController {
   }
 
   @GrpcMethod('UserService', 'FindByMobile')
-  async findByMobile(
-    data: {
-      mobile: string;
-    },
-  ): Promise<UserResponseDto | null> {
+  async findByMobile(data: {
+    mobile: string;
+  }): Promise<UserResponseDto | null> {
     return this.userService.findByMobile(data.mobile);
   }
 
   @GrpcMethod('UserService', 'FindByIdentity')
-  async findByIdentity(
-    data: {
-      provider: string;
-      openid: string;
-    },
-  ): Promise<UserResponseDto | null> {
+  async findByIdentity(data: {
+    provider: string;
+    openid: string;
+  }): Promise<UserResponseDto | null> {
     return this.userService.findByIdentity(data.provider, data.openid);
   }
 }

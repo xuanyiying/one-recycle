@@ -45,10 +45,28 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   // 处理自动跳转
   useEffect(() => {
     if (!isChecking && !loading && !isLoggedIn && !fallback && !showLoginPrompt) {
+        // 获取当前页面路径作为重定向参数
+        const pages = Taro.getCurrentPages()
+        const currentPage = pages[pages.length - 1]
+        const currentPath = currentPage ? `/${currentPage.route}` : ''
+        
+        // 构建带参数的重定向URL
+        let finalRedirectUrl = redirectTo
+        if (currentPath && !redirectTo.includes('?')) {
+            // 如果有参数，也应该带上
+            const options = (currentPage as any).options || {}
+            const queryString = Object.keys(options)
+                .map(key => `${key}=${options[key]}`)
+                .join('&')
+            
+            const fullPath = queryString ? `${currentPath}?${queryString}` : currentPath
+            finalRedirectUrl = `${redirectTo}?redirect=${encodeURIComponent(fullPath)}`
+        }
+
         // 保存当前页面路径作为登录后的重定向地址（可选，视需求而定）
         // 这里简单处理，直接跳转登录页
         Taro.navigateTo({
-            url: redirectTo,
+            url: finalRedirectUrl,
             fail: () => {
                 // 如果是 tabbar 页面或 navigateTo 失败，尝试 reLaunch
                 Taro.reLaunch({ url: redirectTo })

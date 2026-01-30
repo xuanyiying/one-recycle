@@ -32,13 +32,13 @@ const mockItem: Item = {
 
 const mockAddress: Address = {
   id: 'addr_1',
-  recipientName: 'John Doe',
-  phoneNumber: '13800138000',
+  name: 'John Doe',
+  mobile: '13800138000',
   province: '北京市',
   city: '北京市',
   district: '朝阳区',
   region: '北京市 北京市 朝阳区',
-  detailedAddress: '123 Main St',
+  detail: '123 Main St',
   label: AddressLabel.HOME,
   isDefault: true,
   createdAt: new Date().toISOString(),
@@ -269,11 +269,6 @@ describe('ValidationService - Field Validation', () => {
     expect(errors[0].field).toBe('photos')
   })
 
-  it('should validate terms agreement', () => {
-    const errors = validationService.validateField('agreedToTerms', false)
-    expect(errors).toHaveLength(1)
-    expect(errors[0].field).toBe('agreedToTerms')
-  })
 })
 
 // ============================================================================

@@ -27,6 +27,27 @@ export interface SnowflakeConfig {
   epoch?: number;
 }
 
+export interface SnowflakeState {
+  workerId: number;
+  datacenterId: number;
+  epoch: number;
+  lastTimestamp: number;
+  sequence: number;
+}
+
+export interface SnowflakeStateStore {
+  load(key: string): Promise<SnowflakeState | null>;
+  save(key: string, state: SnowflakeState): Promise<void>;
+}
+
+export interface PersistentSnowflakeConfig extends SnowflakeConfig {
+  stateStore?: SnowflakeStateStore;
+  stateKey?: string;
+  persistIntervalMs?: number;
+  maxBackwardMs?: number;
+  metricsKey?: string;
+}
+
 /**
  * NanoID配置接口
  */
@@ -219,6 +240,288 @@ export class SnowflakeIdGenerator {
     }
 
     return Math.abs(hash) & SnowflakeIdGenerator.MAX_DATACENTER_ID;
+  }
+}
+
+export class RedisSnowflakeStateStore implements SnowflakeStateStore {
+  constructor(
+    private readonly store: {
+      get<T = any>(key: string): Promise<T | null>;
+      set(key: string, value: any, ttl?: number): Promise<void>;
+    },
+  ) {}
+
+  async load(key: string): Promise<SnowflakeState | null> {
+    return await this.store.get<SnowflakeState>(key);
+  }
+
+  async save(key: string, state: SnowflakeState): Promise<void> {
+    await this.store.set(key, state);
+  }
+}
+
+export class PersistentSnowflakeIdGenerator {
+  private static readonly EPOCH = 1577836800000;
+  private static readonly MACHINE_ID_BITS = 5;
+  private static readonly DATACENTER_ID_BITS = 5;
+  private static readonly SEQUENCE_BITS = 12;
+
+  private static readonly MAX_MACHINE_ID =
+    (1 << PersistentSnowflakeIdGenerator.MACHINE_ID_BITS) - 1;
+  private static readonly MAX_DATACENTER_ID =
+    (1 << PersistentSnowflakeIdGenerator.DATACENTER_ID_BITS) - 1;
+  private static readonly MAX_SEQUENCE =
+    (1 << PersistentSnowflakeIdGenerator.SEQUENCE_BITS) - 1;
+
+  private static readonly MACHINE_ID_SHIFT =
+    PersistentSnowflakeIdGenerator.SEQUENCE_BITS;
+  private static readonly DATACENTER_ID_SHIFT =
+    PersistentSnowflakeIdGenerator.SEQUENCE_BITS +
+    PersistentSnowflakeIdGenerator.MACHINE_ID_BITS;
+  private static readonly TIMESTAMP_SHIFT =
+    PersistentSnowflakeIdGenerator.SEQUENCE_BITS +
+    PersistentSnowflakeIdGenerator.MACHINE_ID_BITS +
+    PersistentSnowflakeIdGenerator.DATACENTER_ID_BITS;
+
+  private workerId: number;
+  private datacenterId: number;
+  private epoch: number;
+  private sequence = 0;
+  private lastTimestamp = -1;
+
+  private readonly stateStore?: SnowflakeStateStore;
+  private readonly stateKey: string;
+  private readonly persistIntervalMs: number;
+  private readonly maxBackwardMs: number;
+  private readonly metricsKey: string;
+  private initialized = false;
+  private lastPersistedAt = 0;
+  private lastPersistedTimestamp = -1;
+
+  constructor(config: PersistentSnowflakeConfig = {}) {
+    this.workerId = config.workerId ?? this.generateWorkerId();
+    this.datacenterId = config.datacenterId ?? this.generateDatacenterId();
+    this.epoch = config.epoch ?? PersistentSnowflakeIdGenerator.EPOCH;
+    this.stateStore = config.stateStore;
+    this.stateKey = config.stateKey ?? 'snowflake:state:default';
+    this.persistIntervalMs = config.persistIntervalMs ?? 1000;
+    this.maxBackwardMs = config.maxBackwardMs ?? 5000;
+    this.metricsKey = config.metricsKey ?? this.stateKey;
+
+    if (
+      this.workerId > PersistentSnowflakeIdGenerator.MAX_MACHINE_ID ||
+      this.workerId < 0
+    ) {
+      throw new Error(
+        `Machine ID must be between 0 and ${PersistentSnowflakeIdGenerator.MAX_MACHINE_ID}`,
+      );
+    }
+
+    if (
+      this.datacenterId > PersistentSnowflakeIdGenerator.MAX_DATACENTER_ID ||
+      this.datacenterId < 0
+    ) {
+      throw new Error(
+        `Datacenter ID must be between 0 and ${PersistentSnowflakeIdGenerator.MAX_DATACENTER_ID}`,
+      );
+    }
+  }
+
+  async initialize(): Promise<void> {
+    if (!this.stateStore) {
+      this.initialized = true;
+      return;
+    }
+
+    const state = await this.stateStore.load(this.stateKey);
+    if (state) {
+      if (state.workerId !== undefined) {
+        this.workerId = state.workerId;
+      }
+      if (state.datacenterId !== undefined) {
+        this.datacenterId = state.datacenterId;
+      }
+      if (state.epoch !== undefined) {
+        this.epoch = state.epoch;
+      }
+      this.lastTimestamp = state.lastTimestamp ?? -1;
+      this.sequence = state.sequence ?? 0;
+    } else {
+      await this.stateStore.save(this.stateKey, this.getStateSnapshot());
+    }
+
+    this.initialized = true;
+  }
+
+  public nextId(): string {
+    if (this.stateStore && !this.initialized) {
+      throw new Error('PersistentSnowflakeIdGenerator not initialized');
+    }
+
+    const start = performance.now();
+    let success = true;
+    try {
+      let timestamp = this.getCurrentTimestamp();
+
+      if (timestamp < this.lastTimestamp) {
+        IdGeneratorMetrics.recordGeneration(
+          `${this.metricsKey}:clockBackward`,
+          0,
+          false,
+        );
+        const offset = this.lastTimestamp - timestamp;
+        if (offset <= this.maxBackwardMs) {
+          timestamp = this.waitNextMillis(this.lastTimestamp);
+        } else {
+          timestamp = this.lastTimestamp;
+        }
+      }
+
+      if (timestamp === this.lastTimestamp) {
+        this.sequence =
+          (this.sequence + 1) & PersistentSnowflakeIdGenerator.MAX_SEQUENCE;
+        if (this.sequence === 0) {
+          timestamp = this.lastTimestamp + 1;
+        }
+      } else {
+        this.sequence = 0;
+      }
+
+      this.lastTimestamp = timestamp;
+
+      const id =
+        ((timestamp - this.epoch) <<
+          PersistentSnowflakeIdGenerator.TIMESTAMP_SHIFT) |
+        (this.datacenterId <<
+          PersistentSnowflakeIdGenerator.DATACENTER_ID_SHIFT) |
+        (this.workerId << PersistentSnowflakeIdGenerator.MACHINE_ID_SHIFT) |
+        this.sequence;
+
+      this.persistStateIfNeeded();
+
+      return id.toString();
+    } catch (error) {
+      success = false;
+      throw error;
+    } finally {
+      const duration = performance.now() - start;
+      IdGeneratorMetrics.recordGeneration(
+        `${this.metricsKey}:nextId`,
+        duration,
+        success,
+      );
+    }
+  }
+
+  public nextIds(count: number): string[] {
+    if (count <= 0) {
+      throw new Error('Count must be greater than 0');
+    }
+
+    const ids: string[] = [];
+    for (let i = 0; i < count; i++) {
+      ids.push(this.nextId());
+    }
+    return ids;
+  }
+
+  public parseTimestamp(id: string): Date {
+    const idNum = BigInt(id);
+    const timestamp =
+      Number(idNum >> BigInt(PersistentSnowflakeIdGenerator.TIMESTAMP_SHIFT)) +
+      this.epoch;
+    return new Date(timestamp);
+  }
+
+  public getStateSnapshot(): SnowflakeState {
+    return {
+      workerId: this.workerId,
+      datacenterId: this.datacenterId,
+      epoch: this.epoch,
+      lastTimestamp: this.lastTimestamp,
+      sequence: this.sequence,
+    };
+  }
+
+  private persistStateIfNeeded(): void {
+    if (!this.stateStore) return;
+
+    const now = Date.now();
+    if (
+      now - this.lastPersistedAt < this.persistIntervalMs &&
+      this.lastPersistedTimestamp === this.lastTimestamp
+    ) {
+      return;
+    }
+
+    this.lastPersistedAt = now;
+    this.lastPersistedTimestamp = this.lastTimestamp;
+
+    const start = performance.now();
+    Promise.resolve(
+      this.stateStore.save(this.stateKey, this.getStateSnapshot()),
+    )
+      .then(() => {
+        const duration = performance.now() - start;
+        IdGeneratorMetrics.recordGeneration(
+          `${this.metricsKey}:persist`,
+          duration,
+          true,
+        );
+      })
+      .catch(() => {
+        const duration = performance.now() - start;
+        IdGeneratorMetrics.recordGeneration(
+          `${this.metricsKey}:persist`,
+          duration,
+          false,
+        );
+      });
+  }
+
+  private getCurrentTimestamp(): number {
+    return Date.now();
+  }
+
+  private waitNextMillis(lastTimestamp: number): number {
+    let timestamp = this.getCurrentTimestamp();
+    while (timestamp <= lastTimestamp) {
+      timestamp = this.getCurrentTimestamp();
+    }
+    return timestamp;
+  }
+
+  private generateWorkerId(): number {
+    const networkInterfaces = os.networkInterfaces();
+    let hash = 0;
+
+    for (const interfaceName in networkInterfaces) {
+      const interfaces = networkInterfaces[interfaceName];
+      if (interfaces) {
+        for (const iface of interfaces) {
+          if (iface.mac && iface.mac !== '00:00:00:00:00:00') {
+            const macBytes = iface.mac.replace(/:/g, '');
+            for (let i = 0; i < macBytes.length; i += 2) {
+              hash = (hash + parseInt(macBytes.substr(i, 2), 16)) & 0xffffffff;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    return hash & PersistentSnowflakeIdGenerator.MAX_MACHINE_ID;
+  }
+
+  private generateDatacenterId(): number {
+    const hostname = os.hostname();
+    let hash = 0;
+
+    for (let i = 0; i < hostname.length; i++) {
+      hash = ((hash << 5) - hash + hostname.charCodeAt(i)) & 0xffffffff;
+    }
+
+    return Math.abs(hash) & PersistentSnowflakeIdGenerator.MAX_DATACENTER_ID;
   }
 }
 
@@ -677,7 +980,26 @@ export function maskEmail(email: string): string {
 export class IdGeneratorMetrics {
   private static metrics = new Map<
     string,
-    { count: number; totalTime: number; errors: number }
+    {
+      count: number;
+      totalTime: number;
+      errors: number;
+      firstAt: number;
+      lastAt: number;
+    }
+  >();
+  private static alertHandlers = new Set<
+    (payload: {
+      name: string;
+      type: 'avgTime' | 'errorRate';
+      value: number;
+      threshold: number;
+      totalCount: number;
+    }) => void
+  >();
+  private static alertThresholds = new Map<
+    string,
+    { maxAvgTimeMs?: number; maxErrorRate?: number; minCount?: number }
   >();
 
   public static recordGeneration(
@@ -685,32 +1007,112 @@ export class IdGeneratorMetrics {
     duration: number,
     success: boolean = true,
   ): void {
+    const now = Date.now();
     const current = IdGeneratorMetrics.metrics.get(generatorName) || {
       count: 0,
       totalTime: 0,
       errors: 0,
+      firstAt: now,
+      lastAt: now,
     };
     current.count++;
     current.totalTime += duration;
     if (!success) {
       current.errors++;
     }
+    current.lastAt = now;
     IdGeneratorMetrics.metrics.set(generatorName, current);
+
+    const thresholds = IdGeneratorMetrics.alertThresholds.get(generatorName);
+    if (!thresholds) {
+      return;
+    }
+
+    const minCount = thresholds.minCount ?? 1;
+    if (current.count < minCount) {
+      return;
+    }
+
+    const avgTime = current.totalTime / current.count;
+    const errorRate = current.errors / current.count;
+
+    if (
+      thresholds.maxAvgTimeMs !== undefined &&
+      avgTime > thresholds.maxAvgTimeMs
+    ) {
+      for (const handler of IdGeneratorMetrics.alertHandlers) {
+        handler({
+          name: generatorName,
+          type: 'avgTime',
+          value: avgTime,
+          threshold: thresholds.maxAvgTimeMs,
+          totalCount: current.count,
+        });
+      }
+    }
+
+    if (
+      thresholds.maxErrorRate !== undefined &&
+      errorRate > thresholds.maxErrorRate
+    ) {
+      for (const handler of IdGeneratorMetrics.alertHandlers) {
+        handler({
+          name: generatorName,
+          type: 'errorRate',
+          value: errorRate,
+          threshold: thresholds.maxErrorRate,
+          totalCount: current.count,
+        });
+      }
+    }
   }
 
-  public static getMetrics(
-    generatorName: string,
-  ): { avgTime: number; errorRate: number; totalCount: number } | null {
+  public static getMetrics(generatorName: string): {
+    avgTime: number;
+    errorRate: number;
+    totalCount: number;
+    ratePerSecond: number;
+  } | null {
     const metric = IdGeneratorMetrics.metrics.get(generatorName);
     if (!metric || metric.count === 0) {
       return null;
     }
 
+    const durationMs = Math.max(metric.lastAt - metric.firstAt, 1);
     return {
       avgTime: metric.totalTime / metric.count,
       errorRate: metric.errors / metric.count,
       totalCount: metric.count,
+      ratePerSecond: (metric.count / durationMs) * 1000,
     };
+  }
+
+  public static configureAlerts(
+    generatorName: string,
+    thresholds: {
+      maxAvgTimeMs?: number;
+      maxErrorRate?: number;
+      minCount?: number;
+    },
+  ): void {
+    IdGeneratorMetrics.alertThresholds.set(generatorName, thresholds);
+  }
+
+  public static onAlert(
+    handler: (payload: {
+      name: string;
+      type: 'avgTime' | 'errorRate';
+      value: number;
+      threshold: number;
+      totalCount: number;
+    }) => void,
+  ): void {
+    IdGeneratorMetrics.alertHandlers.add(handler);
+  }
+
+  public static clearAlerts(): void {
+    IdGeneratorMetrics.alertHandlers.clear();
+    IdGeneratorMetrics.alertThresholds.clear();
   }
 
   public static clearMetrics(): void {

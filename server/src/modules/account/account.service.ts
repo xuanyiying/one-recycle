@@ -40,7 +40,7 @@ export class AccountService {
           totalWithdrawal: 0,
         },
       });
-      
+
       this.logger.log(`Account created successfully for user ${userId}`);
       return account;
     } catch (error: any) {
@@ -52,16 +52,20 @@ export class AccountService {
     }
   }
 
-  async findAccountByUserId(userId: string | number | bigint): Promise<Account> {
+  async findAccountByUserId(
+    userId: string | number | bigint,
+  ): Promise<Account> {
     const id = BigInt(userId);
-    
+
     let account = await this.prisma.account.findFirst({
       where: { userId: id },
     });
 
     // 兜底策略：如果账户不存在则自动创建
     if (!account) {
-      this.logger.warn(`Account not found for user ${userId}, auto-creating...`);
+      this.logger.warn(
+        `Account not found for user ${userId}, auto-creating...`,
+      );
       account = await this.createAccount(id);
     }
 
@@ -81,6 +85,35 @@ export class AccountService {
       totalIncome: account.totalIncome,
       // 估算减碳量：假设每1元回收收益对应0.02kg碳减排
       savedCarbon: account.totalIncome * this.CARBON_SAVING_RATE,
+    };
+  }
+
+  async getTransactions(
+    userId: string | number | bigint,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+    const id = BigInt(userId);
+
+    const [data, total] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where: { account: { userId: id } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.transaction.count({
+        where: { account: { userId: id } },
+      }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 }

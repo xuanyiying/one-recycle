@@ -69,7 +69,7 @@ export class LocationService {
     try {
       // Integration with Tencent Map or similar reverse geocoding API
       // For now, returning mock data or using a placeholder API call
-      const res = await get('/api/location/reverse-geocode', {
+      const res = await get('/location/reverse-geocode', {
         lat: coords.latitude,
         lng: coords.longitude
       })
@@ -86,7 +86,7 @@ export class LocationService {
     if (!keyword) return []
     
     try {
-      const res = await get('/api/location/suggestions', {
+      const res = await get('/location/suggestions', {
         keyword,
         lat: coords?.latitude,
         lng: coords?.longitude
@@ -112,7 +112,7 @@ export class LocationService {
       
       // Basic parsing of the address string returned by chooseLocation
       return {
-        detailedAddress: res.name || res.address,
+        detail: res.name || res.address,
         coordinates: {
           latitude: res.latitude,
           longitude: res.longitude

@@ -19,13 +19,30 @@ export class CreateOrderDto {
   @IsOptional()
   orderNo?: string;
 
-  @ApiProperty({ description: '用户ID', example: '123' })
+  @ApiPropertyOptional({ description: '用户ID', example: '123' })
   @IsString()
-  userId!: string;
+  @IsOptional()
+  userId?: string;
 
   @ApiProperty({ description: '地址ID', example: '456' })
   @IsString()
   addressId!: string;
+
+  @ApiPropertyOptional({
+    description: '时间槽ID',
+    example: 'slot_2023-10-02_0',
+  })
+  @IsString()
+  @IsOptional()
+  timeSlotId?: string;
+
+  @ApiPropertyOptional({
+    description: '期望上门时间',
+    example: '2023-10-02T10:00:00Z',
+  })
+  @IsString()
+  @IsOptional()
+  expectPickupTime?: string;
 
   @ApiProperty({ description: '订单项列表', type: [OrderItemDto] })
   @IsArray()
@@ -33,13 +50,15 @@ export class CreateOrderDto {
   @Type(() => OrderItemDto)
   items!: OrderItemDto[];
 
-  @ApiProperty({ description: '期望上门时间', example: '2023-10-02T10:00:00Z' })
+  @ApiPropertyOptional({ description: '渠道', example: 'APP' })
   @IsString()
-  expectPickupTime!: string;
+  @IsOptional()
+  channel?: string;
 
-  @ApiProperty({ description: '渠道', example: 'APP' })
+  @ApiPropertyOptional({ description: '备注', example: '请带上打包袋' })
   @IsString()
-  channel!: string;
+  @IsOptional()
+  notes?: string;
 
   @ApiPropertyOptional({ description: '来源', example: 'WeChat' })
   @IsString()
@@ -63,7 +82,11 @@ export class CreateOrderDto {
   @IsOptional()
   estimatedAmount?: number;
 
-  @ApiPropertyOptional({ description: '订单状态', enum: OrderStatus, default: OrderStatus.PENDING })
+  @ApiPropertyOptional({
+    description: '订单状态',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
+  })
   @IsEnum(OrderStatus)
   @IsOptional()
   status?: OrderStatus;

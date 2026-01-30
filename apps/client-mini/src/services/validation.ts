@@ -101,16 +101,16 @@ class ValidationService {
   validateAddress(address: Address): ValidationError[] {
     const errors: ValidationError[] = []
 
-    if (!address.recipientName || address.recipientName.trim() === '') {
+    if (!address.name || address.name.trim() === '') {
       errors.push({
-        field: 'recipientName',
+        field: 'name',
         message: 'Recipient name is required',
       })
     }
 
-    if (!validatePhone(address.phoneNumber)) {
+    if (!validatePhone(address.mobile)) {
       errors.push({
-        field: 'phoneNumber',
+        field: 'mobile',
         message: 'Valid phone number is required',
       })
     }
@@ -122,9 +122,9 @@ class ValidationService {
       })
     }
 
-    if (!address.detailedAddress || address.detailedAddress.trim() === '') {
+    if (!address.detail || address.detail.trim() === '') {
       errors.push({
-        field: 'detailedAddress',
+        field: 'detail',
         message: 'Detailed address is required',
       })
     }
@@ -221,14 +221,6 @@ class ValidationService {
     // Validate time slot
     const slotErrors = this.validateTimeSlot(order.timeSlot)
     errors.push(...slotErrors)
-
-    // Validate terms agreement
-    if (!order.agreedToTerms) {
-      errors.push({
-        field: 'agreedToTerms',
-        message: 'You must agree to the terms',
-      })
-    }
 
     return errors
   }
@@ -422,15 +414,6 @@ class ValidationService {
           errors.push({
             field: 'detailedAddress',
             message: 'Detailed address is required',
-          })
-        }
-        break
-
-      case 'agreedToTerms':
-        if (!value) {
-          errors.push({
-            field: 'agreedToTerms',
-            message: 'You must agree to the terms',
           })
         }
         break

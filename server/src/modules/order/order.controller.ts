@@ -9,12 +9,15 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { OrderService } from './services/order.service';
 import {
-  CreateOrderDto,
-  UpdateOrderDto,
-} from './dto';
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
+import { OrderService } from './services/order.service';
+import { CreateOrderDto, UpdateOrderDto } from './dto';
 import { OrderFilters } from './interfaces/order.interface';
 import { Order } from '@prisma/client';
 
@@ -81,7 +84,11 @@ export class OrderController {
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ): Promise<{ orders: Order[]; total: number }> {
-    return this.orderService.findAll({ userId: userId.toString() }, page, limit);
+    return this.orderService.findAll(
+      { userId: userId.toString() },
+      page,
+      limit,
+    );
   }
 
   /**

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro, { usePullDownRefresh } from '@tarojs/taro'
+import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 
 import { IconFont, Order, Location, Warning, ArrowRight, Service, Setting } from '@nutui/icons-react-taro'
 import { useAuth } from '@/hooks/useAuth'
@@ -26,6 +26,12 @@ interface LoadingState {
 
 export default function Profile(): JSX.Element {
     const { user, updateUser, logout } = useAuth()
+    
+    // 使用 Ref 跟踪最新的 user 状态，用于数据对比
+    const userRef = useRef(user)
+    useEffect(() => {
+        userRef.current = user
+    }, [user])
     
     const [stats, setStats] = useState<AccountStats>({
         totalOrders: 0,
@@ -79,8 +85,13 @@ export default function Profile(): JSX.Element {
             // 处理用户信息
             if (userInfoResult.status === 'fulfilled' && userInfoResult.value.success && userInfoResult.value.data) {
                 const freshUserData = userInfoResult.value.data
-                // 更新全局状态，保持数据一致性
-                updateUser(freshUserData)
+                const currentUser = userRef.current
+                
+                // 更新全局状态，仅当数据确实变化时（避免死循环）
+                // 简单的浅比较或JSON比较
+                if (!currentUser || JSON.stringify(freshUserData) !== JSON.stringify(currentUser)) {
+                    updateUser(freshUserData)
+                }
             } else {
                 console.warn('获取用户信息失败:', userInfoResult.status === 'rejected' ? userInfoResult.reason : '数据格式错误')
             }
@@ -143,9 +154,10 @@ export default function Profile(): JSX.Element {
         })
     }, [loadUserProfile]))
 
-    useEffect(() => {
+    // 页面显示时刷新数据（包含首次加载和返回页面）
+    useDidShow(() => {
         loadUserProfile()
-    }, [loadUserProfile])
+    })
 
     const onEditProfile = useCallback(() => {
         Taro.navigateTo({
@@ -170,7 +182,7 @@ export default function Profile(): JSX.Element {
     }, [])
 
     const handleViewOrders = useCallback(() => {
-        Taro.navigateTo({
+        Taro.switchTab({
             url: '/pages/order/index'
         })
     }, [])
@@ -208,7 +220,7 @@ export default function Profile(): JSX.Element {
 
     const handleTransactions = useCallback(() => {
         Taro.navigateTo({
-            url: '/pages/transaction/list'
+            url: '/pages/transaction/list/index'
         })
     }, [])
 
@@ -273,131 +285,119 @@ export default function Profile(): JSX.Element {
         </View>
     ), [loadingState.error, canRetry, retryLoad, loadingState.retryCount])
 
-    if (isLoading) {
-        return LoadingComponent
-    }
-
-    if (hasError) {
-        return ErrorComponent
-    }
-
     return (
         <AuthGuard>
-            <View className='profile-page'>
-                {/* 顶部沉浸式背景 */}
-                <View className='profile-bg' />
+            {isLoading ? (
+                LoadingComponent
+            ) : hasError ? (
+                ErrorComponent
+            ) : (
+                <View className='profile-page'>
+                    {/* 顶部沉浸式背景 */}
+                    <View className='profile-bg' />
 
-                {/* 用户信息区域 - 开放式布局 */}
-                <View className='user-header'>
-                    <View className='user-info' onClick={onEditProfile}>
-                        <View className='avatar-ring'>
-                            <Avatar
-                                className='user-avatar'
-                                src={user?.avatar || defaultAvatar}
-                                shape='round'
-                            />
-                        </View>
-                        <View className='user-text'>
-                            <Text className='user-nickname'>{user?.nickname || '点击登录'}</Text>
-                            <Text className='user-phone'>{user?.phone || '登录后查看更多信息'}</Text>
+                    {/* 用户信息区域 - 开放式布局 */}
+                    <View className='user-header'>
+                        <View className='user-info' onClick={onEditProfile}>
+                            <View className='avatar-ring'>
+                                <Avatar
+                                    className='user-avatar'
+                                    src={user?.avatarUrl || defaultAvatar}
+                                    shape='round'
+                                />
+                            </View>
+                            <View className='user-detail'>
+                                <View className='name-row'>
+                                    <Text className='nickname'>{user?.nickname || '微信用户'}</Text>
+                                    <View className='edit-badge'>
+                                        <Text>编辑</Text>
+                                    </View>
+                                </View>
+                                <Text className='mobile'>{user?.mobile || '暂无手机号'}</Text>
+                            </View>
                         </View>
                     </View>
-                    <View className='settings-btn' onClick={onSettings}>
-                        <Setting name='setting' size='20' color='#282727ff' />
+
+                    {/* 核心数据卡片 - 悬浮式设计 */}
+                    <View className='stats-card'>
+                        <View className='stats-item' onClick={handleViewOrders}>
+                            <Text className='stats-num'>{formattedStats.totalOrders}</Text>
+                            <Text className='stats-label'>累计回收(次)</Text>
+                        </View>
+                        <View className='stats-divider' />
+                        <View className='stats-item' onClick={handleViewBalance}>
+                            <Text className='stats-num'>{formattedStats.totalAmount}</Text>
+                            <Text className='stats-label'>累计收益(元)</Text>
+                        </View>
+                        <View className='stats-divider' />
+                        <View className='stats-item'>
+                            <Text className='stats-num'>{formattedStats.savedCarbon}</Text>
+                            <Text className='stats-label'>累计减碳(kg)</Text>
+                        </View>
+                    </View>
+
+                    {/* 功能菜单区域 */}
+                    <View className='menu-section'>
+                        <View className='menu-item' onClick={handleViewOrders}>
+                            <View className='menu-icon-wrapper blue'>
+                                <Order className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>我的订单</Text>
+                            <ArrowRight className='menu-arrow' />
+                        </View>
+
+                        <View className='menu-item' onClick={onAddressManage}>
+                            <View className='menu-icon-wrapper green'>
+                                <Location className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>地址管理</Text>
+                            <ArrowRight className='menu-arrow' />
+                        </View>
+
+                        <View className='menu-item' onClick={handleWithdraw}>
+                            <View className='menu-icon-wrapper orange'>
+                                <IconFont name='money' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>余额提现</Text>
+                            <View className='menu-extra'>
+                                <Text className='balance-text'>¥{formattedStats.availableBalance}</Text>
+                                <ArrowRight className='menu-arrow' />
+                            </View>
+                        </View>
+
+                        <View className='menu-item' onClick={handleTransactions}>
+                            <View className='menu-icon-wrapper purple'>
+                                <IconFont name='order' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>交易记录</Text>
+                            <ArrowRight className='menu-arrow' />
+                        </View>
+                    </View>
+
+                    <View className='menu-section'>
+                        <View className='menu-item' onClick={onContactService}>
+                            <View className='menu-icon-wrapper cyan'>
+                                <Service className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>联系客服</Text>
+                            <ArrowRight className='menu-arrow' />
+                        </View>
+
+                        <View className='menu-item' onClick={onSettings}>
+                            <View className='menu-icon-wrapper gray'>
+                                <Setting className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>系统设置</Text>
+                            <ArrowRight className='menu-arrow' />
+                        </View>
+                    </View>
+
+                    {/* 退出登录按钮 */}
+                    <View className='logout-btn' onClick={handleLogout}>
+                        <Text>退出登录</Text>
                     </View>
                 </View>
-
-                {/* 悬浮统计卡片 */}
-                <View className='stats-card'>
-                    <View className='stats-row'>
-                        <View className='stat-item' onClick={handleViewOrders}>
-                            <Text className='stat-num'>{formattedStats.totalOrders}</Text>
-                            <Text className='stat-label'>全部订单</Text>
-                        </View>
-                        <View className='divider' />
-                        <View className='stat-item' onClick={handleViewBalance}>
-                            <Text className='stat-num'>
-                                <Text className='symbol'>¥</Text>
-                                {formattedStats.totalAmount}
-                            </Text>
-                            <Text className='stat-label'>累计收益</Text>
-                        </View>
-                        <View className='divider' />
-                        <View className='stat-item'>
-                            <Text className='stat-num carbon'>{formattedStats.savedCarbon}</Text>
-                            <Text className='stat-label'>减碳(kg)</Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* 账户余额卡片 */}
-                {account && (
-                    <View className='balance-card'>
-                        <View className='card-header'>
-                            <Text className='title'>我的钱包</Text>
-                            <Text className='detail-link' onClick={handleTransactions}>交易明细 ›</Text>
-                        </View>
-                        <View className='balance-content'>
-                            <View className='balance-main'>
-                                <Text className='label'>可用余额</Text>
-                                <Text className='amount'>{accountService.formatAmount(account.availableBalance)}</Text>
-                            </View>
-                            <View className='withdraw-btn' onClick={handleWithdraw}>
-                                <Text>去提现</Text>
-                            </View>
-                        </View>
-                        {account.frozenBalance > 0 && (
-                            <View className='frozen-tip'>
-                                <Warning name='warning' size='12' color='#FF9800' />
-                                <Text className='tip-text'>冻结中：{accountService.formatAmount(account.frozenBalance)}</Text>
-                            </View>
-                        )}
-                    </View>
-                )}
-
-                {/* 功能菜单列表 - 圆角分组 */}
-                <View className='menu-group'>
-                    <View className='menu-item' onClick={onAddressManage}>
-                        <View className='left'>
-                            <View className='icon-box blue'>
-                                <Location size='18' color='#2979FF' />
-                            </View>
-                            <Text className='label'>地址管理</Text>
-                        </View>
-                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
-                    </View>
-
-                    <View className='menu-item' onClick={handleTransactions}>
-                        <View className='left'>
-                            <View className='icon-box purple'>
-                                <Order name='order' size='18' color='#6C5CE7' />
-                            </View>
-                            <Text className='label'>交易明细</Text>
-                        </View>
-                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
-                    </View>
-
-                    <View className='menu-item' onClick={onContactService}>
-                        <View className='left'>
-                            <View className='icon-box green'>
-                                <Service name='service' size='18' color='#00C853' />
-                            </View>
-                            <Text className='label'>联系客服</Text>
-                        </View>
-                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
-                    </View>
-                    <View className='menu-item' onClick={handleLogout}>
-                        <View className='left'>
-                            <View className='icon-box red'>
-                                <IconFont name='logout' size={18} color='#FF3D00' />
-                            </View>
-                            <Text className='label'>退出登录</Text>
-                        </View>
-                        <ArrowRight name='rect-right' size='14' color='#B0BEC5' />
-                    </View>
-                    
-                </View>
-            </View>
+            )}
         </AuthGuard>
     )
 }

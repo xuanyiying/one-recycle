@@ -12,7 +12,10 @@ import { SnowflakeIdGenerator } from '@/common/utils/common.util';
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger(LoggingInterceptor.name);
-  private readonly idGen = new SnowflakeIdGenerator({ workerId: 1, datacenterId: 1 });
+  private readonly idGen = new SnowflakeIdGenerator({
+    workerId: 1,
+    datacenterId: 1,
+  });
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();

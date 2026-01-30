@@ -12,6 +12,7 @@ export const mockUsers = [
     id: '1',
     nickname: '环保小达人',
     avatar: 'https://placehold.co/100x100/png?text=User1',
+    mobile: '138****8888',
     phone: '138****8888',
     email: 'user1@example.com',
     points: 1250,
@@ -22,6 +23,7 @@ export const mockUsers = [
     id: '2',
     nickname: '绿色生活家',
     avatar: 'https://placehold.co/100x100/png?text=User2',
+    mobile: '139****9999',
     phone: '139****9999',
     email: 'user2@example.com',
     points: 850,
@@ -39,8 +41,13 @@ export const mockLogin = async (params: LoginParams): Promise<MockResponse<Login
   // 模拟登录验证
   const user = mockUsers[0] // 默认返回第一个用户
   
+  const token = `mock_token_${MockDataGenerator.generateId()}`
   const loginData = {
-    token: `mock_token_${MockDataGenerator.generateId()}`,
+    tokens: {
+        accessToken: token,
+        refreshToken: `mock_refresh_${token}`,
+        expiresIn: 7200
+    },
     user: {
       ...user,
       platform: params.platform
@@ -62,8 +69,13 @@ export const mockGetUserInfo = async (): Promise<MockResponse<UserInfoResponse['
  * Mock 微信登录
  */
 export const mockWechatLogin = async (params: { code: string; nickname: string; avatar?: string }): Promise<MockResponse<LoginResponse['data']>> => {
+  const token = `wechat_token_${MockDataGenerator.generateId()}`
   const loginData = {
-    token: `wechat_token_${MockDataGenerator.generateId()}`,
+    tokens: {
+        accessToken: token,
+        refreshToken: `wechat_refresh_${token}`,
+        expiresIn: 7200
+    },
     user: {
       ...mockUsers[0],
       nickname: params.nickname,
@@ -79,8 +91,13 @@ export const mockWechatLogin = async (params: { code: string; nickname: string; 
  * Mock 支付宝登录
  */
 export const mockAlipayLogin = async (params: { code: string; nickname: string; avatar?: string }): Promise<MockResponse<LoginResponse['data']>> => {
+  const token = `alipay_token_${MockDataGenerator.generateId()}`
   const loginData = {
-    token: `alipay_token_${MockDataGenerator.generateId()}`,
+    tokens: {
+        accessToken: token,
+        refreshToken: `alipay_refresh_${token}`,
+        expiresIn: 7200
+    },
     user: {
       ...mockUsers[0],
       nickname: params.nickname,
@@ -96,8 +113,13 @@ export const mockAlipayLogin = async (params: { code: string; nickname: string; 
  * Mock 抖音登录
  */
 export const mockDouyinLogin = async (params: { code: string; nickname: string; avatar?: string }): Promise<MockResponse<LoginResponse['data']>> => {
+  const token = `douyin_token_${MockDataGenerator.generateId()}`
   const loginData = {
-    token: `douyin_token_${MockDataGenerator.generateId()}`,
+    tokens: {
+        accessToken: token,
+        refreshToken: `douyin_refresh_${token}`,
+        expiresIn: 7200
+    },
     user: {
       ...mockUsers[0],
       nickname: params.nickname,

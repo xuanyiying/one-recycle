@@ -112,7 +112,7 @@ export interface OrderItem {
   description?: string // 兼容旧字段
   estimatedWeight?: number // 兼容旧字段
   photos?: string[] // 兼容旧字段
-  
+
   // 新字段 (匹配 Mock/Backend)
   categoryId?: number
   categoryName?: string
@@ -127,7 +127,7 @@ export interface OrderAddress {
   detail: string
 }
 
-export type OrderStatus = 
+export type OrderStatus =
   | 'pending_assignment'  // 待派单
   | 'pending_pickup'      // 待上门
   | 'in_progress'         // 进行中
@@ -176,6 +176,24 @@ export interface Article {
   imageUrl: string
   publishDate: string
   views: number
+}
+
+// 问答相关类型
+export interface QAItem {
+  id: number
+  question: string
+  answer: string
+  categoryId?: number
+}
+
+// 简讯相关类型
+export interface NewsBrief {
+  id: number
+  nickname: string
+  soldItems: string
+  weight: number
+  earnings: number
+  time: string
 }
 
 // 登录相关类型

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AccountService } from '@/modules/account/account.service';
 import {
@@ -17,8 +17,11 @@ import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AccountService))
     private readonly accountService: AccountService,
   ) {}
 
@@ -34,33 +37,34 @@ export class UserService {
       }
     }
 
-    // 使用事务确保用户和账户同时创建
-    const user = await this.prisma.$transaction(async (tx) => {
-      // 1. 创建用户
-      const newUser = await tx.user.create({
-        data: {
-          mobile: createUserDto.mobile,
-          nickname: createUserDto.nickname,
-          avatarUrl: createUserDto.avatarUrl,
-        },
-        select: {
-          id: true,
-          mobile: true,
-          nickname: true,
-          avatarUrl: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      // 2. 自动创建关联账户
-      await this.accountService.createAccount(newUser.id, tx);
-
-      return newUser;
+    // 1. 创建用户
+    const newUser = await this.prisma.user.create({
+      data: {
+        mobile: createUserDto.mobile,
+        nickname: createUserDto.nickname,
+        avatarUrl: createUserDto.avatarUrl,
+      },
+      select: {
+        id: true,
+        email: true,
+        mobile: true,
+        nickname: true,
+        avatarUrl: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    return this.mapToUserResponse(user);
+    // 2. 异步创建关联账户
+    this.accountService.createAccount(newUser.id).catch((error) => {
+      this.logger.error(
+        `Failed to create account for user ${newUser.id} asynchronously: ${error.message}`,
+        error.stack,
+      );
+    });
+
+    return this.mapToUserResponse(newUser);
   }
 
   async findOne(id: string): Promise<UserResponseDto> {
@@ -68,6 +72,7 @@ export class UserService {
       where: { id: BigInt(id) },
       select: {
         id: true,
+        email: true,
         mobile: true,
         nickname: true,
         avatarUrl: true,
@@ -113,6 +118,7 @@ export class UserService {
         where,
         select: {
           id: true,
+          email: true,
           mobile: true,
           nickname: true,
           avatarUrl: true,
@@ -165,6 +171,7 @@ export class UserService {
       data: updateUserDto,
       select: {
         id: true,
+        email: true,
         mobile: true,
         nickname: true,
         avatarUrl: true,
@@ -192,10 +199,12 @@ export class UserService {
   }
 
   async findByMobile(mobile: string): Promise<UserResponseDto | null> {
+    const cleanMobile = mobile.replace(/\s+/g, '');
     const user = await this.prisma.user.findUnique({
-      where: { mobile },
+      where: { mobile: cleanMobile },
       select: {
         id: true,
+        email: true,
         mobile: true,
         nickname: true,
         avatarUrl: true,
@@ -221,6 +230,7 @@ export class UserService {
         user: {
           select: {
             id: true,
+            email: true,
             mobile: true,
             nickname: true,
             avatarUrl: true,
@@ -277,10 +287,21 @@ export class UserService {
   }
 
   private mapToUserResponse(
-    data: Pick<User, 'id' | 'mobile' | 'nickname' | 'avatarUrl' | 'status' | 'createdAt' | 'updatedAt'>
+    data: Pick<
+      User,
+      | 'id'
+      | 'email'
+      | 'mobile'
+      | 'nickname'
+      | 'avatarUrl'
+      | 'status'
+      | 'createdAt'
+      | 'updatedAt'
+    >,
   ): UserResponseDto {
     return {
       id: data.id.toString(),
+      email: data.email || undefined,
       mobile: data.mobile || undefined,
       nickname: data.nickname || undefined,
       avatarUrl: data.avatarUrl || undefined,

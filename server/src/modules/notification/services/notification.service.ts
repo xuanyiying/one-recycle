@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -24,21 +25,33 @@ import {
   NotificationPriority,
 } from '../entities/notification.entity';
 import { NOTIFICATION_COSTS } from '@/common/constants';
-import { SnowflakeIdGenerator } from '@/common';
+import {
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  RedisService,
+} from '@/common';
 
 @Injectable()
-export class NotificationService implements INotificationService {
+export class NotificationService implements INotificationService, OnModuleInit {
   private readonly logger = new Logger(NotificationService.name);
-  private readonly idGenerator: SnowflakeIdGenerator;
+  private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {
-    this.idGenerator = new SnowflakeIdGenerator({
+    this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('NOTIFICATION_WORKER_ID', 10),
       datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
+      stateStore: new RedisSnowflakeStateStore(this.redisService),
+      stateKey: 'snowflake:state:notification',
+      metricsKey: 'snowflake:notification',
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.idGenerator.initialize();
   }
 
   async sendNotification(data: SendNotificationData): Promise<any> {
@@ -519,7 +532,10 @@ export class NotificationService implements INotificationService {
         isEnabled: true,
         config: {
           apiKey: this.configService.get('SMS_API_KEY', 'mock-sms-key'),
-          endpoint: this.configService.get('SMS_ENDPOINT', 'https://sms.example.com'),
+          endpoint: this.configService.get(
+            'SMS_ENDPOINT',
+            'https://sms.example.com',
+          ),
         },
       },
       {
@@ -528,7 +544,10 @@ export class NotificationService implements INotificationService {
         isEnabled: true,
         config: {
           apiKey: this.configService.get('EMAIL_API_KEY', 'mock-email-key'),
-          endpoint: this.configService.get('EMAIL_ENDPOINT', 'https://email.example.com'),
+          endpoint: this.configService.get(
+            'EMAIL_ENDPOINT',
+            'https://email.example.com',
+          ),
         },
       },
       {
@@ -537,7 +556,10 @@ export class NotificationService implements INotificationService {
         isEnabled: true,
         config: {
           apiKey: this.configService.get('PUSH_API_KEY', 'mock-push-key'),
-          endpoint: this.configService.get('PUSH_ENDPOINT', 'https://push.example.com'),
+          endpoint: this.configService.get(
+            'PUSH_ENDPOINT',
+            'https://push.example.com',
+          ),
         },
       },
       {
@@ -796,7 +818,10 @@ export class NotificationService implements INotificationService {
   }
 
   private generateNotificationId(): string {
-    return this.idGenerator.nextId();
+    // Replace Snowflake with Timestamp + Random to avoid collisions
+    const timestamp = BigInt(Date.now());
+    const random = BigInt(Math.floor(Math.random() * 1000000));
+    return (timestamp * 1000000n + random).toString();
   }
 
   private generateBatchId(): string {

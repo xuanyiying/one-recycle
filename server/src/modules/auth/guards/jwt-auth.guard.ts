@@ -1,4 +1,3 @@
-import { RedisService } from '@/common';
 import {
   Injectable,
   ExecutionContext,
@@ -13,10 +12,7 @@ import { AuthGuard } from '@nestjs/passport';
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
 
-  constructor(
-    private readonly reflector: Reflector,
-    private readonly redisService: RedisService,
-  ) {
+  constructor(private readonly reflector: Reflector) {
     super();
   }
 
@@ -45,16 +41,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('用户信息不存在');
       }
 
-      // 验证会话是否有效
-      await this.validateSession(user);
-
       // 检查用户权限
       await this.checkPermissions(context, user);
 
       this.logger.log(`用户 ${user.id} 通过认证验证`);
       return true;
     } catch (error) {
-      this.logger.error(`认证失败: ${(error as any).message}`, (error as any).stack);
+      this.logger.error(
+        `认证失败: ${(error as any).message}`,
+        (error as any).stack,
+      );
 
       if (
         error instanceof UnauthorizedException ||
@@ -64,42 +60,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       }
 
       throw new UnauthorizedException('认证验证失败');
-    }
-  }
-
-  /**
-   * 验证用户会话是否有效
-   */
-  private async validateSession(user: any): Promise<void> {
-    if (!user.sessionId) {
-      throw new UnauthorizedException('会话信息不存在');
-    }
-
-    try {
-      const sessionKey = `auth:session:${user.sessionId}`;
-      const sessionData = await this.redisService.get(sessionKey);
-
-      if (!sessionData) {
-        throw new UnauthorizedException('会话已过期或不存在');
-      }
-
-      const session = sessionData;
-
-      // 验证会话中的用户ID是否匹配
-      if (session.userId !== user.id) {
-        throw new UnauthorizedException('会话用户不匹配');
-      }
-
-      // 检查会话是否被标记为无效
-      if (session.invalidated) {
-        throw new UnauthorizedException('会话已失效');
-      }
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      this.logger.error(`会话验证失败: ${(error as any).message}`);
-      throw new UnauthorizedException('会话验证失败');
     }
   }
 

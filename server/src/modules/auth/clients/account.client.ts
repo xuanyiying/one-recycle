@@ -18,9 +18,11 @@ export interface UserIdentityRequest {
 
 export interface UserResponse {
   id: string;
+  email?: string;
   mobile?: string;
   nickname?: string;
   avatarUrl?: string;
+  role?: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -37,7 +39,10 @@ export class AccountClient {
       'ACCOUNT_SERVICE_URL',
       'http://localhost:3001/api',
     );
-    this.timeout = this.configService.get<number>('ACCOUNT_SERVICE_TIMEOUT', 5000);
+    this.timeout = this.configService.get<number>(
+      'ACCOUNT_SERVICE_TIMEOUT',
+      5000,
+    );
 
     this.client = axios.create({
       baseURL: this.accountServiceUrl,
@@ -67,7 +72,21 @@ export class AccountClient {
 
   async findUserByMobile(mobile: string): Promise<UserResponse | null> {
     try {
-      const response = await this.client.get<ApiResponse<UserResponse>>(`/users/mobile/${mobile}`);
+      // 移除手机号中的空格
+      const cleanMobile = mobile.replace(/\s+/g, '');
+      const response = await this.client.get<ApiResponse<UserResponse>>(
+        `/users/mobile/${cleanMobile}`,
+      );
+      console.debug('AccountClient.findUserByMobile response:', response.data);
+
+      if (!response.data.success) {
+        console.warn(
+          'AccountClient.findUserByMobile failed:',
+          response.data.message,
+        );
+        return null;
+      }
+
       return response.data.data || null;
     } catch (error) {
       if ((error as any).response?.status === 404) {
@@ -79,7 +98,9 @@ export class AccountClient {
 
   async findUserById(userId: string): Promise<UserResponse | null> {
     try {
-      const response = await this.client.get<ApiResponse<UserResponse>>(`/users/${userId}`);
+      const response = await this.client.get<ApiResponse<UserResponse>>(
+        `/users/${userId}`,
+      );
       return response.data.data || null;
     } catch (error) {
       if ((error as any).response?.status === 404) {
@@ -91,12 +112,15 @@ export class AccountClient {
 
   async createUser(data: CreateUserRequest): Promise<UserResponse> {
     try {
-      const response = await this.client.post<ApiResponse<UserResponse>>('/users', data);
+      const response = await this.client.post<ApiResponse<UserResponse>>(
+        '/users',
+        data,
+      );
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.message || '创建用户失败');
       }
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(error);
     }
   }
@@ -106,11 +130,14 @@ export class AccountClient {
     identity: UserIdentityRequest,
   ): Promise<void> {
     try {
-      const response = await this.client.post<ApiResponse<void>>(`/users/${userId}/identities`, identity);
+      const response = await this.client.post<ApiResponse<void>>(
+        `/users/${userId}/identities`,
+        identity,
+      );
       if (!response.data.success) {
         throw new Error(response.data.message || '绑定用户身份失败');
       }
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(error);
     }
   }
@@ -120,7 +147,10 @@ export class AccountClient {
     data: Partial<CreateUserRequest>,
   ): Promise<UserResponse> {
     try {
-      const response = await this.client.put<ApiResponse<UserResponse>>(`/users/${userId}`, data);
+      const response = await this.client.put<ApiResponse<UserResponse>>(
+        `/users/${userId}`,
+        data,
+      );
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.message || '更新用户失败');
       }

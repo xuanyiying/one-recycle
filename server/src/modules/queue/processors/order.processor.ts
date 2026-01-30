@@ -331,13 +331,17 @@ export class OrderProcessor {
       } catch (refundError) {
         // 如果订单未入账，退款会失败，这是正常的
         if (
-          (refundError as any).response?.data?.message?.includes('has not been credited')
+          (refundError as any).response?.data?.message?.includes(
+            'has not been credited',
+          )
         ) {
           this.logger.log(
             `Order ${orderId} has not been credited, no refund needed`,
           );
         } else if (
-          (refundError as any).response?.data?.message?.includes('already refunded')
+          (refundError as any).response?.data?.message?.includes(
+            'already refunded',
+          )
         ) {
           this.logger.log(`Order ${orderId} already refunded, skipping`);
           refundInitiated = true;
@@ -465,7 +469,10 @@ export class OrderProcessor {
         dispatchedAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to dispatch order: ${orderId}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to dispatch order: ${orderId}`,
+        (error as Error).stack,
+      );
 
       // 更新订单状态为派单失败
       try {
@@ -508,8 +515,8 @@ export class OrderProcessor {
   @OnQueueFailed()
   onFailed(job: Job, error: Error): void {
     this.logger.error(
-      `Job ${job.id} failed with error: ${(error as Error).message}`,
-      (error as Error).stack,
+      `Job ${job.id} failed with error: ${error.message}`,
+      error.stack,
     );
   }
 }

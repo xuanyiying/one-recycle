@@ -29,7 +29,6 @@ import { submitOrder, validateOrderForSubmission } from '../../services/order'
 import ItemForm from './ItemForm'
 import AddressSelection from './AddressSelection'
 import TimeSlotSelection from './TimeSlotSelection'
-import OrderConfirmation from './OrderConfirmation'
 import OrderSuccess from './OrderSuccess'
 import DraftRecoveryModal from './DraftRecoveryModal'
 import './index.scss'
@@ -38,7 +37,7 @@ import './index.scss'
 // Types
 // ============================================================================
 
-type OrderStep = 1 | 2 | 3 | 4 | 'success'
+type OrderStep = 1 | 2 | 3 | 'success'
 
 interface OrderFlowState {
     currentStep: OrderStep
@@ -46,7 +45,6 @@ interface OrderFlowState {
     selectedAddressId?: string | number
     selectedTimeSlotId?: string
     notes?: string
-    agreedToTerms: boolean
     isLoading: boolean
     error?: string
 }
@@ -78,7 +76,6 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
     const [flowState, setFlowState] = useState<OrderFlowState>({
         currentStep: 1,
         items: [],
-        agreedToTerms: false,
         isLoading: false,
     })
 
@@ -136,7 +133,7 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
             // Determine which step to resume from
             let resumeStep: OrderStep = 1
             if (restoredState.selectedTimeSlotId) {
-                resumeStep = 4 // All steps completed, go to confirmation
+                resumeStep = 3 // All steps completed (except submission), go to time slot
             } else if (restoredState.selectedAddressId) {
                 resumeStep = 3 // Address selected, go to time slot
             } else if (restoredState.items.length > 0) {
@@ -191,7 +188,6 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
             setFlowState({
                 currentStep: 1,
                 items: [],
-                agreedToTerms: false,
                 isLoading: false,
             })
 
@@ -274,29 +270,6 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
     }, [flowState.items, flowState.selectedTimeSlotId, flowState.notes, updateFormState])
 
     /**
-     * Handle moving to next step (Step 3: Time Slot)
-     */
-    const handleTimeSlotNext = useCallback((timeSlot: TimeSlot) => {
-        setFlowState((prev) => ({
-            ...prev,
-            currentStep: 4,
-            selectedTimeSlotId: timeSlot.id,
-        }))
-
-        updateFormState({
-            currentStep: 4,
-        })
-
-        // Auto-save
-        autoSaveDraftRef.current(
-            flowState.items,
-            flowState.selectedAddressId,
-            timeSlot.id,
-            flowState.notes
-        )
-    }, [flowState.items, flowState.selectedAddressId, flowState.notes, updateFormState])
-
-    /**
      * Handle order submission (Step 4: Confirmation)
      * 
      * Validates order data and submits to API with retry logic
@@ -363,6 +336,49 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
         [clearDraftOrder]
     )
 
+    /**
+     * Handle moving to next step (Step 3: Time Slot -> Submit)
+     */
+    const handleTimeSlotNext = useCallback(async (timeSlot: TimeSlot, notes?: string) => {
+        // Update state with selected time slot and notes
+        setFlowState((prev) => ({
+            ...prev,
+            selectedTimeSlotId: timeSlot.id,
+            notes: notes,
+        }))
+
+        // Auto-save one last time
+        autoSaveDraftRef.current(
+            flowState.items,
+            flowState.selectedAddressId,
+            timeSlot.id,
+            notes
+        )
+        
+        // Prepare order submission
+        // We need to get the full address object
+        const address = storeState.addresses.find(a => a.id === flowState.selectedAddressId)
+        
+        if (!address) {
+            Taro.showToast({
+                title: '地址信息丢失，请重新选择',
+                icon: 'none'
+            })
+            return
+        }
+
+        const submission: OrderSubmission = {
+            items: flowState.items,
+            address: address,
+            timeSlot: timeSlot,
+            notes: notes
+        }
+
+        // Trigger submission
+        await handleOrderSubmit(submission)
+        
+    }, [flowState.items, flowState.selectedAddressId, storeState.addresses, handleOrderSubmit])
+
     // ============================================================================
     // Back Navigation Handlers
     // ============================================================================
@@ -389,40 +405,11 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
         }))
     }, [])
 
-    /**
-     * Handle back to time slot from confirmation
-     */
-    const handleBackToTimeSlot = useCallback(() => {
-        setFlowState((prev) => ({
-            ...prev,
-            currentStep: 3,
-        }))
-    }, [])
-
     // ============================================================================
     // Edit Handlers (from confirmation page)
     // ============================================================================
 
-    const handleEditItems = useCallback(() => {
-        setFlowState((prev) => ({
-            ...prev,
-            currentStep: 1,
-        }))
-    }, [])
-
-    const handleEditAddress = useCallback(() => {
-        setFlowState((prev) => ({
-            ...prev,
-            currentStep: 2,
-        }))
-    }, [])
-
-    const handleEditTimeSlot = useCallback(() => {
-        setFlowState((prev) => ({
-            ...prev,
-            currentStep: 3,
-        }))
-    }, [])
+    // Removed edit handlers as Step 4 is removed
 
     // ============================================================================
     // Success Page Handler
@@ -433,8 +420,7 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
         setFlowState({
             currentStep: 1,
             items: [],
-            agreedToTerms: false,
-            isLoading: false,
+            isLoading: false,   
         })
 
         // Navigate to home or orders page
@@ -491,20 +477,8 @@ export default function OrderCreationFlow({ initialCategory }: OrderCreationFlow
                     onNext={handleTimeSlotNext}
                     onBack={handleBackToAddress}
                     initialSlot={selectedTimeSlot}
-                />
-            )}
-
-            {/* Step 4: Order Confirmation */}
-            {flowState.currentStep === 4 && selectedAddress && selectedTimeSlot && (
-                <OrderConfirmation
-                    items={flowState.items}
-                    address={selectedAddress}
-                    timeSlot={selectedTimeSlot}
-                    onSubmit={handleOrderSubmit}
-                    onBack={handleBackToTimeSlot}
-                    onEditItems={handleEditItems}
-                    onEditAddress={handleEditAddress}
-                    onEditTimeSlot={handleEditTimeSlot}
+                    initialNotes={flowState.notes}
+                    isLoading={flowState.isLoading}
                 />
             )}
 

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue, JobOptions } from 'bull';
 import { QUEUE_NAMES } from '../queue.constants';
@@ -10,17 +10,33 @@ import {
   WithdrawalCreatedEventDto,
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
-import { SnowflakeIdGenerator } from '@/common';
+import {
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  RedisService,
+} from '@/common';
 
 @Injectable()
-export class PaymentQueueService {
+export class PaymentQueueService implements OnModuleInit {
   private readonly logger = new Logger(PaymentQueueService.name);
-  private readonly idGenerator = new SnowflakeIdGenerator({
-    workerId: 2,
-    datacenterId: 1,
-  });
+  private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
-  constructor(@InjectQueue(QUEUE_NAMES.PAYMENT) private paymentQueue: Queue) {}
+  constructor(
+    @InjectQueue(QUEUE_NAMES.PAYMENT) private paymentQueue: Queue,
+    private readonly redisService: RedisService,
+  ) {
+    this.idGenerator = new PersistentSnowflakeIdGenerator({
+      workerId: 2,
+      datacenterId: 1,
+      stateStore: new RedisSnowflakeStateStore(this.redisService),
+      stateKey: 'snowflake:state:payment-queue',
+      metricsKey: 'snowflake:payment-queue',
+    });
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.idGenerator.initialize();
+  }
 
   /**
    * 处理支付回调
@@ -157,11 +173,11 @@ export class PaymentQueueService {
   /**
    * 验证支付回调签名（示例方法，实际实现需要根据支付平台）
    */
-  async verifyPaymentSignature(
+  verifyPaymentSignature(
     provider: string,
-    data: any,
-    signature: string,
-  ): Promise<boolean> {
+    _data: any,
+    _signature: string,
+  ): boolean {
     try {
       // TODO: 实现具体的签名验证逻辑
       // 微信支付和支付宝的签名验证方式不同
@@ -246,7 +262,10 @@ export class PaymentQueueService {
       await this.paymentQueue.pause();
       this.logger.log('Payment queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to pause queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

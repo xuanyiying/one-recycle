@@ -205,11 +205,6 @@ export const validateOrder = (order: Order): ValidationError[] => {
   const slotErrors = validateTimeSlot(order.timeSlot)
   errors.push(...slotErrors)
 
-  // Validate terms agreement
-  if (!order.agreedToTerms) {
-    errors.push({ field: 'agreedToTerms', message: 'You must agree to the terms' })
-  }
-
   return errors
 }
 

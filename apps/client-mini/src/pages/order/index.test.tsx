@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, waitFor } from '@testing-library/react'
 import OrderListPage from './index'
 import Taro from '@tarojs/taro'
+import { useAuth } from '@/hooks/useAuth'
+import { getUserOrders } from '@/services/order'
 
 // Mock dependencies
 vi.mock('@tarojs/components', () => ({
@@ -14,7 +16,7 @@ vi.mock('@tarojs/components', () => ({
 
 vi.mock('@tarojs/taro', () => ({
   default: {
-    useDidShow: vi.fn(),
+    useDidShow: vi.fn(), // Do not execute callback immediately
     getStorageSync: vi.fn(),
     removeStorageSync: vi.fn(),
     navigateTo: vi.fn(),
@@ -23,14 +25,11 @@ vi.mock('@tarojs/taro', () => ({
 }))
 
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: vi.fn(() => ({
-    user: { id: '1' },
-    checkAuthStatus: vi.fn(),
-  })),
+  useAuth: vi.fn(),
 }))
 
 vi.mock('@/services/order', () => ({
-  getUserOrders: vi.fn().mockResolvedValue({ success: true, data: [] }),
+  getUserOrders: vi.fn(),
 }))
 
 // Mock AuthGuard to verify props
@@ -57,12 +56,38 @@ vi.mock('@nutui/icons-react-taro', () => ({
 }))
 
 describe('OrderListPage', () => {
-  it('should render AuthGuard with correct redirectTo prop', () => {
-    const { getByTestId } = render(<OrderListPage />)
-    const authGuard = getByTestId('auth-guard')
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should not load orders when user is not logged in', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      isLoggedIn: false,
+      checkAuthStatus: vi.fn(),
+    } as any)
+
+    render(<OrderListPage />)
     
-    expect(authGuard.getAttribute('data-redirect-to')).toBe(
-      `/pages/login/index?redirect=${encodeURIComponent('/pages/order/index')}`
-    )
+    // Wait for useEffect
+    await waitFor(() => {})
+
+    expect(getUserOrders).not.toHaveBeenCalled()
+    expect(Taro.showToast).not.toHaveBeenCalled()
+  })
+
+  it('should load orders when user is logged in', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: { id: '123' },
+      isLoggedIn: true,
+      checkAuthStatus: vi.fn(),
+    } as any)
+    vi.mocked(getUserOrders).mockResolvedValue({ success: true, data: [] } as any)
+
+    render(<OrderListPage />)
+
+    await waitFor(() => {
+      expect(getUserOrders).toHaveBeenCalledWith('123')
+    })
   })
 })

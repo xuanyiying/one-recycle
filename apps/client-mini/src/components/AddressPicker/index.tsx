@@ -1,10 +1,9 @@
 import React, { useState, useCallback } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, ScrollView, Button } from '@tarojs/components'
-import { Cascader, Popup, SearchBar } from '@nutui/nutui-react-taro'
-import { LocationService } from '@/services/location'
+import { View, Text } from '@tarojs/components'
+import { Cascader, TextArea } from '@nutui/nutui-react-taro'
 import { AddressDataService } from '@/services/address-data-service'
-import { Address, LocationInfo } from '@/types/address'
+import { Address } from '@/types/address'
 import './index.scss'
 
 interface AddressPickerProps {
@@ -20,11 +19,6 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
 }) => {
   const [showCascader, setShowCascader] = useState(false)
   const [cascaderData, setCascaderData] = useState<any[]>([])
-  const [showSearch, setShowSearch] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<LocationInfo[]>([])
-  const [isLocating, setIsLocating] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
   const [isLoadingData, setIsLoadingData] = useState(false)
 
   const loadInitialData = useCallback(async () => {
@@ -33,7 +27,7 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
       const provinces = await AddressDataService.getProvinces()
       const options = provinces.map(p => ({
         value: p.code,
-        label: p.name,
+        text: p.name,
         leaf: false, // 标记非叶子节点，触发动态加载
         children: []
       }))
@@ -49,15 +43,26 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
     const { value, level } = node
     // level 0: Province -> City
     // level 1: City -> District
-    // level 2: District -> Street (optional)
+    // level 2: District -> Street
     const nextLevel = (parseInt(level) + 2).toString() 
     
-    const promise = AddressDataService.getAreas(nextLevel, value)
+    // Ensure value (parentCode) is present
+    if (!value) {
+      if (typeof resolve === 'function') resolve([])
+      return Promise.resolve([])
+    }
+
+    const promise = AddressDataService.getAreas(value, nextLevel)
       .then(areas => {
         const children = areas.map(a => ({
           value: a.code,
-          label: a.name,
-          leaf: parseInt(nextLevel) >= 4 // Use 4 as leaf level to include streets
+          text: a.name,
+          // level 2 (District) loads level 3 (Street). Level 3 nodes are leaves.
+          // If level is 2, nextLevel is 4. So if parseInt(nextLevel) >= 4, it is leaf?
+          // If we want 4 levels (0,1,2,3), then level 3 is leaf.
+          // When loading children for level 2, the children are level 3.
+          // So if `level` (parent) is 2, the children are leaves.
+          leaf: parseInt(level) >= 2 
         }))
         if (typeof resolve === 'function') {
           resolve(children)
@@ -65,6 +70,7 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
         return children
       })
       .catch(() => {
+        Taro.showToast({ title: '加载地址数据失败', icon: 'none' })
         if (typeof resolve === 'function') {
           resolve([])
         }
@@ -75,16 +81,9 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
   }, [])
 
   const handleFallback = useCallback(() => {
-    Taro.showModal({
-      title: '选择地区',
-      content: '暂时无法自动加载地区数据，您可以尝试手动搜索小区或直接输入详细地址。',
-      confirmText: '去搜索',
-      cancelText: '知道了',
-      success: (res) => {
-        if (res.confirm) {
-          setShowSearch(true)
-        }
-      }
+    Taro.showToast({
+      title: '无法加载地址数据',
+      icon: 'none'
     })
   }, [])
 
@@ -98,120 +97,63 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
   const handleRegionChange = useCallback((_vals: any[], options: any[]) => {
     if (!options || options.length === 0) return
 
-    const province = options[0]?.label || ''
-    const city = options[1]?.label || ''
-    const district = options[2]?.label || ''
-    const street = options[3]?.label || ''
+    const province = options[0]?.text || ''
     
-    // 特殊处理直辖市：如果省份和城市名称相同，则在显示时进行合并或精简
+    // 特殊处理直辖市
     const isDirectCity = ['北京市', '上海市', '天津市', '重庆市'].includes(province) || 
                          ['北京', '上海', '天津', '重庆'].includes(province)
     
-    let displayRegion = isDirectCity 
-      ? `${province} ${district}`
-      : `${province} ${city} ${district}`
+    let city = ''
+    let district = ''
+    let street = ''
+
+    if (isDirectCity) {
+      city = province
+      // 直辖市可能只有3级 (省->区->街道) 或 4级 (省->市辖区->区->街道)
+      // 通过判断 options[1] 是否为 "市辖区" 或 "县" 来区分
+      const secondLevelName = options[1]?.text || ''
+      if (secondLevelName === '市辖区' || secondLevelName === '县' || secondLevelName === '市') {
+         // 4级结构
+         district = options[2]?.text || ''
+         street = options[3]?.text || ''
+      } else {
+         // 3级结构 (直接跳到区)
+         district = secondLevelName
+         street = options[2]?.text || ''
+      }
+    } else {
+      city = options[1]?.text || ''
+      district = options[2]?.text || ''
+      street = options[3]?.text || ''
+    }
     
-    if (street) {
-      displayRegion += ` ${street}`
+    let displayRegion = ''
+    if (isDirectCity) {
+        displayRegion = `${province} ${district} ${street}`.trim()
+    } else {
+        displayRegion = `${province} ${city} ${district} ${street}`.trim()
     }
 
     onChange({
       ...value,
       province,
-      city: isDirectCity ? province : city,
+      city,
       district,
       street,
-      region: displayRegion.trim()
+      region: displayRegion
     })
     setShowCascader(false)
   }, [onChange, value])
 
-  const handleSearch = useCallback(async (keyword: string) => {
-    setSearchQuery(keyword)
-    if (keyword.length < 1) {
-      setSuggestions([])
-      return
-    }
-
-    setIsSearching(true)
-    try {
-      // 1. 首先尝试从本地静态数据中搜索行政区划
-      const regionResults = await AddressDataService.searchAreas(keyword)
-      const regionSuggestions: LocationInfo[] = regionResults.map(r => ({
-        name: r.name,
-        address: r.pinyin || '',
-        province: r.name, // 简化处理，实际可能需要更复杂的路径查找
-        city: '',
-        district: '',
-        coordinates: { latitude: 0, longitude: 0 }
-      }))
-
-      // 2. 然后尝试从地图 API 搜索 POI
-      const poiResults = await LocationService.getSuggestions(keyword)
-      
-      setSuggestions([...regionSuggestions, ...poiResults])
-    } catch (error) {
-      console.error('Search failed:', error)
-    } finally {
-      setIsSearching(false)
-    }
-  }, [])
-
-  const handleSelectSuggestion = useCallback((suggestion: LocationInfo) => {
+  const handleDetailChange = useCallback((val: string) => {
     onChange({
       ...value,
-      province: suggestion.province || value?.province,
-      city: suggestion.city || value?.city,
-      district: suggestion.district || value?.district,
-      detail: suggestion.name || suggestion.address,
-      coordinates: suggestion.coordinates,
-      region: suggestion.province ? `${suggestion.province} ${suggestion.city} ${suggestion.district || ''}` : value.region
+      detail: val
     })
-    setShowSearch(false)
-    setSearchQuery('')
-    setSuggestions([])
-  }, [onChange, value])
-
-  const handleUseGPS = useCallback(async () => {
-    setIsLocating(true)
-    try {
-      const coords = await LocationService.getCurrentCoordinates()
-      const info = await LocationService.reverseGeocode(coords)
-      onChange({
-        ...value,
-        province: info.province,
-        city: info.city,
-        district: info.district,
-        detail: info.name || info.address,
-        coordinates: info.coordinates,
-        region: `${info.province} ${info.city} ${info.district || ''}`
-      })
-      Taro.showToast({ title: '定位成功', icon: 'success' })
-    } catch (error: any) {
-      Taro.showToast({ title: error.message || '定位失败', icon: 'none' })
-    } finally {
-      setIsLocating(false)
-    }
-  }, [onChange, value])
-
-  const handleOpenMap = useCallback(async () => {
-    try {
-      const address = await LocationService.chooseLocation(value.coordinates)
-      onChange({
-        ...value,
-        ...address,
-        region: address.province ? `${address.province} ${address.city} ${address.district || ''}` : value.region
-      })
-      Taro.showToast({ title: '位置已选择', icon: 'success' })
-    } catch (error: any) {
-      if (error.message !== 'CANCELED') {
-        Taro.showToast({ title: error.message, icon: 'none' })
-      }
-    }
   }, [onChange, value])
 
   const regionDisplay = value.province 
-    ? `${value.province} ${value.city} ${value.district || ''}`
+    ? `${value.province} ${value.city} ${value.district || ''} ${value.street || ''}`.trim()
     : ''
 
   return (
@@ -225,90 +167,45 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
           ) : (
             <Text className='placeholder'>点击选择省市区</Text>
           )}
-          {isLocating && <View className='loading-spinner' />}
         </View>
         <Text className='arrow'>&gt;</Text>
       </View>
 
-      {/* Search Trigger */}
-      <View className='picker-section search-trigger' onClick={() => setShowSearch(true)}>
-        <Text className='label'>查找地址</Text>
+      {/* Detailed Address Input */}
+      <View className={`picker-section detail-section ${errors.detail ? 'error' : ''}`}>
+        <Text className='label'>详细地址</Text>
         <View className='value-container'>
-          <Text className='placeholder'>输入小区/大厦/学校等</Text>
-        </View>
-        <Text className='arrow'>&gt;</Text>
-      </View>
-
-      {/* Quick Actions */}
-      <View className='position-actions'>
-        <View className='action-btn' onClick={handleUseGPS}>
-          <Text className='nut-icon'>📍</Text>
-          <Text>当前位置</Text>
-        </View>
-        <View className='divider' />
-        <View className='action-btn' onClick={handleOpenMap}>
-          <Text className='nut-icon'>🗺️</Text>
-          <Text>地图选择</Text>
+          <TextArea
+              value={value.detail || ''}
+              onChange={(val) => handleDetailChange(val)}
+              placeholder='请输入详细地址（街道、门牌号等）'
+              maxLength={100}
+              autoSize
+            />
         </View>
       </View>
+      {errors.detail && <Text className='error-message detail-error'>{errors.detail}</Text>}
 
       {/* Region Cascader Popup */}
-      <Popup visible={showCascader} position='bottom' className='region-popup' onClose={() => setShowCascader(false)}>
-        {isLoadingData ? (
-          <View className='loading-container'>
-            <View className='loading-spinner' />
-            <Text>正在加载地区数据...</Text>
+      <Cascader 
+        title='请选择所在地区'
+        visible={showCascader}
+        options={cascaderData}
+        lazy
+        onLoad={handleLazyLoad}
+        onChange={handleRegionChange}
+        onClose={() => setShowCascader(false)}
+        closeable
+        popupProps={{ className: 'region-popup' }}
+      />
+      
+      {/* Loading Overlay */}
+      {showCascader && isLoadingData && (
+          <View className='loading-overlay'>
+             <View className='loading-spinner' />
+             <Text>正在加载下一级数据...</Text>
           </View>
-        ) : cascaderData.length > 0 ? (
-          <Cascader
-            title='选择地区'
-            visible={showCascader}
-            options={cascaderData}
-            lazy
-            onLoad={handleLazyLoad}
-            onChange={handleRegionChange}
-          />
-        ) : (
-          <View className='empty-cascader'>
-            <Text>暂无地区数据</Text>
-            <Button size='mini' type='primary' onClick={handleOpenCascader}>重试</Button>
-          </View>
-        )}
-      </Popup>
-
-      {/* Search Popup */}
-      <Popup visible={showSearch} position='bottom' className='search-popup' onClose={() => setShowSearch(false)}>
-        <View className='search-container'>
-          <SearchBar
-            placeholder='搜索地址'
-            value={searchQuery}
-            onChange={handleSearch}
-            autoFocus
-          />
-          <ScrollView className='suggestions-list' scrollY enhanced showScrollbar={false}>
-            {isSearching && <View className='loading-text'>搜索中...</View>}
-            {suggestions.length > 0 ? (
-              suggestions.slice(0, 50).map((item, index) => (
-                <View 
-                  key={index} 
-                  className='suggestion-item'
-                  onClick={() => handleSelectSuggestion(item)}
-                >
-                  <Text className='item-name'>{item.name}</Text>
-                  <Text className='item-address'>{item.address}</Text>
-                </View>
-              ))
-            ) : (
-              !isSearching && searchQuery.length >= 2 && (
-                <View className='empty-text'>未找到相关地址</View>
-              )
-            )}
-            {suggestions.length > 50 && (
-              <View className='list-footer'>仅展示前 50 条相关地址</View>
-            )}
-          </ScrollView>
-        </View>
-      </Popup>
+      )}
     </View>
   )
 }

@@ -6,11 +6,7 @@ import {
   IsEnum,
   IsDateString,
 } from 'class-validator';
-import {
-  ItemCondition,
-  ItemType,
-  ProcessingStatus,
-} from '@prisma/client';
+import { ItemCondition, ItemType, ProcessingStatus } from '@prisma/client';
 
 export class CreateInventoryItemDto {
   @IsNotEmpty()

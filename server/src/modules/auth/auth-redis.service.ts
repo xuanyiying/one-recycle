@@ -3,48 +3,57 @@ import {
   UnauthorizedException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
+  OnModuleInit,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { RedisService } from '../../common/redis/redis.service';
-import { SnowflakeIdGenerator } from '../../common/utils/common.util';
+import {
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  RedisService,
+} from '@/common';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { ThirdPartyLoginDto } from './dto/third-party-login.dto';
-import { WeChatPlatform } from './platforms/wechat.platform';
+import { WeChatPlatform } from '@/modules/auth/platforms';
 import { AlipayPlatform } from './platforms/alipay.platform';
 import { TikTokPlatform } from './platforms/tiktok.platform';
 import { KuaishouPlatform } from './platforms/kuaishou.platform';
-import { AccountClient } from './clients/account.client';
+import { UserService } from '@/modules/user/services/user.service';
 import { UpdateUserDto } from '@/modules/user/dto';
 import { NotificationService } from '../notification/services/notification.service';
 import {
   NotificationType,
   NotificationPriority,
 } from '../notification/entities/notification.entity';
+import { AuthKeyUtils } from './constants/auth-keys.constant';
 
 export interface AuthResult {
   user: {
     id: string;
-    phone: string;
+    email?: string;
+    mobile?: string;
     nickname?: string;
-    avatar?: string;
-    role: string;
+    avatarUrl?: string;
+    role?: string;
     status: string;
+    createdAt?: string;
+    updatedAt?: string;
   };
   tokens: {
     accessToken: string;
     refreshToken: string;
     expiresIn: number;
   };
-  sessionId: string;
 }
 
 interface VerificationCodeData {
   code: string;
-  phone: string;
+  mobile: string;
   type: string;
   expiresAt: number;
   lastSentAt: number;
@@ -52,14 +61,8 @@ interface VerificationCodeData {
   maxAttempts: number;
 }
 
-interface SessionData {
-  userId: string;
-  deviceFingerprint?: string;
-  createdAt: number;
-}
-
 interface RefreshTokenData {
-  userId: string;
+  id: string;
   expiresAt: number;
 }
 
@@ -68,15 +71,14 @@ interface RefreshTokenData {
  * 生产环境就绪版本
  */
 @Injectable()
-export class AuthRedisService {
+class AuthRedisService implements OnModuleInit {
   private readonly logger = new Logger(AuthRedisService.name);
-  private readonly CODE_EXPIRY_MINUTES: number;
+  private readonly CODE_EXPIRY_SECONDS: number = 60;
   private readonly CODE_RESEND_INTERVAL_SECONDS: number;
   private readonly MAX_CODE_ATTEMPTS: number;
   private readonly REFRESH_TOKEN_EXPIRY_DAYS: number;
   private readonly accessTokenExpiresInSeconds: number;
-  private readonly sessionExpiresInSeconds: number;
-  private readonly idGenerator: SnowflakeIdGenerator;
+  private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -86,13 +88,10 @@ export class AuthRedisService {
     private readonly alipayPlatform: AlipayPlatform,
     private readonly tiktokPlatform: TikTokPlatform,
     private readonly kuaishouPlatform: KuaishouPlatform,
-    private readonly accountClient: AccountClient,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
     private readonly notificationService: NotificationService,
   ) {
-    this.CODE_EXPIRY_MINUTES = this.configService.get<number>(
-      'auth.codeExpiresMinutes',
-      5,
-    );
     this.CODE_RESEND_INTERVAL_SECONDS = this.configService.get<number>(
       'auth.codeResendIntervalSeconds',
       60,
@@ -109,68 +108,68 @@ export class AuthRedisService {
       'auth.accessTokenExpiresInSeconds',
       7200,
     );
-    this.sessionExpiresInSeconds = this.configService.get<number>(
-      'auth.sessionExpiresInSeconds',
-      86400,
-    );
 
-    // TODO: move workerId to config
-    this.idGenerator = new SnowflakeIdGenerator({
+    this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: 11,
       datacenterId: 1,
+      stateStore: new RedisSnowflakeStateStore(this.redisService),
+      stateKey: 'snowflake:state:auth',
+      metricsKey: 'snowflake:auth',
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.idGenerator.initialize();
   }
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
     const { mobile, verificationCode, deviceFingerprint } = loginDto;
+    this.logger.log(`尝试登录: mobile=${mobile}`);
 
     // 验证手机号格式
     if (!this.isValidPhoneNumber(mobile)) {
+      this.logger.warn(`登录失败: 手机号格式不正确 - ${mobile}`);
       throw new BadRequestException('手机号格式不正确');
     }
 
     // 验证验证码
     const isCodeValid = await this.verifyCode(mobile, verificationCode);
     if (!isCodeValid) {
+      this.logger.warn(`登录失败: 验证码错误或已过期 - ${mobile}`);
       throw new UnauthorizedException('验证码错误或已过期');
     }
 
     // 查找或创建用户
-    let user = await this.accountClient.findUserByMobile(mobile);
+    let user = await this.userService.findByMobile(mobile);
     if (!user) {
-      user = await this.accountClient.createUser({
+      this.logger.log(`用户不存在，创建新用户: ${mobile}`);
+      user = await this.userService.create({
         mobile,
         nickname: `用户${mobile.slice(-4)}`,
       });
     }
 
-    // 生成会话ID
-    const sessionId = this.generateSessionId();
-
-    // 存储会话信息到Redis
-    await this.saveSession(sessionId, {
-      userId: user.id,
-      deviceFingerprint,
-      createdAt: Date.now(),
-    });
-
     // 生成令牌
-    const tokens = await this.generateTokens(user, sessionId);
+    const tokens = await this.generateTokens(user);
 
     // 清除已使用的验证码
     await this.deleteVerificationCode(mobile);
 
+    this.logger.log(`登录成功: mobile=${mobile}, userId=${user.id}`);
+
     return {
       user: {
         id: user.id,
-        phone: user.mobile || '',
+        email: user.email,
+        mobile: user.mobile || mobile,
         nickname: user.nickname,
-        avatar: user.avatarUrl,
-        role: 'USER',
-        status: user.status,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+        status: user.status || 'active',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
       tokens,
-      sessionId,
     };
   }
 
@@ -178,6 +177,7 @@ export class AuthRedisService {
     sendCodeDto: SendCodeDto,
   ): Promise<{ success: boolean; message: string }> {
     const { mobile, type = 'login' } = sendCodeDto;
+    this.logger.log(`请求发送验证码: mobile=${mobile}, type=${type}`);
 
     // 验证手机号格式
     if (!this.isValidPhoneNumber(mobile)) {
@@ -198,12 +198,13 @@ export class AuthRedisService {
 
     // 生成验证码
     const code = this.generateVerificationCode();
-    const expiresAt = Date.now() + this.CODE_EXPIRY_MINUTES * 60 * 1000;
+    // 60秒过期
+    const expiresAt = Date.now() + this.CODE_EXPIRY_SECONDS * 1000;
 
     // 存储验证码到Redis
     await this.saveVerificationCode(mobile, {
       code,
-      phone: mobile,
+      mobile,
       type,
       expiresAt,
       lastSentAt: Date.now(),
@@ -224,19 +225,23 @@ export class AuthRedisService {
     refreshTokenDto: RefreshTokenDto,
   ): Promise<{ accessToken: string; expiresIn: number }> {
     const { refreshToken } = refreshTokenDto;
+    this.logger.log(`刷新令牌请求`);
 
     const tokenData = await this.getRefreshToken(refreshToken);
     if (!tokenData || tokenData.expiresAt < Date.now()) {
       throw new UnauthorizedException('刷新令牌无效或已过期');
     }
 
-    const user = await this.accountClient.findUserById(tokenData.userId);
+    const user = await this.userService.findOne(tokenData.id);
     if (!user) {
       throw new UnauthorizedException('用户不存在');
     }
 
-    // 生成新的访问令牌
-    const payload = { sub: user.id, phone: user.mobile, role: 'USER' };
+    const payload = {
+      sub: user.id,
+      mobile: user.mobile,
+    };
+
     const accessToken = this.jwtService.sign(payload);
     const expiresIn = this.accessTokenExpiresInSeconds;
 
@@ -251,14 +256,12 @@ export class AuthRedisService {
     logoutDto: LogoutDto,
   ): Promise<{ success: boolean; message: string }> {
     const { refreshToken } = logoutDto;
+    this.logger.log(`用户登出: userId=${userId}`);
 
     // 删除刷新令牌
     if (refreshToken) {
       await this.deleteRefreshToken(refreshToken);
     }
-
-    // 删除用户的所有会话
-    await this.deleteUserSessions(userId);
 
     return {
       success: true,
@@ -271,6 +274,7 @@ export class AuthRedisService {
     thirdPartyLoginDto: ThirdPartyLoginDto,
   ): Promise<AuthResult> {
     const { code, nickname, avatarUrl, deviceFingerprint } = thirdPartyLoginDto;
+    this.logger.log(`第三方登录: platform=${platform}`);
 
     // 根据平台获取用户信息
     let platformUserInfo: { openid: string; unionid?: string };
@@ -317,7 +321,7 @@ export class AuthRedisService {
     }
 
     // 查找或创建用户
-    let user = await this.accountClient.findUserByIdentity(
+    let user = await this.userService.findByIdentity(
       platform,
       platformUserInfo.openid,
     );
@@ -326,13 +330,13 @@ export class AuthRedisService {
       // 创建新用户
       const defaultNickname =
         nickname || `用户${platformUserInfo.openid.slice(-6)}`;
-      user = await this.accountClient.createUser({
+      user = await this.userService.create({
         nickname: defaultNickname,
         avatarUrl: avatarUrl,
       });
 
       // 绑定平台身份
-      await this.accountClient.createOrUpdateUserIdentity(user.id, {
+      await this.userService.createOrUpdateIdentity(user.id, {
         provider: platform,
         openid: platformUserInfo.openid,
         unionid: platformUserInfo.unionid,
@@ -344,120 +348,58 @@ export class AuthRedisService {
         const updateData: UpdateUserDto = {};
         if (nickname) updateData.nickname = nickname;
         if (avatarUrl) updateData.avatarUrl = avatarUrl;
-        user = await this.accountClient.updateUser(user.id, updateData);
+        user = await this.userService.update(user.id, updateData);
       }
     }
 
-    // 生成会话ID
-    const sessionId = this.generateSessionId();
-
-    // 存储会话信息
-    await this.saveSession(sessionId, {
-      userId: user.id,
-      deviceFingerprint,
-      createdAt: Date.now(),
-    });
-
     // 生成令牌
-    const tokens = await this.generateTokensWithPlatform(
-      user,
-      sessionId,
-      platform,
-    );
+    const tokens = await this.generateTokens(user);
 
     return {
       user: {
         id: user.id,
-        phone: user.mobile || '',
+        email: user.email,
+        mobile: user.mobile,
         nickname: user.nickname,
-        avatar: user.avatarUrl,
-        role: 'USER',
-        status: user.status,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+        status: user.status || 'active',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       },
       tokens,
-      sessionId,
     };
   }
 
   // ==================== Redis操作方法 ====================
 
   private async saveVerificationCode(
-    phone: string,
+    mobile: string,
     data: VerificationCodeData,
   ): Promise<void> {
-    const key = `auth:code:${phone}`;
-    const ttl = this.CODE_EXPIRY_MINUTES * 60;
+    const key = AuthKeyUtils.getVerificationCodeKey(mobile);
+    // 使用 60秒
+    const ttl = this.CODE_EXPIRY_SECONDS;
     await this.redisService.set(key, data, ttl);
   }
 
   private async getVerificationCode(
     phone: string,
   ): Promise<VerificationCodeData | null> {
-    const key = `auth:code:${phone}`;
+    const key = AuthKeyUtils.getVerificationCodeKey(phone);
     return await this.redisService.get<VerificationCodeData>(key);
   }
 
   private async deleteVerificationCode(phone: string): Promise<void> {
-    const key = `auth:code:${phone}`;
+    const key = AuthKeyUtils.getVerificationCodeKey(phone);
     await this.redisService.del(key);
-  }
-
-  private async saveSession(
-    sessionId: string,
-    data: SessionData,
-  ): Promise<void> {
-    const key = `auth:session:${sessionId}`;
-    const ttl = this.sessionExpiresInSeconds;
-    await this.redisService.set(key, data, ttl);
-
-
-
-    // 同时维护用户的会话列表
-    const userSessionsKey = `auth:user:sessions:${data.userId}`;
-    await this.redisService.sadd(userSessionsKey, sessionId);
-    await this.redisService.expire(
-      userSessionsKey,
-      this.REFRESH_TOKEN_EXPIRY_DAYS * 86400,
-    );
-  }
-
-  private async getSession(sessionId: string): Promise<SessionData | null> {
-    const key = `auth:session:${sessionId}`;
-    return await this.redisService.get<SessionData>(key);
-  }
-
-  private async deleteSession(sessionId: string): Promise<void> {
-    const session = await this.getSession(sessionId);
-    if (session) {
-      const key = `auth:session:${sessionId}`;
-      await this.redisService.del(key);
-
-      // 从用户会话列表中移除
-      const userSessionsKey = `auth:user:sessions:${session.userId}`;
-      await this.redisService.srem(userSessionsKey, sessionId);
-    }
-  }
-
-  private async deleteUserSessions(userId: string): Promise<void> {
-    const userSessionsKey = `auth:user:sessions:${userId}`;
-    const sessionIds =
-      await this.redisService.smembers<string>(userSessionsKey);
-
-    // 删除所有会话
-    for (const sessionId of sessionIds) {
-      const key = `auth:session:${sessionId}`;
-      await this.redisService.del(key);
-    }
-
-    // 删除会话列表
-    await this.redisService.del(userSessionsKey);
   }
 
   private async saveRefreshToken(
     token: string,
     data: RefreshTokenData,
   ): Promise<void> {
-    const key = `auth:refresh:${token}`;
+    const key = AuthKeyUtils.getRefreshTokenKey(token);
     const ttl = this.REFRESH_TOKEN_EXPIRY_DAYS * 86400;
     await this.redisService.set(key, data, ttl);
   }
@@ -465,25 +407,23 @@ export class AuthRedisService {
   private async getRefreshToken(
     token: string,
   ): Promise<RefreshTokenData | null> {
-    const key = `auth:refresh:${token}`;
+    const key = AuthKeyUtils.getRefreshTokenKey(token);
     return await this.redisService.get<RefreshTokenData>(key);
   }
 
   private async deleteRefreshToken(token: string): Promise<void> {
-    const key = `auth:refresh:${token}`;
+    const key = AuthKeyUtils.getRefreshTokenKey(token);
     await this.redisService.del(key);
   }
+
   // ==================== 辅助方法 ====================
 
   private async generateTokens(
     user: any,
-    sessionId: string,
   ): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
     const payload = {
       sub: user.id,
-      phone: user.mobile,
-      role: 'USER',
-      sessionId,
+      mobile: user.mobile,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -494,39 +434,7 @@ export class AuthRedisService {
     const refreshTokenExpiresAt =
       Date.now() + this.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     await this.saveRefreshToken(refreshToken, {
-      userId: user.id,
-      expiresAt: refreshTokenExpiresAt,
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn,
-    };
-  }
-
-  private async generateTokensWithPlatform(
-    user: any,
-    sessionId: string,
-    platform: string,
-  ): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
-    const payload = {
-      sub: user.id,
-      phone: user.mobile,
-      role: 'USER',
-      sessionId,
-      platform,
-    };
-
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.idGenerator.nextId();
-    const expiresIn = this.accessTokenExpiresInSeconds;
-
-    // 存储刷新令牌
-    const refreshTokenExpiresAt =
-      Date.now() + this.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-    await this.saveRefreshToken(refreshToken, {
-      userId: user.id,
+      id: user.id,
       expiresAt: refreshTokenExpiresAt,
     });
 
@@ -576,13 +484,9 @@ export class AuthRedisService {
 
     return true;
   }
-// 6位验证码， 60s 有效期
+  // 6位验证码， 60s 有效期
   private generateVerificationCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  private generateSessionId(): string {
-    return this.idGenerator.nextId();
   }
 
   private async sendSMS(
@@ -598,7 +502,7 @@ export class AuthRedisService {
         },
         content: {
           title: '验证码',
-          body: `您的验证码是：${code}，5分钟内有效。`,
+          body: `您的验证码是：${code}，60秒内有效。`,
           data: { type },
         },
         priority: NotificationPriority.HIGH,
@@ -614,3 +518,5 @@ export class AuthRedisService {
     }
   }
 }
+
+export default AuthRedisService;

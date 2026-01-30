@@ -1,19 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
-import { AuthRedisService } from './auth-redis.service';
+import AuthRedisService from './auth-redis.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { WeChatPlatform } from '@/modules/auth/platforms';
 import { AlipayPlatform } from '@/modules/auth/platforms';
 import { TikTokPlatform } from '@/modules/auth/platforms';
 import { KuaishouPlatform } from '@/modules/auth/platforms';
-import { AccountClient } from './clients/account.client';
 import { NotificationModule } from '../notification/notification.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
+    forwardRef(() => UserModule),
     NotificationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -38,7 +39,6 @@ import { NotificationModule } from '../notification/notification.module';
     AlipayPlatform,
     TikTokPlatform,
     KuaishouPlatform,
-    AccountClient,
   ],
   exports: [AuthRedisService, JwtAuthGuard],
 })

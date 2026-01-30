@@ -46,8 +46,8 @@ export class DispatchQueueService {
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(
-          `Failed to queue auto dispatch: ${(error as Error).message}`,
-          (error as Error).stack,
+          `Failed to queue auto dispatch: ${error.message}`,
+          error.stack,
         );
       } else {
         this.logger.error(`Failed to queue auto dispatch: ${String(error)}`);
@@ -257,7 +257,10 @@ export class DispatchQueueService {
       await this.dispatchQueue.pause();
       this.logger.log('Dispatch queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to pause queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

@@ -1,120 +1,27 @@
 // 系统相关Mock数据
 import { createMockResponse, MockDataGenerator, MockResponse } from './index'
-// Banner数据类型
-interface Banner {
-  id: number
-  title: string
-  subtitle: string
-  description: string
-  image: string
-  link: string
-  sortOrder: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
 
-// 文章数据类型
-interface Article {
+
+// 问答数据类型
+export interface QAItem {
   id: number
-  title: string
-  content: string
-  summary: string
-  image: string // Changed from imageUrl
-  publishDate: string // Changed from publishedAt
-  views: number // Changed from viewCount
+  question: string
+  answer: string
   categoryId?: number
-  author: string
-  isPublished: boolean
-  createdAt: string
-  updatedAt: string
+  order: number
 }
 
-// Mock Banner数据
-const mockBanners: Banner[] = [
-  {
-    id: 1,
-    title: '旧书回收，绿色生活',
-    subtitle: '让知识循环利用',
-    description: '专业旧书回收服务，上门取件',
-    image: 'https://placehold.co/800x300/png?text=%E6%97%A7%E4%B9%A6%E5%9B%9E%E6%94%B6',
-    link: '/category/1',
-    sortOrder: 1,
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    title: '旧衣回收，价格优惠',
-    subtitle: '衣旧情深，爱心传递',
-    description: '高价回收旧衣物，支持公益',
-    image: 'https://placehold.co/800x300/png?text=%E5%BA%9F%E7%BA%B8%E5%9B%9E%E6%94%B6',
-    link: '/category/1',
-    sortOrder: 2,
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 3,
-    title: '电子产品回收专场',
-    subtitle: '安全环保，高价回收',
-    description: '手机电脑家电回收，隐私清除',
-    image: 'https://placehold.co/800x300/png?text=%E7%94%B5%E5%AD%90%E5%9B%9E%E6%94%B6',
-    link: '/category/4',
-    sortOrder: 3,
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  }
-]
+// 简讯数据类型
+export interface NewsBrief {
+  id: number
+  nickname: string
+  soldItems: string
+  weight: number
+  earnings: number
+  time: string
+}
 
-// Mock Articles数据
-const mockArticles: Article[] = [
-  {
-    id: 1,
-    title: '如何正确分类回收废品',
-    content: '废品分类回收是环保的重要环节...',
-    summary: '学习正确的废品分类方法，提高回收效率',
-    image: 'https://placehold.co/400x200/png?text=%E5%88%86%E7%B1%BB%E5%9B%9E%E6%94%B6',
-    categoryId: 1,
-    author: '环保专家',
-    publishDate: '2024-01-10T10:00:00Z',
-    isPublished: true,
-    views: 1250,
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    title: '废纸回收的经济价值',
-    content: '废纸回收不仅环保，还有很好的经济效益...',
-    summary: '了解废纸回收的经济价值和市场前景',
-    image: 'https://placehold.co/400x200/png?text=%E5%BA%9F%E7%BA%B8%E4%BB%B7%E5%80%BC',
-    categoryId: 1,
-    author: '回收专家',
-    publishDate: '2024-01-12T14:30:00Z',
-    isPublished: true,
-    views: 890,
-    createdAt: '2024-01-12T14:30:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 3,
-    title: '电子产品回收注意事项',
-    content: '电子产品回收需要注意数据安全和环保处理...',
-    summary: '电子产品回收的安全须知和环保要求',
-    image: 'https://placehold.co/400x200/png?text=%E7%94%B5%E5%AD%90%E5%9B%9E%E6%94%B6',
-    categoryId: 4,
-    author: '技术专家',
-    publishDate: '2024-01-14T09:15:00Z',
-    isPublished: true,
-    views: 567,
-    createdAt: '2024-01-14T09:15:00Z',
-    updatedAt: '2024-01-15T10:30:00Z'
-  }
-]
+
 
 // 系统配置接口定义
 export interface SystemConfig {
@@ -315,18 +222,82 @@ const mockAnnouncements: Announcement[] = [
     type: 'success',
     isImportant: false,
     startTime: '2024-01-20T00:00:00Z',
-    createdAt: '2024-01-20T09:00:00Z'
+    createdAt: '2024-01-20T09:00:00Z',
+  }
+]
+
+// Mock QA数据
+const mockQAList: QAItem[] = [
+  {
+    id: 1,
+    question: '旧书回收支持哪些书籍类型？',
+    answer: '我们支持教材教辅、小说文学、期刊杂志、少儿绘本等大部分书籍。但不回收破损严重、缺页、发霉或盗版书籍。',
+    order: 1
+  },
+  {
+    id: 2,
+    question: '回收后如何结算金额？',
+    answer: '我们的回收员上门称重后，会当场计算金额并通过系统结算。您可以查看账户余额并随时提现到微信或支付宝。',
+    order: 2
+  },
+  {
+    id: 3,
+    question: '旧衣回收有什么要求吗？',
+    answer: '旧衣回收需保证基本整洁，无严重污渍 or 大面积破损。内衣裤、袜子、地毯等不在回收范围内。',
+    order: 3
+  },
+  {
+    id: 4,
+    question: '预约上门需要支付费用吗？',
+    answer: '我们的上门回收服务是完全免费的。回收员会在约定时间内主动联系并为您提供上门搬运和称重服务。',
+    order: 4
+  }
+]
+
+// Mock 简讯数据
+const mockNewsBriefs: NewsBrief[] = [
+  {
+    id: 1,
+    nickname: '张**',
+    soldItems: '旧书',
+    weight: 12.5,
+    earnings: 15.00,
+    time: '3分钟前'
+  },
+  {
+    id: 2,
+    nickname: '李**',
+    soldItems: '旧衣服',
+    weight: 8.2,
+    earnings: 6.56,
+    time: '12分钟前'
+  },
+  {
+    id: 3,
+    nickname: '环保达人*',
+    soldItems: '纸板箱',
+    weight: 20.0,
+    earnings: 16.00,
+    time: '25分钟前'
+  },
+  {
+    id: 4,
+    nickname: '王**',
+    soldItems: '旧家电',
+    weight: 1,
+    earnings: 45.00,
+    time: '1小时前'
   }
 ]
 
 // Mock获取系统配置
 export const mockGetSystemConfig = async (key?: string): Promise<MockResponse<SystemConfig[]>> => {
   let configs = mockSystemConfigs
-  
+
   if (key) {
     configs = mockSystemConfigs.filter(config => config.key === key)
   }
-  
+
   return createMockResponse(configs, true, '获取系统配置成功')
 }
 
@@ -341,12 +312,12 @@ export const mockCheckUpdate = async (currentVersion: string): Promise<MockRespo
   versionInfo?: VersionInfo
 }>> => {
   const hasUpdate = currentVersion !== mockVersionInfo.version
-  
+
   const result = {
     hasUpdate,
     versionInfo: hasUpdate ? mockVersionInfo : undefined
   }
-  
+
   return createMockResponse(result, true, hasUpdate ? '发现新版本' : '已是最新版本')
 }
 
@@ -371,7 +342,7 @@ export const mockSubmitFeedback = async (feedbackData: {
     createdAt: MockDataGenerator.generateTimestamp(),
     updatedAt: MockDataGenerator.generateTimestamp()
   }
-  
+
   mockFeedbacks.push(newFeedback)
   return createMockResponse(newFeedback, true, '反馈提交成功')
 }
@@ -385,14 +356,14 @@ export const mockGetUserFeedbacks = async (userId: string): Promise<MockResponse
 // Mock获取常见问题
 export const mockGetFAQs = async (category?: string): Promise<MockResponse<FAQ[]>> => {
   let faqs = mockFAQs.filter(faq => faq.isActive)
-  
+
   if (category) {
     faqs = faqs.filter(faq => faq.category === category)
   }
-  
+
   // 按order字段排序
   faqs.sort((a, b) => a.order - b.order)
-  
+
   return createMockResponse(faqs, true, '获取常见问题成功')
 }
 
@@ -405,20 +376,20 @@ export const mockGetFAQCategories = async (): Promise<MockResponse<string[]>> =>
 // Mock获取公告列表
 export const mockGetAnnouncements = async (userId?: string): Promise<MockResponse<Announcement[]>> => {
   const currentTime = new Date().toISOString()
-  
+
   let announcements = mockAnnouncements.filter(announce => {
     // 检查时间范围
-    const isInTimeRange = announce.startTime <= currentTime && 
-                         (!announce.endTime || announce.endTime >= currentTime)
-    
+    const isInTimeRange = announce.startTime <= currentTime &&
+      (!announce.endTime || announce.endTime >= currentTime)
+
     // 检查目标用户
-    const isTargetUser = !announce.targetUsers || 
-                        !userId || 
-                        announce.targetUsers.includes(userId)
-    
+    const isTargetUser = !announce.targetUsers ||
+      !userId ||
+      announce.targetUsers.includes(userId)
+
     return isInTimeRange && isTargetUser
   })
-  
+
   // 按重要性和创建时间排序
   announcements.sort((a, b) => {
     if (a.isImportant !== b.isImportant) {
@@ -426,8 +397,18 @@ export const mockGetAnnouncements = async (userId?: string): Promise<MockRespons
     }
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
-  
+
   return createMockResponse(announcements, true, '获取公告列表成功')
+}
+
+// Mock获取问答列表
+export const mockGetQAList = async (): Promise<MockResponse<QAItem[]>> => {
+  return createMockResponse(mockQAList, true, '获取问答列表成功')
+}
+
+// Mock获取简讯
+export const mockGetNewsBriefs = async (): Promise<MockResponse<NewsBrief[]>> => {
+  return createMockResponse(mockNewsBriefs, true, '获取简讯成功')
 }
 
 // Mock获取客服信息
@@ -443,7 +424,7 @@ export const mockGetCustomerService = async (): Promise<MockResponse<{
     workingHours: '周一至周日 08:00-18:00',
     onlineChat: true
   }
-  
+
   return createMockResponse(customerService, true, '获取客服信息成功')
 }
 
@@ -484,6 +465,8 @@ export const systemMockData = {
   getFAQs: mockGetFAQs,
   getFAQCategories: mockGetFAQCategories,
   getAnnouncements: mockGetAnnouncements,
+  getQAList: mockGetQAList,
+  getNewsBriefs: mockGetNewsBriefs,
   getCustomerService: mockGetCustomerService,
   uploadImage: mockUploadImage,
   getCities: mockGetCities

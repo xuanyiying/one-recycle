@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -11,20 +12,32 @@ import { CreatePickupNotificationDto } from './dto/create-notification.dto';
 import { NotificationResponseDto } from './dto/notification-response.dto';
 import { UpdateTaskStatusDto } from './dto/update-task.dto';
 import { CourierStatus } from '@prisma/client';
-import { SnowflakeIdGenerator } from '@/common';
+import {
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  RedisService,
+} from '@/common';
 
 @Injectable()
-export class CourierService {
-  private readonly idGenerator: SnowflakeIdGenerator;
+export class CourierService implements OnModuleInit {
+  private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {
-    this.idGenerator = new SnowflakeIdGenerator({
+    this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('COURIER_WORKER_ID', 8),
       datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
+      stateStore: new RedisSnowflakeStateStore(this.redisService),
+      stateKey: 'snowflake:state:courier',
+      metricsKey: 'snowflake:courier',
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.idGenerator.initialize();
   }
 
   async createCourier(data: CreateCourierDto) {

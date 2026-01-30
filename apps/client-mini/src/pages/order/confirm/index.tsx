@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Button, Image, ScrollView, Checkbox } from '@tarojs/components'
+import { View, Text, Button, Image, ScrollView } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
 import { useAuth } from '@/hooks/useAuth'
 import { createOrder } from '@/services/order'
@@ -24,7 +24,6 @@ export default function OrderConfirm() {
   const { user } = useAuth()
   const [orderData, setOrderData] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [agreementChecked, setAgreementChecked] = useState(false)
 
   useEffect(() => {
     const { data } = router.params
@@ -54,13 +53,6 @@ export default function OrderConfirm() {
   }, [router.params])
 
   const handleSubmitOrder = useCallback(async () => {
-    if (!agreementChecked) {
-      Taro.showToast({
-        title: '请先同意服务协议',
-        icon: 'none'
-      })
-      return
-    }
 
     if (!orderData || !user) {
       Taro.showToast({
@@ -115,7 +107,7 @@ export default function OrderConfirm() {
     } finally {
       setLoading(false)
     }
-  }, [agreementChecked, orderData, user])
+  }, [loading, orderData, user])
 
   const handleEditAddress = () => {
     Taro.navigateTo({
@@ -241,26 +233,13 @@ export default function OrderConfirm() {
 
       <Divider />
 
-      {/* 服务协议 */}
-      <View className='agreement-section'>
-        <View className='agreement-checkbox' onClick={() => setAgreementChecked(!agreementChecked)}>
-          <Checkbox checked={agreementChecked} color='#00B894' value='agreement' />
-          <Text className='agreement-text'>
-            我已阅读并同意
-            <Text className='agreement-link'>《回收服务协议》</Text>
-            和
-            <Text className='agreement-link'>《隐私政策》</Text>
-          </Text>
-        </View>
-      </View>
-
       {/* 提交按钮 */}
       <View className='submit-section'>
         <Button
-          className={`submit-btn ${agreementChecked ? 'active' : 'disabled'}`}
+          className={`submit-btn ${loading ? 'disabled' : 'active'}`}
           onClick={handleSubmitOrder}
           loading={loading}
-          disabled={!agreementChecked || loading}
+          disabled={loading}
         >
           {loading ? '提交中...' : '确认下单'}
         </Button>

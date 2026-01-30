@@ -6,8 +6,6 @@ import { CreateUserDto } from '../dto';
 
 describe('UserService', () => {
   let service: UserService;
-  let prismaService: PrismaService;
-  let accountService: AccountService;
 
   const mockPrismaService = {
     user: {
@@ -37,8 +35,6 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    accountService = module.get<AccountService>(AccountService);
   });
 
   afterEach(() => {
@@ -61,6 +57,7 @@ describe('UserService', () => {
         user: {
           create: jest.fn().mockResolvedValue({
             id: BigInt(1),
+            email: 'user@example.com',
             ...createUserDto,
             status: 'ACTIVE',
             createdAt: new Date(),
@@ -73,22 +70,28 @@ describe('UserService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
       // Mock $transaction to execute the callback
-      mockPrismaService.$transaction.mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      mockPrismaService.$transaction.mockImplementation(
+        (callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx),
+      );
 
       const result = await service.create(createUserDto);
 
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(mockTx.user.create).toHaveBeenCalled();
-      expect(mockAccountService.createAccount).toHaveBeenCalledWith(BigInt(1), mockTx);
+      expect(mockAccountService.createAccount).toHaveBeenCalledWith(
+        BigInt(1),
+        mockTx,
+      );
       expect(result).toBeDefined();
+      expect(result.email).toBe('user@example.com');
     });
 
     it('should throw error if mobile already exists', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: BigInt(1) });
 
-      await expect(service.create(createUserDto)).rejects.toThrow('手机号已被注册');
+      await expect(service.create(createUserDto)).rejects.toThrow(
+        '手机号已被注册',
+      );
       expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
     });
   });

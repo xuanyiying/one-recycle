@@ -2,29 +2,38 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
 import {
-  PaymentProvider,
-  PaymentStatus,
-  RefundStatus,
-} from '@prisma/client';
-import { SnowflakeIdGenerator } from '@/common';
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  RedisService,
+} from '@/common';
 
 @Injectable()
-export class PaymentService {
-  private readonly idGenerator: SnowflakeIdGenerator;
+export class PaymentService implements OnModuleInit {
+  private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {
-    this.idGenerator = new SnowflakeIdGenerator({
+    this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('PAYMENT_WORKER_ID', 9),
       datacenterId: this.configService.get<number>('DATACENTER_ID', 1),
+      stateStore: new RedisSnowflakeStateStore(this.redisService),
+      stateKey: 'snowflake:state:payment',
+      metricsKey: 'snowflake:payment',
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.idGenerator.initialize();
   }
 
   async create(createPaymentDto: CreatePaymentDto) {
@@ -44,7 +53,10 @@ export class PaymentService {
     // 生成交易号
     const id = this.idGenerator.nextId();
     const transactionId = BigInt(id);
-    const prefix = this.configService.get<string>('PAYMENT_NUMBER_PREFIX', 'OUT');
+    const prefix = this.configService.get<string>(
+      'PAYMENT_NUMBER_PREFIX',
+      'OUT',
+    );
     const outTradeNo = `${prefix}${id}`;
 
     return this.prisma.payment.create({

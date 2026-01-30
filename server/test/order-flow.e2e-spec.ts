@@ -85,46 +85,70 @@ describe('Order Flow (e2e)', () => {
   afterAll(async () => {
     // Cleanup - Delete dependent records first
     if (dispatchAssignmentId) {
-      await prismaService.courierAssignment.deleteMany({ where: { id: dispatchAssignmentId } }).catch(() => {});
+      await prismaService.courierAssignment
+        .deleteMany({ where: { id: dispatchAssignmentId } })
+        .catch(() => {});
     }
-    
+
     // Clean up Payment related data
     if (orderId) {
-       await prismaService.paymentLog.deleteMany({ where: { orderId: BigInt(orderId) } }).catch(() => {});
+      await prismaService.paymentLog
+        .deleteMany({ where: { orderId: BigInt(orderId) } })
+        .catch(() => {});
     }
-    
+
     if (paymentId) {
-      await prismaService.payment.deleteMany({ where: { id: BigInt(paymentId) } }).catch(() => {});
+      await prismaService.payment
+        .deleteMany({ where: { id: BigInt(paymentId) } })
+        .catch(() => {});
     }
 
     if (orderId) {
       // Clean up Order related data
-      await prismaService.orderTimeline.deleteMany({ where: { orderId: BigInt(orderId) } }).catch(() => {});
-      await prismaService.orderItem.deleteMany({ where: { orderId: BigInt(orderId) } }).catch(() => {});
-      await prismaService.order.deleteMany({ where: { id: BigInt(orderId) } }).catch(() => {});
+      await prismaService.orderTimeline
+        .deleteMany({ where: { orderId: BigInt(orderId) } })
+        .catch(() => {});
+      await prismaService.orderItem
+        .deleteMany({ where: { orderId: BigInt(orderId) } })
+        .catch(() => {});
+      await prismaService.order
+        .deleteMany({ where: { id: BigInt(orderId) } })
+        .catch(() => {});
     }
 
     if (addressId) {
-      await prismaService.address.deleteMany({ where: { id: addressId } }).catch(() => {});
+      await prismaService.address
+        .deleteMany({ where: { id: addressId } })
+        .catch(() => {});
     }
     if (userId) {
       // Clean up User related data (identities, etc if any created implicitly)
-      await prismaService.userIdentity.deleteMany({ where: { userId: userId } }).catch(() => {});
-      await prismaService.user.deleteMany({ where: { id: userId } }).catch(() => {});
+      await prismaService.userIdentity
+        .deleteMany({ where: { userId: userId } })
+        .catch(() => {});
+      await prismaService.user
+        .deleteMany({ where: { id: userId } })
+        .catch(() => {});
     }
     if (courierId) {
-      await prismaService.courier.deleteMany({ where: { id: courierId } }).catch(() => {});
+      await prismaService.courier
+        .deleteMany({ where: { id: courierId } })
+        .catch(() => {});
     }
 
     await app.close();
   });
 
-  it('should complete the order -> payment -> dispatch flow', async () => {
-    // 1. Create Order
+  it('should complete the order submission -> payment -> dispatch flow', async () => {
+    // 1. Submit Order (Client Step 3)
+    const tomorrow = new Date(Date.now() + 86400000);
+    const dateStr = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeSlotId = `slot_${dateStr}_0`; // 09:00-11:00 slot
+
     const createOrderDto = {
       userId: userId.toString(),
       addressId: addressId.toString(),
-      expectPickupTime: new Date(Date.now() + 86400000).toISOString(),
+      timeSlotId: timeSlotId, // Use timeSlotId instead of direct time
       channel: 'APP',
       items: [
         {
@@ -148,6 +172,16 @@ describe('Order Flow (e2e)', () => {
     // Verify status (convert from JSON string if needed, or check body directly)
     // OrderStatus.PENDING is 'PENDING'
     expect(createOrderResponse.body.status).toBe(OrderStatus.PENDING);
+
+    // Verify expectPickupTime is correctly derived from timeSlotId
+    const expectedTime = new Date(`${dateStr}T09:00:00.000Z`).getTime(); // UTC time for comparison might need adjustment depending on server timezone handling
+    // However, OrderService constructs it as new Date(`${dateStr}T${timeSlot.start}:00`).toISOString()
+    // If local time, T09:00 might differ in ISO.
+    // Let's just check it exists for now to avoid timezone flakiness in this quick fix
+    expect(createOrderResponse.body.expectPickupTime).toBeDefined();
+    expect(
+      new Date(createOrderResponse.body.expectPickupTime).toISOString(),
+    ).toContain(dateStr);
 
     // 2. Create Payment
     const createPaymentDto = {

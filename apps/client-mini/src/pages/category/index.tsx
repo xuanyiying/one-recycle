@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { SearchBar, Button as NutButton, Switch } from '@nutui/nutui-react-taro'
+import { SearchBar, Switch } from '@nutui/nutui-react-taro'
 import { Search, Check, ArrowRight } from '@nutui/icons-react-taro'
 import { getActiveCategories } from "@/services/category"
 import { Category } from "@/types"

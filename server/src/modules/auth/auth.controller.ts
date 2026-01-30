@@ -15,7 +15,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AuthRedisService } from './auth-redis.service';
+import AuthRedisService from './auth-redis.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from '@/common/decorators/auth.decorator';
 import { LoginDto } from './dto/login.dto';

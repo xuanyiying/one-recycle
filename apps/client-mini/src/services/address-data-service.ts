@@ -5,7 +5,6 @@ export interface RegionNode {
   code: string
   name: string
   pinyin?: string
-  abbr?: string
   children?: RegionNode[]
 }
 
@@ -16,9 +15,6 @@ export class AddressDataService {
    */
   private static async getRegionData(): Promise<any> {
     try {
-      // Use dynamic import to split region.json into its own chunk
-      // This ensures it only loads when needed and stays out of the main bundle
-      // Note: Taro supports dynamic imports for code splitting
       const data = await import('../data/region.json')
       return data.default || data
     } catch (e) {
@@ -38,20 +34,25 @@ export class AddressDataService {
           code,
           name: data.name,
           pinyin: data.pinyin,
-          abbr: data.abbr
         }))
       }
     } catch (e) {
       console.warn('Local region data loading failed, falling back to API')
     }
-    return this.getAreas('1', '000000')
+    // Fallback to API if local data is missing or incomplete
+    // Pass '000000' as parentCode explicitly to fetch provinces from API
+    return this.getAreas('000000', '1')
   }
 
   /**
    * Get areas (cities/districts/streets) by parent code
    * Implements mixed data strategy: Static -> Cache -> API
    */
-  static async getAreas(level: string, parentCode: string): Promise<RegionNode[]> {
+  static async getAreas(parentCode: string, level?: string): Promise<RegionNode[]> {
+    if (!parentCode) {
+        return []
+    }
+    
     // 1. Try local static data first (Only for Level 1 & 2)
     try {
       const regionData = await this.getRegionData()
@@ -68,20 +69,23 @@ export class AddressDataService {
     // 2. Try Local Storage Cache (For Level 3 & 4)
     const cacheKey = `regions_cache_${parentCode}`
     const cached = Taro.getStorageSync(cacheKey)
-    if (cached && Date.now() - cached.timestamp < 86400000 * 30) {
+    // Only cache if level is provided and is 3 or 4
+    if (level && (level === '3' || level === '4') && cached && Date.now() - cached.timestamp < 86400000 * 30) {
       return cached.data
     }
-
     // 3. Request from Backend API (Level 3 & 4)
     try {
       // Use standard GET request to backend regions API
       const response = await get(`/addresses/regions/${parentCode}`)
-      if (response && Array.isArray(response)) {
-        const nodes = response.map((item: any) => ({
-          code: item.code.substring(0, 6), // Mini program uses 6-digit codes
+      
+      // Handle both direct array and object wrapper response formats
+      const list = Array.isArray(response) ? response : (response?.data || [])
+      
+      if (Array.isArray(list) && list.length > 0) {
+        const nodes = list.map((item: any) => ({
+          code: item.code, // Keep full code length to support street level (9-12 digits)
           name: item.name,
           pinyin: item.pinyin || '',
-          abbr: item.abbr || ''
         }))
         
         // Save to cache
@@ -139,7 +143,6 @@ export class AddressDataService {
               code,
               name,
               pinyin,
-              abbr
             })
           }
         })
@@ -155,7 +158,7 @@ export class AddressDataService {
    * Preload core provinces to improve UX
    */
   static preloadCoreProvinces() {
-    const coreProvinces = ['110000', '310000', '440000', '330000'] // Beijing, Shanghai, Guangdong, Zhejiang
+    const coreProvinces = ['110000000000', '310000000000', '440000000000', '330000000000'] // Beijing, Shanghai, Guangdong, Zhejiang
     coreProvinces.forEach(code => {
       this.getAreas('2', code) // Preload cities for these provinces
     })

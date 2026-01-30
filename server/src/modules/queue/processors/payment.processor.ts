@@ -326,7 +326,10 @@ export class PaymentProcessor {
         processedAt: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(`Failed to process refund: ${orderId}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to process refund: ${orderId}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }
@@ -433,8 +436,8 @@ export class PaymentProcessor {
   @OnQueueFailed()
   onFailed(job: Job, error: Error): void {
     this.logger.error(
-      `Job ${job.id} failed with error: ${(error as Error).message}`,
-      (error as Error).stack,
+      `Job ${job.id} failed with error: ${error.message}`,
+      error.stack,
     );
   }
 }

@@ -122,7 +122,9 @@ describe('AccountService', () => {
     it('should auto-create account if not found', async () => {
       mockPrismaService.account.findFirst.mockResolvedValue(null);
       const mockCreatedAccount = { id: BigInt(1), userId };
-      jest.spyOn(service, 'createAccount').mockResolvedValue(mockCreatedAccount as any);
+      jest
+        .spyOn(service, 'createAccount')
+        .mockResolvedValue(mockCreatedAccount as any);
 
       const result = await service.findAccountByUserId(userId);
 

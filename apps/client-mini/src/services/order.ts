@@ -112,8 +112,7 @@ async function submitOrderRequest(orderData: OrderSubmission): Promise<CreateOrd
       })),
       addressId: orderData.address.id,
       timeSlotId: orderData.timeSlot.id,
-      notes: orderData.notes,
-      agreedToTerms: orderData.agreedToTerms,
+      notes: orderData.notes, 
     }
 
     // Make API request
@@ -167,12 +166,8 @@ async function submitOrderRequest(orderData: OrderSubmission): Promise<CreateOrd
  * For backward compatibility
  */
 export const createOrder = (orderData: any) => {
-    // If orderData matches OrderSubmission, we could use submitOrder
-    // But for safety, we keep the direct call for legacy usages, 
-    // OR we upgrade it to use submitOrderRequest if possible.
-    // Given the payload difference (submitOrderRequest maps fields), 
-    // we should stick to the simple post for 'createOrder' if it expects raw data.
-    return post('/order/orders', orderData)
+ 
+    return post('/orders', orderData)
 }
 
 /**
@@ -194,11 +189,6 @@ export const validateOrderForSubmission = (orderData: OrderSubmission): string[]
   // Validate time slot
   if (!orderData.timeSlot || !orderData.timeSlot.id) {
     errors.push('请选择取货时间')
-  }
-
-  // Validate terms agreement
-  if (!orderData.agreedToTerms) {
-    errors.push('请同意服务条款')
   }
 
   return errors

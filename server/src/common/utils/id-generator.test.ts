@@ -8,6 +8,9 @@ import {
   NanoIdGenerator,
   IdGeneratorFactory,
   IdValidator,
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  IdGeneratorMetrics,
   generateSecureOrderNumber,
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
@@ -162,6 +165,129 @@ describe('分布式ID生成器测试', () => {
       const id = generator.nextId();
       expect(typeof id).toBe('string');
       expect(id.length).toBe(12);
+    });
+  });
+
+  describe('持久化雪花算法测试', () => {
+    test('应该从状态存储恢复生成进度', async () => {
+      const originalNow = Date.now;
+      let now = 1700000000000;
+      Date.now = jest.fn(() => now);
+
+      const store = new Map<string, any>();
+      const stateStore = new RedisSnowflakeStateStore({
+        get: async (key) => store.get(key) ?? null,
+        set: async (key, value) => {
+          store.set(key, value);
+        },
+      });
+
+      const generator1 = new PersistentSnowflakeIdGenerator({
+        workerId: 1,
+        datacenterId: 1,
+        stateStore,
+        stateKey: 'test:snowflake:persist',
+        metricsKey: 'test:snowflake:persist',
+        persistIntervalMs: 0,
+      });
+      await generator1.initialize();
+      const id1 = generator1.nextId();
+      const id2 = generator1.nextId();
+
+      const generator2 = new PersistentSnowflakeIdGenerator({
+        workerId: 1,
+        datacenterId: 1,
+        stateStore,
+        stateKey: 'test:snowflake:persist',
+        metricsKey: 'test:snowflake:persist',
+        persistIntervalMs: 0,
+      });
+      await generator2.initialize();
+      now += 1;
+      const id3 = generator2.nextId();
+
+      expect(BigInt(id3)).toBeGreaterThan(BigInt(id2));
+
+      Date.now = originalNow;
+    });
+
+    test('应该在时钟回拨时保持有序', async () => {
+      const originalNow = Date.now;
+      let now = 1700000100000;
+      Date.now = jest.fn(() => now);
+
+      const store = new Map<string, any>();
+      const stateStore = new RedisSnowflakeStateStore({
+        get: async (key) => store.get(key) ?? null,
+        set: async (key, value) => {
+          store.set(key, value);
+        },
+      });
+
+      const generator = new PersistentSnowflakeIdGenerator({
+        workerId: 2,
+        datacenterId: 1,
+        stateStore,
+        stateKey: 'test:snowflake:clock',
+        metricsKey: 'test:snowflake:clock',
+        persistIntervalMs: 0,
+        maxBackwardMs: 0,
+      });
+      await generator.initialize();
+      const id1 = generator.nextId();
+      now -= 5000;
+      const id2 = generator.nextId();
+
+      expect(BigInt(id2)).toBeGreaterThan(BigInt(id1));
+
+      Date.now = originalNow;
+    });
+
+    test('应该记录生成性能指标', async () => {
+      IdGeneratorMetrics.clearMetrics();
+
+      const store = new Map<string, any>();
+      const stateStore = new RedisSnowflakeStateStore({
+        get: async (key) => store.get(key) ?? null,
+        set: async (key, value) => {
+          store.set(key, value);
+        },
+      });
+
+      const generator = new PersistentSnowflakeIdGenerator({
+        workerId: 3,
+        datacenterId: 1,
+        stateStore,
+        stateKey: 'test:snowflake:metrics',
+        metricsKey: 'test:snowflake:metrics',
+        persistIntervalMs: 0,
+      });
+      await generator.initialize();
+      generator.nextId();
+      generator.nextId();
+
+      const metrics = IdGeneratorMetrics.getMetrics(
+        'test:snowflake:metrics:nextId',
+      );
+
+      expect(metrics?.totalCount).toBeGreaterThan(0);
+    });
+
+    test('应该触发告警钩子', () => {
+      const alerts: Array<{ type: string }> = [];
+      IdGeneratorMetrics.clearAlerts();
+      IdGeneratorMetrics.configureAlerts('test:alert', {
+        maxAvgTimeMs: 0,
+        minCount: 1,
+      });
+      IdGeneratorMetrics.onAlert((payload) => {
+        alerts.push({ type: payload.type });
+      });
+
+      IdGeneratorMetrics.recordGeneration('test:alert', 10, true);
+
+      expect(alerts.length).toBeGreaterThan(0);
+      IdGeneratorMetrics.clearAlerts();
     });
   });
 

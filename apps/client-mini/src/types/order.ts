@@ -125,8 +125,7 @@ export interface Order {
   timeSlot: TimeSlot
   pricing: OrderPricing
   notes?: string
-  agreedToTerms: boolean
-  createdAt: string
+  createdAt: string 
   updatedAt: string
   completedAt?: string
 }
@@ -136,7 +135,6 @@ export interface OrderSubmission {
   address: Address
   timeSlot: TimeSlot
   notes?: string
-  agreedToTerms: boolean
 }
 
 export interface OrderConfirmation {
@@ -165,12 +163,11 @@ export interface DraftOrder {
 // ============================================================================
 
 export interface OrderFormState {
-  currentStep: 1 | 2 | 3 | 4
+  currentStep: 1 | 2 | 3 | 'success'
   items: Item[]
   selectedAddressId?: string | number
   selectedTimeSlotId?: string
   notes?: string
-  agreedToTerms: boolean
   isLoading: boolean
   error?: string
 }
@@ -189,7 +186,6 @@ export interface CreateOrderRequest {
   addressId: string | number
   timeSlotId: string
   notes?: string
-  agreedToTerms: boolean
 }
 
 export interface CreateOrderResponse {

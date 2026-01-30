@@ -19,15 +19,15 @@ export class AddressGrpcController {
   @GrpcMethod('AccountService', 'CreateAddress')
   async createAddress(data: CreateAddressRequest): Promise<AddressResponse> {
     const address = await this.addressService.create({
-      userId: Number(data.userId),
+      userId: String(data.userId),
       name: data.name,
       mobile: data.mobile,
       province: data.province,
       city: data.city,
       district: data.district,
-      town: '',
-      street: '',
-      zipCode: '',
+      town: data.town || '',
+      street: data.street || '',
+      zipCode: data.zipCode || '',
       detail: data.detail,
       isDefault: data.isDefault,
     });
@@ -37,7 +37,7 @@ export class AddressGrpcController {
   @GrpcMethod('AccountService', 'GetAddresses')
   async getAddresses(data: GetAddressesRequest): Promise<AddressListResponse> {
     const addresses = await this.addressService.findAllByUserId(
-      Number(data.userId),
+      String(data.userId),
     );
     return {
       addresses: addresses.map((address: Address) =>

@@ -257,7 +257,10 @@ export class NotificationQueueService {
       await this.notificationQueue.pause();
       this.logger.log('Notification queue paused');
     } catch (error) {
-      this.logger.error(`Failed to pause queue: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to pause queue: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
       throw error;
     }
   }

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
-import { AuthRedisService } from './auth-redis.service';
+import AuthRedisService from './auth-redis.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
@@ -48,12 +48,15 @@ describe('AuthController', () => {
       };
       const expectedResult = {
         user: {
-          id: 'user-123',
-          phone: '13800138000',
+          id: '1121',
+          email: 'user@example.com',
+          mobile: '13800138000',
           nickname: '测试用户',
-          avatar: undefined,
+          avatarUrl: 'http://example.com/avatar.jpg',
           role: 'USER',
           status: 'ACTIVE',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-02T00:00:00.000Z',
         },
         tokens: {
           accessToken: 'access-token',
@@ -66,7 +69,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'login').mockResolvedValue(expectedResult);
 
       const result = await controller.login(loginDto);
-
+      console.debug(result);
       expect(result).toEqual(expectedResult);
       expect(authService.login).toHaveBeenCalledWith(loginDto);
     });
@@ -130,12 +133,15 @@ describe('AuthController', () => {
       const thirdPartyLoginDto: ThirdPartyLoginDto = { code: 'auth-code' };
       const expectedResult = {
         user: {
-          id: 'user-123',
-          phone: '13800138000',
+          id: '2345678901',
+          email: 'user@example.com',
+          mobile: '13800138000',
           nickname: '测试用户',
-          avatar: undefined,
+          avatarUrl: 'http://example.com/avatar.jpg',
           role: 'USER',
           status: 'ACTIVE',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-02T00:00:00.000Z',
         },
         tokens: {
           accessToken: 'access-token',

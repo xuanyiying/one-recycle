@@ -1,8 +1,8 @@
-import { IsString, IsBoolean, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateAddressDto {
-  @IsNumber()
-  userId!: number;
+  @IsString()
+  userId!: string;
 
   @IsString()
   name!: string;
@@ -20,13 +20,16 @@ export class CreateAddressDto {
   district!: string;
 
   @IsString()
-  town!: string;
+  @IsOptional()
+  town?: string;
 
   @IsString()
-  street!: string;
+  @IsOptional()
+  street?: string;
 
   @IsString()
-  zipCode!: string;
+  @IsOptional()
+  zipCode?: string;
 
   @IsString()
   detail!: string;

@@ -5,16 +5,26 @@ export class UserResponseDto {
   @ApiProperty({ description: '用户ID', example: '123456789' })
   id!: string;
 
+  @ApiPropertyOptional({ description: '邮箱', example: 'user@example.com' })
+  email?: string;
+
   @ApiPropertyOptional({ description: '手机号', example: '13800138000' })
   mobile?: string;
 
   @ApiPropertyOptional({ description: '昵称', example: '张三' })
   nickname?: string;
 
-  @ApiPropertyOptional({ description: '头像URL', example: 'https://example.com/avatar.jpg' })
+  @ApiPropertyOptional({
+    description: '头像URL',
+    example: 'https://example.com/avatar.jpg',
+  })
   avatarUrl?: string;
 
-  @ApiPropertyOptional({ description: '用户角色', enum: UserRole, example: UserRole.USER })
+  @ApiPropertyOptional({
+    description: '用户角色',
+    enum: UserRole,
+    example: UserRole.USER,
+  })
   role?: UserRole;
 
   @ApiPropertyOptional({ description: '用户状态', example: 'ACTIVE' })

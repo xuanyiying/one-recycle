@@ -20,8 +20,11 @@ export interface SmsCodeParams {
 export interface LoginResponse {
   success: boolean
   data?: {
-    token: string
-    refreshToken?: string
+    tokens: {
+        accessToken: string
+        refreshToken: string
+        expiresIn: number
+    }
     user: {
       id: string
       nickname: string
@@ -78,14 +81,22 @@ export class AuthService {
             }
 
             const response = await post(requestUrl, payload)
-            if (response.success && response.data?.token) {
-                 await this.saveLoginInfo(response.data.token, response.data.user)
+            
+            if (!response.success) {
+                return {
+                    success: false,
+                    message: response.message || '登录失败'
+                }
+            }
+
+            if (response.data?.tokens?.accessToken) {
+                 await this.saveLoginInfo(response.data.tokens.accessToken, response.data.user, response.data.tokens.refreshToken)
                  return response
             }
 
             return {
                 success: false,
-                message: response.message || '登录失败'
+                message: '登录失败：响应数据缺失'
             }
         } catch (error: any) {
             console.error('登录API调用失败:', error)
@@ -105,15 +116,20 @@ export class AuthService {
                 throw new Error(`当前平台不支持${provider}登录`)
             }
             const response = await post(`/auth/third-party/${provider}`, { provider })
-            if (response.success) {
-                await this.saveLoginInfo(response.data.token, response.data.user)
+            
+            if (!response.success) {
+                throw new Error(response.message || '登录失败')
+            }
+
+            if (response.data?.tokens?.accessToken) {
+                await this.saveLoginInfo(response.data.tokens.accessToken, response.data.user, response.data.tokens.refreshToken)
                 return {
                     success: true,
-                    token: response.data.token,
+                    token: response.data.tokens.accessToken,
                     user: response.data.user
                 }
             } else {
-                throw new Error(response.message || '登录失败')
+                throw new Error('登录失败：响应数据缺失')
             }
         } catch (error) {
             console.error(`${provider}登录失败:`, error)
@@ -139,15 +155,19 @@ export class AuthService {
 
             const response = await post('/auth/login', {mobile: phone, verificationCode: smsCode})
 
-            if (response.success) {
-                await this.saveLoginInfo(response.data.token, response.data.user)
+            if (!response.success) {
+                throw new Error(response.message || '登录失败')
+            }
+
+            if (response.data?.tokens?.accessToken) {
+                await this.saveLoginInfo(response.data.tokens.accessToken, response.data.user, response.data.tokens.refreshToken)
                 return {
                     success: true,
-                    token: response.data.token,
+                    token: response.data.tokens.accessToken,
                     user: response.data.user
                 }
             } else {
-                throw new Error(response.message || '登录失败')
+                throw new Error('登录失败：响应数据缺失')
             }
         } catch (error) {
             return {
@@ -215,40 +235,70 @@ export class AuthService {
         }
     }
 
+    private static refreshPromise: Promise<{ success: boolean; token?: string }> | null = null
+    private static lastRefreshTime: number = 0
+    private static readonly REFRESH_THROTTLE_MS = 2000 // 2秒内防止重复刷新
+
     /**
      * 刷新令牌
      */
     static async refreshToken(): Promise<{ success: boolean; token?: string }> {
-        try {
-            const refreshToken = Taro.getStorageSync('refreshToken')
-            if (!refreshToken) {
-                return { success: false }
-            }
-
-            // 使用 Taro.request 直接请求，避免循环依赖和拦截器干扰
-            const response = await Taro.request({
-                url: `${ENV_CONFIG.API_BASE_URL}/auth/refresh`,
-                method: 'POST',
-                header: { 'Content-Type': 'application/json' },
-                data: { refreshToken }
-            })
-
-            if (response.statusCode >= 200 && response.statusCode < 300) {
-                const data = response.data
-                const newToken = data.accessToken || data.token
-                
-                if (newToken) {
-                    // 更新本地存储
-                    Taro.setStorageSync('token', newToken)
-                    return { success: true, token: newToken }
-                }
-            }
-            
-            return { success: false }
-        } catch (error) {
-            console.error('刷新token失败:', error)
-            return { success: false }
+        // 1. 检查请求锁（防止并发）
+        if (this.refreshPromise) {
+            return this.refreshPromise
         }
+
+        // 2. 检查节流（防止短时间内重复调用）
+        const now = Date.now()
+        if (now - this.lastRefreshTime < this.REFRESH_THROTTLE_MS) {
+            const token = Taro.getStorageSync('token')
+            if (token) {
+                return { success: true, token }
+            }
+        }
+
+        this.refreshPromise = (async () => {
+            try {
+                const refreshToken = Taro.getStorageSync('refreshToken')
+                if (!refreshToken) {
+                    return { success: false }
+                }
+
+                // 使用 Taro.request 直接请求，避免循环依赖和拦截器干扰
+                const response = await Taro.request({
+                    url: `${ENV_CONFIG.API_BASE_URL}/auth/refresh`,
+                    method: 'POST',
+                    header: { 'Content-Type': 'application/json' },
+                    data: { refreshToken }
+                })
+
+                if (response.statusCode >= 200 && response.statusCode < 300) {
+                    const data = response.data
+                    const newToken = data.accessToken || data.token
+                    
+                    if (newToken) {
+                        // 更新本地存储
+                        Taro.setStorageSync('token', newToken)
+                        this.lastRefreshTime = Date.now() // 更新最后刷新时间
+                        return { success: true, token: newToken }
+                    }
+                }
+                
+                // 如果刷新失败（如401/403），说明refreshToken也过期了，需要清除
+                if (response.statusCode === 401 || response.statusCode === 403) {
+                    await this.logout()
+                }
+                
+                return { success: false }
+            } catch (error) {
+                console.error('刷新token失败:', error)
+                return { success: false }
+            } finally {
+                this.refreshPromise = null
+            }
+        })()
+
+        return this.refreshPromise
     }
 
     /**
@@ -292,10 +342,13 @@ export class AuthService {
     /**
      * 保存登录信息
      */
-    static async saveLoginInfo(token: string, user: any): Promise<void> {
+    static async saveLoginInfo(token: string, user: any, refreshToken?: string): Promise<void> {
         try {
             await Taro.setStorageSync('token', token)
             await Taro.setStorageSync('user', user)
+            if (refreshToken) {
+                await Taro.setStorageSync('refreshToken', refreshToken)
+            }
         } catch (error) {
             console.error('保存登录信息失败:', error)
         }

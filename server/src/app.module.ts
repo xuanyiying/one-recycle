@@ -26,6 +26,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { DispatchModule } from './modules/dispatch/dispatch.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AccountModule } from './modules/account/account.module';
+import { RankingModule } from './modules/ranking/ranking.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -72,6 +73,7 @@ import { HealthModule } from './modules/health/health.module';
     NotificationModule,
     DispatchModule,
     QueueModule,
+    RankingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

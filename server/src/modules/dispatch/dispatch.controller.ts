@@ -34,7 +34,6 @@ export class DispatchController {
     return this.dispatchService.updateAssignmentStatus(id, statusData.status);
   }
 
-
   @Post('assignments/:id/accept')
   async acceptAssignment(@Param('id') id: string) {
     return this.dispatchService.acceptAssignment(id);

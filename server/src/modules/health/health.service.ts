@@ -8,8 +8,18 @@ export interface HealthCheckResult {
   timestamp: string;
   uptime: number;
   checks: {
-    database: { status: 'up' | 'down'; responseTime?: number; error?: string; warning?: string };
-    redis: { status: 'up' | 'down'; responseTime?: number; error?: string; warning?: string };
+    database: {
+      status: 'up' | 'down';
+      responseTime?: number;
+      error?: string;
+      warning?: string;
+    };
+    redis: {
+      status: 'up' | 'down';
+      responseTime?: number;
+      error?: string;
+      warning?: string;
+    };
   };
 }
 
@@ -67,8 +77,11 @@ export class HealthService {
     warning?: string;
   }> {
     const start = Date.now();
-    const threshold = this.configService.get<number>('HEALTH_DB_THRESHOLD_MS', 1000);
-    
+    const threshold = this.configService.get<number>(
+      'HEALTH_DB_THRESHOLD_MS',
+      1000,
+    );
+
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       const responseTime = Date.now() - start;
@@ -101,7 +114,10 @@ export class HealthService {
     warning?: string;
   }> {
     const start = Date.now();
-    const threshold = this.configService.get<number>('HEALTH_REDIS_THRESHOLD_MS', 500);
+    const threshold = this.configService.get<number>(
+      'HEALTH_REDIS_THRESHOLD_MS',
+      500,
+    );
 
     try {
       await this.redis.ping();

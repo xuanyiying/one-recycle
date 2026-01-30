@@ -6,7 +6,10 @@ export default () => ({
     db: parseInt(process.env.REDIS_DB || '0', 10),
   },
   queue: {
-    removeOnComplete: parseInt(process.env.QUEUE_REMOVE_ON_COMPLETE || '100', 10),
+    removeOnComplete: parseInt(
+      process.env.QUEUE_REMOVE_ON_COMPLETE || '100',
+      10,
+    ),
     removeOnFail: parseInt(process.env.QUEUE_REMOVE_ON_FAIL || '1000', 10),
   },
   bullBoard: {

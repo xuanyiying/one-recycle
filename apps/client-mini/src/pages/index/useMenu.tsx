@@ -32,7 +32,7 @@ export const useMenu = () => {
       name: '环保榜单',
       icon: <Star size={24} color='#FFC107' />,
       bgColor: '#FFC10715',
-      action: () => Taro.showToast({ title: '环保榜单即将上线', icon: 'none' })
+      path: '/pages/rank/index'
     },
     {
       key: 'service',

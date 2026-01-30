@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RequestWithUser } from '@/common/types/auth.types';
@@ -19,5 +19,15 @@ export class AccountController {
   async getMyStats(@Request() req: RequestWithUser) {
     const userId = req.user.id;
     return this.accountService.getAccountStats(userId);
+  }
+
+  @Get('me/transactions')
+  async getTransactions(
+    @Request() req: RequestWithUser,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    const userId = req.user.id;
+    return this.accountService.getTransactions(userId, +page, +limit);
   }
 }

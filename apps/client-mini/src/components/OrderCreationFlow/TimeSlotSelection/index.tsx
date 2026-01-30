@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react'
-import { View, Text, Button, ScrollView } from '@tarojs/components'
+import { View, Text, Button, ScrollView, Textarea } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { TimeSlot, TimeSlotReservation } from '../../../types/order'
 import { useOrderStore } from '../../../store/orderStore'
@@ -20,10 +20,12 @@ import './index.scss'
 // ============================================================================
 
 interface TimeSlotSelectionProps {
-    onNext: (slot: TimeSlot) => void
+    onNext: (slot: TimeSlot, notes?: string) => void
     onBack: () => void
     initialSlot?: TimeSlot
     availableSlots?: TimeSlot[]
+    initialNotes?: string
+    isLoading?: boolean
 }
 
 // ============================================================================
@@ -109,9 +111,13 @@ export default function TimeSlotSelection({
     onBack,
     initialSlot,
     availableSlots: providedSlots,
+    initialNotes = '',
+    isLoading = false,
 }: TimeSlotSelectionProps) {
     // State management
     const { state, setTimeSlots, selectTimeSlot } = useOrderStore()
+
+    const [notes, setNotes] = useState(initialNotes)
 
     const [selectedDate, setSelectedDate] = useState<string>(() => {
         if (initialSlot?.date) {
@@ -131,7 +137,6 @@ export default function TimeSlotSelection({
 
     const [reservation, setReservation] = useState<TimeSlotReservation | undefined>()
     const [reservationTimeLeft, setReservationTimeLeft] = useState<number>(0)
-    const [isLoading, setIsLoading] = useState(false)
     const [isFetchingSlots, setIsFetchingSlots] = useState(false)
 
     // ============================================================================
@@ -328,8 +333,8 @@ export default function TimeSlotSelection({
         }
 
         // Proceed to next step (time slot reservation will be confirmed during order submission)
-        onNext(selected)
-    }, [selectedSlotId, reservation, timeSlots, onNext])
+        onNext(selected, notes)
+    }, [selectedSlotId, reservation, timeSlots, onNext, notes])
 
     // ============================================================================
     // Helpers
@@ -360,7 +365,7 @@ export default function TimeSlotSelection({
                 {/* Header */}
                 <View className='form-header'>
                     <Text className='form-title'>选择取货时间</Text>
-                    <Text className='form-subtitle'>第3步，共4步</Text>
+                    <Text className='form-subtitle'>第3步，共3步</Text>
                 </View>
 
                 {/* Date Picker Section */}
@@ -397,6 +402,21 @@ export default function TimeSlotSelection({
                     )}
                 </View>
 
+                {/* Notes Section */}
+                <View className='form-section'>
+                    <Text className='section-title'>备注信息 (可选)</Text>
+                    <View className='notes-container'>
+                        <Textarea
+                            className='notes-textarea'
+                            value={notes}
+                            onInput={(e) => setNotes(e.detail.value)}
+                            placeholder='请填写具体的楼层门牌号，或对回收员的特殊要求...'
+                            maxlength={200}
+                        />
+                        <Text className='notes-counter'>{notes.length}/200</Text>
+                    </View>
+                </View>
+
                 {/* Reservation Info */}
                 {reservation && isReservationValid(reservation) && (
                     <View className='reservation-info'>
@@ -412,11 +432,12 @@ export default function TimeSlotSelection({
                         返回
                     </Button>
                     <Button
-                        className='btn-primary'
+                        className={`btn-next ${selectedSlotId ? '' : 'disabled'}`}
                         onClick={handleNext}
-                        disabled={isLoading || !selectedSlotId}
+                        loading={isLoading}
+                        disabled={!selectedSlotId || isLoading}
                     >
-                        {isLoading ? '提交中...' : '下一步'}
+                        {isLoading ? '提交中...' : '立即下单'}
                     </Button>
                 </View>
             </View>

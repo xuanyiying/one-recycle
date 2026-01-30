@@ -97,17 +97,35 @@
                 }
             }
 
-            .user-text {
-                .user-nickname {
-                    font-size: 44rpx;
-                    font-weight: 800;
-                    color: $text-color;
-                    display: block;
+            .user-detail {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+
+                .name-row {
+                    display: flex;
+                    align-items: center;
                     margin-bottom: 12rpx;
-                    text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05);
+
+                    .nickname {
+                        font-size: 44rpx;
+                        font-weight: 800;
+                        color: $text-color;
+                        margin-right: 16rpx;
+                        text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.05);
+                    }
+
+                    .edit-badge {
+                        background: rgba(0, 0, 0, 0.05);
+                        padding: 4rpx 12rpx;
+                        border-radius: 20rpx;
+                        font-size: 20rpx;
+                        color: $text-secondary;
+                        border: 1px solid rgba(0, 0, 0, 0.05);
+                    }
                 }
 
-                .user-phone {
+                .mobile {
                     font-size: 24rpx;
                     color: $text-secondary;
                     background: rgba(255, 255, 255, 0.7);
@@ -115,22 +133,11 @@
                     border-radius: 30rpx;
                     display: inline-flex;
                     align-items: center;
+                    width: fit-content;
                     border: 1px solid rgba(0, 0, 0, 0.05);
                     backdrop-filter: blur(4px);
                     font-weight: 500;
                 }
-            }
-        }
-
-        .settings-btn {
-            width: 64rpx;
-            height: 64rpx;
-            border-radius: 50%;
-            @include flex-center;
-            backdrop-filter: blur(10px);
-
-            &:active {
-                opacity: 0.8;
             }
         }
     }
@@ -143,138 +150,47 @@
         background: #fff;
         border-radius: 32rpx;
         padding: 32rpx 0;
-        box-shadow: $box-shadow-float; // High shadow
+        box-shadow: $box-shadow-float;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
 
-        .stats-row {
-            display: flex;
+        .stats-item {
+            @include flex-column;
             align-items: center;
-            justify-content: space-around;
+            flex: 1;
 
-            .stat-item {
-                @include flex-column;
-                align-items: center;
-                flex: 1;
-
-                .stat-num {
-                    font-size: 40rpx;
-                    font-weight: 800;
-                    color: $text-color;
-                    margin-bottom: 8rpx;
-                    font-family: $font-family-number;
-
-                    &.carbon {
-                        color: $success-color;
-                    }
-
-                    .symbol {
-                        font-size: 24rpx;
-                        margin-right: 4rpx;
-                    }
-                }
-
-                .stat-label {
-                    font-size: 24rpx;
-                    color: $text-secondary;
-                }
-            }
-
-            .divider {
-                width: 1px;
-                height: 40rpx;
-                background: $border-color;
-            }
-        }
-    }
-
-    // 钱包卡片
-    .balance-card {
-        margin: 0 $page-padding $spacing-24;
-        background: #fff;
-        border-radius: 32rpx;
-        padding: 32rpx;
-        box-shadow: $box-shadow-sm;
-
-        .card-header {
-            @include flex-between;
-            margin-bottom: 24rpx;
-
-            .title {
-                font-size: 32rpx;
-                font-weight: 700;
+            .stats-num {
+                font-size: 40rpx;
+                font-weight: 800;
                 color: $text-color;
+                margin-bottom: 8rpx;
+                font-family: $font-family-number;
             }
 
-            .detail-link {
+            .stats-label {
                 font-size: 24rpx;
                 color: $text-secondary;
             }
         }
 
-        .balance-content {
-            @include flex-between;
-            align-items: flex-end;
-
-            .balance-main {
-                .label {
-                    font-size: 24rpx;
-                    color: $text-tertiary;
-                    margin-bottom: 4rpx;
-                    display: block;
-                }
-
-                .amount {
-                    font-size: 56rpx;
-                    font-weight: 800;
-                    color: $text-color;
-                    font-family: $font-family-number;
-                }
-            }
-
-            .withdraw-btn {
-                background: $text-color; // Black button for contrast
-                color: #fff;
-                padding: 12rpx 32rpx;
-                border-radius: 40rpx;
-                font-size: 26rpx;
-                font-weight: 600;
-                box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
-
-                &:active {
-                    transform: scale(0.96);
-                    opacity: 0.9;
-                }
-            }
-        }
-
-        .frozen-tip {
-            margin-top: 24rpx;
-            display: flex;
-            align-items: center;
-            background: #FFF8E1;
-            padding: 8rpx 16rpx;
-            border-radius: 12rpx;
-            display: inline-flex;
-
-            .tip-text {
-                font-size: 22rpx;
-                color: #FF8F00;
-                margin-left: 8rpx;
-            }
+        .stats-divider {
+            width: 1px;
+            height: 40rpx;
+            background: $border-color;
         }
     }
 
     // 菜单组
-    .menu-group {
-        margin: 90rpx $page-padding $spacing-40;
+    .menu-section {
+        margin: 24rpx $page-padding;
         background: #fff;
-        border-radius: 40rpx;
+        border-radius: 32rpx;
         padding: 8rpx 24rpx;
         box-shadow: $box-shadow-sm;
 
-
         .menu-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             padding: 28rpx 0;
             border-bottom: 1px dashed $border-color;
@@ -287,48 +203,94 @@
                 opacity: 0.6;
             }
 
-            .left {
+            .menu-icon-wrapper {
+                width: 64rpx;
+                height: 64rpx;
+                border-radius: 20rpx;
+                @include flex-center;
+                margin-right: 24rpx;
+                flex-shrink: 0;
+
+                &.blue { background: rgba(41, 121, 255, 0.1); }
+                &.purple { background: rgba(108, 92, 231, 0.1); }
+                &.green { background: rgba(0, 200, 83, 0.1); }
+                &.orange { background: rgba(255, 152, 0, 0.1); }
+                &.cyan { background: rgba(0, 188, 212, 0.1); }
+                &.gray { background: rgba(158, 158, 158, 0.1); }
+
+                .menu-icon {
+                    font-size: 32rpx;
+                }
+            }
+
+            .menu-text {
+                font-size: 30rpx;
+                color: $text-color;
+                font-weight: 500;
+                flex: 1;
+            }
+
+            .menu-arrow {
+                color: $text-tertiary;
+                font-size: 24rpx;
+            }
+
+            .menu-extra {
                 display: flex;
                 align-items: center;
-                flex: 1; // 占据剩余空间
-                overflow: hidden; // 防止溢出
-
-                .icon-box {
-                    width: 64rpx;
-                    height: 64rpx;
-                    border-radius: 20rpx;
-                    @include flex-center;
-                    margin-right: 24rpx;
-                    flex-shrink: 0; // 防止图标被压缩
-
-                    &.blue {
-                        background: rgba(41, 121, 255, 0.1);
-                    }
-
-                    &.purple {
-                        background: rgba(108, 92, 231, 0.1);
-                    }
-
-                    &.green {
-                        background: rgba(0, 200, 83, 0.1);
-                    }
-
-                    &.red {
-                        background: rgba(255, 61, 0, 0.1);
-                    }
-                }
-
-                .label {
-                    font-size: 30rpx;
+                
+                .balance-text {
+                    font-size: 28rpx;
+                    font-weight: 600;
                     color: $text-color;
-                    font-weight: 500;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
+                    margin-right: 8rpx;
+                    font-family: $font-family-number;
                 }
             }
         }
     }
+
+    // 退出按钮
+    .logout-btn {
+        margin: 48rpx $page-padding;
+        height: 96rpx;
+        background: #fff;
+        border-radius: 48rpx;
+        @include flex-center;
+        font-size: 30rpx;
+        font-weight: 600;
+        color: #FF3B30;
+        box-shadow: $box-shadow-sm;
+        
+        &:active {
+            opacity: 0.8;
+            transform: scale(0.98);
+        }
+    }
+
+    // 加载状态
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 60vh;
+        
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+            margin-bottom: 20rpx;
+        }
+        
+        .loading-text {
+            font-size: 26rpx;
+            color: $text-tertiary;
+        }
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 // 错误状态

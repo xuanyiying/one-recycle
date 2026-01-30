@@ -6,12 +6,10 @@
 import { useState, useCallback, useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
-import { Address, AddressLabel, AddressFormData } from '@/types/address'
+import { Address, AddressFormData } from '@/types/address'
 import './index.scss'
-import { Input, Button, TextArea, Switch } from '@nutui/nutui-react-taro'
-import { ADDRESS_LABEL_OPTIONS } from '@/config/constants'
+import { Input, Button, Switch } from '@nutui/nutui-react-taro'
 import AddressPicker from '../AddressPicker'
-import { AddressService } from '@/services/address'
 
 // ============================================================================
 // Types
@@ -45,7 +43,6 @@ export default function AddressForm({
         district: initialData?.district || '',
         detail: initialData?.detail || '',
         zipCode: initialData?.zipCode || '',
-        label: initialData?.label || AddressLabel.HOME,
     })
 
     const [isDefault, setIsDefault] = useState(initialData?.isDefault || false)
@@ -132,6 +129,7 @@ export default function AddressForm({
             province: address.province || prev.province,
             city: address.city || prev.city,
             district: address.district || prev.district,
+            street: address.street || prev.street || '',
             detail: address.detail || prev.detail,
         }))
         if (address.coordinates) {
@@ -142,27 +140,10 @@ export default function AddressForm({
         }
     }, [localErrors])
 
-    const handleDetailChange = useCallback((value: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            detail: value,
-        }))
-        if (localErrors.detail) {
-            setLocalErrors(prev => ({ ...prev, detail: '' }))
-        }
-    }, [localErrors])
-
     const handleZipCodeChange = useCallback((value: string) => {
         setFormData((prev) => ({
             ...prev,
             zipCode: value,
-        }))
-    }, [])
-
-    const handleLabelChange = useCallback((label: AddressLabel) => {
-        setFormData((prev) => ({
-            ...prev,
-            label,
         }))
     }, [])
 
@@ -189,33 +170,33 @@ export default function AddressForm({
             return
         }
 
-        // 业务规则校验：配送范围
-        try {
-            const rangeCheck = await AddressService.checkDeliveryRange({
-                province: formData.province,
-                city: formData.city,
-                district: formData.district,
-                coordinates
-            })
+        // // 业务规则校验：配送范围
+        // try {
+        //     const rangeCheck = await AddressService.checkDeliveryRange({
+        //         province: formData.province,
+        //         city: formData.city,
+        //         district: formData.district,
+        //         coordinates
+        //     })
 
-            if (rangeCheck.success && rangeCheck.data && !rangeCheck.data.inRange) {
-                Taro.showModal({
-                    title: '超出服务范围',
-                    content: rangeCheck.data.message || '该地址暂时无法提供上门回收服务，是否仍要保存？',
-                    confirmText: '仍要保存',
-                    cancelText: '取消',
-                    success: async (res) => {
-                        if (res.confirm) {
-                            await executeSave()
-                        }
-                    }
-                })
-                return
-            }
-        } catch (e) {
-            console.error('Delivery range check failed', e)
-            // 校验失败时不阻断流程，允许尝试保存
-        }
+        //     if (rangeCheck.success && rangeCheck.data && !rangeCheck.data.inRange) {
+        //         Taro.showModal({
+        //             title: '超出服务范围',
+        //             content: rangeCheck.data.message || '该地址暂时无法提供上门回收服务，是否仍要保存？',
+        //             confirmText: '仍要保存',
+        //             cancelText: '取消',
+        //             success: async (res) => {
+        //                 if (res.confirm) {
+        //                     await executeSave()
+        //                 }
+        //             }
+        //         })
+        //         return
+        //     }
+        // } catch (e) {
+        //     console.error('Delivery range check failed', e)
+        //     // 校验失败时不阻断流程，允许尝试保存
+        // }
 
         await executeSave()
     }, [formData, isDefault, coordinates, validate, executeSave])
@@ -277,39 +258,12 @@ export default function AddressForm({
                     </View>
 
                     {/* Address Selection with Unified Picker */}
-                    <View className='form-field'>
-                        <View className='field-header'>
-                            <Text className='field-label'>所在地区</Text>
-                            <Text className='required-mark'>*</Text>
-                        </View>
+                    <View className='form-field no-label'>
                         <AddressPicker 
                             value={formData}
                             onChange={handleAddressPickerChange}
                             errors={combinedErrors}
                         />
-                        {combinedErrors.region && (
-                            <Text className='error-text'>{combinedErrors.region}</Text>
-                        )}
-                    </View>
-
-                    {/* Detailed Address with Multiline Support */}
-                    <View className='form-field'>
-                        <View className='field-header'>
-                            <Text className='field-label'>详细地址</Text>
-                            <Text className='required-mark'>*</Text>
-                        </View>
-                        <TextArea
-                            value={formData.detail}
-                            onChange={(value) => handleDetailChange(value)}
-                            placeholder='请输入详细地址（街道、门牌号等）'
-                            maxLength={100}
-                            autoSize
-                            showCount
-                            className={`detailed-address-input ${combinedErrors.detail ? 'error' : ''}`}
-                        />
-                        {combinedErrors.detail && (
-                            <Text className='error-text'>{combinedErrors.detail}</Text>
-                        )}
                     </View>
 
                     {/* Postal Code */}
@@ -328,22 +282,6 @@ export default function AddressForm({
                         {combinedErrors.zipCode && (
                             <Text className='error-text'>{combinedErrors.zipCode}</Text>
                         )}
-                    </View>
-
-                    {/* Address Label */}
-                    <View className='form-field'>
-                        <Text className='field-label'>地址标签</Text>
-                        <View className='label-options'>
-                            {ADDRESS_LABEL_OPTIONS.map((option) => (
-                                <View
-                                    key={option.value}
-                                    className={`label-tag ${formData.label === option.value ? 'active' : ''}`}
-                                    onClick={() => handleLabelChange(option.value as AddressLabel)}
-                                >
-                                    {option.label}
-                                </View>
-                            ))}
-                        </View>
                     </View>
 
                     {/* Set Default */}

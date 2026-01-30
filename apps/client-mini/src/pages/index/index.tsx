@@ -1,29 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
+import { usePullDownRefresh } from '@tarojs/taro'
+import { View, Text, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuth } from '@/hooks/useAuth'
-import { getBanners, getArticles } from '@/services/system'
+import { getQAList, getNewsBriefs } from '@/services/system'
 import './index.scss'
 import { useMenu } from './useMenu'
 import { useRecycleNavigation } from './useRecycleNavigation'
-import { Banner, Article } from '@/types'
+import { QAItem, NewsBrief } from '@/types'
 // 更加生动的图标
 import BookIcon from '@/assets/images/book-recycle.png'
 import ClothesIcon from '@/assets/images/clothes-recycle.png'
 import {
   Location
 } from '@nutui/icons-react-taro'
-import { getCdnUrl } from '@/utils/cdn'
 
 export default function Index() {
   const { user } = useAuth()
   const { features, handleFeatureClick } = useMenu()
   const { handleRecycleClick } = useRecycleNavigation()
   const [currentCity, setCurrentCity] = useState('北京')
-  const [banners, setBanners] = useState<Banner[]>([])
-  const [articles, setArticles] = useState<Article[]>([])
+  const [qaList, setQAList] = useState<QAItem[]>([])
+  const [newsBriefs, setNewsBriefs] = useState<NewsBrief[]>([])
+  const [expandedQAId, setExpandedQAId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   loading
+  usePullDownRefresh(async () => {
+    await initPageData()
+    Taro.stopPullDownRefresh()
+  })
+
   useEffect(() => {
     initPageData()
     // 模拟定位
@@ -33,16 +39,16 @@ export default function Index() {
   const initPageData = async () => {
     try {
       setLoading(true)
-      const [bannersResult, articlesResult] = await Promise.all([
-        getBanners(),
-        getArticles()
+      const [qaResult, newsResult] = await Promise.all([
+        getQAList(),
+        getNewsBriefs()
       ])
 
-      if (bannersResult.success) {
-        setBanners(bannersResult.data || [])
+      if (qaResult.success) {
+        setQAList(qaResult.data || [])
       }
-      if (articlesResult.success) {
-        setArticles(articlesResult.data || [])
+      if (newsResult.success) {
+        setNewsBriefs(newsResult.data || [])
       }
     } catch (error) {
       console.error('初始化数据失败:', error)
@@ -149,61 +155,84 @@ export default function Index() {
         ))}
       </View>
 
-      {/* 活动 Banner */}
-      <View className='banner-section'>
-        <Swiper
-          className='banner-swiper'
-          indicatorDots
-          autoplay
-          interval={4000}
-          duration={500}
-          circular
-          indicatorColor='rgba(255, 255, 255, 0.6)'
-          indicatorActiveColor='#2E7D32'
-        >
-          {banners.map((banner, index) => (
-            <SwiperItem key={index}>
-              <View className='banner-item'>
-                <Image
-                  className='banner-image'
-                  src={getCdnUrl(banner.image || '', { w: 750, h: 300, fmt: 'webp', q: 80 })}
-                  mode='aspectFill'
-                  lazyLoad
-                />
-              </View>
-            </SwiperItem>
-          ))}
-        </Swiper>
-      </View>
-
-      {/* 环保资讯 */}
-      <View className='article-section'>
+      {/* 问答区域 (原轮播图) */}
+      <View className='qa-section'>
         <View className='section-header'>
-          <Text className='section-title'>环保资讯</Text>
-          <Text className='section-more'>更多</Text>
+          <Text className='section-title'>常见问答</Text>
+          <Text className='section-more' onClick={() => Taro.showToast({ title: '更多问答即将上线', icon: 'none' })}>查看更多</Text>
         </View>
-        <View className='article-list'>
-          {articles.map((article, index) => (
+        <View className='qa-list'>
+          {qaList.slice(0, 3).map((item) => (
             <View
-              key={index}
-              className='article-card'
-              onClick={() => Taro.showToast({ title: '文章详情即将上线', icon: 'none' })}
+              key={item.id}
+              className={`qa-item ${expandedQAId === item.id ? 'expanded' : ''}`}
+              onClick={() => setExpandedQAId(expandedQAId === item.id ? null : item.id)}
             >
-              <Image
-                className='article-image'
-                src={getCdnUrl(article.imageUrl, { w: 690, h: 360, fmt: 'webp', q: 80 })}
-                mode='aspectFill'
-                lazyLoad
-              />
-              <View className='article-content'>
-                <Text className='article-title'>{article.title}</Text>
-                <View className='article-meta'>
-                  <Text className='article-date'>{article.publishDate}</Text>
-                  <Text className='article-views'>{article.views} 阅读</Text>
-                </View>
+              <View className='qa-question'>
+                <Text className='q-icon'>Q</Text>
+                <Text className='q-text'>{item.question}</Text>
+                <View className={`arrow-icon ${expandedQAId === item.id ? 'up' : 'down'}`} />
               </View>
+              {expandedQAId === item.id && (
+                <View className='qa-answer'>
+                  <Text className='a-icon'>A</Text>
+                  <Text className='a-text'>{item.answer}</Text>
+                </View>
+              )}
             </View>
           ))}
+        </View>
+      </View>
+
+      {/* 简讯 (原环保资讯) */}
+      <View className='news-brief-section'>
+        <View className='section-header'>
+          <View className='title-with-icon'>
+            <Text className='section-title'>简讯</Text>
+            <View className='live-dot' />
+          </View>
+          <Text className='section-more'>更多动态</Text>
+        </View>
+        <View className='news-list'>
+          {loading ? (
+            // Skeleton Loading
+            Array.from({ length: 3 }).map((_, i) => (
+              <View key={i} className='news-card skeleton-card'>
+                <View className='skeleton-circle' />
+                <View className='skeleton-content'>
+                  <View className='skeleton-line w-40' />
+                  <View className='skeleton-line w-60' />
+                </View>
+              </View>
+            ))
+          ) : newsBriefs.length > 0 ? (
+            newsBriefs.map((news, index) => (
+              <View key={index} className='news-card'>
+                <View className='news-left'>
+                  <View className='news-icon-circle'>
+                    <Text>🎉</Text>
+                  </View>
+                  <View className='news-info'>
+                    <View className='news-top'>
+                      <Text className='nickname'>{news.nickname}</Text>
+                      <Text className='action'>卖出了</Text>
+                      <Text className='items'>{news.soldItems} {news.weight}kg</Text>
+                    </View>
+                    <View className='news-bottom'>
+                      <Text className='earning-label'>获得收益</Text>
+                      <Text className='earning-value'>¥{news.earnings.toFixed(2)}</Text>
+                    </View>
+                  </View>
+                </View>
+                <Text className='news-time'>{news.time}</Text>
+              </View>
+            ))
+          ) : (
+            // Empty State
+            <View className='empty-state'>
+              <Text>暂无最新简讯</Text>
+            </View>
+          )}
         </View>
       </View>
     </View>

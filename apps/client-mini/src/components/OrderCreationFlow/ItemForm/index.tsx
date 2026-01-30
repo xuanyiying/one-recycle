@@ -18,10 +18,6 @@ import ItemList from './ItemList'
 import ItemDetailsForm from './ItemDetailsForm'
 import './index.scss'
 
-// ============================================================================
-// Types
-// ============================================================================
-
 interface ItemFormProps {
     onNext: (items: Item[]) => void
     onBack?: () => void
@@ -75,26 +71,35 @@ export default function ItemForm({ onNext, onBack, initialItems = [], initialCat
     // Effects
     // ============================================================================
 
-    // Load categories from API on mount
     useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                setLoadingCategories(true)
-                const categoriesData = await getActiveCategories()
-                setCategories(categoriesData)
-            } catch (error) {
-                console.error('Failed to load categories:', error)
-                Taro.showToast({
-                    title: '加载分类失败',
-                    icon: 'none',
-                })
-            } finally {
-                setLoadingCategories(false)
+        loadCategories()
+    }, [])
+
+    useEffect(() => {
+        if (initialCategory && categories.length > 0 && !formData.categoryId) {
+            const category = categories.find(cat => cat.seo?.slug === initialCategory)
+            if (category) {
+                handleCategoryChange(String(category.id))
             }
         }
+    }, [initialCategory, categories, formData.categoryId])
 
-        loadCategories()
-    }, [initialCategory])
+    const loadCategories = async () => {
+        try {
+            setLoadingCategories(true)
+            const categoriesData = await getActiveCategories()
+
+            setCategories(categoriesData)
+        } catch (error) {
+            console.error('Failed to load categories:', error)
+            Taro.showToast({
+                title: '加载分类失败',
+                icon: 'none',
+            })
+        } finally {
+            setLoadingCategories(false)
+        }
+    }
 
     // ============================================================================
     // Form Data Handlers
@@ -339,6 +344,30 @@ export default function ItemForm({ onNext, onBack, initialItems = [], initialCat
     }, [items, onNext])
 
     // ============================================================================
+    // Helper Functions
+    // ============================================================================
+
+    const getPageTitle = useCallback(() => {
+        let title = '添加回收物品'
+        
+        if (formData.categoryName) {
+            title = formData.categoryName
+        } else if (initialCategory && categories.length > 0) {
+            const category = categories.find(cat => cat.seo?.slug === initialCategory)
+            if (category) {
+                title = category.name
+            }
+        }
+        
+        // Append '回收' if not present and title is not default
+        if (title !== '添加回收物品' && !title.endsWith('回收')) {
+            return `${title}回收`
+        }
+        
+        return title
+    }, [formData.categoryName, initialCategory, categories])
+
+    // ============================================================================
     // Render
     // ============================================================================
 
@@ -348,7 +377,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [], initialCat
                 {/* Header */}
                 <View className='form-header'>
                     <Text className='form-title'>
-                        {initialCategory === 'book' ? '旧书回收' : (initialCategory === 'clothes' ? '旧衣回收' : '添加回收物品')}
+                        {getPageTitle()}
                     </Text>
                     <Text className='form-subtitle'>第1步，共4步</Text>
                 </View>

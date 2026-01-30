@@ -4,13 +4,13 @@ import { CategoryType } from './create-category.dto';
 export class CategoryPriceDto {
   @ApiProperty({ description: '价格类型', example: 'fixed' })
   type: string;
-  
+
   @ApiPropertyOptional({ description: '单价', example: 10.5 })
   unitPrice?: number;
-  
+
   @ApiProperty({ description: '单位', example: 'kg' })
   unit: string;
-  
+
   @ApiProperty({ description: '货币', example: 'CNY' })
   currency: string;
 }
@@ -18,10 +18,10 @@ export class CategoryPriceDto {
 export class CategorySeoDto {
   @ApiPropertyOptional({ description: 'Meta标题' })
   metaTitle?: string;
-  
+
   @ApiPropertyOptional({ description: 'Meta描述' })
   metaDescription?: string;
-  
+
   @ApiProperty({ description: 'URL标识符', example: 'waste-paper' })
   slug: string;
 }

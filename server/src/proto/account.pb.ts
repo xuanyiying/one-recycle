@@ -27,6 +27,9 @@ export interface CreateAddressRequest {
   province: string;
   city: string;
   district: string;
+  town: string;
+  street: string;
+  zipCode: string;
   detail: string;
   isDefault: boolean;
 }

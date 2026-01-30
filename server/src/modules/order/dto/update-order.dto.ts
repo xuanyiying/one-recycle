@@ -1,6 +1,12 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateOrderDto } from './create-order.dto';
-import { IsOptional, IsString, IsEnum, IsDateString, IsNumber } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsDateString,
+  IsNumber,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus, OrderPriority } from '@/common';
 

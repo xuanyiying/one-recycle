@@ -432,8 +432,8 @@ export class NotificationProcessor {
   @OnQueueFailed()
   onFailed(job: Job, error: Error): void {
     this.logger.error(
-      `Job ${job.id} failed with error: ${(error as Error).message}`,
-      (error as Error).stack,
+      `Job ${job.id} failed with error: ${error.message}`,
+      error.stack,
     );
   }
 

@@ -66,7 +66,6 @@ type OrderStoreAction =
 const initialFormState: OrderFormState = {
     currentStep: 1,
     items: [],
-    agreedToTerms: false,
     isLoading: false,
 }
 

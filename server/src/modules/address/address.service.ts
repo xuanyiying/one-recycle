@@ -17,7 +17,10 @@ export class AddressService {
     private redis: RedisService,
     private configService: ConfigService,
   ) {
-    this.CACHE_TTL = this.configService.get<number>('REGION_CACHE_TTL', 86400 * 7);
+    this.CACHE_TTL = this.configService.get<number>(
+      'REGION_CACHE_TTL',
+      86400 * 7,
+    );
   }
 
   /**
@@ -25,7 +28,7 @@ export class AddressService {
    */
   async getRegionsByParent(parentCode: string): Promise<Region[]> {
     const cacheKey = `${this.REGION_CACHE_KEY_PREFIX}${parentCode}`;
-    
+
     // 1. 尝试从缓存获取
     try {
       const cachedData = await this.redis.get<Region[]>(cacheKey);
@@ -40,13 +43,15 @@ export class AddressService {
     // 2. 从数据库查询
     const regions = await this.prisma.region.findMany({
       where: { parentCode },
-      orderBy: { code: 'asc' }
+      orderBy: { code: 'asc' },
     });
 
     // 3. 写入缓存 (异步)
     if (regions.length > 0) {
-      this.redis.set(cacheKey, regions, this.CACHE_TTL).catch(err => {
-        this.logger.error(`Failed to cache regions for ${parentCode}: ${err.message}`);
+      this.redis.set(cacheKey, regions, this.CACHE_TTL).catch((err) => {
+        this.logger.error(
+          `Failed to cache regions for ${parentCode}: ${err.message}`,
+        );
       });
     }
 
@@ -65,6 +70,9 @@ export class AddressService {
 
     return await this.prisma.address.create({
       data: {
+        town: '',
+        street: '',
+        zipCode: '',
         ...createAddressDto,
         userId: BigInt(createAddressDto.userId),
       },
@@ -141,5 +149,17 @@ export class AddressService {
       where: { id: BigInt(id) },
       data: { isDefault: true },
     });
+  }
+
+  async findOne(id: string | number): Promise<Address> {
+    const address = await this.prisma.address.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!address) {
+      throw new NotFoundException('地址不存在');
+    }
+
+    return address;
   }
 }

@@ -244,6 +244,11 @@ model OrderItem {
   actualWeight    Float?   @map("actual_weight")
   unitPrice       Float    @map("unit_price")
   amount          Float
+  quantity        Int      @default(1)
+  condition       String?  @db.VarChar(50)
+  photos          Json?
+  brandModel      String?  @map("brand_model") @db.VarChar(100)
+  notes           String?  @db.VarChar(500)
   createdAt       DateTime @default(now()) @map("created_at")
   order           Order    @relation(fields: [orderId], references: [id])
   category        Category @relation(fields: [categoryId], references: [id])

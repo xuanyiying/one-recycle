@@ -9,13 +9,14 @@ import { useState, useCallback, useEffect } from 'react'
 import { View, Text, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { Address } from '@/types/order'
-import { AddressLabel, AddressFormData } from '@/types/address'
+import { AddressFormData } from '@/types/address'
 import { validateAddress, validateAddressInServiceArea } from '../../../utils/orderValidation'
 import { useOrderStore } from '../../../store/orderStore'
 import AddressCard from '../../AddressCard'
 import AddressForm from '@/components/AddressForm'
 import './index.scss'
 import { AddressService } from '@/services/address'
+import { useAddresses } from '@/hooks/useAddresses'
 
 // ============================================================================
 // Types
@@ -40,71 +41,32 @@ export default function AddressSelection({
 }: AddressSelectionProps) {
     // State management
     const { state, setAddresses, selectAddress, addAddress, updateAddress } = useOrderStore()
+    // Get addresses from store
+    const addresses = state.addresses
+
     const normalizeAddressId = (id?: string | number) => (id !== undefined && id !== null ? String(id) : undefined)
     const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(
         normalizeAddressId(initialAddress?.id ?? state.selectedAddressId)
     )
     const [showAddressForm, setShowAddressForm] = useState(false)
     const [editingAddressId, setEditingAddressId] = useState<string | number | undefined>()
-    const [isLoading, setIsLoading] = useState(true) // Start with loading true
-    const [hasFetched, setHasFetched] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Get addresses from store
-    const addresses = state.addresses
+    // Use custom hook for address loading logic
+    const { isLoading: isInitialLoading, hasFetched } = useAddresses({ 
+        addresses, 
+        setAddresses 
+    })
+
+    const isLoading = isInitialLoading || isSubmitting
+
 
     // ============================================================================
     // Effects
     // ============================================================================
 
-    // Load addresses from API on mount
-    useEffect(() => {
-        const loadAddresses = async () => {
-            // If already fetching, don't fetch again
-            // But if we haven't fetched yet (even if isLoading is true initially), we should proceed
-            // However, we need to distinguish between "initial loading state" and "actual fetching"
-            // Let's simplify: always set isLoading to true before fetch, and false after.
-            
-            try {
-                const response = await AddressService.getUserAddresses()
-                if (response.success && response.data) {
-                    // Update all addresses in store at once
-                    setAddresses(response.data)
-                    
-                    // Auto-select default address if none selected
-                    const normalizedSelectedId = normalizeAddressId(selectedAddressId)
-                    const hasSelected = normalizedSelectedId && response.data.some((addr) => String(addr.id) === normalizedSelectedId)
-                    if (!hasSelected) {
-                        const defaultAddr = response.data.find(addr => addr.isDefault) || response.data[0]
-                        if (defaultAddr && defaultAddr.id !== undefined) {
-                            const id = String(defaultAddr.id)
-                            setSelectedAddressId(id)
-                            selectAddress(id)
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load addresses:', error)
-                Taro.showToast({
-                    title: '获取地址列表失败',
-                    icon: 'none'
-                })
-            } finally {
-                setIsLoading(false)
-                setHasFetched(true)
-            }
-        }
-
-        // Load addresses if we haven't loaded them yet or if the store is empty
-        if (addresses.length === 0 && !hasFetched) {
-            loadAddresses()
-        } else {
-             // If we already have addresses (e.g. from store), we don't need to load, but we should turn off loading state
-             setIsLoading(false)
-             setHasFetched(true)
-        }
-    }, [setAddresses, selectAddress, selectedAddressId, addresses.length, hasFetched])
-
+    // Auto-select default address or validate current selection
     useEffect(() => {
         if (addresses.length === 0) return
         
@@ -153,54 +115,6 @@ export default function AddressSelection({
         setShowAddressForm(true)
     }, [])
 
-    const handleImportFromWechat = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const res = await Taro.chooseAddress()
-            
-            // Map WeChat address to our format
-            const newAddress: AddressFormData = {
-                name: res.userName,
-                mobile: res.telNumber,
-                province: res.provinceName,
-                city: res.cityName,
-                district: res.countyName,
-                detail: res.detailInfo,
-                region: `${res.provinceName} ${res.cityName} ${res.countyName}`,
-                label: AddressLabel.OTHER,
-                isDefault: false
-            }
-
-            // Save the address
-            const response = await AddressService.createAddress(newAddress)
-            if (response.success && response.data) {
-                addAddress(response.data)
-                const addressId = String(response.data.id)
-                setSelectedAddressId(addressId)
-                selectAddress(addressId)
-                Taro.showToast({ title: '导入成功', icon: 'success' })
-            }
-        } catch (error: any) {
-            // Check if user denied permission or canceled
-            if (error.errMsg?.includes('cancel')) return
-            
-            // If native fails, fallback to manual form with a hint
-            Taro.showModal({
-                title: '微信导入失败',
-                content: '无法获取微信地址，是否切换到手动添加？',
-                confirmText: '手动添加',
-                success: (modalRes) => {
-                    if (modalRes.confirm) {
-                        handleAddNewAddress()
-                    }
-                }
-            })
-            console.error('WeChat Address Import Error:', error)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [addAddress, selectAddress, handleAddNewAddress])
-
     const handleDeleteAddress = useCallback(async (addressId: string) => {
         Taro.showModal({
             title: '删除地址',
@@ -238,9 +152,7 @@ export default function AddressSelection({
     // ============================================================================
 
     const handleSaveAddress = useCallback(
-        async (formData: AddressFormData) => {
-            // formData comes from AddressForm which uses AddressFormData & { isDefault: boolean, coordinates?: any }
-            
+        async (formData: AddressFormData) => {            
             // Validate address
             const addressToValidate = {
                 ...formData,
@@ -275,7 +187,7 @@ export default function AddressSelection({
                 return
             }
 
-            setIsLoading(true)
+            setIsSubmitting(true)
             try {
                 // Prepare data for API - matches Address model
                 const addressData: Omit<Address, 'id'> = {
@@ -329,7 +241,7 @@ export default function AddressSelection({
                     icon: 'none',
                 })
             } finally {
-                setIsLoading(false)
+                setIsSubmitting(false)
             }
         },
         [editingAddressId, addresses, addAddress, updateAddress, selectAddress, serviceAreaBoundary]
@@ -444,9 +356,6 @@ export default function AddressSelection({
                         <View className='add-address-section'>
                             <Button className='btn-secondary' onClick={handleAddNewAddress}>
                                 + 手动添加
-                            </Button>
-                            <Button className='btn-wechat' onClick={handleImportFromWechat}>
-                                <Text className='icon'>📱</Text> 微信导入
                             </Button>
                         </View>
                     </View>

@@ -1,25 +1,46 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { OrderService } from '../order/services/order.service';
 import { CourierService } from '../courier/courier.service';
 import { TaskStatus } from '@prisma/client';
-import { SnowflakeIdGenerator, OrderStatus } from '@/common';
+import {
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  RedisService,
+  OrderStatus,
+} from '@/common';
 
 @Injectable()
-export class DispatchService {
-  private readonly idGenerator: SnowflakeIdGenerator;
+export class DispatchService implements OnModuleInit {
+  private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
     private readonly orderService: OrderService,
     private readonly courierService: CourierService,
   ) {
-    this.idGenerator = new SnowflakeIdGenerator({
+    this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('SNOWFLAKE_WORKER_ID', 1),
-      datacenterId: this.configService.get<number>('SNOWFLAKE_DATACENTER_ID', 1),
+      datacenterId: this.configService.get<number>(
+        'SNOWFLAKE_DATACENTER_ID',
+        1,
+      ),
+      stateStore: new RedisSnowflakeStateStore(this.redisService),
+      stateKey: 'snowflake:state:dispatch',
+      metricsKey: 'snowflake:dispatch',
     });
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.idGenerator.initialize();
   }
 
   async assignOrder(orderId: string, courierId: string) {

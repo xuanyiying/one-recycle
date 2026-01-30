@@ -21,10 +21,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      message = exception.message;
-      code = exception.name;
+      const exceptionResponse = exception.getResponse();
+
+      // Handle validation errors or other object responses
+      if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+        const responseData = exceptionResponse as any;
+        message = Array.isArray(responseData.message)
+          ? responseData.message.join('; ')
+          : responseData.message || exception.message;
+        code = responseData.error || exception.name;
+      } else {
+        message = exception.message;
+        code = exception.name;
+      }
     } else if (exception instanceof BusinessException) {
-      status = HttpStatus.BAD_REQUEST;
+      status = exception.getStatus();
       message = exception.message;
       code = exception.code;
     } else if (exception instanceof Error) {

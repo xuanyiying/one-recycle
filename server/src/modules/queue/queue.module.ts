@@ -21,11 +21,12 @@ import { PaymentServiceClient } from './clients/payment-service.client';
 import { OrderModule } from '../order/order.module';
 import { PaymentModule } from '../payment/payment.module';
 import { NotificationModule } from '../notification/notification.module';
-import { QUEUE_NAMES } from '@/common';
+import { QUEUE_NAMES, RedisModule } from '@/common';
 
 @Module({
   imports: [
     ConfigModule,
+    RedisModule,
     // Use forwardRef to prevent circular dependencies
     forwardRef(() => OrderModule),
     forwardRef(() => PaymentModule),
@@ -34,7 +35,7 @@ import { QUEUE_NAMES } from '@/common';
       { name: QUEUE_NAMES.ORDER },
       {
         name: QUEUE_NAMES.NOTIFICATION,
-        useFactory: async (configService: ConfigService) => ({
+        useFactory: (configService: ConfigService) => ({
           limiter: {
             max: configService.get<number>('NOTIFICATION_QUEUE_LIMIT_MAX', 100),
             duration: configService.get<number>(
