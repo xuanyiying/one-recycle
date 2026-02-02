@@ -7,9 +7,19 @@ export enum AuthKeyPrefix {
   VERIFICATION_CODE = 'auth:code:',
   REFRESH_TOKEN = 'auth:refresh:',
   SESSION = 'auth:session:',
+  ROLE_PERMISSIONS = 'auth:permissions:role:',
 }
 
 export class AuthKeyUtils {
+  /**
+   * 生成角色权限Redis键
+   * @param roleId 角色ID
+   * @returns auth:permissions:role:{roleId}
+   */
+  static getRolePermissionsKey(roleId: number | string): string {
+    return `${AuthKeyPrefix.ROLE_PERMISSIONS}${roleId}`;
+  }
+
   /**
    * 生成验证码Redis键
    * @param mobile 手机号

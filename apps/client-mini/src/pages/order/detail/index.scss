@@ -7,6 +7,9 @@
   // 修复顶部安全区域遮挡问题
   @include responsive-page-padding;
   
+  // 底部留白，防止被固定操作栏遮挡 (80rpx btn + 40rpx padding + safe area + 20rpx extra)
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
+  
   // 状态头部
   .status-header {
     background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);

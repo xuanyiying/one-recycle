@@ -1,6 +1,9 @@
 // 通用类型定义
 
 // 导出订单创建流相关类型
+import {TimeSlot} from "@/types/order";
+import { Address } from './address';
+
 export * from './address'
 export * from './order'
 
@@ -66,6 +69,7 @@ export interface PriceFactor {
 
 // 订单相关类型
 export interface Order {
+  timeSlot: TimeSlot;
   id: string
   status: OrderStatus
   statusText: string
@@ -74,7 +78,7 @@ export interface Order {
   estimatedWeight: number
   estimatedPrice: number
   actualPrice?: number | null
-  address: string | OrderAddress
+  address: string | OrderAddress | Address
   appointmentTime: string
   courierName?: string
   courierPhone?: string
@@ -107,24 +111,52 @@ export interface OrderTimeline {
   completed: boolean
 }
 
+// 统一的订单项接口，整合了各个版本的字段
 export interface OrderItem {
-  name?: string // 兼容旧字段
-  description?: string // 兼容旧字段
-  estimatedWeight?: number // 兼容旧字段
-  photos?: string[] // 兼容旧字段
-
-  // 新字段 (匹配 Mock/Backend)
-  categoryId?: number
-  categoryName?: string
-  weight?: number
-  unitPrice?: number
-  amount?: number
+  id?: string;
+  // 核心字段
+  categoryId: string | number; // 支持字符串和数字ID
+  categoryName?: string;
+  categorySlug?: string;
+  brandModel?: string;
+  condition?: string; // 使用字符串而不是枚举，增加灵活性
+  
+  // 数量和重量
+  weight?: number;
+  quantity?: number;
+  unit?: string;
+  
+  // 价格相关
+  unitPrice?: number;
+  totalPrice?: number;
+  amount?: number;
+  estimatedPrice?: any; // 可以是 PriceRange 或数值
+  actualPrice?: number;
+  
+  // 其他属性
+  photos?: string[];
+  notes?: string;
+  createdAt?: string;
+  
+  // 服务端字段
+  estimatedAmount?: number;
+  actualAmount?: number;
 }
 
 export interface OrderAddress {
   name: string
   phone: string
   detail: string
+  // Optional fields for compatibility with Address
+  mobile?: string
+  province?: string
+  city?: string
+  district?: string
+  town?: string
+  street?: string
+  region?: string
+  zipCode?: string
+  isDefault?: boolean
 }
 
 export type OrderStatus =

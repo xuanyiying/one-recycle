@@ -11,7 +11,7 @@ import { QUEUE_NAMES } from '@/common';
 import {
   OrderCreatedEventDto,
   OrderStatusChangedEventDto,
-  OrderCancelledEventDto,
+  OrderCanceledEventDto,
   OrderCompletedEventDto,
 } from '../dto/order-events.dto';
 import { NotificationQueueService } from '../services/notification-queue.service';
@@ -33,42 +33,57 @@ export class OrderProcessor {
   ) {}
 
   /**
+   * @description 回收物品订单不需要检查库存，锁定库存
    * 处理订单创建事件
    */
   @Process({ name: 'order-created', concurrency: 5 })
   async handleOrderCreated(job: Job<OrderCreatedEventDto>): Promise<any> {
-    const { orderId, userId, items, address, scheduledTime } = job.data;
+    const { orderId, userId, items, address, scheduledTime, orderType } =
+      job.data;
 
-    this.logger.log(`Processing order created: ${orderId}`);
+    this.logger.log(
+      `Processing order created: ${orderId}, Type: ${orderType || 'RECYCLE'}`,
+    );
 
     try {
-      // 1. 检查库存是否充足
-      this.logger.log(`Checking inventory for order: ${orderId}`);
-      const inventoryCheck = await this.inventoryServiceClient.checkInventory({
-        items: items.map((item) => ({
-          categoryId: item.categoryId,
-          quantity: item.quantity,
-        })),
-      });
+      // 默认是 RECYCLE
+      const isRecycleOrder = !orderType || orderType === 'RECYCLE';
 
-      if (!inventoryCheck.available) {
-        this.logger.warn(`Insufficient inventory for order: ${orderId}`);
-        await this.orderServiceClient.updateOrderStatus(
-          orderId,
-          'INVENTORY_INSUFFICIENT',
+      if (!isRecycleOrder) {
+        // 1. 检查库存是否充足
+        this.logger.log(`Checking inventory for order: ${orderId}`);
+        const inventoryCheck = await this.inventoryServiceClient.checkInventory(
+          {
+            items: items.map((item) => ({
+              categoryId: item.categoryId,
+              quantity: item.quantity,
+            })),
+          },
         );
-        throw new Error('Insufficient inventory');
-      }
 
-      // 2. 锁定库存
-      this.logger.log(`Locking inventory for order: ${orderId}`);
-      await this.inventoryServiceClient.lockInventory({
-        orderId,
-        items: items.map((item) => ({
-          categoryId: item.categoryId,
-          quantity: item.quantity,
-        })),
-      });
+        if (!inventoryCheck.available) {
+          this.logger.warn(`Insufficient inventory for order: ${orderId}`);
+          await this.orderServiceClient.updateOrderStatus(
+            orderId,
+            'INVENTORY_INSUFFICIENT',
+          );
+          throw new Error('Insufficient inventory');
+        }
+
+        // 2. 锁定库存
+        this.logger.log(`Locking inventory for order: ${orderId}`);
+        await this.inventoryServiceClient.lockInventory({
+          orderId,
+          items: items.map((item) => ({
+            categoryId: item.categoryId,
+            quantity: item.quantity,
+          })),
+        });
+      } else {
+        this.logger.log(
+          `Skipping inventory check/lock for recycle order: ${orderId}`,
+        );
+      }
 
       // 3. 计算订单总价
       this.logger.log(`Calculating price for order: ${orderId}`);
@@ -205,6 +220,7 @@ export class OrderProcessor {
         orderId,
         description: `订单收入 - ${orderId}`,
       });
+      // 扣减商家账户
 
       this.logger.log(
         `Balance increased successfully for user ${userId}. ` +
@@ -273,8 +289,8 @@ export class OrderProcessor {
    * 处理订单取消事件
    */
   @Process({ name: 'order-cancelled', concurrency: 5 })
-  async handleOrderCancelled(job: Job<OrderCancelledEventDto>): Promise<any> {
-    const { orderId, userId, reason, cancelledBy } = job.data;
+  async handleOrderCancelled(job: Job<OrderCanceledEventDto>): Promise<any> {
+    const { orderId, userId, reason, canceledBy } = job.data;
 
     this.logger.log(
       `Processing order cancellation: ${orderId}, Reason: ${reason}`,
@@ -383,110 +399,6 @@ export class OrderProcessor {
         `Failed to process order cancellation: ${orderId}`,
         (error as Error).stack,
       );
-      throw error;
-    }
-  }
-
-  /**
-   * 处理派单任务（调用京东快递API）
-   */
-  @Process({ name: 'dispatch-order', concurrency: 3 })
-  async handleDispatchOrder(job: Job<{ orderId: string }>): Promise<any> {
-    const { orderId } = job.data;
-
-    this.logger.log(`Processing dispatch for order: ${orderId}`);
-
-    try {
-      // 1. 获取订单详情
-      this.logger.log(`Fetching order details: ${orderId}`);
-      const order = await this.orderServiceClient.getOrder(orderId);
-
-      // 2. 检查订单状态是否允许派单
-      if (order.status !== 'CONFIRMED' && order.status !== 'PAID') {
-        this.logger.warn(
-          `Order ${orderId} status ${order.status} not ready for dispatch`,
-        );
-        return {
-          success: false,
-          orderId,
-          reason: 'Order not ready for dispatch',
-        };
-      }
-
-      // 3. 调用派单服务（会调用京东快递API）
-      this.logger.log(`Calling dispatch service for order: ${orderId}`);
-      const dispatchResult = await this.dispatchServiceClient.autoDispatch({
-        orderId: order.id,
-        address: {
-          province: order.address.province || '',
-          city: order.address.city || '',
-          district: order.address.district || '',
-          detail: order.address.detail || order.address.fullAddress,
-          contactName: order.address.contactName || '',
-          contactPhone: order.address.contactPhone || '',
-          coordinates: order.address.coordinates,
-        },
-        items: order.items.map((item) => ({
-          categoryId: item.categoryId,
-          quantity: item.quantity,
-        })),
-        scheduledTime: order.scheduledTime,
-        serviceType: 'STANDARD',
-      });
-
-      if (!dispatchResult.success) {
-        throw new Error('Dispatch failed');
-      }
-
-      // 4. 更新订单信息（快递员和运单号）
-      this.logger.log(`Updating order with dispatch info: ${orderId}`);
-      await this.orderServiceClient.assignCourier(
-        orderId,
-        dispatchResult.courierId || '',
-        dispatchResult.waybillNo,
-      );
-
-      // 5. 更新订单状态为已派单
-      await this.orderServiceClient.updateOrderStatus(orderId, 'DISPATCHED');
-
-      // 6. 发送派单成功通知
-      this.logger.log(`Sending dispatch notification for order: ${orderId}`);
-      await this.notificationQueueService.sendOrderStatusNotification(
-        order.userId,
-        orderId,
-        '已派单',
-      );
-
-      this.logger.log(
-        `Order ${orderId} dispatched successfully. Waybill: ${dispatchResult.waybillNo}`,
-      );
-
-      return {
-        success: true,
-        orderId,
-        courierId: dispatchResult.courierId,
-        waybillNo: dispatchResult.waybillNo,
-        dispatchedAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to dispatch order: ${orderId}`,
-        (error as Error).stack,
-      );
-
-      // 更新订单状态为派单失败
-      try {
-        await this.orderServiceClient.updateOrderStatus(
-          orderId,
-          'DISPATCH_FAILED',
-        );
-      } catch (updateError) {
-        this.logger.error(
-          `Failed to update order status: ${orderId}`,
-          updateError,
-        );
-      }
-
       throw error;
     }
   }

@@ -13,7 +13,7 @@ Sentry.init({
     release: process.env.NEXT_PUBLIC_APP_VERSION,
 
     // Server-specific configuration
-    beforeSend(event, hint) {
+    beforeSend(event: Sentry.ErrorEvent, hint: Sentry.EventHint) {
         // Filter out development errors
         if (process.env.NODE_ENV === 'development') {
             console.error('Sentry Error:', hint.originalException || event);

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import Taro from '@tarojs/taro'
-import { useAppContext } from '@/store'
-import { AuthService } from '@/services/auth'
-import { MockAutoLogin } from '@/mock'
-import { User } from '@/types'
+import {useAppContext} from '@/store'
+import {AuthService} from '@/services/auth'
+import {MockAutoLogin} from '@/mock'
+import {User} from '@/types'
 
 export const useAuth = () => {
   const { state, dispatch } = useAppContext()
@@ -195,8 +195,7 @@ export const useAuth = () => {
   const sendSmsCode = useCallback(async (mobile: string) => {
     try {
       setLoading(true)
-      const result = await AuthService.sendSmsCode({ mobile, type: 'login' })
-      return result
+      return await AuthService.sendSmsCode({mobile, type: 'login'})
     } catch (error: any) {
       console.error('发送验证码失败:', error)
       return { success: false, message: error.message || '发送失败' }

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { View, Text, Image } from '@tarojs/components'
 import './index.scss'
 import { IconFont } from '@nutui/icons-react-taro'
-import logoIcon from '../../assets/icons/logo.png'
+import logoIcon from '../../assets/icons/logo.jpg'
 import AuthGuard from '@/components/AuthGuard'
 
 interface SettingItem {

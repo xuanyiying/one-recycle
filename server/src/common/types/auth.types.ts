@@ -149,7 +149,25 @@ export interface RequestWithUser extends Request {
   user: {
     id: string;
     phone: string;
+    username: string;
     role: string;
+    roleCode: string;
+    type: string;
+    tenantId: string;
+    sessionId: string;
+  };
+}
+
+// 员工认证后的请求对象
+export interface RequestWithStaff extends Request {
+  user: {
+    id: string;
+    phone: string;
+    username: string;
+    role: string;
+    roleCode: string;
+    type: 'admin' | 'staff';
+    tenantId: string;
     sessionId: string;
   };
 }

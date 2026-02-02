@@ -5,7 +5,7 @@ import { QUEUE_NAMES } from '../queue.constants';
 import {
   OrderCreatedEventDto,
   OrderStatusChangedEventDto,
-  OrderCancelledEventDto,
+  OrderCanceledEventDto,
   OrderCompletedEventDto,
 } from '../dto/order-events.dto';
 
@@ -133,7 +133,7 @@ export class OrderQueueService {
   /**
    * 处理订单取消
    */
-  async handleOrderCancelled(data: OrderCancelledEventDto): Promise<void> {
+  async handleOrderCanceled(data: OrderCanceledEventDto): Promise<void> {
     try {
       const jobOptions: JobOptions = {
         priority: 9,

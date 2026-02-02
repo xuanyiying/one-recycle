@@ -24,7 +24,7 @@ import { PaymentProvider } from '@prisma/client';
 export class WeChatPayProvider implements IPaymentProvider {
   private readonly logger = new Logger(WeChatPayProvider.name);
   private readonly appId: string;
-  private readonly mchId: string;
+  private readonly tenantId: string;
   private readonly apiKey: string;
   private readonly certPath: string;
   private readonly keyPath: string;
@@ -38,7 +38,7 @@ export class WeChatPayProvider implements IPaymentProvider {
 
   constructor(private readonly configService: ConfigService) {
     this.appId = this.configService.get<string>('WECHAT_APP_ID', '');
-    this.mchId = this.configService.get<string>('WECHAT_MCH_ID', '');
+    this.tenantId = this.configService.get<string>('WECHAT_TENANT_ID', '');
     this.apiKey = this.configService.get<string>('WECHAT_API_KEY', '');
     this.certPath = this.configService.get<string>('WECHAT_CERT_PATH', '');
     this.keyPath = this.configService.get<string>('WECHAT_KEY_PATH', '');
@@ -49,7 +49,7 @@ export class WeChatPayProvider implements IPaymentProvider {
     this.isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
 
-    if (!this.appId || !this.mchId || !this.apiKey) {
+    if (!this.appId || !this.tenantId || !this.apiKey) {
       this.logger.warn('WeChat Pay configuration is incomplete');
     }
 
@@ -82,7 +82,7 @@ export class WeChatPayProvider implements IPaymentProvider {
 
     try {
       // 验证配置
-      if (!this.appId || !this.mchId || !this.apiKey) {
+      if (!this.appId || !this.tenantId || !this.apiKey) {
         throw new Error('微信支付配置不完整');
       }
 
@@ -120,7 +120,7 @@ export class WeChatPayProvider implements IPaymentProvider {
       // 构建请求参数
       const params = {
         mch_appid: this.appId,
-        mchid: this.mchId,
+        mchid: this.tenantId,
         nonce_str: this.generateNonceStr(),
         partner_trade_no: outTradeNo,
         openid: accountInfo.openid,
@@ -206,7 +206,7 @@ export class WeChatPayProvider implements IPaymentProvider {
       // 构建请求参数
       const params = {
         appid: this.appId,
-        mch_id: this.mchId,
+        mch_id: this.tenantId,
         partner_trade_no: outTradeNo,
         nonce_str: this.generateNonceStr(),
       };

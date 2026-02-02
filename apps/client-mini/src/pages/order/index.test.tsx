@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
 import OrderListPage from './index'
@@ -54,6 +55,22 @@ vi.mock('@nutui/icons-react-taro', () => ({
   Star: () => null,
   Close: () => null,
 }))
+
+vi.mock('@/assets/images/empty-box.png', () => ({
+  default: 'empty-box.png'
+}))
+
+vi.mock('@/components/RecycleCard', () => ({
+  RecycleCard: (props) => <div data-testid="recycle-card" {...props} />
+}))
+
+vi.mock('../index/useRecycleNavigation', () => ({
+  useRecycleNavigation: () => ({
+    handleRecycleClick: vi.fn()
+  })
+}))
+
+vi.mock('./index.scss', () => ({}))
 
 describe('OrderListPage', () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@ import { OrderQueueService } from './services/order-queue.service';
 import { PaymentQueueService } from './services/payment-queue.service';
 import {
   OrderCompletedEventDto,
-  OrderCancelledEventDto,
+  OrderCanceledEventDto,
 } from './dto/order-events.dto';
 import {
   WithdrawalCreatedEventDto,
@@ -49,17 +49,17 @@ export class QueueController {
   }
 
   /**
-   * Receive order cancelled event from order-service
-   * POST /queue/order/cancelled
+   * Receive order canceled event from order-service
+   * POST /queue/order/canceled
    */
-  @Post('order/cancelled')
-  async handleOrderCancelled(
-    @Body() data: OrderCancelledEventDto,
+  @Post('order/canceled')
+  async handleOrderCanceled(
+    @Body() data: OrderCanceledEventDto,
   ): Promise<{ success: boolean; message: string }> {
-    this.logger.log(`Received order cancelled event: ${data.orderId}`);
+    this.logger.log(`Received order canceled event: ${data.orderId}`);
 
     try {
-      await this.orderQueueService.handleOrderCancelled(data);
+      await this.orderQueueService.handleOrderCanceled(data);
 
       return {
         success: true,

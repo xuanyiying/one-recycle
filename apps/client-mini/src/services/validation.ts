@@ -6,8 +6,9 @@
  * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
  */
 
-import { Item, Address, TimeSlot, Order, ValidationError, ItemCondition } from '../types/order'
-import { validatePhone } from '../utils/validation'
+import {Address, TimeSlot, Order, ValidationError, ItemCondition, OrderItem} from '@/types/index'
+import { validatePhone } from '@/utils/validation'
+import { isFullAddress } from '@/utils/address'
 
 // ============================================================================
 // Validation Service Class
@@ -17,10 +18,10 @@ class ValidationService {
   /**
    * Validates an item has all required fields
    */
-  validateItem(item: Item): ValidationError[] {
+  validateItem(item: OrderItem): ValidationError[] {
     const errors: ValidationError[] = []
 
-    if (!item.categoryId || item.categoryId.trim() === '') {
+    if (!item.categoryId || String(item.categoryId).trim() === '') {
       errors.push({
         field: 'categoryId',
         message: 'Category is required',
@@ -34,28 +35,21 @@ class ValidationService {
       })
     }
 
-    if (!item.condition || !Object.values(ItemCondition).includes(item.condition)) {
-      errors.push({
-        field: 'condition',
-        message: 'Valid condition is required',
-      })
-    }
-
-    if (item.weight <= 0) {
+    if (item.weight !== undefined && item.weight <= 0) {
       errors.push({
         field: 'weight',
         message: 'Weight must be greater than 0',
       })
     }
 
-    if (item.quantity <= 0) {
+    if (item.quantity !== undefined && item.quantity <= 0) {
       errors.push({
         field: 'quantity',
         message: 'Quantity must be greater than 0',
       })
     }
 
-    if (!item.photos || item.photos.length === 0) {
+    if (item.photos && item.photos.length === 0) {
       errors.push({
         field: 'photos',
         message: 'At least one photo is required',
@@ -66,6 +60,13 @@ class ValidationService {
       errors.push({
         field: 'photos',
         message: 'Maximum 6 photos allowed',
+      })
+    }
+
+    if (item.condition && !Object.values(ItemCondition).includes(item.condition as any)) {
+      errors.push({
+        field: 'condition',
+        message: 'Valid condition is required',
       })
     }
 
@@ -82,7 +83,7 @@ class ValidationService {
   /**
    * Validates item list is not empty
    */
-  validateItemList(items: Item[]): ValidationError[] {
+  validateItemList(items: OrderItem[]): ValidationError[] {
     const errors: ValidationError[] = []
 
     if (!items || items.length === 0) {
@@ -123,6 +124,33 @@ class ValidationService {
     }
 
     if (!address.detail || address.detail.trim() === '') {
+      errors.push({
+        field: 'detail',
+        message: 'Detailed address is required',
+      })
+    }
+
+    return errors
+  }
+
+  validateOrderAddress(orderAddress: any): ValidationError[] {
+    const errors: ValidationError[] = []
+
+    if (!orderAddress.name || orderAddress.name.trim() === '') {
+      errors.push({
+        field: 'name',
+        message: 'Recipient name is required',
+      })
+    }
+
+    if (!validatePhone(orderAddress.phone)) {
+      errors.push({
+        field: 'phone',
+        message: 'Valid phone number is required',
+      })
+    }
+
+    if (!orderAddress.detail || orderAddress.detail.trim() === '') {
       errors.push({
         field: 'detail',
         message: 'Detailed address is required',
@@ -215,12 +243,24 @@ class ValidationService {
     })
 
     // Validate address
-    const addressErrors = this.validateAddress(order.address)
-    errors.push(...addressErrors)
+    if (typeof order.address !== 'string') {
+      // Check if it's an Address type
+      if (isFullAddress(order.address)) {
+        // It's an Address type
+        const addressErrors = this.validateAddress(order.address);
+        errors.push(...addressErrors);
+      } else {
+        // It's an OrderAddress type
+        const orderAddressErrors = this.validateOrderAddress(order.address);
+        errors.push(...orderAddressErrors);
+      }
+    }
 
     // Validate time slot
-    const slotErrors = this.validateTimeSlot(order.timeSlot)
-    errors.push(...slotErrors)
+    if (order.timeSlot) {
+      const slotErrors = this.validateTimeSlot(order.timeSlot)
+      errors.push(...slotErrors)
+    }
 
     return errors
   }
@@ -238,7 +278,7 @@ class ValidationService {
    */
   validateFormStep(
     step: number,
-    items: Item[],
+    items: OrderItem[],
     selectedAddressId?: string,
     selectedTimeSlotId?: string
   ): ValidationError[] {
@@ -351,7 +391,7 @@ class ValidationService {
         break
 
       case 'weight':
-        if (value <= 0) {
+        if (value !== undefined && value <= 0) {
           errors.push({
             field: 'weight',
             message: 'Weight must be greater than 0',
@@ -360,7 +400,7 @@ class ValidationService {
         break
 
       case 'quantity':
-        if (value <= 0) {
+        if (value !== undefined && value <= 0) {
           errors.push({
             field: 'quantity',
             message: 'Quantity must be greater than 0',
@@ -382,19 +422,20 @@ class ValidationService {
         }
         break
 
-      case 'recipientName':
+      case 'name':
         if (!value || value.trim() === '') {
           errors.push({
-            field: 'recipientName',
+            field: 'name',
             message: 'Recipient name is required',
           })
         }
         break
 
-      case 'phoneNumber':
+      case 'mobile':
+      case 'phone':
         if (!validatePhone(value)) {
           errors.push({
-            field: 'phoneNumber',
+            field: 'mobile',
             message: 'Valid phone number is required',
           })
         }
@@ -409,11 +450,20 @@ class ValidationService {
         }
         break
 
-      case 'detailedAddress':
+      case 'detail':
         if (!value || value.trim() === '') {
           errors.push({
-            field: 'detailedAddress',
+            field: 'detail',
             message: 'Detailed address is required',
+          })
+        }
+        break
+
+      case 'condition':
+        if (value && !Object.values(ItemCondition).includes(value as any)) {
+          errors.push({
+            field: 'condition',
+            message: 'Valid condition is required',
           })
         }
         break

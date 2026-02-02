@@ -1,81 +1,123 @@
 'use client';
 
 import React from 'react';
-import { Menu } from 'antd';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { cn } from '@/lib/utils/cn';
 import {
-  DashboardOutlined,
-  UserOutlined,
-  ShoppingOutlined,
-  CarOutlined,
-  NotificationOutlined,
-  SettingOutlined,
-  TagsOutlined,
-  DatabaseOutlined,
-} from '@ant-design/icons';
-import { usePathname, useRouter } from 'next/navigation';
-import styles from './Sidebar.module.css';
+  LayoutDashboard,
+  Users,
+  ShoppingBag,
+  Tags,
+  Database,
+  Truck,
+  Bell,
+  Settings,
+  Wallet,
+  X
+} from 'lucide-react';
+import { Button } from './ui/button';
 
-const Sidebar: React.FC = () => {
-  const router = useRouter();
+interface SidebarProps {
+  className?: string;
+  onClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
   const pathname = usePathname();
 
-  const menuItems = [
+  const menuGroups = [
     {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表板',
+      title: '业务管理',
+      items: [
+        { href: '/dashboard', icon: LayoutDashboard, label: '仪表板' },
+        { href: '/orders', icon: ShoppingBag, label: '订单管理' },
+        { href: '/inventory', icon: Database, label: '进存销管理' },
+      ],
     },
     {
-      key: '/users',
-      icon: <UserOutlined />,
-      label: '用户管理',
+      title: '运营中心',
+      items: [
+        { href: '/users', icon: Users, label: '用户管理' },
+        { href: '/couriers', icon: Truck, label: '骑手管理' },
+        { href: '/finance/recharge', icon: Wallet, label: '财务充值' },
+        { href: '/categories', icon: Tags, label: '分类管理' },
+      ],
     },
     {
-      key: '/orders',
-      icon: <ShoppingOutlined />,
-      label: '订单管理',
-    },
-    {
-      key: '/categories',
-      icon: <TagsOutlined />,
-      label: '分类管理',
-    },
-    {
-      key: '/inventory',
-      icon: <DatabaseOutlined />,
-      label: '进存销管理',
-    },
-    {
-      key: '/couriers',
-      icon: <CarOutlined />,
-      label: '骑手管理',
-    },
-    {
-      key: '/notifications',
-      icon: <NotificationOutlined />,
-      label: '通知管理',
-    },
-    {
-      key: '/settings',
-      icon: <SettingOutlined />,
-      label: '系统设置',
+      title: '系统设置',
+      items: [
+        { href: '/notifications', icon: Bell, label: '通知管理' },
+        { href: '/settings', icon: Settings, label: '系统设置' },
+      ],
     },
   ];
 
-  const handleClick = ({ key }: { key: string }) => {
-    router.push(key);
-  };
-
   return (
-    <div className={styles.sidebar}>
-      <div className={styles.logo} />
-      <Menu
-        theme="dark"
-        mode="inline"
-        selectedKeys={[pathname]}
-        items={menuItems}
-        onClick={handleClick}
-      />
+    <div className={cn("flex h-screen w-64 flex-col border-r border-border/40 bg-card text-card-foreground", className)}>
+      {/* Terminal-style header */}
+      <div className="flex h-14 items-center justify-between px-4 border-b border-border/40">
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500/60" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+            <div className="w-3 h-3 rounded-full bg-green-500/60" />
+          </div>
+          <span className="font-mono text-sm font-medium text-foreground">one-recycle</span>
+        </div>
+        {onClose && (
+          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-4">
+        {menuGroups.map((group, index) => (
+          <div key={index} className="mb-6 px-3">
+            <h3 className="mb-2 px-3 font-mono text-[10px] uppercase tracking-widest text-syntax-comment">
+              {'// '}{group.title}
+            </h3>
+            <nav className="space-y-1">
+              {group.items.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className={cn(
+                      'group flex items-center rounded-md px-3 py-2 font-mono text-sm transition-all duration-150',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    )}
+                  >
+                    {isActive && (
+                      <span className="mr-2 text-primary animate-cursor">{'>'}</span>
+                    )}
+                    <item.icon
+                      className={cn(
+                        'h-4 w-4 flex-shrink-0 transition-colors',
+                        isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+                        !isActive && 'mr-3'
+                      )}
+                    />
+                    <span className={cn(!isActive && 'ml-0')}>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
+      </div>
+
+      {/* Terminal status bar */}
+      <div className="border-t border-border/40 px-4 py-2">
+        <p className="font-mono text-[10px] text-syntax-comment">
+          v1.0.0 <span className="text-syntax-string">ready</span>
+        </p>
+      </div>
     </div>
   );
 };

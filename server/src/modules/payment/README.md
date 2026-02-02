@@ -39,7 +39,7 @@ Implements enterprise payment to WeChat wallet (企业付款到零钱).
 
 **Configuration Required:**
 - `WECHAT_APP_ID`: WeChat application ID
-- `WECHAT_MCH_ID`: Merchant ID
+- `WECHAT_TENANT_ID`: WeChat Tenant ID (Merchant ID)
 - `WECHAT_API_KEY`: API key for signature
 - `WECHAT_CERT_PATH`: Path to certificate file
 

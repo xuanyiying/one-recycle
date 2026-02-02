@@ -8,6 +8,7 @@ import { DispatchQueueService } from './services/dispatch-queue.service';
 import { OrderProcessor } from './processors/order.processor';
 import { NotificationProcessor } from './processors/notification.processor';
 import { PaymentProcessor } from './processors/payment.processor';
+import { DispatchProcessor } from './processors/dispatch.processor';
 import { QueueController } from './queue.controller';
 import { QueueGrpcController } from './queue.grpc.controller';
 
@@ -21,6 +22,8 @@ import { PaymentServiceClient } from './clients/payment-service.client';
 import { OrderModule } from '../order/order.module';
 import { PaymentModule } from '../payment/payment.module';
 import { NotificationModule } from '../notification/notification.module';
+import { LogisticsModule } from '../logistics/logistics.module';
+import { TenantModule } from '../tenant/tenant.module';
 import { QUEUE_NAMES, RedisModule } from '@/common';
 
 @Module({
@@ -31,6 +34,8 @@ import { QUEUE_NAMES, RedisModule } from '@/common';
     forwardRef(() => OrderModule),
     forwardRef(() => PaymentModule),
     forwardRef(() => NotificationModule),
+    LogisticsModule,
+    TenantModule,
     BullModule.registerQueueAsync(
       { name: QUEUE_NAMES.ORDER },
       {
@@ -66,6 +71,7 @@ import { QUEUE_NAMES, RedisModule } from '@/common';
     OrderProcessor,
     NotificationProcessor,
     PaymentProcessor,
+    DispatchProcessor,
   ],
   exports: [
     OrderQueueService,

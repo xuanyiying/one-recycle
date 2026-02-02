@@ -6,7 +6,7 @@ import {
   BannerResponseDto,
   ArticleResponseDto,
   QAResponseDto,
-  RankingResponseDto,
+  SystemRankingResponseDto as RankingResponseDto,
 } from './dto';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
 import { CACHE_TTL } from '@/common';

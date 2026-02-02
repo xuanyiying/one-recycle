@@ -68,7 +68,7 @@ export function useResponsive(): ScreenSize {
       const width = systemInfo.screenWidth
       const height = systemInfo.screenHeight
       
-      let screenType: 'small' | 'standard' | 'large' = 'standard'
+      let screenType: 'small' | 'standard' | 'large'
       if (width <= BREAKPOINTS.small) {
         screenType = 'small'
       } else if (width <= BREAKPOINTS.standard) {

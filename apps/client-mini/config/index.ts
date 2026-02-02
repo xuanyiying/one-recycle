@@ -80,6 +80,41 @@ const config = {
           })
         }
       })
+
+      // 优化分包配置
+      chain.merge({
+        optimization: {
+          splitChunks: {
+            chunks: 'all',
+            maxInitialRequests: Infinity,
+            minSize: 0,
+            cacheGroups: {
+              common: {
+                name: 'common',
+                minChunks: 2,
+                priority: 1,
+                reuseExistingChunk: true
+              },
+              vendors: {
+                name: 'vendors',
+                minChunks: 2,
+                test: /[\\/]node_modules[\\/]/,
+                priority: 10
+              },
+              taro: {
+                name: 'taro',
+                test: /[\\/]node_modules[\\/]@tarojs[\\/]/,
+                priority: 20
+              },
+              nutui: {
+                name: 'nutui',
+                test: /[\\/]node_modules[\\/]@nutui[\\/]/,
+                priority: 20
+              }
+            }
+          }
+        }
+      })
     }
   },
   h5: {

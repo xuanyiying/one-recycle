@@ -98,7 +98,7 @@
 
     .form-title {
       display: block;
-      font-size: $font-size-md;
+      font-size: $font-size-headline;
       font-weight: $font-weight-semibold;
       color: $text-color;
       margin-bottom: $spacing-8;
@@ -106,7 +106,7 @@
 
     .form-subtitle {
       display: block;
-      font-size: $font-size-sm;
+      font-size: $font-size-caption11;
       color: $text-tertiary;
     }
   }
@@ -132,7 +132,7 @@
 
     .empty-title {
       display: block;
-      font-size: $font-size-lg;
+      font-size: $font-size-headline3;
       font-weight: $font-weight-semibold;
       color: $text-color;
       margin-bottom: $spacing-12;
@@ -140,7 +140,7 @@
 
     .empty-description {
       display: block;
-      font-size: $font-size-sm;
+      font-size: $font-size-caption11;
       color: $text-tertiary;
       margin-bottom: $spacing-xl;
     }

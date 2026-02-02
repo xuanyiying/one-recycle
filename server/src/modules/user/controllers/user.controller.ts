@@ -36,6 +36,11 @@ export class UserController {
     return this.userService.findMany(query);
   }
 
+  @Get('stats')
+  async getStats() {
+    return this.userService.getStats();
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);

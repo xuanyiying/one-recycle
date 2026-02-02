@@ -1,4 +1,4 @@
-import { post, get, put } from '../utils/request'
+import { post, get, put } from '@/utils/request'
 import { User } from '@/types'
 
 // 用户相关 API 服务

@@ -21,10 +21,30 @@ async function bootstrap() {
   // 全局前缀
   app.setGlobalPrefix('api');
 
-  // CORS 配置
-  const corsOrigins = configService.get<string[]>('app.corsOrigins');
+  const corsOrigins = configService.get<string[]>('app.corsOrigins') || [];
+  const normalizedOrigins = corsOrigins
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const isDevelopment =
+    (process.env.NODE_ENV || 'development') === 'development';
+  const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+
   app.enableCors({
-    origin: corsOrigins,
+    origin: (
+      origin: string | undefined,
+      callback: (error: Error | null, allow?: boolean) => void,
+    ) => {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (normalizedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (isDevelopment && localhostPattern.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -32,10 +52,13 @@ async function bootstrap() {
       'X-Requested-With',
       'Accept',
       'Origin',
+      'X-Request-ID',
+      'X-CSRF-Token',
     ],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Request-ID'],
     credentials: true,
-    maxAge: 3600, // 缓存预检请求 1 小时
+    maxAge: 3600,
+    optionsSuccessStatus: 204,
   });
 
   // 全局验证管道

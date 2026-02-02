@@ -5,8 +5,8 @@
  * Requirements: 3.2
  */
 
-import { get } from '../utils/request'
-import { TimeSlot } from '../types/order'
+import { get } from '@/utils/request'
+import { TimeSlot } from '@/types'
 
 /**
  * Fetch available time slots for a given date and address

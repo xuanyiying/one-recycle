@@ -85,7 +85,7 @@ describe('LocationService', () => {
       const result = await LocationService.reverseGeocode({ latitude: 30, longitude: 120 })
 
       expect(result).toEqual(mockInfo)
-      expect(requestUtils.get).toHaveBeenCalledWith('/api/location/reverse-geocode', { lat: 30, lng: 120 })
+      expect(requestUtils.get).toHaveBeenCalledWith('/location/reverse-geocode', { lat: 30, lng: 120 })
     })
   })
 
@@ -97,7 +97,7 @@ describe('LocationService', () => {
       const result = await LocationService.chooseLocation()
 
       expect(result).toEqual({
-        detailedAddress: 'Park',
+        detail: 'Park',
         coordinates: {
           latitude: 30,
           longitude: 120

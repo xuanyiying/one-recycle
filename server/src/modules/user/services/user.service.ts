@@ -25,6 +25,30 @@ export class UserService {
     private readonly accountService: AccountService,
   ) {}
 
+  async getStats(): Promise<{
+    totalUsers: number;
+    newUsersToday: number;
+  }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [totalUsers, newUsersToday] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({
+        where: {
+          createdAt: {
+            gte: today,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalUsers,
+      newUsersToday,
+    };
+  }
+
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     // 检查手机号是否已存在
     if (createUserDto.mobile) {

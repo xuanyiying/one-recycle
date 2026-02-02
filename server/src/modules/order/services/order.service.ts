@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -10,6 +16,7 @@ import {
 import { CreateOrderDto, UpdateOrderDto } from '../dto';
 import { OrderFilters, DayTimeSlots } from '../interfaces/order.interface';
 import { Order, Prisma } from '@prisma/client';
+import { OrderQueueService } from '../../queue/services/order-queue.service';
 
 @Injectable()
 export class OrderService implements OnModuleInit {
@@ -27,6 +34,8 @@ export class OrderService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    @Inject(forwardRef(() => OrderQueueService))
+    private readonly orderQueueService: OrderQueueService,
   ) {
     this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('ORDER_WORKER_ID', 6),
@@ -61,7 +70,6 @@ export class OrderService implements OnModuleInit {
   }
 
   async create(createOrderData: CreateOrderDto): Promise<Order> {
-    // 兼容 CreateOrderDto 的变更
     // 1. 处理 timeSlotId -> expectPickupTime
     if (createOrderData.timeSlotId) {
       // 解析 slotId 格式: slot_2026-01-29_0
@@ -90,12 +98,6 @@ export class OrderService implements OnModuleInit {
             ).toISOString();
           }
         }
-      } else if (parts.length >= 2 && !createOrderData.expectPickupTime) {
-        // Fallback for old format if any or partial parse
-        const dateStr = parts[1];
-        createOrderData.expectPickupTime = new Date(
-          `${dateStr}T09:00:00`,
-        ).toISOString();
       }
     }
 
@@ -163,13 +165,134 @@ export class OrderService implements OnModuleInit {
         include: {
           items: true,
           assignments: true,
+          address: true,
         },
       });
 
       return order;
     });
 
+    // 发送订单创建消息到队列
+    await this.orderQueueService.handleOrderCreated({
+      orderId: order.id.toString(),
+      userId: order.userId.toString(),
+      items: order.items.map((item) => ({
+        categoryId: item.categoryId.toString(),
+        quantity: item.quantity,
+        estimatedPrice: item.unitPrice,
+        description: item.notes || undefined,
+      })),
+      address: {
+        id: order.addressId.toString(),
+        fullAddress: order.address.detail || '',
+        coordinates:
+          order.latitude && order.longitude
+            ? {
+                lat: order.latitude,
+                lng: order.longitude,
+              }
+            : undefined,
+      },
+      scheduledTime:
+        order.expectPickupTime?.toISOString() || new Date().toISOString(),
+      totalAmount: order.estimatedAmount,
+      createdAt: order.createdAt.toISOString(),
+      orderType: order.orderType,
+    });
+
     return this.mapToOrder(order);
+  }
+
+  /**
+   * 保存派单结果（事务操作：创建物流单 + 更新订单状态）
+   */
+  async saveDispatchResult(
+    orderId: string,
+    logisticsData: {
+      logisticsNo: string;
+      logisticsCompany: string;
+      status: string;
+      senderName?: string;
+      senderPhone?: string;
+      senderAddress?: string;
+      receiverName?: string;
+      receiverPhone?: string;
+      receiverAddress?: string;
+      estimatedPickupTime?: Date;
+      estimatedDeliveryTime?: Date;
+      providerData?: any;
+    },
+  ): Promise<void> {
+    await this.prisma.$transaction(async (prisma) => {
+      // 1. 创建物流单
+      await prisma.logisticsOrder.create({
+        data: {
+          orderId: BigInt(orderId),
+          logisticsNo: logisticsData.logisticsNo,
+          logisticsCompany: logisticsData.logisticsCompany,
+          status: logisticsData.status,
+          senderName: logisticsData.senderName,
+          senderPhone: logisticsData.senderPhone,
+          senderAddress: logisticsData.senderAddress,
+          receiverName: logisticsData.receiverName,
+          receiverPhone: logisticsData.receiverPhone,
+          receiverAddress: logisticsData.receiverAddress,
+          estimatedPickupTime: logisticsData.estimatedPickupTime,
+          estimatedDeliveryTime: logisticsData.estimatedDeliveryTime,
+          providerData: logisticsData.providerData,
+        },
+      });
+
+      // 2. 更新订单状态
+      await prisma.order.update({
+        where: { id: BigInt(orderId) },
+        data: {
+          status: OrderStatus.DISPATCHED,
+        },
+      });
+    });
+  }
+
+  /**
+   * 创建物流订单记录
+   */
+  async createLogisticsOrder(
+    orderId: string,
+    logisticsData: {
+      logisticsNo: string;
+      logisticsCompany: string;
+      status: string;
+      senderName?: string;
+      senderPhone?: string;
+      senderAddress?: string;
+      receiverName?: string;
+      receiverPhone?: string;
+      receiverAddress?: string;
+      estimatedPickupTime?: Date;
+      estimatedDeliveryTime?: Date;
+      providerData?: any;
+    },
+  ): Promise<void> {
+    await this.prisma.logisticsOrder.create({
+      data: {
+        orderId: BigInt(orderId),
+        logisticsNo: logisticsData.logisticsNo,
+        logisticsCompany: logisticsData.logisticsCompany,
+        status: logisticsData.status,
+        senderName: logisticsData.senderName,
+        senderPhone: logisticsData.senderPhone,
+        senderAddress: logisticsData.senderAddress,
+        receiverName: logisticsData.receiverName,
+        receiverPhone: logisticsData.receiverPhone,
+        receiverAddress: logisticsData.receiverAddress,
+        estimatedPickupTime: logisticsData.estimatedPickupTime,
+        estimatedDeliveryTime: logisticsData.estimatedDeliveryTime,
+        providerData: logisticsData.providerData,
+      },
+    });
+
+    // Update order status if needed, e.g. to ASSIGNED
+    // await this.updateOrderStatus(orderId, 'ASSIGNED');
   }
 
   /**
@@ -230,6 +353,7 @@ export class OrderService implements OnModuleInit {
       include: {
         items: true,
         assignments: true,
+        address: true,
       },
     });
 
@@ -315,6 +439,51 @@ export class OrderService implements OnModuleInit {
   }
 
   /**
+   * 获取订单统计信息
+   */
+  async getStats(): Promise<{
+    totalOrders: number;
+    pendingOrders: number;
+    completedOrders: number;
+    totalAmount: number;
+  }> {
+    const [totalOrders, pendingOrders, completedOrders, aggregateResult] =
+      await Promise.all([
+        this.prisma.order.count(),
+        this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
+        this.prisma.order.count({ where: { status: OrderStatus.COMPLETED } }),
+        this.prisma.order.aggregate({
+          _sum: {
+            settlementAmount: true,
+          },
+        }),
+      ]);
+
+    return {
+      totalOrders,
+      pendingOrders,
+      completedOrders,
+      totalAmount: aggregateResult._sum.settlementAmount || 0,
+    };
+  }
+
+  /**
+   * 获取最近订单
+   * @param limit 数量
+   */
+  async getRecentOrders(limit: number = 5): Promise<Order[]> {
+    const orders = await this.prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        items: true,
+        assignments: true,
+      },
+    });
+    return orders.map((order) => this.mapToOrder(order));
+  }
+
+  /**
    * 批量获取时间段
    * @param startDate 开始日期
    * @param daysCount 天数
@@ -377,6 +546,16 @@ export class OrderService implements OnModuleInit {
     }
 
     return slots;
+  }
+
+  /**
+   * 查找订单关联的物流单
+   * @param orderId 订单ID
+   */
+  async findLogisticsOrder(orderId: string): Promise<any> {
+    return this.prisma.logisticsOrder.findFirst({
+      where: { orderId: BigInt(orderId) },
+    });
   }
 
   // 兼容旧版方法

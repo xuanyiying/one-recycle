@@ -450,86 +450,10 @@
     .category-options {
       display: flex;
       justify-content: space-between;
-      padding-bottom: 20rpx;
+      padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
 
-      .category-card {
+      .popup-action-card {
         width: 48%;
-        height: 240rpx;
-        border-radius: 24rpx;
-        background: #fff;
-        padding: 24rpx;
-        box-sizing: border-box;
-        position: relative;
-        box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.02);
-        overflow: hidden;
-        transition: all 0.2s;
-
-        &:active {
-          transform: scale(0.98);
-          background: #FAFAFA;
-        }
-
-        .card-content {
-          position: relative;
-          z-index: 2;
-
-          .card-title {
-            font-size: 32rpx;
-            font-weight: 600;
-            color: $text-color;
-            display: block;
-            margin-bottom: 8rpx;
-          }
-
-          .title-area {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8rpx;
-
-            .card-icon {
-              margin-right: 8rpx;
-            }
-          }
-
-          .card-desc {
-            font-size: 24rpx;
-            color: $text-secondary;
-            display: block;
-            margin-bottom: 24rpx;
-          }
-
-          .price-tag {
-            display: inline-flex;
-            align-items: baseline;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 6rpx 14rpx;
-            border-radius: 12rpx;
-            box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-
-            .price {
-              font-size: 30rpx;
-              font-weight: bold;
-              color: #E65100;
-            }
-
-            .unit {
-              font-size: 22rpx;
-              color: #E65100;
-              margin-left: 4rpx;
-            }
-          }
-        }
-
-        .card-bg-img {
-          position: absolute;
-          right: -20rpx;
-          bottom: -20rpx;
-          width: 140rpx;
-          height: 140rpx;
-          opacity: 0.8;
-          z-index: 1;
-        }
       }
     }
   }

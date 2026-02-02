@@ -31,8 +31,36 @@ export class InventoryController {
     return this.inventoryService.createInventoryItem(createInventoryItemDto);
   }
 
-  @Get('items')
+  @Get()
   async findAllInventoryItems(
+    @Query('status') status?: string,
+    @Query('itemType') itemType?: string,
+    @Query('condition') condition?: string,
+    @Query('location') location?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<any> {
+    const filters = {
+      status: status as InventoryStatus,
+      itemType: itemType as ItemType,
+      condition: condition as ItemCondition,
+      location,
+      categoryId: categoryId ? BigInt(categoryId) : undefined,
+    };
+    const pagination = {
+      page: page ? parseInt(page) : 1,
+      pageSize: pageSize ? parseInt(pageSize) : 10,
+    };
+    return this.inventoryService.getInventoryItems(
+      filters,
+      undefined,
+      pagination,
+    );
+  }
+
+  @Get('items')
+  async findAllInventoryItemsLegacy(
     @Query('status') status?: string,
     @Query('itemType') itemType?: string,
     @Query('condition') condition?: string,
@@ -89,6 +117,11 @@ export class InventoryController {
     @Body() createReservationDto: CreateReservationDto,
   ): Promise<any> {
     return this.inventoryService.createReservation(createReservationDto);
+  }
+
+  @Get('alerts')
+  async getAlerts(): Promise<any[]> {
+    return this.inventoryService.getAlerts();
   }
 
   @Get('stats')

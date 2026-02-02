@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePullDownRefresh } from '@tarojs/taro'
-import { View, Text, Image } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useAuth } from '@/hooks/useAuth'
 import { getQAList, getNewsBriefs } from '@/services/system'
@@ -8,9 +8,7 @@ import './index.scss'
 import { useMenu } from './useMenu'
 import { useRecycleNavigation } from './useRecycleNavigation'
 import { QAItem, NewsBrief } from '@/types'
-// 更加生动的图标
-import BookIcon from '@/assets/images/book-recycle.png'
-import ClothesIcon from '@/assets/images/clothes-recycle.png'
+import { RecycleCard } from '@/components/RecycleCard'
 import {
   Location
 } from '@nutui/icons-react-taro'
@@ -24,7 +22,6 @@ export default function Index() {
   const [newsBriefs, setNewsBriefs] = useState<NewsBrief[]>([])
   const [expandedQAId, setExpandedQAId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  loading
   usePullDownRefresh(async () => {
     await initPageData()
     Taro.stopPullDownRefresh()
@@ -88,53 +85,16 @@ export default function Index() {
       {/* 核心操作区 (双卡片) */}
       {/* 核心操作区 (大卡片) */}
       <View className='core-action-area'>
-        <View
-          className='action-card book-card'
+        <RecycleCard
+          type='book'
           onClick={() => handleRecycleClick('book')}
-          hoverClass='card-hover'
-          hoverStayTime={100}
-        >
-          <View className='card-content'>
-            <Text className='card-title'>旧书回收</Text>
-            <Text className='card-desc'>无需分拣 · 免费上门</Text>
-            <View className='price-pill'>
-              <Text className='unit'>最高</Text>
-              <Text className='price'>1.2</Text>
-              <Text className='unit'>元/kg</Text>
-            </View>
-            <View className='action-btn'>立即预约</View>
-          </View>
-          <Image
-            className='card-bg-img'
-            src={BookIcon}
-            mode='aspectFit'
-            lazyLoad
-          />
-        </View>
-
-        <View
-          className='action-card clothes-card'
+          className='home-action-card'
+        />
+        <RecycleCard
+          type='clothes'
           onClick={() => handleRecycleClick('clothes')}
-          hoverClass='card-hover'
-          hoverStayTime={100}
-        >
-          <View className='card-content'>
-            <Text className='card-title'>旧衣回收</Text>
-            <Text className='card-desc'>统统回收 · 公益环保</Text>
-            <View className='price-pill'>
-              <Text className='unit'>最高</Text>
-              <Text className='price'>0.8</Text>
-              <Text className='unit'>元/kg</Text>
-            </View>
-            <View className='action-btn'>立即预约</View>
-          </View>
-          <Image
-            className='card-bg-img'
-            src={ClothesIcon}
-            mode='aspectFit'
-            lazyLoad
-          />
-        </View>
+          className='home-action-card'
+        />
       </View>
 
       {/* 功能栏 */}

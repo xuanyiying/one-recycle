@@ -21,7 +21,7 @@ global.HTMLCanvasElement.prototype.getContext = () => {
   return {
     fillRect: () => {},
     clearRect: () => {},
-    getImageData: (x, y, w, h) => ({
+    getImageData: (_x, _y, w, h) => ({
       data: new Array(w * h * 4)
     }),
     putImageData: () => {},

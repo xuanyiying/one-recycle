@@ -6,13 +6,16 @@ import { getUserOrders } from '@/services/order';
 import AuthGuard from '@/components/AuthGuard';
 import { Order, OrderStatus } from '@/types';
 import { Popup } from '@nutui/nutui-react-taro'
-import EmptyIcon from '@/assets/images/empty-box.png'
+import EmptyIcon from '@/assets/images/empty-box.webp'
 import { Edit, Star, Close } from '@nutui/icons-react-taro';
+import { RecycleCard } from '@/components/RecycleCard';
+import { useRecycleNavigation } from '../index/useRecycleNavigation';
 import './index.scss';
 import { getCdnUrl } from '@/utils/cdn';
 
 const OrderListPage: React.FC = () => {
   const { user } = useAuth();
+  const { handleRecycleClick } = useRecycleNavigation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [orderList, setOrderList] = useState<Order[]>([]);
@@ -103,11 +106,9 @@ const OrderListPage: React.FC = () => {
     setShowCategorySelect(true);
   };
 
-  const handleSelectCategory = (category: string) => {
+  const handleCardClick = (type: 'book' | 'clothes') => {
     setShowCategorySelect(false);
-    Taro.navigateTo({
-      url: `/pages/recycle/index?category=${category}`
-    });
+    handleRecycleClick(type);
   };
 
   // Helper to format date
@@ -156,21 +157,21 @@ const OrderListPage: React.FC = () => {
                 />
               ) : (
                 <View className="icon-wrapper">
-                  {(item.categoryName || item.name || '').includes('书') ? <Edit size={24} color='#999' /> : <Star size={24} color='#999' />}
+                  {(item.categoryName || '').includes('书') ? <Edit size={24} color='#999' /> : <Star size={24} color='#999' />}
                 </View>
               )}
             </View>
             <View className="item-content">
               <View className="item-main">
-                <Text className="item-title">{item.categoryName || item.name || '回收物品'}</Text>
+                <Text className="item-title">{item.categoryName || '回收物品'}</Text>
                 <Text className="item-price">
                   {item.amount ? `¥${item.amount.toFixed(2)}` : '待估价'}
                 </Text>
               </View>
               <View className="item-sub">
                 <Text className="item-specs">
-                  {(item.weight || item.estimatedWeight) ? `${item.weight || item.estimatedWeight}kg` : ''}
-                  {(item.weight || item.estimatedWeight) && item.unitPrice ? ' | ' : ''}
+                  {(item.weight) ? `${item.weight}kg` : ''}
+                  {item.weight && item.unitPrice ? ' | ' : ''}
                   {item.unitPrice ? `¥${item.unitPrice}/kg` : ''}
                 </Text>
               </View>
@@ -284,49 +285,16 @@ const OrderListPage: React.FC = () => {
             </View>
           </View>
           <View className="category-options">
-            <View
-              className="category-card book-card"
-              onClick={() => handleSelectCategory('book')}
-            >
-              <View className="card-content">
-                <View className="title-area">
-                  <Edit size={24} color='#2E7D32' className="card-icon" />
-                  <Text className="card-title">旧书回收</Text>
-                </View>
-                <Text className="card-desc">知识循环</Text>
-                <View className="price-tag">
-                  <Text className="price">0.8</Text>
-                  <Text className="unit">元/kg</Text>
-                </View>
-              </View>
-              <Image
-                className="card-bg-img"
-                src="https://img12.360buyimg.com/img/s160x160_jfs/t1/192028/25/25459/6075/629f2716E2e83d844/9247656828555365.png"
-                mode="aspectFit"
-              />
-            </View>
-
-            <View
-              className="category-card clothes-card"
-              onClick={() => handleSelectCategory('clothes')}
-            >
-              <View className="card-content">
-                <View className="title-area">
-                  <Star size={24} color='#2E7D32' className="card-icon" />
-                  <Text className="card-title">旧衣回收</Text>
-                </View>
-                <Text className="card-desc">衣旧情深</Text>
-                <View className="price-tag">
-                  <Text className="price">0.5</Text>
-                  <Text className="unit">元/kg</Text>
-                </View>
-              </View>
-              <Image
-                className="card-bg-img"
-                src="https://placehold.co/160x160/e8f5e9/2e7d32.png?text=Clothes"
-                mode="aspectFit"
-              />
-            </View>
+            <RecycleCard
+              type='book'
+              onClick={() => handleCardClick('book')}
+              className='popup-action-card'
+            />
+            <RecycleCard
+              type='clothes'
+              onClick={() => handleCardClick('clothes')}
+              className='popup-action-card'
+            />
           </View>
         </Popup>
       </View >

@@ -1,8 +1,16 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
-import { message } from 'antd';
+import axios, {
+  AxiosInstance,
+  AxiosResponse,
+  AxiosError,
+  AxiosRequestConfig,
+} from 'axios';
+import { toast } from '@/components/ui/toast';
 
 // API base URLs from environment variables
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3008';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:3008';
 
 // 通用响应接口
 export interface ApiResponse<T = any> {
@@ -25,23 +33,28 @@ export interface PaginatedResponse<T = any> {
 export interface ApiError {
   message: string;
   code?: number;
-  details?: any;
+  details?: unknown;
 }
 
 // 请求配置接口
-export interface RequestConfig {
+export interface RequestConfig extends AxiosRequestConfig {
   showLoading?: boolean;
   showError?: boolean;
   showSuccess?: boolean;
   successMessage?: string;
+  retry?: number;
+  retryDelay?: number;
 }
+
+type RetryConfig = {
+  retry?: number;
+  retryDelay?: number;
+};
 
 export class ApiClient {
   private instance: AxiosInstance;
-  private loadingCount = 0;
 
   constructor(baseURL: string, serviceName?: string) {
-    // 为不同服务添加正确的API路径前缀
     let fullBaseURL = baseURL;
     if (serviceName) {
       fullBaseURL = `${baseURL}/api`;
@@ -49,7 +62,7 @@ export class ApiClient {
 
     this.instance = axios.create({
       baseURL: fullBaseURL,
-      timeout: 30000,
+      timeout: 15000, // Reduced to 15s for quicker feedback
       headers: {
         'Content-Type': 'application/json',
       },
@@ -59,57 +72,63 @@ export class ApiClient {
   }
 
   private setupInterceptors(serviceName?: string) {
-    // 请求拦截器
     this.instance.interceptors.request.use(
       (config) => {
-        // 添加认证token
         const token = this.getAuthToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
-
-        // 添加请求ID用于追踪
         config.headers['X-Request-ID'] = this.generateRequestId();
 
-        // 日志记录
-        console.log(
-          `[${serviceName || 'API'}] 发送请求: ${config.method?.toUpperCase()} ${config.url}`,
-        );
-
+        // Use debug log instead of console.log in production
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[${serviceName || 'API'}] Request: ${config.method?.toUpperCase()} ${config.url}`);
+        }
         return config;
       },
       (error) => {
-        console.error(`[${serviceName || 'API'}] 请求拦截器错误:`, error);
         return Promise.reject(error);
-      },
+      }
     );
 
-    // 响应拦截器
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => {
-        console.log(
-          `[${serviceName || 'API'}] 收到响应: ${response.status} ${response.config.url}`,
-        );
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[${serviceName || 'API'}] Response: ${response.status} ${response.config.url}`);
+        }
         return response;
       },
       (error: AxiosError) => {
-        console.error(
-          `[${serviceName || 'API'}] 响应错误:`,
-          error.response?.status,
-          error.config?.url,
-          error.message,
-        );
+        const config = error.config as AxiosRequestConfig & RetryConfig & {
+          __retryCount?: number;
+        };
 
-        // 统一错误处理
+        // Retry logic
+        if (config && config.retry && config.retry > 0) {
+          config.__retryCount = config.__retryCount || 0;
+
+          if (config.__retryCount < config.retry) {
+            config.__retryCount += 1;
+            const backoff = new Promise(resolve => {
+              setTimeout(resolve, config.retryDelay || 1000);
+            });
+
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[${serviceName || 'API'}] Retrying request (${config.__retryCount}/${config.retry}): ${config.url}`);
+            }
+
+            return backoff.then(() => this.instance(config));
+          }
+        }
+
+        console.error(`[${serviceName || 'API'}] Error:`, error.message);
         this.handleError(error);
-
         return Promise.reject(error);
-      },
+      }
     );
   }
 
   private getAuthToken(): string | null {
-    // 从localStorage或其他存储中获取token
     if (typeof window !== 'undefined') {
       return localStorage.getItem('auth_token');
     }
@@ -122,179 +141,177 @@ export class ApiClient {
 
   private handleError(error: AxiosError) {
     const status = error.response?.status;
-    const data = error.response?.data as any;
+    const data = error.response?.data as { message?: string } | undefined;
 
     switch (status) {
       case 401:
-        message.error('认证失败，请重新登录');
-        // 可以在这里触发登出逻辑
         this.handleUnauthorized();
         break;
       case 403:
-        message.error('权限不足，无法访问该资源');
+        toast.error('权限不足，无法访问该资源');
         break;
       case 404:
-        message.error('请求的资源不存在');
+        toast.error('请求的资源不存在');
         break;
       case 422:
-        message.error(data?.message || '请求参数验证失败');
+        toast.error(data?.message || '请求参数验证失败');
         break;
       case 429:
-        message.error('请求过于频繁，请稍后再试');
+        toast.error('请求过于频繁，请稍后再试');
         break;
       case 500:
-        message.error('服务器内部错误，请稍后再试');
+        toast.error('服务器内部错误，请稍后再试');
         break;
       case 502:
       case 503:
       case 504:
-        message.error('服务暂时不可用，请稍后再试');
+        toast.error('服务暂时不可用，请稍后再试');
         break;
       default:
         if (error.code === 'ECONNABORTED') {
-          message.error('请求超时，请检查网络连接');
-        } else if (error.message === 'Network Error') {
-          message.error('网络连接失败，请检查网络设置');
+          toast.error('请求超时，请检查网络连接');
+        } else if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+          toast.error('无法连接到服务器，请检查网络设置或稍后再试');
+        } else if (error.code === 'ECONNREFUSED') {
+          toast.error('服务器拒绝连接，服务可能未启动');
         } else {
-          message.error(data?.message || '请求失败，请稍后再试');
+          toast.error(data?.message || '请求失败，请稍后再试');
         }
     }
   }
 
   private handleUnauthorized() {
-    // 清除认证信息
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
-      // 可以重定向到登录页面
-      // window.location.href = '/login';
     }
   }
 
-  // GET请求
-  async get<T = any>(url: string, params?: any, config?: RequestConfig): Promise<T> {
-    try {
-      const response = await this.instance.get<ApiResponse<T>>(url, { params });
-
-      if (config?.showSuccess && config?.successMessage) {
-        message.success(config.successMessage);
-      }
-
-      // 处理不同的响应格式
-      const responseData = response.data;
-      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        return (responseData as ApiResponse<T>).data;
-      }
-      return responseData as T;
-    } catch (error) {
-      if (config?.showError !== false) {
-        // 错误已在拦截器中处理
-      }
-      throw error;
-    }
-  }
-
-  // POST请求
-  async post<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T> {
-    try {
-      const response = await this.instance.post<ApiResponse<T>>(url, data);
-
-      if (config?.showSuccess && config?.successMessage) {
-        message.success(config.successMessage);
-      }
-
-      // 处理不同的响应格式
-      const responseData = response.data;
-      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        return (responseData as ApiResponse<T>).data;
-      }
-      return responseData as T;
-    } catch (error) {
-      if (config?.showError !== false) {
-        // 错误已在拦截器中处理
-      }
-      throw error;
-    }
-  }
-
-  // PUT请求
-  async put<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T> {
-    try {
-      const response = await this.instance.put<ApiResponse<T>>(url, data);
-
-      if (config?.showSuccess && config?.successMessage) {
-        message.success(config.successMessage);
-      }
-
-      // 处理不同的响应格式
-      const responseData = response.data;
-      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        return (responseData as ApiResponse<T>).data;
-      }
-      return responseData as T;
-    } catch (error) {
-      if (config?.showError !== false) {
-        // 错误已在拦截器中处理
-      }
-      throw error;
-    }
-  }
-
-  // DELETE请求
-  async delete<T = any>(url: string, config?: RequestConfig): Promise<T> {
-    try {
-      const response = await this.instance.delete<ApiResponse<T>>(url);
-
-      if (config?.showSuccess && config?.successMessage) {
-        message.success(config.successMessage);
-      }
-
-      // 处理不同的响应格式
-      const responseData = response.data;
-      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        return (responseData as ApiResponse<T>).data;
-      }
-      return responseData as T;
-    } catch (error) {
-      if (config?.showError !== false) {
-        // 错误已在拦截器中处理
-      }
-      throw error;
-    }
-  }
-
-  // PATCH请求
-  async patch<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T> {
-    try {
-      const response = await this.instance.patch<ApiResponse<T>>(url, data);
-
-      if (config?.showSuccess && config?.successMessage) {
-        message.success(config.successMessage);
-      }
-
-      // 处理不同的响应格式
-      const responseData = response.data;
-      if (responseData && typeof responseData === 'object' && 'data' in responseData) {
-        return (responseData as ApiResponse<T>).data;
-      }
-      return responseData as T;
-    } catch (error) {
-      if (config?.showError !== false) {
-        // 错误已在拦截器中处理
-      }
-      throw error;
-    }
-  }
-
-  // 获取原始axios实例（用于特殊需求）
   getInstance(): AxiosInstance {
     return this.instance;
   }
+
+  private buildRetryConfig(
+    defaultRetry: number,
+    config?: RequestConfig,
+  ): RequestConfig & RetryConfig {
+    const { retry, retryDelay, ...axiosConfig } = config || {};
+    return {
+      ...axiosConfig,
+      retry: retry ?? defaultRetry,
+      retryDelay: retryDelay ?? 1000,
+    };
+  }
+
+  private unwrapResponseData<T>(responseData: unknown): T {
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'success' in (responseData as Record<string, unknown>) &&
+      'data' in (responseData as Record<string, unknown>)
+    ) {
+      return (responseData as { data: T }).data;
+    }
+    return responseData as unknown as T;
+  }
+
+  async get<T = any>(url: string, params?: any, config?: RequestConfig): Promise<T> {
+    try {
+      const requestConfig = this.buildRetryConfig(3, config);
+      requestConfig.params = params;
+      const response = await this.instance.get<ApiResponse<T>>(url, requestConfig);
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async post<T = any>(url: string, data?: unknown, config?: RequestConfig): Promise<T> {
+    try {
+      const requestConfig = this.buildRetryConfig(0, config);
+      const response = await this.instance.post<ApiResponse<T>>(
+        url,
+        data,
+        requestConfig,
+      );
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async put<T = any>(url: string, data?: unknown, config?: RequestConfig): Promise<T> {
+    try {
+      const requestConfig = this.buildRetryConfig(3, config);
+      const response = await this.instance.put<ApiResponse<T>>(
+        url,
+        data,
+        requestConfig,
+      );
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async patch<T = any>(url: string, data?: unknown, config?: RequestConfig): Promise<T> {
+    try {
+      const requestConfig = this.buildRetryConfig(3, config);
+      const response = await this.instance.patch<ApiResponse<T>>(
+        url,
+        data,
+        requestConfig,
+      );
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async delete<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T> {
+    try {
+      const requestConfig = this.buildRetryConfig(3, config);
+      requestConfig.data = data;
+      const response = await this.instance.delete<ApiResponse<T>>(url, requestConfig);
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async upload<T = any>(url: string, data: FormData, config?: RequestConfig): Promise<T> {
+    try {
+      const requestConfig = this.buildRetryConfig(0, config);
+      requestConfig.headers = { 'Content-Type': 'multipart/form-data' };
+      const response = await this.instance.post<ApiResponse<T>>(
+        url,
+        data,
+        requestConfig,
+      );
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
 }
-// 导出默认客户端
-const apiClient = new ApiClient(API_BASE_URL);
 
-// 导出用户服务专用客户端
-export const userApiClient = new ApiClient(API_BASE_URL, 'user-service');
-
-export default apiClient;
+export const apiClient = new ApiClient(API_BASE_URL, 'Main');

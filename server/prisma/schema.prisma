@@ -72,10 +72,11 @@ model Category {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // 自引用关系
-  parent         Category?       @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children       Category[]      @relation("CategoryHierarchy")
-  inventoryItems InventoryItem[]
-  orderItems     OrderItem[]
+  parent              Category?            @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children            Category[]           @relation("CategoryHierarchy")
+  inventoryItems      InventoryItem[]
+  orderItems          OrderItem[]
+  recyclePricingRules RecyclePricingRule[]
 
   @@index([type])
   @@index([parentId])
@@ -210,6 +211,10 @@ model Order {
   timeline           OrderTimeline[]
   userFeedbacks      UserFeedback[]
   courierFeedbacks   CourierFeedback[]
+  logisticsOrders    LogisticsOrder[] // 物流单
+  tenant             Tenant?             @relation(fields: [tenantId], references: [id])
+  tenantId           BigInt?
+  settlementRecord   SettlementRecord?
 
   @@index([userId])
   @@index([status])
@@ -217,6 +222,45 @@ model Order {
   @@index([channel])
   @@index([createdAt])
   @@map("orders")
+}
+
+/// 物流订单表
+model LogisticsOrder {
+  id               BigInt  @id @default(autoincrement())
+  orderId          BigInt  @map("order_id")
+  logisticsNo      String? @unique @map("logistics_no") // 物流运单号
+  logisticsCompany String? @map("logistics_company") // 物流公司编码 (JD, SF, etc.)
+  status           String // 物流状态
+
+  // 寄件人快照
+  senderName    String? @map("sender_name")
+  senderPhone   String? @map("sender_phone")
+  senderAddress String? @map("sender_address")
+
+  // 收件人快照
+  receiverName    String? @map("receiver_name")
+  receiverPhone   String? @map("receiver_phone")
+  receiverAddress String? @map("receiver_address")
+
+  // 时间信息
+  estimatedPickupTime   DateTime? @map("estimated_pickup_time")
+  actualPickupTime      DateTime? @map("actual_pickup_time")
+  estimatedDeliveryTime DateTime? @map("estimated_delivery_time")
+  actualDeliveryTime    DateTime? @map("actual_delivery_time")
+
+  // 费用
+  deliveryFee Float? @map("delivery_fee")
+
+  // 完整响应快照
+  providerData Json? @map("provider_data")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@map("logistics_orders")
 }
 
 /// 订单分配表
@@ -307,11 +351,11 @@ model PaymentLog {
 model Region {
   id         Int      @id @default(autoincrement())
   code       String   @unique @db.VarChar(12) // 行政区划代码
-  name       String   @db.VarChar(100)        // 名称
-  level      Int                              // 层级: 1-省, 2-市, 3-区, 4-街道
+  name       String   @db.VarChar(100) // 名称
+  level      Int // 层级: 1-省, 2-市, 3-区, 4-街道
   parentCode String?  @map("parent_code") @db.VarChar(12) // 父级代码
-  pinyin     String?  @db.VarChar(100)        // 拼音
-  abbr       String?  @db.VarChar(50)         // 简称/缩写
+  pinyin     String?  @db.VarChar(100) // 拼音
+  abbr       String?  @db.VarChar(50) // 简称/缩写
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -552,6 +596,8 @@ model Warehouse {
   capacity       Float?
   status         WarehouseStatus
   description    String?
+  tenantId       BigInt?         @map("tenant_id")
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id])
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
   inventoryItems InventoryItem[]
@@ -818,6 +864,7 @@ model Account {
   accountType      String        @map("account_type") // BANK, PAYPAL, WECHAT, ALIPAY
   accountDetails   Json          @map("account_details") // 存储账户信息的JSON
   isVerified       Boolean       @default(false) @map("is_verified") // 是否已验证
+  paymentPassword  String?       @map("payment_password") @db.VarChar(255) // 支付密码
   createdAt        DateTime      @default(now()) @map("created_at") // 创建时间
   updatedAt        DateTime      @updatedAt @map("updated_at") // 更新时间
   user             User          @relation(fields: [userId], references: [id])
@@ -899,4 +946,315 @@ enum WithdrawalStatus {
   FAILED // 失败
   REJECTED // 已拒绝
   TIMEOUT // 超时
+}
+
+/// 物流服务商配置
+model LogisticsProvider {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  code      String   @unique @db.VarChar(20) // jd, sf
+  apiUrl    String?  @map("api_url") @db.VarChar(255)
+  tenantId  String?  @map("tenant_id") @db.VarChar(100)
+  appId     String?  @map("app_id") @db.VarChar(100)
+  appSecret String?  @map("app_secret") @db.VarChar(255)
+  config    Json? // 运费规则等配置
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("logistics_providers")
+}
+
+/// 平台/租户钱包
+model PlatformWallet {
+  id              Int      @id @default(autoincrement())
+  balance         Float    @default(0.0) // 可用余额
+  frozenAmount    Float    @default(0.0) @map("frozen_amount") // 冻结金额
+  totalRecharge   Float    @default(0.0) @map("total_recharge") // 累计充值
+  totalPayout     Float    @default(0.0) @map("total_payout") // 累计支出
+  paymentPassword String?  @map("payment_password") @db.VarChar(255) // 支付密码(Hash)
+  version         Int      @default(0) // 乐观锁
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_wallets")
+}
+
+/// 平台交易记录
+model PlatformTransaction {
+  id             BigInt   @id @default(autoincrement())
+  walletId       Int      @map("wallet_id")
+  type           String   @db.VarChar(20) // RECHARGE, PAYOUT, REFUND
+  amount         Float
+  balanceBefore  Float    @map("balance_before")
+  balanceAfter   Float    @map("balance_after")
+  relatedOrderNo String?  @map("related_order_no") @db.VarChar(64) // 关联订单号
+  description    String?  @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([walletId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("platform_transactions")
+}
+
+/// 平台充值订单
+model RechargeOrder {
+  id            BigInt    @id @default(autoincrement())
+  orderNo       String    @unique @map("order_no") @db.VarChar(64)
+  amount        Float
+  paymentMethod String    @map("payment_method") @db.VarChar(20) // ALIPAY, WECHAT
+  status        String    @default("PENDING") @db.VarChar(20) // PENDING, SUCCESS, FAILED
+  paidAt        DateTime? @map("paid_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("recharge_orders")
+}
+
+/// 充值计划
+model RechargePlan {
+  id        Int      @id @default(autoincrement())
+  amount    Float // 充值金额
+  bonus     Float    @default(0) // 赠送金额
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("recharge_plans")
+}
+
+/// 租户主表
+model Tenant {
+  id           BigInt       @id @default(autoincrement())
+  name         String       @db.VarChar(100)
+  code         String       @unique @db.VarChar(50)
+  contactName  String?      @map("contact_name") @db.VarChar(50)
+  contactPhone String?      @map("contact_phone") @db.VarChar(20)
+  status       TenantStatus @default(ACTIVE)
+
+  // 财务属性
+  balance         Float           @default(0)
+  frozenBalance   Float           @default(0) @map("frozen_balance")
+  settlementCycle SettlementCycle @default(MONTHLY) @map("settlement_cycle")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  addresses    TenantAddress[]
+  warehouses   Warehouse[]
+  orders       Order[]
+  transactions TenantTransaction[]
+  settlements  SettlementRecord[]
+  pricingRules RecyclePricingRule[]
+  staffs       Staff[]
+  roles        Role[]
+
+  @@map("tenants")
+}
+
+/// 租户角色表
+model Role {
+  id          Int      @id @default(autoincrement())
+  tenantId    BigInt?  @map("tenant_id") // 如果为 null，则是系统预设角色
+  name        String   @db.VarChar(50)
+  code        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(200)
+  isAdmin     Boolean  @default(false) @map("is_admin")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant?          @relation(fields: [tenantId], references: [id])
+  staffs      Staff[]
+  permissions RolePermission[]
+
+  @@index([tenantId])
+  @@map("roles")
+}
+
+/// 权限项表
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  code        String   @unique @db.VarChar(100)
+  type        String   @db.VarChar(20) // MENU, BUTTON, API
+  parentId    Int?     @map("parent_id")
+  description String?  @db.VarChar(200)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  parent   Permission?      @relation("PermissionHierarchy", fields: [parentId], references: [id])
+  children Permission[]     @relation("PermissionHierarchy")
+  roles    RolePermission[]
+
+  @@index([parentId])
+  @@map("permissions")
+}
+
+/// 角色权限关联表
+model RolePermission {
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// 租户员工表
+model Staff {
+  id          BigInt      @id @default(autoincrement())
+  tenantId    BigInt      @map("tenant_id")
+  roleId      Int         @map("role_id")
+  username    String      @unique @db.VarChar(50)
+  password    String      @db.VarChar(255)
+  realName    String?     @map("real_name") @db.VarChar(50)
+  mobile      String?     @db.VarChar(20)
+  email       String?     @db.VarChar(100)
+  avatarUrl   String?     @map("avatar_url") @db.VarChar(255)
+  status      StaffStatus @default(ACTIVE)
+  lastLoginAt DateTime?   @map("last_login_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@index([tenantId])
+  @@index([roleId])
+  @@map("staffs")
+}
+
+enum StaffStatus {
+  ACTIVE
+  DISABLED
+  DELETED
+}
+
+/// 租户地址表
+model TenantAddress {
+  id           BigInt      @id @default(autoincrement())
+  tenantId     BigInt      @map("tenant_id")
+  type         AddressType // BUSINESS, RETURN, INVOICE, RECEIPT
+  province     String      @db.VarChar(50)
+  city         String      @db.VarChar(50)
+  district     String      @db.VarChar(50)
+  street       String?     @db.VarChar(100)
+  detail       String      @db.VarChar(255)
+  contactName  String      @map("contact_name") @db.VarChar(50)
+  contactPhone String      @map("contact_phone") @db.VarChar(20)
+  isDefault    Boolean     @default(false) @map("is_default")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("tenant_addresses")
+}
+
+/// 回收定价规则表
+model RecyclePricingRule {
+  id         BigInt  @id @default(autoincrement())
+  tenantId   BigInt  @map("tenant_id")
+  categoryId Int     @map("category_id")
+  basePrice  Float   @map("base_price") // 基础单价
+  minWeight  Float?  @map("min_weight")
+  maxWeight  Float?  @map("max_weight")
+  ruleJson   Json?   @map("rule_json") // 复杂计费规则
+  isActive   Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@index([tenantId])
+  @@index([categoryId])
+  @@map("recycle_pricing_rules")
+}
+
+/// 租户交易流水表
+model TenantTransaction {
+  id           BigInt                @id @default(autoincrement())
+  tenantId     BigInt                @map("tenant_id")
+  type         TenantTransactionType
+  amount       Float
+  balanceAfter Float                 @map("balance_after")
+  relatedType  String?               @map("related_type") // ORDER, WITHDRAWAL
+  relatedId    String?               @map("related_id")
+  remark       String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("tenant_transactions")
+}
+
+/// 结算记录表
+model SettlementRecord {
+  id       BigInt @id @default(autoincrement())
+  tenantId BigInt @map("tenant_id")
+  orderId  BigInt @unique @map("order_id")
+
+  totalAmount   Float @map("total_amount") // 最终结算金额
+  goodsAmount   Float @map("goods_amount") // 货款
+  expressFee    Float @map("express_fee") // 快递费
+  platformFee   Float @map("platform_fee") // 平台服务费
+  subsidyAmount Float @default(0) @map("subsidy_amount")
+
+  status    SettlementStatus @default(PENDING)
+  settledAt DateTime?        @map("settled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("settlement_records")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum AddressType {
+  BUSINESS
+  RETURN
+  INVOICE
+  RECEIPT
+}
+
+enum SettlementCycle {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum TenantTransactionType {
+  ORDER_INCOME // 订单收入
+  EXPRESS_DEDUCTION // 快递费扣除
+  PLATFORM_FEE // 平台费扣除
+  WITHDRAWAL // 提现
+  ADJUSTMENT // 调账
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }

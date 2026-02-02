@@ -263,6 +263,54 @@ export class InventoryService {
     };
   }
 
+  // 获取库存警报
+  async getAlerts(): Promise<any[]> {
+    const alerts: any[] = [];
+
+    // 1. 获取低库存商品
+    const lowStockItems = await this.prisma.inventoryItem.findMany({
+      where: {
+        status: InventoryStatus.LOW_STOCK,
+      },
+      take: 5,
+    });
+
+    lowStockItems.forEach((item) => {
+      alerts.push({
+        id: `low-${item.id}`,
+        type: 'low_stock',
+        severity: 'warning',
+        message: `商品 "${item.name}" 库存不足 (剩余: ${item.quantity})`,
+        itemId: item.id.toString(),
+        createdAt: new Date().toISOString(),
+      });
+    });
+
+    // 2. 获取即将过期商品
+    const expiringItems = await this.prisma.inventoryItem.findMany({
+      where: {
+        expiryDate: {
+          lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          gt: new Date(),
+        },
+      },
+      take: 5,
+    });
+
+    expiringItems.forEach((item) => {
+      alerts.push({
+        id: `exp-${item.id}`,
+        type: 'expiring_soon',
+        severity: 'info',
+        message: `商品 "${item.name}" 即将过期 (${item.expiryDate?.toISOString().split('T')[0]})`,
+        itemId: item.id.toString(),
+        createdAt: new Date().toISOString(),
+      });
+    });
+
+    return alerts;
+  }
+
   // 创建交易记录
   async createTransaction(
     data: CreateTransactionData,

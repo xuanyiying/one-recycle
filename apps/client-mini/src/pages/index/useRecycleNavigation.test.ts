@@ -37,7 +37,7 @@ describe('useRecycleNavigation', () => {
 
     expect(mockCheckAuthStatus).toHaveBeenCalled()
     expect(Taro.navigateTo).toHaveBeenCalledWith({
-      url: '/pages/recycle/index?category=book',
+      url: '/pages/recycle/index?category=books',
     })
   })
 

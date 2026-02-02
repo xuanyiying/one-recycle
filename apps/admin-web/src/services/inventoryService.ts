@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 
 // 库存状态枚举
 export enum InventoryStatus {

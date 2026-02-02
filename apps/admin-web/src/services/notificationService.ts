@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 import { cacheService, CACHE_KEYS } from './cacheService';
 
 // 通知类型枚举

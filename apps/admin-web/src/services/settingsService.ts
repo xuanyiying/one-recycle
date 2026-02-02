@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 import { cacheService, CACHE_KEYS } from './cacheService';
 
 // 个人资料接口
@@ -260,11 +260,11 @@ class SettingsService {
   }
 
   private async fetchSystemSettings(): Promise<SystemSettings> {
-    return await apiClient.get('/api/settings/system');
+    return await apiClient.get('/settings/system');
   }
 
   async updateSystemSettings(data: UpdateSystemSettingsRequest): Promise<SystemSettings> {
-    const response: SystemSettings = await apiClient.put('/api/settings/system', data);
+    const response: SystemSettings = await apiClient.put('/settings/system', data);
     // 清除系统设置缓存
     cacheService.delete(CACHE_KEYS.SYSTEM_SETTINGS);
     return response;

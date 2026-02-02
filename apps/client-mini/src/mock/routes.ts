@@ -45,13 +45,6 @@ export const registerAllMockRoutes = () => {
       return categoryMockData.getArticles(data?.categoryId)
     })
   
-  // 保留原有的路由以兼容其他调用
-  mockManager.registerRoute('GET /categories/active', async () => categoryMockData.getActiveCategories())
-  mockManager.registerRoute('GET /categories', async () => categoryMockData.getAllCategories())
-  mockManager.registerRoute('GET /categories/:id', async (_, params) => categoryMockData.getCategoryDetail(params?.id || ''))
-  mockManager.registerRoute('GET /api/category/:id', async (_, params) => categoryMockData.getCategoryDetail(params?.id || ''))
-  mockManager.registerRoute('GET /api/articles/:id', async (_, params) => categoryMockData.getArticleDetail(params?.id || ''))
-
   // 订单相关路由
   mockManager.registerRoute('POST /orders', async (data) => orderMockData.createOrder(data))
   mockManager.registerRoute('GET /orders', async (data) => orderMockData.getUserOrders(data?.userId || '1'))

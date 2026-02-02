@@ -4,7 +4,7 @@
  */
 
 import Taro from '@tarojs/taro'
-import { DraftOrder, Item } from '../types/order'
+import { DraftOrder, Item } from '@/types'
 
 // ============================================================================
 // Constants
@@ -104,7 +104,7 @@ export const getDraftOrder = (): DraftOrder | null => {
   try {
     const draft = Taro.getStorageSync(DRAFT_ORDER_STORAGE_KEY)
 
-    if (!draft) {
+    if (!draft || typeof draft !== 'object') {
       return null
     }
 

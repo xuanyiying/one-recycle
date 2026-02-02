@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest'
 import ValidationService from './validation'
-import { Item, Address, TimeSlot, ItemCondition, AddressLabel } from '../types/order'
+import { OrderItem, Address, TimeSlot, ItemCondition, AddressLabel } from '@/types'
 
 // ============================================================================
 // Test Setup
@@ -16,7 +16,7 @@ import { Item, Address, TimeSlot, ItemCondition, AddressLabel } from '../types/o
 const validationService = new ValidationService()
 
 // Mock data
-const mockItem: Item = {
+const mockItem: OrderItem = {
   id: 'item_1',
   categoryId: 'electronics',
   categoryName: '电子产品',
@@ -26,7 +26,7 @@ const mockItem: Item = {
   quantity: 1,
   photos: ['photo1.jpg'],
   notes: 'Good condition',
-  estimatedPrice: { min: 100, max: 200, currency: 'CNY' },
+  estimatedPrice: { min: 100, max: 200, currency: 'CNY' } as any, // Using 'as any' since PriceRange is not part of unified OrderItem
   createdAt: new Date().toISOString(),
 }
 
@@ -73,8 +73,8 @@ describe('ValidationService - Item Validation', () => {
     )
   })
 
-  it('should reject item with missing condition', () => {
-    const item = { ...mockItem, condition: '' as any }
+  it('should reject item with invalid condition', () => {
+    const item = { ...mockItem, condition: 'invalid' as any }
     const errors = validationService.validateItem(item)
     expect(errors).toContainEqual(
       expect.objectContaining({ field: 'condition' })
@@ -154,18 +154,18 @@ describe('ValidationService - Address Validation', () => {
   })
 
   it('should reject address with missing recipient name', () => {
-    const address = { ...mockAddress, recipientName: '' }
+    const address = { ...mockAddress, name: '' }
     const errors = validationService.validateAddress(address)
     expect(errors).toContainEqual(
-      expect.objectContaining({ field: 'recipientName' })
+      expect.objectContaining({ field: 'name' })
     )
   })
 
   it('should reject address with invalid phone number', () => {
-    const address = { ...mockAddress, phoneNumber: 'invalid' }
+    const address = { ...mockAddress, mobile: 'invalid' }
     const errors = validationService.validateAddress(address)
     expect(errors).toContainEqual(
-      expect.objectContaining({ field: 'phoneNumber' })
+      expect.objectContaining({ field: 'mobile' })
     )
   })
 
@@ -178,10 +178,10 @@ describe('ValidationService - Address Validation', () => {
   })
 
   it('should reject address with missing detailed address', () => {
-    const address = { ...mockAddress, detailedAddress: '' }
+    const address = { ...mockAddress, detail: '' }
     const errors = validationService.validateAddress(address)
     expect(errors).toContainEqual(
-      expect.objectContaining({ field: 'detailedAddress' })
+      expect.objectContaining({ field: 'detail' })
     )
   })
 
@@ -258,15 +258,21 @@ describe('ValidationService - Field Validation', () => {
   })
 
   it('should validate phone number', () => {
-    const errors = validationService.validateField('phoneNumber', 'invalid')
+    const errors = validationService.validateField('mobile', 'invalid')
     expect(errors).toHaveLength(1)
-    expect(errors[0].field).toBe('phoneNumber')
+    expect(errors[0].field).toBe('mobile')
   })
 
   it('should validate photo array', () => {
     const errors = validationService.validateField('photos', [])
     expect(errors).toHaveLength(1)
     expect(errors[0].field).toBe('photos')
+  })
+
+  it('should validate condition field', () => {
+    const errors = validationService.validateField('condition', 'invalid')
+    expect(errors).toHaveLength(1)
+    expect(errors[0].field).toBe('condition')
   })
 
 })

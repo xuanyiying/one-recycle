@@ -7,7 +7,7 @@ import { Button, Input, Checkbox } from '@nutui/nutui-react-taro'
 import { View, Text, Image } from "@tarojs/components"
 
 // 导入图片资源
-import logoIcon from '../../assets/icons/logo.png'
+import logoIcon from '../../assets/icons/logo.jpg'
 
 // 常量定义
 const COUNTDOWN_SECONDS = 60

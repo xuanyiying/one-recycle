@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 import { cacheService, CACHE_KEYS } from './cacheService';
 
 // 骑手状态枚举
@@ -152,36 +152,36 @@ export class CourierService {
   }
 
   private async fetchCouriers(params?: CourierQueryParams): Promise<CourierListResponse> {
-    const response = await apiClient.get('/api/couriers', { params });
+    const response = await apiClient.get('/couriers', { params });
     return response.data;
   }
 
   // 获取骑手详情
   async getCourierById(id: string): Promise<Courier> {
-    const response = await apiClient.get(`/api/couriers/${id}`);
+    const response = await apiClient.get(`/couriers/${id}`);
     return response.data;
   }
 
   // 创建骑手
   async createCourier(data: CreateCourierRequest): Promise<Courier> {
-    const response = await apiClient.post('/api/couriers', data);
+    const response = await apiClient.post('/couriers', data);
     return response.data;
   }
 
   // 更新骑手
   async updateCourier(id: string, data: UpdateCourierRequest): Promise<Courier> {
-    const response = await apiClient.put(`/api/couriers/${id}`, data);
+    const response = await apiClient.put(`/couriers/${id}`, data);
     return response.data;
   }
 
   // 删除骑手
   async deleteCourier(id: string): Promise<void> {
-    await apiClient.delete(`/api/couriers/${id}`);
+    await apiClient.delete(`/couriers/${id}`);
   }
 
   // 更新骑手状态
   async updateCourierStatus(id: string, status: CourierStatus): Promise<Courier> {
-    const response = await apiClient.patch(`/api/couriers/${id}/status`, { status });
+    const response = await apiClient.patch(`/couriers/${id}/status`, { status });
     return response.data;
   }
 
@@ -198,25 +198,25 @@ export class CourierService {
   }
 
   private async fetchCourierStats(): Promise<CourierStats> {
-    const response = await apiClient.get('/api/couriers/stats');
+    const response = await apiClient.get('/couriers/stats');
     return response.data;
   }
 
   // 获取骑手工作记录
   async getWorkRecords(params?: WorkRecordQueryParams): Promise<WorkRecordListResponse> {
-    const response = await apiClient.get('/api/couriers/work-records', { params });
+    const response = await apiClient.get('/couriers/work-records', { params });
     return response.data;
   }
 
   // 获取骑手评价
   async getRatings(params?: RatingQueryParams): Promise<RatingListResponse> {
-    const response = await apiClient.get('/api/couriers/ratings', { params });
+    const response = await apiClient.get('/couriers/ratings', { params });
     return response.data;
   }
 
   // 导出骑手数据
   async exportCouriers(params?: CourierQueryParams): Promise<Blob> {
-    const response = await apiClient.get('/api/couriers/export', {
+    const response = await apiClient.get('/couriers/export', {
       params,
       responseType: 'blob',
     });
@@ -225,7 +225,7 @@ export class CourierService {
 
   // 批量更新骑手状态
   async batchUpdateStatus(courierIds: string[], status: CourierStatus): Promise<void> {
-    await apiClient.patch('/api/couriers/batch-status', {
+    await apiClient.patch('/couriers/batch-status', {
       courierIds,
       status,
     });
@@ -233,7 +233,7 @@ export class CourierService {
 
   // 获取骑手绩效报告
   async getPerformanceReport(courierId: string, startDate: string, endDate: string): Promise<any> {
-    const response = await apiClient.get(`/api/couriers/${courierId}/performance`, {
+    const response = await apiClient.get(`/couriers/${courierId}/performance`, {
       params: { startDate, endDate },
     });
     return response.data;

@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 
 // 分类类型枚举
 export enum CategoryType {
@@ -158,8 +158,7 @@ export const categoryService = {
   // 获取分类列表
   async getCategories(params?: CategoryQueryParams): Promise<CategoryListResponse> {
     try {
-      const response = await apiClient.get('/category', { params });
-      return response.data;
+      return await apiClient.get('/category/categories', params);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       throw new Error('获取分类列表失败');
@@ -169,8 +168,7 @@ export const categoryService = {
   // 根据ID获取分类详情
   async getCategoryById(id: number): Promise<Category> {
     try {
-      const response = await apiClient.get(`/category/${id}`);
-      return response.data;
+      return await apiClient.get(`/category/categories/${id}`);
     } catch (error) {
       console.error('Failed to fetch category:', error);
       throw new Error('获取分类详情失败');
@@ -180,8 +178,7 @@ export const categoryService = {
   // 创建分类
   async createCategory(data: CreateCategoryRequest): Promise<Category> {
     try {
-      const response = await apiClient.post('/category', data);
-      return response.data;
+      return await apiClient.post('/category/categories', data);
     } catch (error) {
       console.error('Failed to create category:', error);
       throw new Error('创建分类失败');
@@ -191,8 +188,7 @@ export const categoryService = {
   // 更新分类
   async updateCategory(id: number, data: Partial<CreateCategoryRequest>): Promise<Category> {
     try {
-      const response = await apiClient.put(`/category/${id}`, data);
-      return response.data;
+      return await apiClient.put(`/category/categories/${id}`, data);
     } catch (error) {
       console.error('Failed to update category:', error);
       throw new Error('更新分类失败');
@@ -202,7 +198,7 @@ export const categoryService = {
   // 删除分类
   async deleteCategory(id: number): Promise<void> {
     try {
-      await apiClient.delete(`/category/${id}`);
+      await apiClient.delete(`/category/categories/${id}`);
     } catch (error) {
       console.error('Failed to delete category:', error);
       throw new Error('删除分类失败');
@@ -212,8 +208,7 @@ export const categoryService = {
   // 批量操作分类
   async batchUpdateCategories(ids: number[], operation: string, data?: any): Promise<any> {
     try {
-      const response = await apiClient.post('/category/batch', { ids, operation, data });
-      return response.data;
+      return await apiClient.post('/category/categories/batch', { ids, operation, data });
     } catch (error) {
       console.error('Failed to batch update categories:', error);
       throw new Error('批量操作分类失败');
@@ -223,8 +218,7 @@ export const categoryService = {
   // 获取分类树
   async getCategoryTree(): Promise<Category[]> {
     try {
-      const response = await apiClient.get('/category/tree');
-      return response.data;
+      return await apiClient.get('/category/categories/tree');
     } catch (error) {
       console.error('Failed to fetch category tree:', error);
       throw new Error('获取分类树失败');
@@ -237,9 +231,7 @@ export const categoryService = {
       const formData = new FormData();
       formData.append('icon', file);
 
-      const response = await apiClient.post('/category/upload-icon', formData);
-
-      return response.data;
+      return await apiClient.post('/category/categories/upload-icon', formData);
     } catch (error) {
       console.error('Failed to upload icon:', error);
       throw new Error('图标上传失败');

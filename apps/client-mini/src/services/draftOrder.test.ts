@@ -21,6 +21,28 @@ import {
   createAutoSaveDraft,
 } from './draftOrder'
 import { Item, ItemCondition, DraftOrder } from '../types/order'
+import Taro from '@tarojs/taro'
+
+// Mock Taro Storage
+vi.mock('@tarojs/taro', () => {
+  let storage: Record<string, any> = {}
+  return {
+    default: {
+      setStorageSync: (key: string, data: any) => {
+        storage[key] = data
+      },
+      getStorageSync: (key: string) => {
+        return storage[key] || ''
+      },
+      removeStorageSync: (key: string) => {
+        delete storage[key]
+      },
+      clearStorageSync: () => {
+        storage = {}
+      }
+    }
+  }
+})
 
 // ============================================================================
 // Mock Data
@@ -46,14 +68,14 @@ const createMockItem = (overrides?: Partial<Item>): Item => ({
 // ============================================================================
 
 beforeEach(() => {
-  // Clear localStorage before each test
-  localStorage.clear()
+  // Clear mock storage before each test
+  Taro.clearStorageSync()
   vi.clearAllMocks()
 })
 
 afterEach(() => {
   // Clean up after each test
-  localStorage.clear()
+  Taro.clearStorageSync()
 })
 
 // ============================================================================
@@ -61,7 +83,7 @@ afterEach(() => {
 // ============================================================================
 
 describe('saveDraftOrder', () => {
-  it('should save a draft order to localStorage', () => {
+  it('should save a draft order to storage', () => {
     const items = [createMockItem()]
     const draft = saveDraftOrder(items, 'addr_1', 'slot_1', 'Test notes')
 
@@ -152,15 +174,15 @@ describe('getDraftOrder', () => {
       expiresAt: new Date(Date.now() - 1000).toISOString(),
     }
 
-    localStorage.setItem('order_creation_draft', JSON.stringify(expiredDraft))
+    Taro.setStorageSync('order_creation_draft', expiredDraft)
 
     const retrieved = getDraftOrder()
 
     expect(retrieved).toBeNull()
   })
 
-  it('should handle corrupted localStorage data gracefully', () => {
-    localStorage.setItem('order_creation_draft', 'invalid json')
+  it('should handle corrupted storage data gracefully', () => {
+    Taro.setStorageSync('order_creation_draft', 'invalid json')
 
     const draft = getDraftOrder()
 
@@ -232,7 +254,7 @@ describe('updateDraftOrder', () => {
 // ============================================================================
 
 describe('deleteDraftOrder', () => {
-  it('should delete a draft order from localStorage', () => {
+  it('should delete a draft order from storage', () => {
     const items = [createMockItem()]
     saveDraftOrder(items)
 
@@ -273,7 +295,7 @@ describe('hasDraftOrder', () => {
       expiresAt: new Date(Date.now() - 1000).toISOString(),
     }
 
-    localStorage.setItem('order_creation_draft', JSON.stringify(expiredDraft))
+    Taro.setStorageSync('order_creation_draft', expiredDraft)
 
     expect(hasDraftOrder()).toBe(false)
   })
@@ -310,7 +332,7 @@ describe('getDraftOrderTimeRemaining', () => {
       expiresAt: new Date(Date.now() - 1000).toISOString(),
     }
 
-    localStorage.setItem('order_creation_draft', JSON.stringify(expiredDraft))
+    Taro.setStorageSync('order_creation_draft', expiredDraft)
 
     const timeRemaining = getDraftOrderTimeRemaining()
 

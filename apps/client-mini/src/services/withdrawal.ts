@@ -18,7 +18,7 @@ class WithdrawalService {
    * POST /api/withdrawals
    */
   async createWithdrawal(data: CreateWithdrawalRequest): Promise<Withdrawal> {
-    return post('/api/withdrawals', data);
+    return post('/withdrawals', data);
   }
 
   /**

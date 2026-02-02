@@ -69,6 +69,10 @@ export class OrderCreatedEventDto {
   @IsDateString()
   @IsOptional()
   createdAt?: string;
+
+  @IsString()
+  @IsOptional()
+  orderType?: string;
 }
 
 export class OrderStatusChangedEventDto {
@@ -96,7 +100,7 @@ export class OrderStatusChangedEventDto {
   timestamp: string;
 }
 
-export class OrderCancelledEventDto {
+export class OrderCanceledEventDto {
   @IsString()
   @IsNotEmpty()
   orderId: string;
@@ -111,7 +115,7 @@ export class OrderCancelledEventDto {
 
   @IsString()
   @IsNotEmpty()
-  cancelledBy: string;
+  canceledBy: string;
 
   @IsDateString()
   timestamp: string;

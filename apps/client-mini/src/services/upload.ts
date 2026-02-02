@@ -9,7 +9,7 @@ export interface UploadResponse {
   }
   message?: string
 }
-
+const baseUrl = process.env.TARO_APP_API_BASE_URL || 'http://localhost:3000';
 /**
  * 上传图片到服务器
  * @param filePath 本地文件路径
@@ -18,7 +18,7 @@ export interface UploadResponse {
 export const uploadImage = async (filePath: string): Promise<UploadResponse> => {
   try {
     const uploadResult = await Taro.uploadFile({
-      url: `${process.env.TARO_APP_API_BASE_URL || 'http://localhost:3000'}/api/upload/image`,
+      url: `${baseUrl}/api/upload/image`,
       filePath,
       name: 'image',
       header: {
@@ -59,7 +59,7 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
 export const uploadAvatar = async (filePath: string): Promise<UploadResponse> => {
   try {
     const uploadResult = await Taro.uploadFile({
-      url: `${process.env.TARO_APP_API_BASE_URL || 'http://localhost:3000'}/api/upload/avatar`,
+      url: `${baseUrl}/api/upload/avatar`,
       filePath,
       name: 'avatar',
       header: {

@@ -1,9 +1,19 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  IN_PROGRESS = 'IN_PROGRESS',
+  ASSIGNED = 'ASSIGNED',
+  PICKUP_PENDING = 'PICKUP_PENDING',
+  PICKED_UP = 'PICKED_UP',
+  IN_TRANSIT = 'IN_TRANSIT',
+  RECEIVING_PENDING = 'RECEIVING_PENDING',
+  INSPECTING = 'INSPECTING',
+  INSPECTED = 'INSPECTED',
+  INSPECTION_EXCEPTION = 'INSPECTION_EXCEPTION',
+  MANUAL_REVIEW = 'MANUAL_REVIEW',
+  INBOUND_PENDING = 'INBOUND_PENDING',
+  INBOUND_COMPLETED = 'INBOUND_COMPLETED',
+  SETTLEMENT_PENDING = 'SETTLEMENT_PENDING',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   REFUNDED = 'REFUNDED',
@@ -19,11 +29,54 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   status: OrderStatus;
+  logistics?: OrderLogistics;
+  statusTimeline?: OrderStatusTimelineItem[];
+  operationLogs?: OrderOperationLog[];
+  inspection?: OrderInspection;
   createdAt: string;
   updatedAt: string;
   scheduledDate?: string;
   completedAt?: string;
   notes?: string;
+}
+
+export interface OrderLogistics {
+  carrierName: string;
+  trackingNumber: string;
+  currentStatus: string;
+  lastUpdatedAt: string;
+  events: OrderLogisticsEvent[];
+}
+
+export interface OrderLogisticsEvent {
+  time: string;
+  location: string;
+  status: string;
+  detail?: string;
+}
+
+export interface OrderStatusTimelineItem {
+  status: OrderStatus;
+  time: string;
+  operator?: string;
+  note?: string;
+}
+
+export interface OrderOperationLog {
+  id: string;
+  operator: string;
+  action: string;
+  time: string;
+  detail?: string;
+}
+
+export interface OrderInspection {
+  inspector: string;
+  result: 'PASS' | 'EXCEPTION';
+  reason?: string[];
+  note?: string;
+  images?: string[];
+  completedAt?: string;
 }
 
 export interface OrderItem {
@@ -156,7 +209,7 @@ class OrderService {
    * 更新订单状态
    */
   async updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
-    return apiClient.patch<Order>(
+    return apiClient.put<Order>(
       `${this.baseUrl}/${id}/status`,
       { status },
       {

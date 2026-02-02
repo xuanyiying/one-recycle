@@ -18,7 +18,7 @@
 
 @mixin ios-title1 {
   font-family: $font-family-primary;
-  font-size: $font-size-title1;
+  font-size: $font-size-headline1;
   font-weight: $font-weight-regular;
   line-height: $line-height-tight;
   color: var(--ios-label);
@@ -27,7 +27,7 @@
 
 @mixin ios-title2 {
   font-family: $font-family-primary;
-  font-size: $font-size-title2;
+  font-size: $font-size-headline2;
   font-weight: $font-weight-regular;
   line-height: $line-height-normal;
   color: var(--ios-label);
@@ -36,7 +36,7 @@
 
 @mixin ios-title3 {
   font-family: $font-family-primary;
-  font-size: $font-size-title3;
+  font-size: $font-size-headline3;
   font-weight: $font-weight-regular;
   line-height: $line-height-normal;
   color: var(--ios-label);
@@ -84,7 +84,7 @@
 
 @mixin ios-caption1 {
   font-family: $font-family-primary;
-  font-size: $font-size-caption1;
+  font-size: $font-size-caption11;
   font-weight: $font-weight-regular;
   line-height: $line-height-normal;
   color: var(--ios-secondary-label);
@@ -92,7 +92,7 @@
 
 @mixin ios-caption2 {
   font-family: $font-family-primary;
-  font-size: $font-size-caption2;
+  font-size: $font-size-caption12;
   font-weight: $font-weight-regular;
   line-height: $line-height-normal;
   color: var(--ios-secondary-label);
@@ -641,7 +641,7 @@
       }
 
       .ios-tab-label {
-        font-size: $font-size-caption2;
+        font-size: $font-size-caption12;
         color: var(--ios-secondary-label);
         text-align: center;
       }
@@ -880,7 +880,7 @@
     @include flex-center;
     padding: $spacing-16; // 16pt (32rpx)
     color: var(--ios-tertiary-label);
-    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-size: $font-size-caption11; // iOS Caption 1 (24rpx)
   }
 
   // iOS 空状态
@@ -927,13 +927,13 @@
 
   .error-text {
     color: #FF3B30; // iOS 系统红色
-    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-size: $font-size-caption11; // iOS Caption 1 (24rpx)
     margin-top: $spacing-8; // 8pt (16rpx)
   }
 
   .error-message {
     color: #FF3B30; // iOS 系统红色
-    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-size: $font-size-caption11; // iOS Caption 1 (24rpx)
     margin-top: $spacing-8; // 8pt (16rpx)
     text-align: center;
     line-height: $line-height-relaxed;
@@ -946,7 +946,7 @@
     padding: $spacing-4 $spacing-8; // 4pt 8pt (8rpx 16rpx)
     background: rgba(0, 122, 255, 0.15); // iOS 蓝色背景
     color: var(--ios-blue);
-    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-size: $font-size-caption11; // iOS Caption 1 (24rpx)
     border-radius: $border-radius-pill; // 胶囊形
     font-weight: $font-weight-medium;
   }
@@ -956,12 +956,12 @@
     align-items: center;
     padding: $spacing-4 $spacing-8; // 4pt 8pt (8rpx 16rpx)
     border-radius: $border-radius-pill; // 胶囊形
-    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-size: $font-size-caption11; // iOS Caption 1 (24rpx)
     font-weight: $font-weight-medium;
   }
 
   .status-text {
-    font-size: $font-size-caption1; // iOS Caption 1 (24rpx)
+    font-size: $font-size-caption11; // iOS Caption 1 (24rpx)
     font-weight: $font-weight-medium;
   }
 

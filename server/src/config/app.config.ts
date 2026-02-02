@@ -17,9 +17,14 @@ export default registerAs(
     logLevel: process.env.LOG_LEVEL || 'info',
     corsOrigins: process.env.CORS_ORIGINS?.split(',') || [
       'http://localhost:3000',
+      'http://localhost:3005',
+      'http://localhost:3008',
       'http://localhost:8080',
+      'http://localhost:8081',
       'http://localhost:5173',
-      'http://localhost:8081', // React Native / Expo default
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3005',
+      'http://127.0.0.1:3008',
     ],
   }),
 );

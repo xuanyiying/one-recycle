@@ -61,8 +61,8 @@ describe('useMenu Hook', () => {
     expect(rankItem).toBeDefined()
     if (rankItem) {
       result.current.handleFeatureClick(rankItem)
-      expect(Taro.showToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: expect.stringContaining('环保榜单')
+      expect(Taro.navigateTo).toHaveBeenCalledWith(expect.objectContaining({
+        url: '/pages/rank/index'
       }))
     }
   })

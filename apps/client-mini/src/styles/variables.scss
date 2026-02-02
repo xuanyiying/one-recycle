@@ -3,16 +3,16 @@ $primary-color: #00C853; // 鲜艳的自然绿
 $primary-light: #69F0AE;
 $primary-dark: #009624;
 
-// 微信小程序标准色 (兼容性)
-$wechat-primary: #07C160;
-$wechat-secondary: #06AD56;
-
 // 辅助色彩
 $secondary-color: #FF6D00; // 活力橙 - 强调行动
 $success-color: #00C853;
 $warning-color: #FFD600;
 $error-color: #FF3D00;
 $info-color: #2979FF;
+
+// 微信品牌色
+$wechat-primary: #07C160;
+$wechat-secondary: #06AD56;
 
 // 中性色彩 - 更加柔和
 $text-color: #263238; // 蓝灰深色 - 比纯黑更柔和
@@ -48,29 +48,18 @@ $font-family-primary: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sa
 $font-family-number: 'SF Mono', 'Consolas', monospace;
 
 // 字体大小 (基于 750rpx 设计稿)
-$font-size-caption2: 20rpx; // 10px
-$font-size-caption1: 24rpx; // 12px - 辅助文字
+$font-size-caption1: 24rpx; // 12px
+$font-size-caption12: 20rpx; // 10px
+$font-size-caption11: 24rpx; // 12px - 辅助文字
 $font-size-footnote: 28rpx; // 14px - 说明文字
 $font-size-body: 32rpx; // 16px - 正文 (加大)
 $font-size-subheadline: 32rpx;
 $font-size-callout: 32rpx;
 $font-size-headline: 36rpx; // 18px - 标题
-$font-size-title3: 40rpx; // 20px - 大标题
-$font-size-title2: 48rpx; // 24px - 超大标题
-$font-size-title1: 56rpx;
+$font-size-headline3: 40rpx; // 20px - 大标题
+$font-size-headline2: 48rpx; // 24px - 超大标题
+$font-size-headline1: 56rpx;
 $font-size-large-title: 64rpx;
-
-// 兼容性别名
-$font-size-xs: $font-size-caption2;
-$font-size-sm: $font-size-caption1;
-$font-size-base: $font-size-body;
-$font-size-md: $font-size-headline;
-$font-size-lg: $font-size-title3;
-$font-size-xl: $font-size-title2;
-$font-size-xxl: $font-size-title1;
-$font-size-display: 72rpx;
-$font-size-title: $font-size-headline; // 别名适配
-$font-size-caption: $font-size-caption1; // 别名适配
 
 // 像素级间距别名 (iOS 设计系统专用)
 $spacing-2: 4rpx;
@@ -107,34 +96,43 @@ $spacing-base: 32rpx; // 16px
 $spacing-lg: 40rpx; // 20px
 $spacing-xl: 48rpx; // 24px
 $spacing-xxl: 64rpx; // 32px
+$page-margin-top: 32rpx;
 
 // ==================== 组件尺寸 ====================// 组件尺寸
 $button-height-sm: 64rpx;
 $button-height-md: 96rpx; // 加大按钮更易触控
 $button-height-lg: 112rpx;
 $button-radius: 48rpx; // 全圆角按钮
-$border-radius-sm: 12rpx;
-$border-radius-base: 24rpx; // 更加圆润
-$border-radius-md: 32rpx; // 卡片圆角
-$border-radius-lg: 40rpx;
-$border-radius-xl: 48rpx;
 $border-radius-xs: 8rpx;
-$touch-target-min: 96rpx;
-$input-height: 96rpx;
-$input-radius: 24rpx;
-$section-margin: 40rpx;
-$card-radius: 32rpx; // 卡片统一大圆角
-$cell-height-md: 112rpx;
-$list-item-padding: 32rpx;
-$card-padding: 40rpx;
-$page-padding: 40rpx;
-$page-margin-top: 32rpx;
+$border-radius-sm: 12rpx;
+$border-radius-md: 16rpx;
+$border-radius-lg: 24rpx;
+$border-radius-xl: 32rpx;
 $border-radius-pill: 999rpx;
+$border-radius-base: $border-radius-md;
 
-// 动效与阴影
-$transition-fast: 0.2s ease;
-$transition-base: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-$box-shadow-sm: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
-$box-shadow-base: 0 8rpx 20rpx rgba(0, 0, 0, 0.04);
-$box-shadow-lg: 0 16rpx 40rpx rgba(0, 0, 0, 0.08);
-$box-shadow-float: 0 20rpx 60rpx rgba(0, 200, 83, 0.15); // 悬浮投影
+// 触摸目标最小尺寸
+$touch-target-min: 88rpx;
+
+// 输入框
+$input-height: 88rpx;
+$input-radius: 12rpx;
+
+// 列表与卡片
+$section-margin: 32rpx;
+$card-radius: 24rpx;
+$card-padding: 32rpx;
+$cell-height-md: 88rpx;
+$list-item-padding: 32rpx;
+$page-padding: 32rpx;
+
+// ==================== 阴影 ====================
+$box-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+$box-shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+$box-shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+$box-shadow-base: $box-shadow-md;
+$box-shadow-float: 0 16rpx 48rpx rgba(0, 0, 0, 0.16);
+
+// ==================== 动画 ====================
+$transition-base: 0.3s ease;
+$transition-fast: 0.15s ease;

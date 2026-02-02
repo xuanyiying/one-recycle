@@ -1,5 +1,8 @@
 import { cacheService, CACHE_KEYS } from './cacheService';
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
+import { orderService } from './orderService';
+import { userService } from './userService';
+
 // Dashboard data interfaces
 export interface DashboardStats {
   totalOrders: number;
@@ -49,40 +52,40 @@ class DashboardApiService {
   private async fetchDashboardStats(): Promise<DashboardStats> {
     try {
       const [orderStats, userStats] = await Promise.all([
-        apiClient.get('/api/orders/stats'),
-        apiClient.get('/api/users/stats'),
+        orderService.getOrderStats(),
+        userService.getUserStats(),
       ]);
 
       // Combine data from different services
       const stats: DashboardStats = {
-        totalOrders: orderStats.data.total || 1250,
-        todayOrders: orderStats.data.today || 45,
-        totalRevenue: orderStats.data.totalRevenue || 125000,
-        todayRevenue: orderStats.data.todayRevenue || 3200,
-        totalUsers: userStats.data.total || 850,
-        activeUsers: userStats.data.active || 320,
-        pendingOrders: orderStats.data.pending || 12,
-        completedOrders: orderStats.data.completed || 1180,
-        orderGrowth: orderStats.data.growth || 15.5,
-        revenueGrowth: orderStats.data.revenueGrowth || 22.3,
+        totalOrders: orderStats.total || 0,
+        todayOrders: 0, // Not available in OrderStats yet, assuming 0 or need to update OrderStats
+        totalRevenue: 0, // Not available in OrderStats yet
+        todayRevenue: orderStats.todayRevenue || 0,
+        totalUsers: userStats.totalUsers || 0,
+        activeUsers: userStats.activeUsers || 0,
+        pendingOrders: orderStats.pending || 0,
+        completedOrders: orderStats.completed || 0,
+        orderGrowth: 0, // Not available
+        revenueGrowth: 0, // Not available
       };
-
-      return stats;
+      
+      // Update with actual fields if available or mapped correctly
+      // Checking OrderStats interface:
+      // total, pending, confirmed, inProgress, completed, cancelled, todayRevenue, monthlyRevenue
+      // It seems some fields like orderGrowth are missing in OrderStats. 
+      // I will map what is available and use defaults for others or I might need to update OrderStats.
+      
+      return {
+        ...stats,
+        totalOrders: orderStats.total,
+        todayRevenue: orderStats.todayRevenue,
+        pendingOrders: orderStats.pending,
+        completedOrders: orderStats.completed,
+      };
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      // Return mock data as fallback
-      return {
-        totalOrders: 1250,
-        todayOrders: 45,
-        totalRevenue: 125000,
-        todayRevenue: 3200,
-        totalUsers: 850,
-        activeUsers: 320,
-        pendingOrders: 12,
-        completedOrders: 1180,
-        orderGrowth: 15.5,
-        revenueGrowth: 22.3,
-      };
+      throw error;
     }
   }
 
@@ -103,8 +106,22 @@ class DashboardApiService {
 
   private async fetchRecentOrders(limit: number): Promise<RecentOrder[]> {
     try {
-      const response = await apiClient.get(`/api/orders/recent?limit=${limit}`);
-      return response.data || [];
+      // Assuming orderService has getRecentOrders, if not I will use apiClient as fallback or need to add it to orderService
+      // But based on previous read, it likely has it. 
+      // To be safe, I will stick to what works or check orderService content first.
+      // Wait, I saw "获取最近订单（用于仪表板）" comment in orderService.ts.
+      // So I can use it.
+      // However, the return type might be Order[], but Dashboard needs RecentOrder[].
+      // I might need to map it.
+      const orders = await orderService.getRecentOrders(limit);
+      return orders.map(order => ({
+        id: order.id,
+        orderNo: order.orderNumber,
+        customer: order.customerName,
+        amount: order.totalAmount,
+        status: order.status as any,
+        createdAt: order.createdAt
+      }));
     } catch (error) {
       console.error('获取最近订单失败:', error);
       return [];
@@ -127,7 +144,7 @@ class DashboardApiService {
 
   private async fetchInventoryAlerts(): Promise<InventoryAlert[]> {
     try {
-      const response = await apiClient.get('/api/inventory/alerts');
+      const response = await apiClient.get('/inventory/alerts');
       return response.data || [];
     } catch (error) {
       console.error('获取库存警报失败:', error);

@@ -101,7 +101,7 @@ export class QAResponseDto {
   order: number;
 }
 
-export class RankingResponseDto {
+export class SystemRankingResponseDto {
   @ApiProperty()
   id: number;
 

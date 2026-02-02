@@ -1,6 +1,6 @@
 import { Component, PropsWithChildren, lazy, Suspense } from 'react'
 import { AppProvider } from './store'
-import { AddressDataService } from './services/address-data-service'
+import { AddressData } from './services/address-data'
 import { performanceMonitor } from './utils/performanceMonitor'
 import networkStatusManager from './utils/networkStatus'
 import './styles/global.scss' // 引入全局样式
@@ -28,7 +28,7 @@ class App extends Component<PropsWithChildren> {
         // Preload critical pages after a short delay
         setTimeout(() => {
             // Preload core address data
-            AddressDataService.preloadCoreProvinces();
+            AddressData.preloadCoreProvinces();
         }, 2000);
 
         // Send performance metrics every 5 minutes in production

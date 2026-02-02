@@ -38,6 +38,30 @@ export class OrderController {
   }
 
   /**
+   * 获取订单统计信息
+   */
+  @Get('stats')
+  @ApiOperation({ summary: '获取订单统计信息' })
+  @ApiResponse({ status: 200, description: '获取订单统计信息成功' })
+  async getStats() {
+    return this.orderService.getStats();
+  }
+
+  /**
+   * 获取最近订单
+   * @param limit 数量
+   */
+  @Get('recent')
+  @ApiOperation({ summary: '获取最近订单' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: '获取最近订单成功' })
+  async getRecentOrders(
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.orderService.getRecentOrders(limit);
+  }
+
+  /**
    * 获取订单列表
    * @param filters 筛选条件
    * @param page 页码
@@ -144,30 +168,5 @@ export class OrderController {
   @ApiResponse({ status: 200, description: '订单删除成功' })
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.orderService.remove(id);
-  }
-
-  // 兼容旧版API
-  /**
-   * 创建回收订单 (兼容旧版)
-   * @param createOrderData 创建订单数据
-   */
-  @Post('recycle')
-  @ApiOperation({ summary: '创建回收订单' })
-  async createRecycleOrder(
-    @Body() createOrderData: CreateOrderDto,
-  ): Promise<Order> {
-    return this.orderService.createRecycleOrder(createOrderData);
-  }
-
-  /**
-   * 创建销售订单 (兼容旧版)
-   * @param createOrderData 创建订单数据
-   */
-  @Post('sale')
-  @ApiOperation({ summary: '创建销售订单' })
-  async createSaleOrder(
-    @Body() createOrderData: CreateOrderDto,
-  ): Promise<Order> {
-    return this.orderService.createSaleOrder(createOrderData);
   }
 }

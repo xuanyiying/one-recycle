@@ -81,6 +81,7 @@ export enum NotificationStatus {
 export enum OrderStatus {
   PENDING = 'PENDING', // 待确认
   CONFIRMED = 'CONFIRMED', // 已确认
+  DISPATCHED = 'DISPATCHED', // 已派单
   ASSIGNED = 'ASSIGNED', // 已分配
   IN_PROGRESS = 'IN_PROGRESS', // 进行中
   COMPLETED = 'COMPLETED', // 已完成

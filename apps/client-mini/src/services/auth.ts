@@ -1,8 +1,8 @@
 import Taro from '@tarojs/taro'
-import { post } from '../utils/request'
-import { PlatformDetector } from '../utils/platformDetector'
-import { LoginProvider, LoginResult } from '../types'
-import { ENV_CONFIG } from '../config/env'
+import { post } from '@/utils/request'
+import { PlatformDetector } from '@/utils/platformDetector'
+import { LoginProvider, LoginResult } from '@/types'
+import { ENV_CONFIG } from '@/config/env'
 
 export interface LoginParams {
   code: string
@@ -426,15 +426,5 @@ export class AuthService {
             token: token || undefined
         }
     }
-
 }
 
-// 导出单例对象（为了兼容性）
-export const authService = new AuthService()
-
-// 导出独立函数（为了兼容旧代码）
-export const login = AuthService.login.bind(AuthService)
-export const getUserInfo = AuthService.getUserInfo.bind(AuthService)
-export const wechatLogin = AuthService.wechatLogin.bind(AuthService)
-export const alipayLogin = AuthService.alipayLogin.bind(AuthService)
-export const douyinLogin = AuthService.douyinLogin.bind(AuthService)

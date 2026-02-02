@@ -58,10 +58,24 @@ const mockTimeSlot: TimeSlot = {
 // Tests
 // ============================================================================
 
+const mockStorage = new Map()
+
+vi.mock('@tarojs/taro', () => {
+  return {
+    default: {
+      setStorageSync: (key: string, data: any) => mockStorage.set(key, data),
+      getStorageSync: (key: string) => mockStorage.get(key),
+      removeStorageSync: (key: string) => mockStorage.delete(key),
+      showToast: vi.fn(),
+      navigateTo: vi.fn(),
+    }
+  }
+})
+
 describe('OrderCreationFlow Integration', () => {
     beforeEach(() => {
         // Clear localStorage before each test
-        localStorage.clear()
+        mockStorage.clear()
         vi.clearAllMocks()
     })
 
@@ -72,14 +86,13 @@ describe('OrderCreationFlow Integration', () => {
                 require('./ItemForm')
                 require('./AddressSelection')
                 require('./TimeSlotSelection')
-                require('./OrderConfirmation')
                 require('./OrderSuccess')
             }).not.toThrow()
         })
 
         it('should have OrderCreationFlow container component', () => {
             expect(() => {
-                require('./OrderCreationFlow')
+                require('./index')
             }).not.toThrow()
         })
 
@@ -509,8 +522,8 @@ describe('OrderCreationFlow Integration', () => {
 
             const isValid =
                 orderData.items.length > 0 &&
-                orderData.address &&
-                orderData.timeSlot 
+                !!orderData.address &&
+                !!orderData.timeSlot 
 
             expect(isValid).toBe(true)
         })

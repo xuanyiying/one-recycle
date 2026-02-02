@@ -3,7 +3,7 @@ import {
   BannerResponseDto,
   ArticleResponseDto,
   QAResponseDto,
-  RankingResponseDto,
+  SystemRankingResponseDto as RankingResponseDto,
 } from './dto';
 
 @Injectable()

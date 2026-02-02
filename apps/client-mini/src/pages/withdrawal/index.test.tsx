@@ -7,6 +7,10 @@ import { vi, describe, it, expect, beforeEach } from 'vitest'
 // Mock services
 vi.mock('@/services/account')
 vi.mock('@/services/withdrawal')
+vi.mock('@/components/AuthGuard', () => ({
+  default: ({ children }) => <div>{children}</div>
+}))
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { openid: 'test', realName: 'Test' } })
 }))
@@ -14,14 +18,16 @@ vi.mock('@tarojs/taro', () => ({
   default: {
     showToast: vi.fn(),
     navigateTo: vi.fn(),
-    getSystemInfoSync: () => ({ safeArea: { top: 20, bottom: 800 } })
+    getSystemInfoSync: () => ({ safeArea: { top: 20, bottom: 800 } }),
+    getCurrentPages: vi.fn(() => [{ route: 'pages/withdrawal/index' }]),
   },
   useDidShow: vi.fn(),
 }))
 vi.mock('@nutui/nutui-react-taro', () => ({
   Button: ({ children, onClick, ...props }) => <button onClick={onClick} {...props}>{children}</button>,
   Popup: ({ children, visible }) => visible ? <div>{children}</div> : null,
-  Input: ({ onChange, value }) => <input onChange={e => onChange(e.target.value)} value={value} />,
+  Input: ({ onChange, value, ...props }) => <input onChange={e => onChange(e.target.value)} value={value} {...props} />,
+  Loading: ({ children }) => <div>{children}</div>,
 }))
 
 describe('WalletPage', () => {

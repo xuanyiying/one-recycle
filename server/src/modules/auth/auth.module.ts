@@ -40,6 +40,6 @@ import { UserModule } from '../user/user.module';
     TikTokPlatform,
     KuaishouPlatform,
   ],
-  exports: [AuthRedisService, JwtAuthGuard],
+  exports: [AuthRedisService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

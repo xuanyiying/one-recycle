@@ -77,7 +77,7 @@ export interface UserQueryParams {
 
 // 用户列表响应
 export interface UserListResponse {
-  users: User[];
+  items: User[];
   total: number;
   page: number;
   limit: number;

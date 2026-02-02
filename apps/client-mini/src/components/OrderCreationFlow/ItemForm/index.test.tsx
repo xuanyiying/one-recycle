@@ -17,7 +17,7 @@ vi.mock('@tarojs/components', () => ({
   Text: ({ children, className }: any) => <span className={className}>{children}</span>,
   Button: ({ children, onClick, className }: any) => <button className={className} onClick={onClick}>{children}</button>,
   ScrollView: ({ children, className }: any) => <div className={className}>{children}</div>,
-  Picker: ({ children, onChange, range }: any) => (
+  Picker: ({ children, onChange }: any) => (
     <div data-testid="picker" onClick={() => onChange({ detail: { value: 0 } })}>
       {children}
     </div>

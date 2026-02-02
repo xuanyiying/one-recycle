@@ -13,7 +13,7 @@
     min-height: 1200rpx; // Use fixed min-height instead of vh
 
     .loading-text {
-      font-size: $font-size-title;
+      font-size: $font-size-headline;
       color: $text-secondary;
     }
   }
@@ -27,7 +27,7 @@
     box-shadow: $box-shadow-base;
 
     .page-title {
-      font-size: $font-size-display;
+      font-size: 72rpx;
       font-weight: $font-weight-semibold;
       color: $text-color;
       margin-bottom: $spacing-xs;
@@ -35,7 +35,7 @@
     }
 
     .page-subtitle {
-      font-size: $font-size-lg;
+      font-size: $font-size-headline3;
       color: $text-secondary;
       display: block;
     }
@@ -67,7 +67,7 @@
       border-bottom: 2rpx solid $border-color;
 
       .card-title {
-        font-size: $font-size-title;
+        font-size: $font-size-headline;
         font-weight: $font-weight-semibold;
         color: $text-color;
       }
@@ -75,7 +75,7 @@
       .edit-btn {
         background: $gradient-primary;
         color: white;
-        font-size: $font-size-base;
+        font-size: $font-size-body;
         padding-left: $spacing-sm; padding-right: $spacing-sm;
         padding-top: $spacing-xs; padding-bottom: $spacing-xs;
         border-radius: $border-radius-pill;
@@ -89,14 +89,14 @@
       align-items: flex-start;
 
       .info-label {
-        font-size: $font-size-lg;
+        font-size: $font-size-headline3;
         color: $text-secondary;
         width: 160rpx;
         flex-shrink: 0;
       }
 
       .info-value {
-        font-size: $font-size-lg;
+        font-size: $font-size-headline3;
         color: $text-color;
         flex: 1;
         line-height: 1.4;

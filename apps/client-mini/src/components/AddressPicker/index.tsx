@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { Cascader, TextArea } from '@nutui/nutui-react-taro'
-import { AddressDataService } from '@/services/address-data-service'
+import { AddressData } from '@/services/address-data'
 import { Address } from '@/types/address'
 import './index.scss'
 
@@ -24,7 +24,7 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
   const loadInitialData = useCallback(async () => {
     setIsLoadingData(true)
     try {
-      const provinces = await AddressDataService.getProvinces()
+      const provinces = await AddressData.getProvinces()
       const options = provinces.map(p => ({
         value: p.code,
         text: p.name,
@@ -52,7 +52,7 @@ const AddressPicker: React.FC<AddressPickerProps> = ({
       return Promise.resolve([])
     }
 
-    const promise = AddressDataService.getAreas(value, nextLevel)
+    const promise = AddressData.getAreas(value, nextLevel)
       .then(areas => {
         const children = areas.map(a => ({
           value: a.code,
