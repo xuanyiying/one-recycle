@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   OnModuleInit,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -13,15 +14,18 @@ import {
   RedisSnowflakeStateStore,
   RedisService,
 } from '@/common';
+import { PaymentProviderFactory } from './payment-provider.factory';
 
 @Injectable()
 export class PaymentService implements OnModuleInit {
+  private readonly logger = new Logger(PaymentService.name);
   private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly paymentProviderFactory: PaymentProviderFactory,
   ) {
     this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('PAYMENT_WORKER_ID', 9),
@@ -38,7 +42,6 @@ export class PaymentService implements OnModuleInit {
 
   async create(createPaymentDto: CreatePaymentDto) {
     // 检查是否已有支付记录
-    // 检查是否已有支付记录
     const existingPayment = await this.prisma.payment.findFirst({
       where: {
         orderId: BigInt(createPaymentDto.orderId),
@@ -47,6 +50,7 @@ export class PaymentService implements OnModuleInit {
     });
 
     if (existingPayment) {
+      this.logger.warn(`Duplicate payment attempt for order ${createPaymentDto.orderId}`);
       throw new ConflictException('订单已支付成功');
     }
 
@@ -58,6 +62,8 @@ export class PaymentService implements OnModuleInit {
       'OUT',
     );
     const outTradeNo = `${prefix}${id}`;
+
+    this.logger.log(`Creating payment for order ${createPaymentDto.orderId}, transactionId: ${transactionId}`);
 
     return this.prisma.payment.create({
       data: {
@@ -77,9 +83,11 @@ export class PaymentService implements OnModuleInit {
     });
 
     if (!payment) {
+      this.logger.error(`Payment not found for update: ${transactionId}`);
       throw new NotFoundException('支付记录不存在');
     }
 
+    this.logger.log(`Updating payment ${transactionId} status to ${status}`);
     return this.prisma.payment.update({
       where: { id: payment.id },
       data: { status: status, updatedAt: new Date() },
@@ -125,6 +133,7 @@ export class PaymentService implements OnModuleInit {
     }
 
     const outRefundNo = `REF${this.idGenerator.nextId()}`;
+    this.logger.log(`Creating refund for payment ${paymentId}, amount: ${refundAmount}`);
 
     return this.prisma.refund.create({
       data: {
@@ -146,6 +155,7 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('退款记录不存在');
     }
 
+    this.logger.log(`Updating refund ${refundId} status to ${status}`);
     return this.prisma.refund.update({
       where: { id: refundId },
       data: { status: status },
@@ -196,17 +206,21 @@ export class PaymentService implements OnModuleInit {
     });
 
     if (!payment) {
+      this.logger.error(`Payment not found for notify: ${notifyData.outTradeNo}`);
       throw new NotFoundException('支付记录不存在');
     }
+
+    const newStatus = notifyData.tradeState === 'SUCCESS'
+      ? PaymentStatus.SUCCESS
+      : PaymentStatus.FAILED;
+
+    this.logger.log(`Handling notify for ${notifyData.outTradeNo}, status: ${newStatus}`);
 
     return this.prisma.payment.update({
       where: { id: payment.id },
       data: {
         transactionId: notifyData.transactionId,
-        status:
-          notifyData.tradeState === 'SUCCESS'
-            ? PaymentStatus.SUCCESS
-            : PaymentStatus.FAILED,
+        status: newStatus,
         notifyRaw: notifyData.notifyRaw,
         updatedAt: new Date(),
       },
@@ -219,16 +233,20 @@ export class PaymentService implements OnModuleInit {
     });
 
     if (!refund) {
+      this.logger.error(`Refund not found for notify: ${notifyData.outRefundNo}`);
       throw new NotFoundException('退款记录不存在');
     }
+
+    const newStatus = notifyData.refundStatus === 'SUCCESS'
+      ? RefundStatus.SUCCESS
+      : RefundStatus.FAILED;
+
+    this.logger.log(`Handling refund notify for ${notifyData.outRefundNo}, status: ${newStatus}`);
 
     return this.prisma.refund.update({
       where: { id: refund.id },
       data: {
-        status:
-          notifyData.refundStatus === 'SUCCESS'
-            ? RefundStatus.SUCCESS
-            : RefundStatus.FAILED,
+        status: newStatus,
         notifyRaw: notifyData.notifyRaw,
         updatedAt: new Date(),
       },
@@ -304,5 +322,110 @@ export class PaymentService implements OnModuleInit {
     return this.prisma.paymentLog.findMany({
       where: { createdAt: { gte: startDate, lte: endDate } },
     });
+  }
+
+  /**
+   * 转账给用户（企业付款到零钱/提现）
+   * @param userId 用户ID
+   * @param amount 金额
+   * @param provider 支付渠道
+   * @param accountInfo 账户信息
+   * @param description 描述
+   * @param orderId 关联订单ID
+   */
+  async transferToUser(
+    userId: bigint,
+    amount: number,
+    provider: PaymentProvider,
+    accountInfo: { openid?: string; realName?: string; accountNo?: string },
+    description: string = 'Order Settlement',
+    orderId: bigint = BigInt(0),
+  ) {
+    // 1. 生成交易号
+    const id = this.idGenerator.nextId();
+    const transactionId = BigInt(id);
+    const outTradeNo = `TR${id}`;
+
+    this.logger.log(`Starting transfer to user ${userId} (Order: ${orderId}), amount: ${amount}, provider: ${provider}`);
+
+    // 2. 创建支付记录 (状态为 PENDING)
+    // 注意：转账记录我们也放在 Payment 表中
+    await this.prisma.payment.create({
+      data: {
+        orderId: orderId,
+        transactionId,
+        outTradeNo,
+        total: amount,
+        status: PaymentStatus.PENDING,
+        provider,
+      },
+    });
+
+    try {
+      let result;
+      // 3. 调用具体 Provider
+      const paymentProvider = this.paymentProviderFactory.getProvider(provider);
+      
+      if (provider === PaymentProvider.WECHAT) {
+         if (!accountInfo.openid) {
+             throw new Error('WeChat transfer requires openid');
+         }
+         
+         result = await paymentProvider.transfer(
+             amount,
+             { 
+                 openid: accountInfo.openid,
+                 realName: accountInfo.realName,
+             },
+             outTradeNo,
+             description
+         );
+      } else {
+         // Try generic transfer if supported by other providers
+          result = await paymentProvider.transfer(
+             amount,
+             { 
+                 openid: accountInfo.openid,
+                 realName: accountInfo.realName,
+                 alipayAccount: accountInfo.accountNo,
+             },
+             outTradeNo,
+             description
+         );
+      }
+
+      // 4. 更新状态
+      if (result.success) {
+        this.logger.log(`Transfer success: ${transactionId}`);
+        await this.updatePaymentStatus(transactionId, PaymentStatus.SUCCESS);
+      } else {
+        this.logger.warn(`Transfer failed: ${transactionId}, message: ${result.message}`);
+        await this.updatePaymentStatus(transactionId, PaymentStatus.FAILED);
+        // Log failure reason
+        await this.createPaymentLog({
+            transactionId,
+            orderId: orderId,
+            amount,
+            status: PaymentStatus.FAILED,
+            provider,
+            rawData: JSON.stringify(result),
+        });
+        throw new Error(result.message || 'Transfer failed');
+      }
+      
+      return result;
+    } catch (error) {
+      this.logger.error(`Transfer exception: ${transactionId}`, error instanceof Error ? error.stack : String(error));
+      await this.updatePaymentStatus(transactionId, PaymentStatus.FAILED);
+       await this.createPaymentLog({
+            transactionId,
+            orderId: orderId,
+            amount,
+            status: PaymentStatus.FAILED,
+            provider,
+            rawData: JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+        });
+      throw error;
+    }
   }
 }

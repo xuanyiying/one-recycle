@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Account, Prisma } from '@prisma/client';
+import { Account, Prisma, TransactionType } from '@prisma/client';
 
 @Injectable()
 export class AccountService {
@@ -115,5 +115,48 @@ export class AccountService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async deposit(
+    userId: bigint,
+    amount: number,
+    orderId: string,
+    description: string = 'Order Settlement',
+  ): Promise<Account> {
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.account.findFirst({
+        where: { userId },
+      });
+
+      if (!account) {
+        throw new Error(`Account not found for user ${userId}`);
+      }
+
+      const balanceBefore = account.availableBalance;
+      const balanceAfter = balanceBefore + amount;
+
+      const updatedAccount = await tx.account.update({
+        where: { id: account.id },
+        data: {
+          availableBalance: { increment: amount },
+          totalIncome: { increment: amount },
+          version: { increment: 1 },
+        },
+      });
+
+      await tx.transaction.create({
+        data: {
+          accountId: account.id,
+          type: TransactionType.ORDER_INCOME,
+          amount: new Prisma.Decimal(amount),
+          balanceBefore: new Prisma.Decimal(balanceBefore),
+          balanceAfter: new Prisma.Decimal(balanceAfter),
+          orderId: orderId,
+          description: description,
+        },
+      });
+
+      return updatedAccount;
+    });
   }
 }

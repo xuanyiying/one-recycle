@@ -27,7 +27,7 @@ import {
   WarehouseType,
   WarehouseStatus,
 } from '../entities/inventory.entity';
-import { InventoryItem } from '@prisma/client';
+import { InventoryItem, Order, OrderItem } from '@prisma/client';
 
 @Injectable()
 export class InventoryService {
@@ -388,5 +388,59 @@ export class InventoryService {
     });
 
     return warehouse as unknown as WarehouseEntity;
+  }
+
+  // 从订单创建库存项目
+  async createFromOrder(order: Order & { items: any[] }): Promise<void> {
+    if (!order.items || order.items.length === 0) return;
+
+    // Find default warehouse
+    let warehouse = await this.prisma.warehouse.findFirst({
+      where: { type: WarehouseType.MAIN as any, status: WarehouseStatus.ACTIVE },
+    });
+
+    // If no warehouse, create one
+    if (!warehouse) {
+      warehouse = await this.prisma.warehouse.create({
+        data: {
+          name: 'Default Warehouse',
+          code: `WH-DEFAULT`,
+          type: WarehouseType.MAIN as any,
+          address: 'Default Address',
+          contactPhone: '000-0000000',
+          capacity: 10000,
+          status: WarehouseStatus.ACTIVE,
+        },
+      });
+    }
+
+    const warehouseId = warehouse.id;
+
+    // Fetch categories to get names
+    const categoryIds = order.items.map((i) => i.categoryId);
+    const categories = await this.prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+    });
+    const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+    for (const item of order.items) {
+      const category = categoryMap.get(item.categoryId);
+      const name = item.brandModel || category?.name || 'Recycled Item';
+
+      await this.createInventoryItem({
+        warehouseId: warehouseId,
+        categoryId: BigInt(item.categoryId),
+        name: name,
+        description: item.notes || `From Order #${order.orderNo}`,
+        unit: 'kg', // Default unit
+        quantity: item.actualWeight || item.estimatedWeight || item.quantity || 1,
+        unitPrice: item.unitPrice,
+        status: InventoryStatus.IN_STOCK,
+        itemType: ItemType.RECYCLED,
+        condition: ItemCondition.GOOD,
+        sourceOrderId: order.id.toString(),
+        processingStatus: ProcessingStatus.RECEIVED,
+      });
+    }
   }
 }

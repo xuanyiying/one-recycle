@@ -79,11 +79,18 @@ export enum NotificationStatus {
 
 // 订单状态
 export enum OrderStatus {
-  PENDING = 'PENDING', // 待确认
-  CONFIRMED = 'CONFIRMED', // 已确认
-  DISPATCHED = 'DISPATCHED', // 已派单
-  ASSIGNED = 'ASSIGNED', // 已分配
-  IN_PROGRESS = 'IN_PROGRESS', // 进行中
+  PENDING = 'PENDING', // 待接单
+  PENDING_PICKUP = 'PENDING_PICKUP', // 待取件 (已接单/已派单)
+  PICKED_UP = 'PICKED_UP', // 已取件
+  IN_TRANSIT = 'IN_TRANSIT', // 运输中
+  PENDING_RECEIPT = 'PENDING_RECEIPT', // 待收货 (已到达回收站)
+  INSPECTING = 'INSPECTING', // 验货中
+  INSPECTED = 'INSPECTED', // 已验货
+  INSPECTION_EXCEPTION = 'INSPECTION_EXCEPTION', // 验货异常
+  MANUAL_PROCESSING = 'MANUAL_PROCESSING', // 人工处理
+  PENDING_INBOUND = 'PENDING_INBOUND', // 待入库
+  INBOUNDED = 'INBOUNDED', // 已入库
+  PENDING_SETTLEMENT = 'PENDING_SETTLEMENT', // 待结算
   COMPLETED = 'COMPLETED', // 已完成
   CANCELLED = 'CANCELLED', // 已取消
   REFUNDED = 'REFUNDED', // 已退款

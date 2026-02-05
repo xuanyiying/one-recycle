@@ -66,7 +66,7 @@ export class DispatchService implements OnModuleInit {
     });
 
     await this.orderService.update(Number(orderId), {
-      status: OrderStatus.ASSIGNED,
+      status: OrderStatus.PENDING_PICKUP,
     } as any);
     return { success: true, orderId, courierId, assignmentId: assignment.id };
   }
