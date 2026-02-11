@@ -264,7 +264,7 @@ export class StaffService {
         realName: realName || fullName,
         mobile: mobile || phone,
         email,
-        status: (status?.toUpperCase() || 'ACTIVE') as any,
+        status: status?.toUpperCase() || 'ACTIVE',
       },
       include: { role: true },
     });

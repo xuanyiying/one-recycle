@@ -8,6 +8,8 @@ import {
   Delete,
   Query,
   ParseIntPipe,
+  Put,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -144,6 +146,75 @@ export class OrderController {
     @Body() updateOrderData: UpdateOrderDto,
   ): Promise<Order> {
     return this.orderService.update(id, updateOrderData);
+  }
+
+  /**
+   * 更新订单状态
+   * @param id 订单ID
+   * @param updateOrderData 更新订单状态
+   */
+  @Put(':id/status')
+  @ApiOperation({ summary: '更新订单状态' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: '订单状态更新成功' })
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateOrderData: UpdateOrderDto,
+  ): Promise<Order> {
+    if (!updateOrderData.status) {
+      throw new BadRequestException('status is required');
+    }
+    return this.orderService.updateStatus(id, updateOrderData);
+  }
+
+  /**
+   * 确认订单
+   * @param id 订单ID
+   */
+  @Put(':id/confirm')
+  @ApiOperation({ summary: '确认订单' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: '订单确认成功' })
+  async confirm(@Param('id', ParseIntPipe) id: number): Promise<Order> {
+    return this.orderService.confirmOrder(id);
+  }
+
+  /**
+   * 入库确认
+   * @param id 订单ID
+   */
+  @Patch(':id/inbound/confirm')
+  @ApiOperation({ summary: '入库确认' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: '入库确认成功' })
+  async confirmInbound(@Param('id', ParseIntPipe) id: number): Promise<Order> {
+    return this.orderService.confirmInbound(id);
+  }
+
+  /**
+   * 物流状态回调
+   * @param id 订单ID
+   */
+  @Post(':id/logistics/notify')
+  @ApiOperation({ summary: '物流状态回调' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: '物流状态更新成功' })
+  async logisticsNotify(
+    @Param('id', ParseIntPipe) id: number,
+    @Body()
+    data: {
+      status: string;
+      providerData?: any;
+    },
+  ): Promise<Order> {
+    if (!data?.status) {
+      throw new BadRequestException('status is required');
+    }
+    return this.orderService.updateLogisticsStatus(
+      id,
+      data.status,
+      data.providerData,
+    );
   }
 
   /**

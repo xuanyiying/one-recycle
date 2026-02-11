@@ -212,6 +212,7 @@ model Order {
   userFeedbacks      UserFeedback[]
   courierFeedbacks   CourierFeedback[]
   logisticsOrders    LogisticsOrder[] // 物流单
+  photos             OrderPhoto[]       // 订单照片（与存储关联）
   tenant             Tenant?             @relation(fields: [tenantId], references: [id])
   tenantId           BigInt?
   settlementRecord   SettlementRecord?
@@ -1257,4 +1258,103 @@ enum SettlementStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+
+// Storage
+
+/// 文件存储记录
+/// 字段与服务端 StorageService 上传/读取/删除接口完全对齐
+/// - filename: 文件名（不含路径）
+/// - originalName: 原始上传名（用于展示）
+/// - fileSize: 文件大小（字节）
+/// - mimeType: MIME 类型（如 image/jpeg）
+/// - fileUrl: 访问 URL（可能为预签名或公开地址）
+/// - filePath: 存储对象键（如 orders/{orderId}/photos/{ts}_{rand}.jpg）
+/// - hashMd5: 文件内容 MD5（用于秒传/去重）
+/// - fileType: 文件类型枚举（IMAGE/VIDEO/DOCUMENT/AUDIO/OTHER）
+/// - category: 业务分类（例如 'ORDER_PHOTO'）
+/// - thumbnailUrl: 缩略图 URL（如图片生成的预览）
+/// - ossType: 存储后端类型（MINIO/S3/OSS/...）
+/// - isPublic: 是否公开访问（影响访问权限）
+/// - downloadCount: 下载次数（统计用途）
+model Storage {
+  id           String   @id @default(uuid())
+  userId       String
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  fileUrl      String
+  filePath     String
+  hashMd5      String
+  fileType     FileType
+  category     String?
+  thumbnailUrl String?
+  ossType      OssType
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orderPhotos  OrderPhoto[]
+
+  @@index([userId])
+  @@index([fileType])
+  @@index([hashMd5])
+  @@map("storages")
+}
+
+
+enum FileType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+  OTHER
+}
+
+enum OssType {
+  MINIO
+  AWS_S3
+  ALIYUN_OSS
+  TENCENT_COS
+  LOCAL
+}
+
+/// 订单照片模型
+/// 与 Storage 映射关系：
+/// - photoUrl ↔ Storage.fileUrl
+/// - filePath ↔ Storage.filePath（对象键，包含命名规则前缀）
+/// - fileSize ↔ Storage.fileSize
+/// - mimeType ↔ Storage.mimeType
+/// 存储路径与命名规则（推荐）：
+///   orders/{order_id}/photos/{yyyy}/{mm}/{dd}/{order_id}_{timestamp}_{random}.{ext}
+/// 访问权限：
+///   isPublic = false（默认私有）；如需公开展示可设为 true
+model OrderPhoto {
+  id         BigInt   @id @default(autoincrement())
+  orderId    BigInt   @map("order_id")
+  storageId  String   @map("storage_id")
+  filename   String   @db.VarChar(255)  @map("filename")
+  originalName String @db.VarChar(255)  @map("original_name")
+  photoUrl   String   @db.VarChar(2048) @map("photo_url")
+  filePath   String   @db.VarChar(512)  @map("file_path")
+  fileSize   Int      @map("file_size")
+  mimeType   String   @db.VarChar(100)  @map("mime_type")
+  hashMd5    String   @db.VarChar(32)   @map("hash_md5")
+  fileType   FileType @default(IMAGE)   @map("file_type")
+  category   String?  @db.VarChar(50)   @map("category")
+  thumbnailUrl String? @db.VarChar(2048) @map("thumbnail_url")
+  ossType    OssType  @map("oss_type")
+  uploadedAt DateTime @default(now())   @map("uploaded_at")
+  createdAt  DateTime @default(now())   @map("created_at")
+  updatedAt  DateTime @updatedAt        @map("updated_at")
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  storage Storage @relation(fields: [storageId], references: [id])
+
+  // 性能与约束：高并发检索与去重
+  @@index([orderId])
+  @@index([storageId])
+  @@index([uploadedAt])
+  @@unique([orderId, filePath]) // 防止同一订单重复对象键
+  @@map("order_photos")
 }

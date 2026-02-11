@@ -29,15 +29,20 @@
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "seed": "ts-node scripts/main.ts",
     "seed:all": "ts-node scripts/main.ts",
-    "seed:categories": "ts-node scripts/seed-categories.ts"
+    "seed:categories": "ts-node scripts/seed-categories.ts",
+    "prepare": "husky"
   },
   "dependencies": {
-    "@nestjs/cache-manager": "^3.1.0",
+    "@alicloud/pop-core": "^1.8.0",
+    "@aws-sdk/client-s3": "^3.984.0",
+    "@aws-sdk/s3-request-presigner": "^3.984.0",
     "@grpc/grpc-js": "^1.14.1",
     "@grpc/proto-loader": "^0.8.0",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/bull": "^11.0.4",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -50,15 +55,19 @@
     "@nestjs/throttler": "^6.4.0",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
+    "@types/ali-oss": "^6.23.2",
+    "ali-oss": "^6.23.0",
     "axios": "^1.13.2",
     "bull": "^4.16.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "ioredis": "^5.8.2",
+    "p-limit": "^7.3.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.13.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "uuid": "^13.0.0",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
@@ -69,16 +78,20 @@
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^1.4.12",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.11.10",
     "@types/supertest": "^6.0.2",
     "@types/xml2js": "^0.4.14",
+    "aws-sdk-client-mock": "^4.1.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
     "prisma": "^7.1.0",
     "source-map-support": "^0.5.21",
@@ -89,6 +102,12 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "jest": {
     "moduleFileExtensions": [
@@ -103,7 +122,8 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1"
+      "^@/(.*)$": "<rootDir>/$1",
+      "^uuid$": "<rootDir>/../test/mocks/uuid.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

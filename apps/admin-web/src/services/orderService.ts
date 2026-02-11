@@ -2,91 +2,125 @@ import { apiClient } from './apiClient';
 
 export enum OrderStatus {
   PENDING = 'PENDING',
-  ASSIGNED = 'ASSIGNED',
-  PICKUP_PENDING = 'PICKUP_PENDING',
+  PENDING_PICKUP = 'PENDING_PICKUP',
   PICKED_UP = 'PICKED_UP',
   IN_TRANSIT = 'IN_TRANSIT',
-  RECEIVING_PENDING = 'RECEIVING_PENDING',
+  PENDING_RECEIPT = 'PENDING_RECEIPT',
   INSPECTING = 'INSPECTING',
   INSPECTED = 'INSPECTED',
   INSPECTION_EXCEPTION = 'INSPECTION_EXCEPTION',
-  MANUAL_REVIEW = 'MANUAL_REVIEW',
-  INBOUND_PENDING = 'INBOUND_PENDING',
-  INBOUND_COMPLETED = 'INBOUND_COMPLETED',
-  SETTLEMENT_PENDING = 'SETTLEMENT_PENDING',
+  MANUAL_PROCESSING = 'MANUAL_PROCESSING',
+  PENDING_INBOUND = 'PENDING_INBOUND',
+  INBOUNDED = 'INBOUNDED',
+  PENDING_SETTLEMENT = 'PENDING_SETTLEMENT',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   REFUNDED = 'REFUNDED',
 }
 
-// 订单类型接口
-export interface Order {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  items: OrderItem[];
-  totalAmount: number;
-  status: OrderStatus;
-  logistics?: OrderLogistics;
-  statusTimeline?: OrderStatusTimelineItem[];
-  operationLogs?: OrderOperationLog[];
-  inspection?: OrderInspection;
+export interface OrderAddress {
+  id: number;
+  userId: number;
+  name: string;
+  mobile: string;
+  province: string;
+  city: string;
+  district: string;
+  town: string;
+  street: string;
+  zipCode: string;
+  detail: string;
   createdAt: string;
   updatedAt: string;
-  scheduledDate?: string;
-  completedAt?: string;
-  notes?: string;
-}
-
-export interface OrderLogistics {
-  carrierName: string;
-  trackingNumber: string;
-  currentStatus: string;
-  lastUpdatedAt: string;
-  events: OrderLogisticsEvent[];
-}
-
-export interface OrderLogisticsEvent {
-  time: string;
-  location: string;
-  status: string;
-  detail?: string;
-}
-
-export interface OrderStatusTimelineItem {
-  status: OrderStatus;
-  time: string;
-  operator?: string;
-  note?: string;
-}
-
-export interface OrderOperationLog {
-  id: string;
-  operator: string;
-  action: string;
-  time: string;
-  detail?: string;
-}
-
-export interface OrderInspection {
-  inspector: string;
-  result: 'PASS' | 'EXCEPTION';
-  reason?: string[];
-  note?: string;
-  images?: string[];
-  completedAt?: string;
 }
 
 export interface OrderItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  quantity: number;
-  unit: string;
+  id: number;
+  orderId: number;
+  categoryId: number;
+  categoryName?: string;
+  estimatedWeight: number;
+  actualWeight?: number | null;
   unitPrice: number;
-  totalPrice: number;
+  amount: number;
+  quantity: number;
+  condition?: string | null;
+  photos?: unknown;
+  brandModel?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface OrderAssignment {
+  id: number;
+  orderId: number;
+  courierId: number;
+  status: string;
+  acceptedAt?: string | null;
+  arrivedAt?: string | null;
+  finishedAt?: string | null;
+  createdAt: string;
+}
+
+export interface LogisticsOrder {
+  id: number;
+  orderId: number;
+  logisticsNo?: string | null;
+  logisticsCompany?: string | null;
+  status: string;
+  senderName?: string | null;
+  senderPhone?: string | null;
+  senderAddress?: string | null;
+  receiverName?: string | null;
+  receiverPhone?: string | null;
+  receiverAddress?: string | null;
+  estimatedPickupTime?: string | null;
+  actualPickupTime?: string | null;
+  estimatedDeliveryTime?: string | null;
+  actualDeliveryTime?: string | null;
+  deliveryFee?: number | null;
+  providerData?: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderTimelineItem {
+  id: number;
+  orderId: number;
+  status: string;
+  message: string;
+  operator?: string | null;
+  createdAt: string;
+}
+
+// 订单类型接口
+export interface Order {
+  id: number;
+  orderNo: string;
+  userId: number;
+  addressId: number;
+  orderType: string;
+  status: OrderStatus;
+  priority: number;
+  expectPickupTime?: string | null;
+  actualPickupTime?: string | null;
+  expectDeliveryTime?: string | null;
+  actualDeliveryTime?: string | null;
+  estimatedAmount: number;
+  settlementAmount: number;
+  payAmount: number;
+  discountAmount?: number;
+  channel: string;
+  remark?: string | null;
+  source?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+  address?: OrderAddress;
+  items?: OrderItem[];
+  assignments?: OrderAssignment[];
+  logisticsOrders?: LogisticsOrder[];
+  timeline?: OrderTimelineItem[];
 }
 
 // 订单统计接口
@@ -104,13 +138,15 @@ export interface OrderStats {
 // 订单查询参数
 export interface OrderQueryParams {
   page?: number;
-  pageSize?: number;
+  limit?: number;
   status?: OrderStatus;
-  customerName?: string;
-  orderNumber?: string;
+  userId?: string;
+  orderNo?: string;
+  orderType?: string;
+  priority?: number;
   startDate?: string;
   endDate?: string;
-  sortBy?: 'createdAt' | 'totalAmount' | 'status';
+  sortBy?: 'createdAt' | 'estimatedAmount' | 'settlementAmount' | 'status';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -119,29 +155,50 @@ export interface OrderListResponse {
   orders: Order[];
   total: number;
   page: number;
-  pageSize: number;
+  limit: number;
   totalPages: number;
 }
 
 // 创建订单请求
 export interface CreateOrderRequest {
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  items: Omit<OrderItem, 'id' | 'totalPrice'>[];
-  scheduledDate?: string;
+  orderNo?: string;
+  userId?: number;
+  addressId: number;
+  timeSlotId?: string;
+  expectPickupTime?: string;
+  items: Array<{
+    categoryId: number | string;
+    categoryName?: string;
+    estimatedWeight?: number;
+    weight?: number;
+    unitPrice?: number;
+    quantity: number;
+    brandModel?: string;
+    condition?: string;
+    photos?: string[];
+    notes?: string;
+    estimatedPrice?: any;
+  }>;
+  channel?: string;
   notes?: string;
+  source?: string;
+  remark?: string;
+  totalAmount?: number;
+  estimatedAmount?: number;
+  status?: OrderStatus;
 }
 
 // 更新订单请求
 export interface UpdateOrderRequest {
-  customerName?: string;
-  customerPhone?: string;
-  customerAddress?: string;
-  items?: Omit<OrderItem, 'id' | 'totalPrice'>[];
   status?: OrderStatus;
-  scheduledDate?: string;
-  notes?: string;
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  remark?: string;
+  expectPickupTime?: string;
+  expectDeliveryTime?: string;
+  actualPickupTime?: string;
+  actualDeliveryTime?: string;
+  settlementAmount?: number;
+  payAmount?: number;
 }
 
 class OrderService {
@@ -157,7 +214,7 @@ class OrderService {
   /**
    * 获取订单详情
    */
-  async getOrderById(id: string): Promise<Order> {
+  async getOrderById(id: number | string): Promise<Order> {
     return apiClient.get<Order>(`${this.baseUrl}/${id}`);
   }
 
@@ -174,7 +231,7 @@ class OrderService {
   /**
    * 更新订单
    */
-  async updateOrder(id: string, data: UpdateOrderRequest): Promise<Order> {
+  async updateOrder(id: number | string, data: UpdateOrderRequest): Promise<Order> {
     return apiClient.put<Order>(`${this.baseUrl}/${id}`, data, {
       showSuccess: true,
       successMessage: '订单更新成功',
@@ -184,7 +241,7 @@ class OrderService {
   /**
    * 删除订单
    */
-  async deleteOrder(id: string): Promise<void> {
+  async deleteOrder(id: number | string): Promise<void> {
     return apiClient.delete<void>(`${this.baseUrl}/${id}`, {
       showSuccess: true,
       successMessage: '订单删除成功',
@@ -208,7 +265,7 @@ class OrderService {
   /**
    * 更新订单状态
    */
-  async updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
+  async updateOrderStatus(id: number | string, status: OrderStatus): Promise<Order> {
     return apiClient.put<Order>(
       `${this.baseUrl}/${id}/status`,
       { status },

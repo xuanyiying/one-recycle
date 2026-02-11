@@ -106,19 +106,12 @@ class DashboardApiService {
 
   private async fetchRecentOrders(limit: number): Promise<RecentOrder[]> {
     try {
-      // Assuming orderService has getRecentOrders, if not I will use apiClient as fallback or need to add it to orderService
-      // But based on previous read, it likely has it. 
-      // To be safe, I will stick to what works or check orderService content first.
-      // Wait, I saw "获取最近订单（用于仪表板）" comment in orderService.ts.
-      // So I can use it.
-      // However, the return type might be Order[], but Dashboard needs RecentOrder[].
-      // I might need to map it.
       const orders = await orderService.getRecentOrders(limit);
       return orders.map(order => ({
-        id: order.id,
-        orderNo: order.orderNumber,
-        customer: order.customerName,
-        amount: order.totalAmount,
+        id: order.id.toString(),
+        orderNo: order.orderNo,
+        customer: order.address?.name || `用户#${order.userId}`,
+        amount: order.settlementAmount || order.estimatedAmount || order.payAmount || 0,
         status: order.status as any,
         createdAt: order.createdAt
       }));

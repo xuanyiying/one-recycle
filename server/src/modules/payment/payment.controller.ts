@@ -47,6 +47,16 @@ export class PaymentController {
     );
   }
 
+  @Post('notify')
+  handlePaymentNotify(@Body() notifyData: any) {
+    return this.paymentService.handlePaymentNotify(notifyData);
+  }
+
+  @Post('notify/refund')
+  handleRefundNotify(@Body() notifyData: any) {
+    return this.paymentService.handleRefundNotify(notifyData);
+  }
+
   @Put('refunds/:refundId/status')
   updateRefundStatus(
     @Param('refundId') refundId: string,

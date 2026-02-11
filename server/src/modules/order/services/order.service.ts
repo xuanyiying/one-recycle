@@ -4,6 +4,7 @@ import {
   OnModuleInit,
   Inject,
   forwardRef,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -177,6 +178,39 @@ export class OrderService implements OnModuleInit {
         },
       });
 
+      const photoIds = items
+        .flatMap((item) => (Array.isArray(item.photos) ? item.photos : []))
+        .filter((photoId) => typeof photoId === 'string' && photoId.length > 0);
+
+      if (photoIds.length > 0) {
+        const uniquePhotoIds = Array.from(new Set(photoIds));
+        const transactionClient = prisma as any;
+        const storageFiles = await transactionClient.storage.findMany({
+          where: { id: { in: uniquePhotoIds } },
+        });
+
+        if (storageFiles.length > 0) {
+          await transactionClient.orderPhoto.createMany({
+            data: storageFiles.map((file: any) => ({
+              orderId: order.id,
+              storageId: file.id,
+              filename: file.filename,
+              originalName: file.originalName,
+              photoUrl: file.fileUrl,
+              filePath: file.filePath,
+              fileSize: file.fileSize,
+              mimeType: file.mimeType,
+              hashMd5: file.hashMd5,
+              fileType: file.fileType,
+              category: file.category,
+              thumbnailUrl: file.thumbnailUrl,
+              ossType: file.ossType,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
       return order;
     });
 
@@ -188,6 +222,8 @@ export class OrderService implements OnModuleInit {
         categoryId: item.categoryId.toString(),
         quantity: item.quantity,
         estimatedPrice: item.unitPrice,
+        weight: item.estimatedWeight,
+        condition: item.condition || undefined,
         description: item.notes || undefined,
       })),
       address: {
@@ -335,6 +371,7 @@ export class OrderService implements OnModuleInit {
         include: {
           items: true,
           assignments: true,
+          address: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -419,6 +456,59 @@ export class OrderService implements OnModuleInit {
     return this.mapToOrder(order);
   }
 
+  async updateStatus(id: number, data: UpdateOrderDto): Promise<Order> {
+    const order = await this.findById(id);
+    if (!order) throw new NotFoundException('Order not found');
+
+    if (data.status) {
+      this.validateTransition(order.status, data.status);
+    }
+
+    return this.update(id, data);
+  }
+
+  async confirmOrder(id: number): Promise<Order> {
+    return this.updateStatus(id, { status: OrderStatus.PENDING_PICKUP });
+  }
+
+  async updateLogisticsStatus(
+    orderId: number,
+    logisticsStatus: string,
+    providerData?: any,
+  ): Promise<Order> {
+    const logisticsOrder = await this.prisma.logisticsOrder.findFirst({
+      where: { orderId: BigInt(orderId) },
+    });
+
+    if (!logisticsOrder) {
+      throw new NotFoundException('Logistics order not found');
+    }
+
+    await this.prisma.logisticsOrder.update({
+      where: { id: logisticsOrder.id },
+      data: {
+        status: logisticsStatus,
+        providerData: providerData ?? logisticsOrder.providerData,
+      },
+    });
+
+    const normalized = logisticsStatus.toString().toUpperCase();
+    const statusMap: Record<string, OrderStatus> = {
+      PICKED_UP: OrderStatus.PICKED_UP,
+      IN_TRANSIT: OrderStatus.IN_TRANSIT,
+      ARRIVED: OrderStatus.PENDING_RECEIPT,
+      DELIVERED: OrderStatus.PENDING_RECEIPT,
+      RECEIVED: OrderStatus.PENDING_RECEIPT,
+    };
+
+    const mappedStatus = statusMap[normalized];
+    if (mappedStatus) {
+      return this.updateStatus(orderId, { status: mappedStatus });
+    }
+
+    return this.findOne(orderId);
+  }
+
   /**
    * 取消订单
    * @param id 订单ID
@@ -486,6 +576,7 @@ export class OrderService implements OnModuleInit {
       include: {
         items: true,
         assignments: true,
+        address: true,
       },
     });
     return orders.map((order) => this.mapToOrder(order));
@@ -641,7 +732,15 @@ export class OrderService implements OnModuleInit {
 
   async finishInspection(
     id: number,
-    result: { actualAmount: number; items?: { id: number; actualWeight: number; unitPrice?: number; condition?: string }[] },
+    result: {
+      actualAmount: number;
+      items?: {
+        id: number;
+        actualWeight: number;
+        unitPrice?: number;
+        condition?: string;
+      }[];
+    },
   ): Promise<Order> {
     const order = await this.findById(id);
     if (!order) throw new NotFoundException('Order not found');
@@ -656,7 +755,9 @@ export class OrderService implements OnModuleInit {
             data: {
               actualWeight: item.actualWeight,
               unitPrice: item.unitPrice, // Optional update
-              amount: item.unitPrice ? item.actualWeight * item.unitPrice : undefined,
+              amount: item.unitPrice
+                ? item.actualWeight * item.unitPrice
+                : undefined,
               condition: item.condition,
             },
           });
@@ -686,13 +787,19 @@ export class OrderService implements OnModuleInit {
     });
   }
 
-  async resolveException(id: number, resolution: 'RETRY' | 'MANUAL'): Promise<Order> {
+  async resolveException(
+    id: number,
+    resolution: 'RETRY' | 'MANUAL',
+  ): Promise<Order> {
     const order = await this.findById(id);
     if (!order) throw new NotFoundException('Order not found');
-    
-    const nextStatus = resolution === 'RETRY' ? OrderStatus.INSPECTING : OrderStatus.MANUAL_PROCESSING;
+
+    const nextStatus =
+      resolution === 'RETRY'
+        ? OrderStatus.INSPECTING
+        : OrderStatus.MANUAL_PROCESSING;
     this.validateTransition(order.status, nextStatus);
-    
+
     return this.update(id, { status: nextStatus });
   }
 
@@ -716,32 +823,32 @@ export class OrderService implements OnModuleInit {
    * Analyzes order item photos to suggest category and condition
    */
   async performAiGrading(id: number): Promise<any> {
-    const order = await this.findById(id) as any;
+    const order = (await this.findById(id)) as any;
     if (!order) throw new NotFoundException('Order not found');
-    
+
     // Mock AI Analysis Logic
     // In production, this would call an external AI Vision API
     if (order.items) {
-        const results = order.items.map((item: any) => {
-            // Logic to analyze item.photos
-            return {
-                itemId: item.id.toString(),
-                aiSuggestion: {
-                    category: 'Recyclable',
-                    condition: 'Good',
-                    confidence: 0.88,
-                    tags: ['plastic', 'bottle']
-                }
-            };
-        });
-        return results;
+      const results = order.items.map((item: any) => {
+        // Logic to analyze item.photos
+        return {
+          itemId: item.id.toString(),
+          aiSuggestion: {
+            category: 'Recyclable',
+            condition: 'Good',
+            confidence: 0.88,
+            tags: ['plastic', 'bottle'],
+          },
+        };
+      });
+      return results;
     }
     return [];
   }
 
   async completeSettlement(
-    id: number, 
-    options?: { method: PaymentProvider; accountInfo?: any }
+    id: number,
+    options?: { method: PaymentProvider; accountInfo?: any },
   ): Promise<Order> {
     const order = await this.findById(id);
     if (!order) throw new NotFoundException('Order not found');
@@ -750,47 +857,54 @@ export class OrderService implements OnModuleInit {
     // Perform settlement (deposit to user account or transfer)
     if (order.settlementAmount > 0) {
       const method = options?.method || PaymentProvider.BALANCE;
-      
-      if (method === PaymentProvider.BALANCE) {
-          await this.accountService.deposit(
-            order.userId,
-            order.settlementAmount,
-            order.id.toString(),
-            `Recycle Order Settlement #${order.orderNo}`,
-          );
-      } else if (method === PaymentProvider.WECHAT || method === PaymentProvider.ALIPAY) {
-          // Ensure we have account info
-          // If not provided in options, try to find from UserIdentity
-          let accountInfo = options?.accountInfo;
-          if (!accountInfo) {
-              const identity = await this.prisma.userIdentity.findFirst({
-                  where: { 
-                      userId: BigInt(order.userId),
-                      provider: method === PaymentProvider.WECHAT ? 'wechat' : 'alipay'
-                  }
-              });
-              
-              if (identity) {
-                  accountInfo = {
-                      openid: identity.openid,
-                      // Real name might be in User profile
-                      realName: (await this.prisma.user.findUnique({ where: { id: BigInt(order.userId) } }))?.realName
-                  };
-              }
-          }
-          
-          if (!accountInfo || !accountInfo.openid) {
-             throw new Error(`Missing account info for ${method} transfer`);
-          }
 
-          await this.paymentService.transferToUser(
-            BigInt(order.userId),
-            order.settlementAmount,
-            method,
-            accountInfo,
-            `Recycle Order Settlement #${order.orderNo}`,
-            BigInt(order.id),
-          );
+      if (method === PaymentProvider.BALANCE) {
+        await this.accountService.deposit(
+          order.userId,
+          order.settlementAmount,
+          order.id.toString(),
+          `Recycle Order Settlement #${order.orderNo}`,
+        );
+      } else if (
+        method === PaymentProvider.WECHAT ||
+        method === PaymentProvider.ALIPAY
+      ) {
+        // Ensure we have account info
+        // If not provided in options, try to find from UserIdentity
+        let accountInfo = options?.accountInfo;
+        if (!accountInfo) {
+          const identity = await this.prisma.userIdentity.findFirst({
+            where: {
+              userId: BigInt(order.userId),
+              provider: method === PaymentProvider.WECHAT ? 'wechat' : 'alipay',
+            },
+          });
+
+          if (identity) {
+            accountInfo = {
+              openid: identity.openid,
+              // Real name might be in User profile
+              realName: (
+                await this.prisma.user.findUnique({
+                  where: { id: BigInt(order.userId) },
+                })
+              )?.realName,
+            };
+          }
+        }
+
+        if (!accountInfo || !accountInfo.openid) {
+          throw new Error(`Missing account info for ${method} transfer`);
+        }
+
+        await this.paymentService.transferToUser(
+          BigInt(order.userId),
+          order.settlementAmount,
+          method,
+          accountInfo,
+          `Recycle Order Settlement #${order.orderNo}`,
+          BigInt(order.id),
+        );
       }
     }
 
@@ -799,8 +913,14 @@ export class OrderService implements OnModuleInit {
 
   private validateTransition(current: string, target: string): void {
     const validTransitions: Record<string, string[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.PENDING_PICKUP, OrderStatus.CANCELLED],
-      [OrderStatus.PENDING_PICKUP]: [OrderStatus.PICKED_UP, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING]: [
+        OrderStatus.PENDING_PICKUP,
+        OrderStatus.CANCELLED,
+      ],
+      [OrderStatus.PENDING_PICKUP]: [
+        OrderStatus.PICKED_UP,
+        OrderStatus.CANCELLED,
+      ],
       [OrderStatus.PICKED_UP]: [OrderStatus.IN_TRANSIT],
       [OrderStatus.IN_TRANSIT]: [OrderStatus.PENDING_RECEIPT],
       [OrderStatus.PENDING_RECEIPT]: [OrderStatus.INSPECTING],
@@ -824,13 +944,10 @@ export class OrderService implements OnModuleInit {
     };
 
     if (!validTransitions[current]?.includes(target)) {
-      // Allow if target is same as current (idempotency)
       if (current === target) return;
-      
-      // Allow admin override or specialized flows? For now, strict.
-      // throw new Error(`Invalid state transition from ${current} to ${target}`);
-      // Log warning but allow for now to prevent breakage during migration
-      console.warn(`Invalid state transition from ${current} to ${target}`);
+      throw new BadRequestException(
+        `Invalid state transition from ${current} to ${target}`,
+      );
     }
   }
 }

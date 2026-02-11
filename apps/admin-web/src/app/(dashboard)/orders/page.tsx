@@ -183,13 +183,13 @@ export default function OrdersPage() {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const isOrderNumber = /^\d+$/.test(search) || search.startsWith('ORD');
-      const customerFromSearch = !isOrderNumber && search ? search : undefined;
+      const isOrderNo = search.startsWith('ORD');
+      const isNumeric = /^\d+$/.test(search);
       const params: OrderQueryParams = {
         page,
-        pageSize: limit,
-        orderNumber: isOrderNumber ? search : undefined,
-        customerName: userFilterFromUrl || customerFromSearch,
+        limit,
+        orderNo: search && (isOrderNo || isNumeric) ? search : undefined,
+        userId: userFilterFromUrl || (!isOrderNo && isNumeric ? search : undefined),
         status: (status as OrderStatus) || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -217,24 +217,23 @@ export default function OrdersPage() {
   const getStatusBadgeVariant = (value: OrderStatus) => {
     switch (value) {
       case OrderStatus.PENDING:
-      case OrderStatus.PICKUP_PENDING:
+      case OrderStatus.PENDING_PICKUP:
       case OrderStatus.INSPECTING:
-      case OrderStatus.SETTLEMENT_PENDING:
+      case OrderStatus.PENDING_SETTLEMENT:
         return 'warning';
-      case OrderStatus.ASSIGNED:
-      case OrderStatus.RECEIVING_PENDING:
-      case OrderStatus.INBOUND_PENDING:
+      case OrderStatus.PENDING_RECEIPT:
+      case OrderStatus.PENDING_INBOUND:
         return 'info';
       case OrderStatus.PICKED_UP:
       case OrderStatus.IN_TRANSIT:
         return 'default';
       case OrderStatus.INSPECTION_EXCEPTION:
         return 'destructive';
-      case OrderStatus.MANUAL_REVIEW:
+      case OrderStatus.MANUAL_PROCESSING:
       case OrderStatus.CANCELLED:
         return 'secondary';
       case OrderStatus.INSPECTED:
-      case OrderStatus.INBOUND_COMPLETED:
+      case OrderStatus.INBOUNDED:
       case OrderStatus.COMPLETED:
         return 'success';
       case OrderStatus.REFUNDED:
@@ -244,12 +243,22 @@ export default function OrdersPage() {
     }
   };
 
-  const handleEdit = (order: Order) => {
-    setEditingOrder(order);
+  const handleEdit = async (order: Order) => {
     setModalVisible(true);
+    setModalLoading(true);
+    try {
+      const detail = await orderService.getOrderById(order.id);
+      setEditingOrder(detail);
+    } catch (error) {
+      console.error(error);
+      toast.error('获取订单详情失败');
+      setEditingOrder(order);
+    } finally {
+      setModalLoading(false);
+    }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('确定要删除该订单吗？此操作不可恢复。')) return;
 
     try {
@@ -262,7 +271,7 @@ export default function OrdersPage() {
     }
   };
 
-  const handleModalOk = async (id: string, values: UpdateOrderRequest) => {
+  const handleModalOk = async (id: number, values: UpdateOrderRequest) => {
     try {
       setModalLoading(true);
       await orderService.updateOrder(id, values);
@@ -279,6 +288,20 @@ export default function OrdersPage() {
 
   const toggleColumn = (column: keyof typeof visibleColumns) => {
     setVisibleColumns((prev) => ({ ...prev, [column]: !prev[column] }));
+  };
+
+  const getFullAddress = (address?: Order['address']) => {
+    if (!address) return '';
+    return [
+      address.province,
+      address.city,
+      address.district,
+      address.town,
+      address.street,
+      address.detail,
+    ]
+      .filter(Boolean)
+      .join('');
   };
 
   const compressImage = (file: File): Promise<string> => {
@@ -476,7 +499,7 @@ export default function OrdersPage() {
                   <div className="relative flex-1">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="搜索订单号/客户姓名..."
+                      placeholder="搜索订单号/用户ID..."
                       className="pl-9"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
@@ -654,17 +677,26 @@ export default function OrdersPage() {
                     data?.orders.map((order) => (
                       <TableRow key={order.id} className={density === 'compact' ? 'py-1' : ''}>
                         {visibleColumns.orderNumber && (
-                          <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                          <TableCell className="font-medium">{order.orderNo}</TableCell>
                         )}
                         {visibleColumns.customerInfo && (
                           <TableCell>
                             <div className="flex flex-col text-sm">
-                              <span>{order.customerName}</span>
-                              <span className="text-muted-foreground text-xs">{order.customerPhone}</span>
+                              <span>
+                                {order.address?.name || `用户#${order.userId}`}
+                                {order.address?.mobile ? ` · ${order.address.mobile}` : ''}
+                              </span>
+                              <span className="text-muted-foreground text-xs">
+                                {getFullAddress(order.address) || '-'}
+                              </span>
                             </div>
                           </TableCell>
                         )}
-                        {visibleColumns.amount && <TableCell>¥{order.totalAmount}</TableCell>}
+                        {visibleColumns.amount && (
+                          <TableCell>
+                            ¥{order.settlementAmount || order.estimatedAmount || order.payAmount || 0}
+                          </TableCell>
+                        )}
                         {visibleColumns.status && (
                           <TableCell>
                             <Badge variant={getStatusBadgeVariant(order.status)}>

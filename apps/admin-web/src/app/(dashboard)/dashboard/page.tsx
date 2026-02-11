@@ -70,14 +70,27 @@ const DashboardPage: React.FC = () => {
     switch (status) {
       case 'PENDING':
         return <Badge variant="secondary">待处理</Badge>;
-      case 'CONFIRMED':
-        return <Badge className="bg-info hover:bg-info-600">已确认</Badge>;
-      case 'PROCESSING':
+      case 'PENDING_PICKUP':
+      case 'PENDING_RECEIPT':
+      case 'PENDING_INBOUND':
+      case 'PENDING_SETTLEMENT':
+        return <Badge className="bg-info hover:bg-info-600">待处理</Badge>;
+      case 'PICKED_UP':
+      case 'IN_TRANSIT':
+      case 'INSPECTING':
         return <Badge className="bg-primary hover:bg-primary/90">处理中</Badge>;
+      case 'INSPECTED':
+      case 'INBOUNDED':
       case 'COMPLETED':
         return <Badge className="bg-success hover:bg-success-600">已完成</Badge>;
+      case 'INSPECTION_EXCEPTION':
+        return <Badge className="bg-destructive hover:bg-destructive/90">异常</Badge>;
+      case 'MANUAL_PROCESSING':
+        return <Badge variant="outline">人工处理</Badge>;
       case 'CANCELLED':
         return <Badge variant="destructive">已取消</Badge>;
+      case 'REFUNDED':
+        return <Badge variant="destructive">已退款</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -212,7 +225,7 @@ const DashboardPage: React.FC = () => {
                       <TableCell className="font-medium">{order.orderNo}</TableCell>
                       <TableCell>{order.customer}</TableCell>
                       <TableCell>{getStatusBadge(order.status)}</TableCell>
-                      <TableCell className="text-right">¥{order.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">¥{Number(order.amount ?? 0).toFixed(2)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => window.location.href = `/orders/${order.id}`}>
                           <Eye className="h-4 w-4" />

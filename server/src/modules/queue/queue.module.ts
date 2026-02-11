@@ -24,6 +24,7 @@ import { PaymentModule } from '../payment/payment.module';
 import { NotificationModule } from '../notification/notification.module';
 import { LogisticsModule } from '../logistics/logistics.module';
 import { TenantModule } from '../tenant/tenant.module';
+import { PricingModule } from '../pricing/pricing.module';
 import { QUEUE_NAMES, RedisModule } from '@/common';
 
 @Module({
@@ -36,6 +37,7 @@ import { QUEUE_NAMES, RedisModule } from '@/common';
     forwardRef(() => NotificationModule),
     LogisticsModule,
     TenantModule,
+    PricingModule,
     BullModule.registerQueueAsync(
       { name: QUEUE_NAMES.ORDER },
       {

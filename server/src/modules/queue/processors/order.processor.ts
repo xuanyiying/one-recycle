@@ -7,7 +7,7 @@ import {
 } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
-import { QUEUE_NAMES } from '@/common';
+import { QUEUE_NAMES, OrderStatus } from '@/common';
 import {
   OrderCreatedEventDto,
   OrderStatusChangedEventDto,
@@ -19,6 +19,7 @@ import { OrderServiceClient } from '../clients/order-service.client';
 import { InventoryServiceClient } from '../clients/inventory-service.client';
 import { DispatchServiceClient } from '../clients/dispatch-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
+import { PricingService } from '@/modules/pricing/pricing.service';
 
 @Processor(QUEUE_NAMES.ORDER)
 export class OrderProcessor {
@@ -30,6 +31,7 @@ export class OrderProcessor {
     private readonly inventoryServiceClient: InventoryServiceClient,
     private readonly dispatchServiceClient: DispatchServiceClient,
     private readonly paymentServiceClient: PaymentServiceClient,
+    private readonly pricingService: PricingService,
   ) {}
 
   /**
@@ -65,7 +67,7 @@ export class OrderProcessor {
           this.logger.warn(`Insufficient inventory for order: ${orderId}`);
           await this.orderServiceClient.updateOrderStatus(
             orderId,
-            'INVENTORY_INSUFFICIENT',
+            OrderStatus.INSPECTION_EXCEPTION,
           );
           throw new Error('Insufficient inventory');
         }
@@ -87,16 +89,37 @@ export class OrderProcessor {
 
       // 3. 计算订单总价
       this.logger.log(`Calculating price for order: ${orderId}`);
-      const totalAmount = items.reduce(
-        (sum, item) => sum + item.estimatedPrice * item.quantity,
-        0,
-      );
+      let totalAmount = 0;
+      try {
+        const pricingResult = await this.pricingService.estimatePricing(
+          items.map((item) => ({
+            categoryId: item.categoryId,
+            condition: item.condition,
+            weight: item.weight,
+            quantity: item.quantity,
+          })),
+        );
+        const totalRange = pricingResult.pricing.totalEstimate;
+        totalAmount =
+          Math.round(((totalRange.min + totalRange.max) / 2) * 100) / 100;
+      } catch (pricingError) {
+        this.logger.warn(
+          `Pricing service failed for order ${orderId}, fallback to estimatedPrice: ${pricingError}`,
+        );
+        totalAmount = items.reduce(
+          (sum, item) => sum + item.estimatedPrice * item.quantity,
+          0,
+        );
+      }
 
       // 4. 更新订单总价
       await this.orderServiceClient.updateOrderAmount(orderId, totalAmount);
 
-      // 5. 更新订单状态为已确认
-      await this.orderServiceClient.updateOrderStatus(orderId, 'CONFIRMED');
+      // 5. 更新订单状态为待取件
+      await this.orderServiceClient.updateOrderStatus(
+        orderId,
+        OrderStatus.PENDING_PICKUP,
+      );
 
       // 6. 发送订单确认通知
       this.logger.log(
@@ -157,21 +180,17 @@ export class OrderProcessor {
 
       // 2. 根据新状态触发不同的业务逻辑
       switch (newStatus) {
-        case 'CONFIRMED':
+        case OrderStatus.PENDING_PICKUP:
           this.logger.log(`Order confirmed: ${orderId}`);
-          // 触发派单流程
           break;
-        case 'PICKED_UP':
+        case OrderStatus.PICKED_UP:
           this.logger.log(`Order picked up: ${orderId}`);
-          // 通知用户物品已取走
           break;
-        case 'COMPLETED':
+        case OrderStatus.COMPLETED:
           this.logger.log(`Order completed: ${orderId}`);
-          // 触发支付流程
           break;
-        case 'CANCELLED':
+        case OrderStatus.CANCELLED:
           this.logger.log(`Order cancelled: ${orderId}`);
-          // 处理取消逻辑
           break;
       }
 
@@ -370,7 +389,10 @@ export class OrderProcessor {
       }
 
       // 5. 更新订单状态为已取消
-      await this.orderServiceClient.updateOrderStatus(orderId, 'CANCELLED');
+      await this.orderServiceClient.updateOrderStatus(
+        orderId,
+        OrderStatus.CANCELLED,
+      );
 
       // 6. 通知用户订单已取消
       await this.notificationQueueService.sendOrderStatusNotification(

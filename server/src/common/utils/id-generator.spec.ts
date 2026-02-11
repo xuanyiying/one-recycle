@@ -10,7 +10,6 @@ import {
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
   generateUniqueId,
-  generateShortId,
 } from './common.util';
 
 describe('分布式ID生成器规范测试', () => {
@@ -18,7 +17,7 @@ describe('分布式ID生成器规范测试', () => {
     test('generateUniqueId 应该生成有效雪花ID', () => {
       const id = generateUniqueId();
       expect(typeof id).toBe('string');
-      expect(id).toMatch(/^-?\d+$/);
+      expect(id).toMatch(/^\d+$/);
     });
 
     test('NanoID 应该生成指定长度', () => {
@@ -32,9 +31,9 @@ describe('分布式ID生成器规范测试', () => {
       const ord = generateSecureOrderNumber();
       const pay = generateSecurePaymentNumber();
       const ref = generateSecureRefundNumber();
-      expect(ord).toMatch(/^ORD-?\d+[A-Za-z0-9]+$/);
+      expect(ord).toMatch(/^ORD\d+[A-Za-z0-9]+$/);
       expect(pay).toMatch(/^PAY\d+[A-Za-z0-9]+$/);
-      expect(ref).toMatch(/^REF-?\d+[A-Za-z0-9]+$/);
+      expect(ref).toMatch(/^REF\d+[A-Za-z0-9]+$/);
     });
   });
 
@@ -46,7 +45,7 @@ describe('分布式ID生成器规范测试', () => {
       });
       expect(instance).toBeInstanceOf(SnowflakeIdGenerator);
       const id = (instance as SnowflakeIdGenerator).nextId();
-      expect(id).toMatch(/^-?\d+$/);
+      expect(id).toMatch(/^\d+$/);
     });
   });
 

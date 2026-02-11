@@ -160,11 +160,16 @@ export class SnowflakeIdGenerator {
 
     this.lastTimestamp = timestamp;
 
+    const timestampPart =
+      BigInt(timestamp - this.epoch) <<
+      BigInt(SnowflakeIdGenerator.TIMESTAMP_SHIFT);
+    const datacenterPart =
+      BigInt(this.datacenterId) <<
+      BigInt(SnowflakeIdGenerator.DATACENTER_ID_SHIFT);
+    const workerPart =
+      BigInt(this.workerId) << BigInt(SnowflakeIdGenerator.MACHINE_ID_SHIFT);
     const id =
-      ((timestamp - this.epoch) << SnowflakeIdGenerator.TIMESTAMP_SHIFT) |
-      (this.datacenterId << SnowflakeIdGenerator.DATACENTER_ID_SHIFT) |
-      (this.workerId << SnowflakeIdGenerator.MACHINE_ID_SHIFT) |
-      this.sequence;
+      timestampPart | datacenterPart | workerPart | BigInt(this.sequence);
 
     return id.toString();
   }
@@ -389,13 +394,17 @@ export class PersistentSnowflakeIdGenerator {
 
       this.lastTimestamp = timestamp;
 
+      const timestampPart =
+        BigInt(timestamp - this.epoch) <<
+        BigInt(PersistentSnowflakeIdGenerator.TIMESTAMP_SHIFT);
+      const datacenterPart =
+        BigInt(this.datacenterId) <<
+        BigInt(PersistentSnowflakeIdGenerator.DATACENTER_ID_SHIFT);
+      const workerPart =
+        BigInt(this.workerId) <<
+        BigInt(PersistentSnowflakeIdGenerator.MACHINE_ID_SHIFT);
       const id =
-        ((timestamp - this.epoch) <<
-          PersistentSnowflakeIdGenerator.TIMESTAMP_SHIFT) |
-        (this.datacenterId <<
-          PersistentSnowflakeIdGenerator.DATACENTER_ID_SHIFT) |
-        (this.workerId << PersistentSnowflakeIdGenerator.MACHINE_ID_SHIFT) |
-        this.sequence;
+        timestampPart | datacenterPart | workerPart | BigInt(this.sequence);
 
       this.persistStateIfNeeded();
 

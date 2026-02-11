@@ -20,11 +20,13 @@
     "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
     "esModuleInterop": true,
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["jest", "node"]
+    "types": ["jest", "node", "express", "multer"]
   },
   "exclude": ["node_modules", "dist", "../apps", "../services"]
 }

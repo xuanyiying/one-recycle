@@ -24,7 +24,7 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div
-        className="relative w-full rounded-lg bg-card text-card-foreground shadow-terminal border border-border/40 animate-in zoom-in-95 duration-200"
+        className="relative w-full max-h-[90vh] rounded-lg bg-card text-card-foreground shadow-terminal border border-border/40 animate-in zoom-in-95 duration-200 flex flex-col"
         style={{ maxWidth: width }}
       >
         {/* Terminal window chrome */}
@@ -49,7 +49,7 @@ export function Modal({
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           {children}
         </div>
 

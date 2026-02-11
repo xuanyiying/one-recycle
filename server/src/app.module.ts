@@ -30,6 +30,8 @@ import { RankingModule } from './modules/ranking/ranking.module';
 import { LogisticsModule } from './modules/logistics/logistics.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { TenantModule } from './modules/tenant/tenant.module';
+import { PricingModule } from './modules/pricing/pricing.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -81,6 +83,8 @@ import { HealthModule } from './modules/health/health.module';
     LogisticsModule,
     FinanceModule,
     TenantModule,
+    PricingModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

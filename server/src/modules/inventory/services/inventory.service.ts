@@ -396,7 +396,10 @@ export class InventoryService {
 
     // Find default warehouse
     let warehouse = await this.prisma.warehouse.findFirst({
-      where: { type: WarehouseType.MAIN as any, status: WarehouseStatus.ACTIVE },
+      where: {
+        type: WarehouseType.MAIN as any,
+        status: WarehouseStatus.ACTIVE,
+      },
     });
 
     // If no warehouse, create one
@@ -433,7 +436,8 @@ export class InventoryService {
         name: name,
         description: item.notes || `From Order #${order.orderNo}`,
         unit: 'kg', // Default unit
-        quantity: item.actualWeight || item.estimatedWeight || item.quantity || 1,
+        quantity:
+          item.actualWeight || item.estimatedWeight || item.quantity || 1,
         unitPrice: item.unitPrice,
         status: InventoryStatus.IN_STOCK,
         itemType: ItemType.RECYCLED,

@@ -15,6 +15,14 @@ export class OrderItemDto {
   categoryId: string;
 
   @IsNumber()
+  @IsOptional()
+  weight?: number;
+
+  @IsString()
+  @IsOptional()
+  condition?: string;
+
+  @IsNumber()
   quantity: number;
 
   @IsNumber()

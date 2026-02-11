@@ -19,6 +19,7 @@ import {
 import { NotificationQueueService } from '../services/notification-queue.service';
 import { OrderServiceClient } from '../clients/order-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
+import { OrderStatus } from '@/common/types/business.types';
 
 type PaymentCallbackStatus = 'success' | 'failed';
 
@@ -83,11 +84,15 @@ export class PaymentProcessor {
       if (normalizedStatus === 'success') {
         this.logger.log(`Payment successful for order: ${orderId}`);
 
-        // 更新订单状态为已支付
-        await this.orderServiceClient.updateOrderStatus(orderId, 'PAID', {
-          transactionId,
-          paidAt: new Date().toISOString(),
-        });
+        // 更新订单状态为待取件
+        await this.orderServiceClient.updateOrderStatus(
+          orderId,
+          OrderStatus.PENDING_PICKUP,
+          {
+            transactionId,
+            paidAt: new Date().toISOString(),
+          },
+        );
 
         // 发送支付成功通知
         await this.notificationQueueService.sendOrderStatusNotification(
@@ -98,10 +103,10 @@ export class PaymentProcessor {
       } else {
         this.logger.warn(`Payment failed for order: ${orderId}`);
 
-        // 更新订单状态为支付失败
+        // 支付失败，取消订单
         await this.orderServiceClient.updateOrderStatus(
           orderId,
-          'PAYMENT_FAILED',
+          OrderStatus.CANCELLED,
           {
             transactionId,
             failReason: rawData?.message || 'Payment failed',
@@ -161,11 +166,17 @@ export class PaymentProcessor {
       const order = await this.orderServiceClient.getOrder(orderId);
 
       // 2. 更新订单状态
-      this.logger.log(`Updating order status to PAID: ${orderId}`);
-      await this.orderServiceClient.updateOrderStatus(orderId, 'PAID', {
-        transactionId,
-        paidAt: new Date().toISOString(),
-      });
+      this.logger.log(
+        `Updating order status to ${OrderStatus.PENDING_PICKUP}: ${orderId}`,
+      );
+      await this.orderServiceClient.updateOrderStatus(
+        orderId,
+        OrderStatus.PENDING_PICKUP,
+        {
+          transactionId,
+          paidAt: new Date().toISOString(),
+        },
+      );
 
       // 3. 记录支付成功日志
       this.logger.log(`Recording payment success: ${transactionId}`);
@@ -220,10 +231,12 @@ export class PaymentProcessor {
       const order = await this.orderServiceClient.getOrder(orderId);
 
       // 2. 更新订单状态
-      this.logger.log(`Updating order status to PAYMENT_FAILED: ${orderId}`);
+      this.logger.log(
+        `Updating order status to ${OrderStatus.CANCELLED}: ${orderId}`,
+      );
       await this.orderServiceClient.updateOrderStatus(
         orderId,
-        'PAYMENT_FAILED',
+        OrderStatus.CANCELLED,
         {
           transactionId,
           failReason: reason,
@@ -294,11 +307,15 @@ export class PaymentProcessor {
 
       // 3. 更新订单退款状态
       this.logger.log(`Updating refund status for order: ${orderId}`);
-      await this.orderServiceClient.updateOrderStatus(orderId, 'REFUNDED', {
-        refundId: refundResult.refundId,
-        refundAmount: amount,
-        refundReason: reason,
-      });
+      await this.orderServiceClient.updateOrderStatus(
+        orderId,
+        OrderStatus.REFUNDED,
+        {
+          refundId: refundResult.refundId,
+          refundAmount: amount,
+          refundReason: reason,
+        },
+      );
 
       // 4. 记录退款日志
       this.logger.log(`Recording refund: ${refundResult.refundId}`);

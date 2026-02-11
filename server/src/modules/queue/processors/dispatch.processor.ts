@@ -6,7 +6,7 @@ import { OrderService } from '@/modules/order/services/order.service';
 import { TenantService } from '@/modules/tenant/tenant.service';
 import { SettlementService } from '@/modules/tenant/settlement.service';
 import { CreateOrderDto as JdlCreateOrderDto } from '@/modules/logistics/dto/jdl.dto';
-import { QUEUE_NAMES } from '@/common';
+import { QUEUE_NAMES, OrderStatus } from '@/common';
 
 @Processor(QUEUE_NAMES.ORDER)
 export class DispatchProcessor {
@@ -33,10 +33,11 @@ export class DispatchProcessor {
       }
 
       // 2. 检查订单状态
-      // 只有已确认的订单才能派单
-      if (order.status !== 'CONFIRMED') {
+      // 只有待接单/待取件状态才能派单
+      const allowedStatuses = [OrderStatus.PENDING, OrderStatus.PENDING_PICKUP];
+      if (!allowedStatuses.includes(order.status)) {
         this.logger.warn(
-          `[Dispatch] Order ${orderId} is not in CONFIRMED status (current: ${order.status}), skipping.`,
+          `[Dispatch] Order ${orderId} is not in dispatchable status (current: ${order.status}), skipping.`,
         );
         return;
       }

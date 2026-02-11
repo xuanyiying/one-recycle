@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { execSync } from 'child_process';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as crypto from 'crypto';
@@ -56,7 +57,7 @@ async function main() {
             description: '负责部门管理',
         },
     });
-    console.log('角色已创建: ADMIN, MANAGER');
+    console.log(`角色已创建: ADMIN(${adminRole.id}), MANAGER(${managerRole.id})`);
 
     // 3. 创建测试员工
     const staff1 = await prisma.staff.upsert({
@@ -82,6 +83,13 @@ async function main() {
     console.log(`- 租户代码: ${tenant1.code}`);
     console.log(`- 用户名: ${staff1.username}`);
     console.log(`- 密码: 123456`);
+
+    const seedScriptPath = path.join(__dirname, 'seed-order-status.ts');
+    execSync(`npx ts-node ${seedScriptPath}`, {
+        cwd: path.join(__dirname, '..'),
+        stdio: 'inherit',
+        env: { ...process.env, FORCE_COLOR: '1' },
+    });
 }
 
 main()

@@ -1,24 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { OrderStatus } from '@/common/types/business.types';
 
-export type RemoteOrderStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'PAID'
-  | 'PAYMENT_FAILED'
-  | 'DISPATCHED'
-  | 'DISPATCH_FAILED'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  | 'REFUNDED'
-  | 'INVENTORY_INSUFFICIENT'
-  | 'PICKED_UP';
+export type RemoteOrderStatus = OrderStatus;
 
 export interface Order {
   id: string;
   userId: string;
   status: RemoteOrderStatus | string;
+  orderType?: string;
   items: OrderItem[];
   address: Address;
   totalAmount: number;
@@ -121,7 +112,7 @@ export class OrderServiceClient {
     metadata?: Record<string, any>,
   ): Promise<Order> {
     try {
-      const response = await this.httpClient.patch<Order>(
+      const response = await this.httpClient.put<Order>(
         `/orders/${orderId}/status`,
         {
           status,
@@ -203,7 +194,10 @@ export class OrderServiceClient {
   async isOrderPaid(orderId: string): Promise<boolean> {
     try {
       const order = await this.getOrder(orderId);
-      return order.status === 'PAID' || order.status === 'COMPLETED';
+      return (
+        order.status !== OrderStatus.PENDING &&
+        order.status !== OrderStatus.CANCELLED
+      );
     } catch (error) {
       this.logger.error(
         `Failed to check payment status for order ${orderId}:`,
