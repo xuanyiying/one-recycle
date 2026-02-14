@@ -116,6 +116,8 @@ const OrderModal: React.FC<OrderModalProps> = ({
               <div>渠道：{order.channel || '-'}</div>
               <div>来源：{order.source || '-'}</div>
               <div>用户ID：{order.userId}</div>
+              <div>预约上门时间：{formatDisplayTime(order.expectPickupTime)}</div>
+              <div>实际上门时间：{formatDisplayTime(order.actualPickupTime)}</div>
               <div>创建时间：{formatDisplayTime(order.createdAt)}</div>
               <div>更新时间：{formatDisplayTime(order.updatedAt)}</div>
               <div>完成时间：{formatDisplayTime(order.completedAt)}</div>

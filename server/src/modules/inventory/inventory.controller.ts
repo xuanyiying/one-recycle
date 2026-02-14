@@ -119,6 +119,21 @@ export class InventoryController {
     return this.inventoryService.createReservation(createReservationDto);
   }
 
+  @Post('reservations/:id/confirm')
+  async confirmReservation(@Param('id') id: string): Promise<any> {
+    return this.inventoryService.confirmReservation(BigInt(id));
+  }
+
+  @Post('reservations/:id/cancel')
+  async cancelReservation(@Param('id') id: string): Promise<any> {
+    return this.inventoryService.cancelReservation(BigInt(id));
+  }
+
+  @Post('reservations/expire')
+  async expireReservations(): Promise<any> {
+    return this.inventoryService.expireReservations();
+  }
+
   @Get('alerts')
   async getAlerts(): Promise<any[]> {
     return this.inventoryService.getAlerts();

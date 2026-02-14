@@ -1,6 +1,6 @@
 import { RedisService } from '@/common/redis/redis.service';
 import { Injectable, Logger } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { FileType } from '../interfaces/storage.interface';
 
 export interface ChunkUploadSession {
@@ -42,7 +42,7 @@ export class ChunkUploadSessionService {
     totalChunks: number,
     metadata?: Record<string, unknown>,
   ): Promise<ChunkUploadSession> {
-    const sessionId = uuidv4();
+    const sessionId = randomUUID();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + this.SESSION_EXPIRE_TIME * 1000);
 

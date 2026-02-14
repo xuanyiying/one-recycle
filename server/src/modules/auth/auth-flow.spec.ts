@@ -102,6 +102,7 @@ describe('AuthFlow Integration', () => {
     }).compile();
 
     service = module.get<AuthRedisService>(AuthRedisService);
+    await service.onModuleInit();
   });
 
   it('should complete full login flow with complete user data', async () => {

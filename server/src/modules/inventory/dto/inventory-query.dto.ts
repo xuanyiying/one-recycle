@@ -1,10 +1,4 @@
-import {
-  IsOptional,
-  IsString,
-  IsNumber,
-  IsBoolean,
-  IsEnum,
-} from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export class InventoryQueryDto {

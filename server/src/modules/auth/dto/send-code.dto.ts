@@ -1,4 +1,4 @@
-import { IsString, IsMobilePhone, IsOptional, IsIn } from 'class-validator';
+import { IsMobilePhone, IsOptional, IsIn } from 'class-validator';
 
 export class SendCodeDto {
   @IsMobilePhone('zh-CN', {}, { message: '手机号格式不正确' })

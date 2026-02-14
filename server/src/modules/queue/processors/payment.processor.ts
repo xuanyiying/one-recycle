@@ -183,7 +183,7 @@ export class PaymentProcessor {
       await this.paymentServiceClient.createPaymentLog({
         orderId,
         transactionId,
-        status: 'success',
+        status: 'SUCCESS',
         amount,
         provider: provider || 'unknown',
       });
@@ -248,7 +248,7 @@ export class PaymentProcessor {
       await this.paymentServiceClient.createPaymentLog({
         orderId,
         transactionId,
-        status: 'failed',
+        status: 'FAILED',
         amount: 0,
         provider: provider || 'unknown',
       });

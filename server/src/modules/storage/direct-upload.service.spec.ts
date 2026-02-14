@@ -37,6 +37,13 @@ describe('DirectUploadService', () => {
   const mockOssService = {
     getPresignedUploadUrl: jest.fn(),
     getFileUrl: jest.fn(),
+    createPostPolicySignature: jest.fn().mockReturnValue('mock-signature'),
+    createPostPolicyV4Signature: jest.fn().mockReturnValue({
+      policyBase64: 'mock-policy',
+      signature: 'mock-v4-signature',
+      formattedDate: '20250101T000000Z',
+      credential: 'sts-id/20250101/cn-hangzhou/oss/aliyun_v4_request',
+    }),
   };
 
   const mockOssConfigService = {

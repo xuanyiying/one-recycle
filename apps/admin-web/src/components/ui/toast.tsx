@@ -20,14 +20,48 @@ interface ToastContextType {
 
 const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
 
-// Global toast function for imperative usage
+type PendingToast = { message: string; type: ToastType };
+
 let globalAddToast: ((message: string, type?: ToastType) => void) | null = null;
+const pendingToasts: PendingToast[] = [];
+
+function flushPendingToasts() {
+  if (globalAddToast && pendingToasts.length > 0) {
+    const toasts = [...pendingToasts];
+    pendingToasts.length = 0;
+    toasts.forEach((t) => globalAddToast?.(t.message, t.type));
+  }
+}
 
 export const toast = {
-  success: (message: string) => globalAddToast?.(message, 'success'),
-  error: (message: string) => globalAddToast?.(message, 'error'),
-  warning: (message: string) => globalAddToast?.(message, 'warning'),
-  info: (message: string) => globalAddToast?.(message, 'info'),
+  success: (message: string) => {
+    if (globalAddToast) {
+      globalAddToast(message, 'success');
+    } else {
+      pendingToasts.push({ message, type: 'success' });
+    }
+  },
+  error: (message: string) => {
+    if (globalAddToast) {
+      globalAddToast(message, 'error');
+    } else {
+      pendingToasts.push({ message, type: 'error' });
+    }
+  },
+  warning: (message: string) => {
+    if (globalAddToast) {
+      globalAddToast(message, 'warning');
+    } else {
+      pendingToasts.push({ message, type: 'warning' });
+    }
+  },
+  info: (message: string) => {
+    if (globalAddToast) {
+      globalAddToast(message, 'info');
+    } else {
+      pendingToasts.push({ message, type: 'info' });
+    }
+  },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -45,9 +79,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Register global toast function
   React.useEffect(() => {
     globalAddToast = addToast;
+    flushPendingToasts();
     return () => {
       globalAddToast = null;
     };
@@ -61,7 +95,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Alias for ToastProvider - for compatibility
 export const Toaster = ToastProvider;
 
 export function useToast() {

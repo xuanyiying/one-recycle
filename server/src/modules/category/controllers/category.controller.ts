@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  UseFilters,
   UseInterceptors,
 } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
@@ -21,11 +20,9 @@ import {
   CategoryListResponseDto,
   CategoryType,
 } from '../dto';
-import { GlobalExceptionFilter } from '../../../common/filters/global-exception.filter';
 
 @ApiTags('categories')
 @Controller('category/categories')
-@UseFilters(GlobalExceptionFilter)
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 

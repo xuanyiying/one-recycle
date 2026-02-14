@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ISettlementService } from './tenant.interfaces';
 import { SettlementStatus, TenantTransactionType } from '@prisma/client';
+import { toDecimal, toNumber } from '@/common/utils/decimal.util';
 
 @Injectable()
 export class SettlementService implements ISettlementService {
@@ -22,10 +23,10 @@ export class SettlementService implements ISettlementService {
       data: {
         orderId: oid,
         tenantId: tid,
-        goodsAmount: 0,
-        expressFee: estimatedExpressFee,
-        platformFee: 0,
-        totalAmount: 0,
+        goodsAmount: toDecimal(0),
+        expressFee: toDecimal(estimatedExpressFee),
+        platformFee: toDecimal(0),
+        totalAmount: toDecimal(0),
         status: SettlementStatus.PENDING,
       },
     });
@@ -33,12 +34,14 @@ export class SettlementService implements ISettlementService {
     // Freeze express fee
     const tenant = await this.prisma.tenant.findUnique({ where: { id: tid } });
     if (tenant) {
+      const expressFee = toDecimal(estimatedExpressFee);
+      const balanceAfter = toDecimal(tenant.balance).minus(expressFee);
       await this.prisma.tenantTransaction.create({
         data: {
           tenantId: tid,
           type: TenantTransactionType.EXPRESS_DEDUCTION,
-          amount: -estimatedExpressFee,
-          balanceAfter: tenant.balance - estimatedExpressFee,
+          amount: expressFee.negated(),
+          balanceAfter,
           relatedType: 'ORDER',
           relatedId: orderId.toString(),
           remark: 'Frozen express fee for order',
@@ -65,14 +68,17 @@ export class SettlementService implements ISettlementService {
     }
 
     // Goods total
-    const goodsAmount = order.items.reduce((sum, item) => sum + item.amount, 0);
+    const goodsAmount = order.items.reduce(
+      (sum, item) => sum.plus(toDecimal(item.amount)),
+      toDecimal(0),
+    );
 
     // Platform fee (5%)
-    const platformFee = goodsAmount * 0.05;
+    const platformFee = goodsAmount.mul(0.05);
 
     // Total amount to be added to tenant balance
-    const expressFee = order.settlementRecord?.expressFee || 0;
-    const totalAmount = goodsAmount - platformFee - expressFee;
+    const expressFee = toDecimal(order.settlementRecord?.expressFee);
+    const totalAmount = goodsAmount.minus(platformFee).minus(expressFee);
 
     // Update settlement record
     await this.prisma.settlementRecord.update({
@@ -85,7 +91,7 @@ export class SettlementService implements ISettlementService {
       },
     });
 
-    return totalAmount;
+    return toNumber(totalAmount);
   }
 
   async executeSettlement(orderId: number): Promise<void> {

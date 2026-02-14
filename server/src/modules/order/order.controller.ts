@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Put,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,11 +23,16 @@ import { OrderService } from './services/order.service';
 import { CreateOrderDto, UpdateOrderDto } from './dto';
 import { OrderFilters } from './interfaces/order.interface';
 import { Order } from '@prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+import type { Request } from 'express';
 
 @ApiTags('orders')
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * 创建订单
@@ -201,6 +207,7 @@ export class OrderController {
   @ApiResponse({ status: 200, description: '物流状态更新成功' })
   async logisticsNotify(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request,
     @Body()
     data: {
       status: string;
@@ -210,11 +217,51 @@ export class OrderController {
     if (!data?.status) {
       throw new BadRequestException('status is required');
     }
-    return this.orderService.updateLogisticsStatus(
-      id,
-      data.status,
-      data.providerData,
+
+    const logisticsOrder = await this.orderService.findLogisticsOrder(
+      id.toString(),
     );
+
+    const callbackLog = await this.prisma.logisticsCallbackLog.create({
+      data: {
+        logisticsOrderId: logisticsOrder?.id,
+        orderId: BigInt(id),
+        providerCode: data?.providerData?.providerCode || logisticsOrder?.logisticsCompany || 'UNKNOWN',
+        headers: req.headers as any,
+        rawBody: JSON.stringify(data),
+        parsedBody: data.providerData ?? data,
+        signatureValid: null,
+        processed: false,
+      },
+    });
+
+    try {
+      const updated = await this.orderService.updateLogisticsStatus(
+        id,
+        data.status,
+        data.providerData,
+      );
+
+      await this.prisma.logisticsCallbackLog.update({
+        where: { id: callbackLog.id },
+        data: {
+          processed: true,
+          processedAt: new Date(),
+        },
+      });
+
+      return updated;
+    } catch (error: any) {
+      await this.prisma.logisticsCallbackLog.update({
+        where: { id: callbackLog.id },
+        data: {
+          processed: true,
+          processedAt: new Date(),
+          processError: error?.message ? String(error.message) : 'UNKNOWN_ERROR',
+        },
+      });
+      throw error;
+    }
   }
 
   /**

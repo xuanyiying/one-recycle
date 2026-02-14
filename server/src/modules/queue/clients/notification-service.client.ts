@@ -51,7 +51,7 @@ export class NotificationServiceClient {
   constructor(private readonly configService: ConfigService) {
     this.baseURL =
       this.configService.get<string>('NOTIFICATION_SERVICE_URL') ||
-      'http://localhost:3004';
+      'http://localhost:3008';
 
     this.httpClient = axios.create({
       baseURL: this.baseURL,

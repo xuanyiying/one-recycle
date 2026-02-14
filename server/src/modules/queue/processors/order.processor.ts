@@ -40,8 +40,7 @@ export class OrderProcessor {
    */
   @Process({ name: 'order-created', concurrency: 5 })
   async handleOrderCreated(job: Job<OrderCreatedEventDto>): Promise<any> {
-    const { orderId, userId, items, address, scheduledTime, orderType } =
-      job.data;
+    const { orderId, userId, items, orderType } = job.data;
 
     this.logger.log(
       `Processing order created: ${orderId}, Type: ${orderType || 'RECYCLE'}`,
@@ -168,7 +167,7 @@ export class OrderProcessor {
   async handleOrderStatusChanged(
     job: Job<OrderStatusChangedEventDto>,
   ): Promise<any> {
-    const { orderId, oldStatus, newStatus, updatedBy, reason } = job.data;
+    const { orderId, oldStatus, newStatus, updatedBy } = job.data;
 
     this.logger.log(
       `Processing order status change: ${orderId} (${oldStatus} -> ${newStatus})`,
@@ -222,7 +221,7 @@ export class OrderProcessor {
    */
   @Process({ name: 'order-completed', concurrency: 5 })
   async handleOrderCompleted(job: Job<OrderCompletedEventDto>): Promise<any> {
-    const { orderId, userId, settlementAmount, completedAt } = job.data;
+    const { orderId, userId, settlementAmount } = job.data;
 
     this.logger.log(
       `Processing order completed: ${orderId}, User: ${userId}, Amount: ${settlementAmount}`,
@@ -309,7 +308,7 @@ export class OrderProcessor {
    */
   @Process({ name: 'order-cancelled', concurrency: 5 })
   async handleOrderCancelled(job: Job<OrderCanceledEventDto>): Promise<any> {
-    const { orderId, userId, reason, canceledBy } = job.data;
+    const { orderId, userId, reason } = job.data;
 
     this.logger.log(
       `Processing order cancellation: ${orderId}, Reason: ${reason}`,

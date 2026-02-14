@@ -7,8 +7,6 @@ import {
   Body,
   Param,
   Query,
-  UseInterceptors,
-  UseFilters,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import {
@@ -18,11 +16,8 @@ import {
   UserResponseDto,
   UserListResponseDto,
 } from '../dto';
-import { GlobalExceptionFilter, ResponseInterceptor } from '@/common';
 
 @Controller('users')
-@UseInterceptors(ResponseInterceptor)
-@UseFilters(GlobalExceptionFilter)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

@@ -9,6 +9,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
+import { toNumber } from '@/common/utils/decimal.util';
 import {
   PersistentSnowflakeIdGenerator,
   RedisSnowflakeStateStore,
@@ -132,7 +133,7 @@ export class PaymentService implements OnModuleInit {
       throw new ConflictException('只有支付成功的订单才能退款');
     }
 
-    if (refundAmount > payment.total) {
+    if (refundAmount > toNumber(payment.total)) {
       throw new ConflictException('退款金额不能超过支付金额');
     }
 
@@ -286,7 +287,7 @@ export class PaymentService implements OnModuleInit {
       select: { total: true },
     });
     const totalAmount = totalAmountResult.reduce(
-      (sum, payment) => sum + payment.total,
+      (sum, payment) => sum + toNumber(payment.total),
       0,
     );
 
@@ -330,7 +331,7 @@ export class PaymentService implements OnModuleInit {
 
   async isTransactionProcessed(transactionId: bigint) {
     return this.prisma.paymentLog.findFirst({
-      where: { transactionId: transactionId, status: 'SUCCESS' },
+      where: { transactionId: transactionId, status: PaymentStatus.SUCCESS },
     });
   }
 
@@ -356,11 +357,12 @@ export class PaymentService implements OnModuleInit {
     accountInfo: { openid?: string; realName?: string; accountNo?: string },
     description: string = 'Order Settlement',
     orderId: bigint = BigInt(0),
+    outTradeNoOverride?: string,
   ) {
     // 1. 生成交易号
     const id = this.idGenerator.nextId();
     const transactionId = BigInt(id);
-    const outTradeNo = `TR${id}`;
+    const outTradeNo = outTradeNoOverride || `TR${id}`;
 
     this.logger.log(
       `Starting transfer to user ${userId} (Order: ${orderId}), amount: ${amount}, provider: ${provider}`,
@@ -433,7 +435,11 @@ export class PaymentService implements OnModuleInit {
         throw new Error(result.message || 'Transfer failed');
       }
 
-      return result;
+      return {
+        ...result,
+        transactionId,
+        outTradeNo,
+      };
     } catch (error) {
       this.logger.error(
         `Transfer exception: ${transactionId}`,

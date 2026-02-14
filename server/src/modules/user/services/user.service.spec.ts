@@ -10,6 +10,7 @@ describe('UserService', () => {
   const mockPrismaService = {
     user: {
       findUnique: jest.fn(),
+      create: jest.fn(),
       count: jest.fn(),
     },
     $transaction: jest.fn(),
@@ -52,36 +53,22 @@ describe('UserService', () => {
       avatarUrl: 'http://example.com/avatar.jpg',
     };
 
-    it('should create user and account in a transaction', async () => {
-      const mockTx = {
-        user: {
-          create: jest.fn().mockResolvedValue({
-            id: BigInt(1),
-            email: 'user@example.com',
-            ...createUserDto,
-            status: 'ACTIVE',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }),
-        },
-      };
-
-      // Mock findUnique to return null (user doesn't exist)
+    it('should create user and trigger account creation', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
-
-      // Mock $transaction to execute the callback
-      mockPrismaService.$transaction.mockImplementation(
-        (callback: (tx: typeof mockTx) => Promise<unknown>) => callback(mockTx),
-      );
+      mockPrismaService.user.create.mockResolvedValue({
+        id: BigInt(1),
+        email: 'user@example.com',
+        ...createUserDto,
+        status: 'ACTIVE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockAccountService.createAccount.mockResolvedValue({ id: BigInt(1) });
 
       const result = await service.create(createUserDto);
 
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
-      expect(mockTx.user.create).toHaveBeenCalled();
-      expect(mockAccountService.createAccount).toHaveBeenCalledWith(
-        BigInt(1),
-        mockTx,
-      );
+      expect(mockPrismaService.user.create).toHaveBeenCalled();
+      expect(mockAccountService.createAccount).toHaveBeenCalledWith(BigInt(1));
       expect(result).toBeDefined();
       expect(result.email).toBe('user@example.com');
     });
@@ -92,7 +79,7 @@ describe('UserService', () => {
       await expect(service.create(createUserDto)).rejects.toThrow(
         '手机号已被注册',
       );
-      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+      expect(mockPrismaService.user.create).not.toHaveBeenCalled();
     });
   });
 });

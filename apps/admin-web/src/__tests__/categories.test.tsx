@@ -9,6 +9,21 @@ jest.mock('@/services/categoryService', () => ({
     getCategoryTree: jest.fn().mockResolvedValue([]),
     deleteCategory: jest.fn().mockResolvedValue(undefined),
   },
+  CategoryType: {
+    RECYCLE: 'recycle',
+    SALE: 'sale',
+    BOTH: 'both',
+  },
+  CategoryStatus: {
+    ACTIVE: 'active',
+    INACTIVE: 'inactive',
+    ARCHIVED: 'archived',
+  },
+  PriceType: {
+    FIXED: 'fixed',
+    RANGE: 'range',
+    NEGOTIABLE: 'negotiable',
+  },
 }));
 
 describe('CategoriesPage', () => {

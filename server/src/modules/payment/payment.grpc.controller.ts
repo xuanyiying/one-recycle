@@ -28,6 +28,7 @@ import {
   PaymentLog,
   Refund,
 } from '@prisma/client';
+import { toNumber } from '@/common/utils/decimal.util';
 
 @Controller()
 export class PaymentGrpcController {
@@ -115,7 +116,7 @@ export class PaymentGrpcController {
       orderId: payment.orderId,
       transactionId: payment.transactionId || 0n,
       outTradeNo: payment.outTradeNo || '',
-      total: payment.total,
+      total: toNumber(payment.total),
       status: payment.status,
       provider: payment.provider,
       notifyRaw: payment.notifyRaw || '',
@@ -129,7 +130,7 @@ export class PaymentGrpcController {
       id: refund.id,
       paymentId: refund.paymentId,
       outRefundNo: refund.outRefundNo || '',
-      refundAmount: refund.refundAmount,
+      refundAmount: toNumber(refund.refundAmount),
       status: refund.status,
       reason: refund.reason || '',
       notifyRaw: refund.notifyRaw || '',
@@ -222,7 +223,7 @@ export class PaymentGrpcController {
       const success = logs.filter((log) => log.status === 'SUCCESS').length;
       const failed = logs.filter((log) => log.status === 'FAILED').length;
       const pending = logs.filter((log) => log.status === 'PENDING').length;
-      const totalAmount = logs.reduce((sum, log) => sum + log.amount, 0);
+      const totalAmount = logs.reduce((sum, log) => sum + toNumber(log.amount), 0);
 
       return {
         total,

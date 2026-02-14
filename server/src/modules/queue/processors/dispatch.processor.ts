@@ -1,11 +1,10 @@
 import { Processor, Process, OnQueueActive, OnQueueFailed } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bull';
-import { JdlLogisticsService } from '@/modules/logistics/providers/jd-provider';
+import { LogisticsIntegrationService } from '@/modules/logistics/logistics-integration.service';
 import { OrderService } from '@/modules/order/services/order.service';
 import { TenantService } from '@/modules/tenant/tenant.service';
 import { SettlementService } from '@/modules/tenant/settlement.service';
-import { CreateOrderDto as JdlCreateOrderDto } from '@/modules/logistics/dto/jdl.dto';
 import { QUEUE_NAMES, OrderStatus } from '@/common';
 
 @Processor(QUEUE_NAMES.ORDER)
@@ -13,7 +12,7 @@ export class DispatchProcessor {
   private readonly logger = new Logger(DispatchProcessor.name);
 
   constructor(
-    private readonly jdlLogisticsService: JdlLogisticsService,
+    private readonly logisticsIntegrationService: LogisticsIntegrationService,
     private readonly orderService: OrderService,
     private readonly tenantService: TenantService,
     private readonly settlementService: SettlementService,
@@ -67,7 +66,6 @@ export class DispatchProcessor {
         Number(tenantId),
       );
 
-      // 构造京东下单参数
       // 这里的逻辑是：用户（Sender） -> 商家回收中心（Receiver）
       const receiverContact = {
         name: receiptAddress.contactName || 'EcoRecycle Center',
@@ -75,57 +73,48 @@ export class DispatchProcessor {
         address: `${receiptAddress.province}${receiptAddress.city}${receiptAddress.district}${receiptAddress.detail}`,
       };
 
-      const jdlParams: JdlCreateOrderDto = {
-        customerCode: 'YOUR_CUSTOMER_CODE', // TODO: Get from config
-        orderId: order.orderNo,
-        // 发件人：用户
-        senderName: order.address.name,
-        senderMobile: order.address.mobile,
-        senderAddress: `${order.address.province}${order.address.city}${order.address.district}${order.address.detail}`,
-        // 收件人：回收中心
-        receiverName: receiverContact.name,
-        receiverMobile: receiverContact.mobile,
-        receiverAddress: receiverContact.address,
-        weight: order.items.reduce(
-          (sum: number, item: any) => sum + (item.estimatedWeight || 0),
-          0,
-        ),
-        goodsName: order.items.map((i: any) => i.categoryId).join(','), // Simplified
-        packageCount: 1,
-        // promiseTimeType: 1, // Optional
-        // payType: 1, // Optional
-      };
+      this.logger.log(`[Dispatch] Calling logistics integration for ${orderId}`);
 
-      this.logger.log(`[Dispatch] Calling JDL CreateOrder for ${orderId}`);
+      const cargo = order.items.map((item: any) => ({
+        name: String(item.categoryId),
+        count: Math.max(1, Number(item.quantity || 1)),
+      }));
 
-      // 4. 调用京东API
-      // 接口调用重试机制由 BullMQ 自动处理 (throw error triggers retry)
-      const result = await this.jdlLogisticsService.createOrder(jdlParams);
+      const result = await this.logisticsIntegrationService.createPickupOrder({
+        orderId: BigInt(order.id),
+        sender: {
+          name: order.address.name,
+          phone: order.address.mobile,
+          address: `${order.address.province}${order.address.city}${order.address.district}${order.address.detail}`,
+          province: order.address.province,
+          city: order.address.city,
+          district: order.address.district,
+        },
+        receiver: {
+          name: receiverContact.name,
+          phone: receiverContact.mobile,
+          address: receiverContact.address,
+          province: receiptAddress.province,
+          city: receiptAddress.city,
+          district: receiptAddress.district,
+        },
+        cargo,
+      });
 
-      if (!result || !result.waybillCode) {
-        throw new Error('Failed to get logistics number from JDL');
-      }
-
-      this.logger.log(`[Dispatch] JDL Order Created: ${result.waybillCode}`);
+      this.logger.log(`[Dispatch] Logistics order created: ${result.logisticsNo}`);
 
       // 5. 更新本地物流信息并更新订单状态 (事务)
       await this.orderService.saveDispatchResult(orderId, {
-        logisticsNo: result.waybillCode,
-        logisticsCompany: 'JD', // JDL
-        status: 'CREATED',
-        senderName: jdlParams.senderName,
-        senderPhone: jdlParams.senderMobile,
-        senderAddress: jdlParams.senderAddress,
-        receiverName: jdlParams.receiverName,
-        receiverPhone: jdlParams.receiverMobile,
-        receiverAddress: jdlParams.receiverAddress,
-        estimatedPickupTime: result.estimatedPickupTime
-          ? new Date(result.estimatedPickupTime)
-          : undefined,
-        estimatedDeliveryTime: result.estimatedDeliveryTime
-          ? new Date(result.estimatedDeliveryTime)
-          : undefined,
-        providerData: result,
+        logisticsNo: result.logisticsNo,
+        logisticsCompany: result.logisticsCompany,
+        status: result.status,
+        senderName: order.address.name,
+        senderPhone: order.address.mobile,
+        senderAddress: `${order.address.province}${order.address.city}${order.address.district}${order.address.detail}`,
+        receiverName: receiverContact.name,
+        receiverPhone: receiverContact.mobile,
+        receiverAddress: receiverContact.address,
+        providerData: result.providerData,
       });
 
       // 6. 初始化结算记录
@@ -144,7 +133,7 @@ export class DispatchProcessor {
       return {
         success: true,
         orderId,
-        logisticsNo: result.waybillCode,
+        logisticsNo: result.logisticsNo,
       };
     } catch (error) {
       this.logger.error(

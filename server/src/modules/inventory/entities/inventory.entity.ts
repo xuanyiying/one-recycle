@@ -8,7 +8,7 @@ import {
   WarehouseType,
   CourierStatus,
   TaskStatus,
-  TransactionType,
+  InventoryTxnType,
   WithdrawalStatus,
   InventoryItem,
   InventoryTransaction,
@@ -27,7 +27,7 @@ export {
   WarehouseType,
   CourierStatus,
   TaskStatus,
-  TransactionType,
+  InventoryTxnType,
   WithdrawalStatus,
 };
 

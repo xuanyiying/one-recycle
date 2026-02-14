@@ -2,9 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsInt, Min, Max, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
-/**
- * 分页请求 DTO
- */
 export class PaginationQueryDto {
   @ApiPropertyOptional({ description: '页码', default: 1, minimum: 1 })
   @IsOptional()
@@ -41,9 +38,6 @@ export class PaginationQueryDto {
   sortOrder?: 'asc' | 'desc' = 'desc';
 }
 
-/**
- * 分页响应元数据
- */
 export class PaginationMeta {
   @ApiProperty({ description: '当前页码' })
   page: number;
@@ -62,27 +56,4 @@ export class PaginationMeta {
 
   @ApiProperty({ description: '是否有下一页' })
   hasNextPage: boolean;
-}
-
-/**
- * 分页响应 DTO 工厂
- */
-export function createPaginatedResponse<T>(
-  data: T[],
-  total: number,
-  page: number,
-  limit: number,
-): { data: T[]; meta: PaginationMeta } {
-  const totalPages = Math.ceil(total / limit);
-  return {
-    data,
-    meta: {
-      page,
-      limit,
-      total,
-      totalPages,
-      hasPrevPage: page > 1,
-      hasNextPage: page < totalPages,
-    },
-  };
 }

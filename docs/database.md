@@ -160,6 +160,136 @@ erDiagram
     }
 ```
 
+## 1.1 增量实体（物流/入库/资金）
+
+```mermaid
+erDiagram
+    "ORDER" ||--|| LOGISTICS_ORDER : "has"
+    "ORDER" ||--o{ LOGISTICS_API_CALL : "calls"
+    "ORDER" ||--o{ LOGISTICS_CALLBACK_LOG : "callbacks"
+
+    "ORDER" ||--|| INBOUND_RECEIPT : "inbound"
+    WAREHOUSE ||--o{ INBOUND_RECEIPT : "receives"
+
+    USER ||--o{ ACCOUNT : "owns"
+    ACCOUNT ||--o{ TRANSACTION : "records"
+    ACCOUNT ||--o{ WITHDRAWAL : "withdraws"
+
+    TENANT ||--o{ TENANT_TRANSACTION : "records"
+    PLATFORM_WALLET ||--o{ PLATFORM_TRANSACTION : "records"
+
+    LOGISTICS_ORDER {
+        bigint id PK
+        bigint order_id FK
+        varchar logistics_no
+        varchar logistics_company
+        varchar status
+        varchar provider_status
+        jsonb provider_data
+    }
+
+    LOGISTICS_API_CALL {
+        bigint id PK
+        bigint order_id FK
+        bigint logistics_order_id FK
+        varchar provider_code
+        varchar action
+        varchar idempotency_key
+        jsonb request_payload
+        jsonb response_payload
+        boolean success
+    }
+
+    LOGISTICS_CALLBACK_LOG {
+        bigint id PK
+        bigint order_id FK
+        bigint logistics_order_id FK
+        jsonb headers
+        text raw_body
+        boolean signature_valid
+        boolean processed
+    }
+
+    INBOUND_RECEIPT {
+        bigint id PK
+        bigint order_id FK
+        bigint warehouse_id FK
+        varchar status
+        varchar inspection_result
+        timestamp inbounded_at
+    }
+
+    ACCOUNT {
+        bigint id PK
+        bigint user_id FK
+        decimal available_balance
+        decimal frozen_balance
+        int version
+        varchar account_type
+    }
+
+    WITHDRAWAL {
+        bigint id PK
+        bigint account_id FK
+        bigint user_id FK
+        decimal amount
+        varchar out_trade_no
+        varchar idempotency_key
+        varchar status
+    }
+```
+
+## 1.2 关键时序（下单到入库入账）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant O as OrderService
+    participant D as DispatchProcessor
+    participant L as LogisticsIntegration
+    participant I as InventoryService
+    participant A as AccountService
+
+    U->>O: 创建订单
+    O->>D: 进入派单队列
+    D->>L: 预校验/下单/订阅轨迹
+    L-->>D: waybillCode
+    D->>O: 保存物流单 + 状态推进
+    O->>I: 确认入库(创建库存)
+    O->>A: 结算入账(余额)
+```
+
+## 1.3 关键时序（提现冻结到成功/失败退回）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant W as WithdrawalService
+    participant P as PaymentProvider
+    participant A as AccountService
+    participant T as Tenant
+    participant PW as PlatformWallet
+
+    U->>W: 创建提现(幂等)
+    W->>A: 冻结用户余额
+    W->>PW: 冻结平台资金
+    W->>T: 冻结租户资金(可选)
+    W->>P: 出款
+    alt 成功
+        P-->>W: SUCCESS 回调/返回
+        W->>A: 冻结转扣减
+        W->>PW: 冻结转支出
+        W->>T: 冻结转扣减(可选)
+    else 失败/超时
+        P-->>W: FAILED/TIMEOUT 回调
+        W->>A: 退回冻结
+        W->>PW: 退回冻结
+        W->>T: 释放冻结(可选)
+    end
+```
+
 ## 2. 实际表结构定义
 
 项目采用微服务架构，每个服务有独立的数据库schema。以下是各服务的实际Prisma schema定义：

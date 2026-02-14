@@ -5,9 +5,13 @@ import {
   IsNotEmpty,
   IsArray,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { FileType } from '../interfaces/storage.interface';
 
 export class UploadFileBodyDto {
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
   @IsEnum(FileType)
   @IsNotEmpty()
   fileType: FileType;
@@ -18,6 +22,9 @@ export class UploadFileBodyDto {
 }
 
 export class UploadBatchBodyDto {
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
   @IsEnum(FileType)
   @IsNotEmpty()
   fileType: FileType;

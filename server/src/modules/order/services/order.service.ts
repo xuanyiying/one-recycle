@@ -16,7 +16,16 @@ import {
 } from '@/common';
 import { CreateOrderDto, UpdateOrderDto } from '../dto';
 import { OrderFilters, DayTimeSlots } from '../interfaces/order.interface';
-import { Order, Prisma } from '@prisma/client';
+import {
+  InventoryTxnType,
+  InboundStatus,
+  InspectionResult,
+  LogisticsStatus,
+  Order,
+  Prisma,
+  ReservationStatus,
+} from '@prisma/client';
+import { toDecimal, toNumber } from '@/common/utils/decimal.util';
 import { OrderQueueService } from '../../queue/services/order-queue.service';
 import { InventoryService } from '@/modules/inventory/services/inventory.service';
 import { AccountService } from '@/modules/account/account.service';
@@ -221,7 +230,7 @@ export class OrderService implements OnModuleInit {
       items: order.items.map((item) => ({
         categoryId: item.categoryId.toString(),
         quantity: item.quantity,
-        estimatedPrice: item.unitPrice,
+        estimatedPrice: toNumber(item.unitPrice),
         weight: item.estimatedWeight,
         condition: item.condition || undefined,
         description: item.notes || undefined,
@@ -239,7 +248,7 @@ export class OrderService implements OnModuleInit {
       },
       scheduledTime:
         order.expectPickupTime?.toISOString() || new Date().toISOString(),
-      totalAmount: order.estimatedAmount,
+      totalAmount: toNumber(order.estimatedAmount),
       createdAt: order.createdAt.toISOString(),
       orderType: order.orderType,
     });
@@ -255,7 +264,7 @@ export class OrderService implements OnModuleInit {
     logisticsData: {
       logisticsNo: string;
       logisticsCompany: string;
-      status: string;
+      status: LogisticsStatus;
       senderName?: string;
       senderPhone?: string;
       senderAddress?: string;
@@ -268,6 +277,11 @@ export class OrderService implements OnModuleInit {
     },
   ): Promise<void> {
     await this.prisma.$transaction(async (prisma) => {
+      const before = await prisma.order.findUnique({
+        where: { id: BigInt(orderId) },
+        select: { status: true },
+      });
+
       // 1. 创建物流单
       await prisma.logisticsOrder.create({
         data: {
@@ -294,6 +308,21 @@ export class OrderService implements OnModuleInit {
           status: OrderStatus.PENDING_PICKUP,
         },
       });
+
+      await prisma.orderTimeline.create({
+        data: {
+          orderId: BigInt(orderId),
+          status: OrderStatus.PENDING_PICKUP,
+          fromStatus: before?.status ?? null,
+          toStatus: OrderStatus.PENDING_PICKUP,
+          message: `状态变更为 ${OrderStatus.PENDING_PICKUP}`,
+          operator: 'SYSTEM',
+          operatorType: 'SYSTEM',
+          operatorId: null,
+          reason: null,
+          rawSnapshot: { action: 'saveDispatchResult' } as any,
+        },
+      });
     });
   }
 
@@ -305,7 +334,7 @@ export class OrderService implements OnModuleInit {
     logisticsData: {
       logisticsNo: string;
       logisticsCompany: string;
-      status: string;
+      status: LogisticsStatus;
       senderName?: string;
       senderPhone?: string;
       senderAddress?: string;
@@ -463,8 +492,54 @@ export class OrderService implements OnModuleInit {
     if (data.status) {
       this.validateTransition(order.status, data.status);
     }
+    const fromStatus = order.status;
 
-    return this.update(id, data);
+    const updateData: Prisma.OrderUpdateInput = {};
+
+    if (data.status) updateData.status = data.status;
+    if (data.expectPickupTime)
+      updateData.expectPickupTime = new Date(data.expectPickupTime);
+    if (data.actualPickupTime)
+      updateData.actualPickupTime = new Date(data.actualPickupTime);
+    if (data.expectDeliveryTime)
+      updateData.expectDeliveryTime = new Date(data.expectDeliveryTime);
+    if (data.actualDeliveryTime)
+      updateData.actualDeliveryTime = new Date(data.actualDeliveryTime);
+    if (data.settlementAmount !== undefined)
+      updateData.settlementAmount = toDecimal(data.settlementAmount);
+    if (data.payAmount !== undefined) updateData.payAmount = toDecimal(data.payAmount);
+    if (data.remark) updateData.remark = data.remark;
+    if (data.priority) updateData.priority = data.priority as unknown as number;
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: BigInt(id) },
+        data: updateData,
+        include: {
+          items: true,
+          assignments: true,
+        },
+      });
+
+      if (data.status && data.status !== fromStatus) {
+        await tx.orderTimeline.create({
+          data: {
+            orderId: BigInt(id),
+            status: data.status,
+            fromStatus: fromStatus,
+            toStatus: data.status,
+            message: `状态变更为 ${data.status}`,
+            operator: 'SYSTEM',
+            operatorType: 'SYSTEM',
+            operatorId: null,
+            reason: null,
+            rawSnapshot: data as any,
+          },
+        });
+      }
+
+      return this.mapToOrder(updated);
+    });
   }
 
   async confirmOrder(id: number): Promise<Order> {
@@ -484,15 +559,22 @@ export class OrderService implements OnModuleInit {
       throw new NotFoundException('Logistics order not found');
     }
 
+    const normalized = logisticsStatus.toString().toUpperCase();
+    const statusEnum = (Object.values(LogisticsStatus) as string[]).includes(
+      normalized,
+    )
+      ? (normalized as LogisticsStatus)
+      : LogisticsStatus.FAILED;
+
     await this.prisma.logisticsOrder.update({
       where: { id: logisticsOrder.id },
       data: {
-        status: logisticsStatus,
+        status: statusEnum,
+        providerStatus: normalized,
         providerData: providerData ?? logisticsOrder.providerData,
       },
     });
 
-    const normalized = logisticsStatus.toString().toUpperCase();
     const statusMap: Record<string, OrderStatus> = {
       PICKED_UP: OrderStatus.PICKED_UP,
       IN_TRANSIT: OrderStatus.IN_TRANSIT,
@@ -514,16 +596,83 @@ export class OrderService implements OnModuleInit {
    * @param id 订单ID
    */
   async cancel(id: number): Promise<Order> {
-    const order = await this.prisma.order.update({
-      where: { id: BigInt(id) },
-      data: { status: OrderStatus.CANCELLED },
-      include: {
-        items: true,
-        assignments: true,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: BigInt(id) },
+        include: { items: true, assignments: true, reservations: true },
+      });
+      if (!order) throw new NotFoundException('Order not found');
+      this.validateTransition(order.status, OrderStatus.CANCELLED);
 
-    return this.mapToOrder(order);
+      const now = new Date();
+
+      for (const reservation of order.reservations) {
+        if (
+          reservation.status === ReservationStatus.CANCELLED ||
+          reservation.status === ReservationStatus.EXPIRED
+        ) {
+          continue;
+        }
+
+        await tx.reservation.update({
+          where: { id: reservation.id },
+          data: {
+            status: ReservationStatus.CANCELLED,
+            cancelledAt: now,
+          },
+        });
+
+        const item = await tx.inventoryItem.findUnique({
+          where: { id: reservation.itemId },
+        });
+        if (item) {
+          await tx.inventoryItem.update({
+            where: { id: item.id },
+            data: {
+              reservedQty: { decrement: reservation.quantity },
+              availableQty: { increment: reservation.quantity },
+            },
+          });
+
+          const unitPrice = new Prisma.Decimal(item.unitPrice);
+          const qty = new Prisma.Decimal(reservation.quantity);
+          await tx.inventoryTransaction.create({
+            data: {
+              itemId: item.id,
+              type: InventoryTxnType.RELEASE,
+              quantity: reservation.quantity,
+              unitPrice,
+              totalPrice: unitPrice.mul(qty),
+              referenceId: order.id.toString(),
+              notes: 'order:cancel:release',
+            },
+          });
+        }
+      }
+
+      const updated = await tx.order.update({
+        where: { id: BigInt(id) },
+        data: { status: OrderStatus.CANCELLED },
+        include: { items: true, assignments: true },
+      });
+
+      await tx.orderTimeline.create({
+        data: {
+          orderId: BigInt(id),
+          status: OrderStatus.CANCELLED,
+          fromStatus: order.status,
+          toStatus: OrderStatus.CANCELLED,
+          message: `状态变更为 ${OrderStatus.CANCELLED}`,
+          operator: 'SYSTEM',
+          operatorType: 'SYSTEM',
+          operatorId: null,
+          reason: null,
+          rawSnapshot: { action: 'cancel' } as any,
+        },
+      });
+
+      return this.mapToOrder(updated);
+    });
   }
 
   /**
@@ -561,7 +710,7 @@ export class OrderService implements OnModuleInit {
       totalOrders,
       pendingOrders,
       completedOrders,
-      totalAmount: aggregateResult._sum.settlementAmount || 0,
+      totalAmount: toNumber(aggregateResult._sum.settlementAmount),
     };
   }
 
@@ -629,6 +778,7 @@ export class OrderService implements OnModuleInit {
         const remaining = Math.max(0, range.quota - used);
 
         return {
+          id: `slot_${dateStr}_${index}`,
           startTime: range.start,
           endTime: range.end,
           isAvailable: remaining > 0,
@@ -645,6 +795,13 @@ export class OrderService implements OnModuleInit {
     }
 
     return slots;
+  }
+
+  async getAvailableTimeSlots(
+    date: string,
+    addressId?: string | number,
+  ): Promise<DayTimeSlots[]> {
+    return this.getBatchTimeSlots(date, 1, addressId);
   }
 
   /**
@@ -676,6 +833,14 @@ export class OrderService implements OnModuleInit {
       updatedAt: order.updatedAt,
     };
 
+    if (order.estimatedAmount !== undefined)
+      baseOrder.estimatedAmount = toNumber(order.estimatedAmount);
+    if (order.settlementAmount !== undefined)
+      baseOrder.settlementAmount = toNumber(order.settlementAmount);
+    if (order.payAmount !== undefined) baseOrder.payAmount = toNumber(order.payAmount);
+    if (order.discountAmount !== undefined)
+      baseOrder.discountAmount = toNumber(order.discountAmount);
+
     if (order.items) {
       baseOrder.items = order.items.map((item: any) => ({
         ...item,
@@ -700,34 +865,22 @@ export class OrderService implements OnModuleInit {
   // State Machine Transitions
 
   async courierPickUp(id: number, time: Date = new Date()): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.PICKED_UP);
-    return this.update(id, {
+    return this.updateStatus(id, {
       status: OrderStatus.PICKED_UP,
       actualPickupTime: time.toISOString(),
     });
   }
 
   async startTransport(id: number): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.IN_TRANSIT);
-    return this.update(id, { status: OrderStatus.IN_TRANSIT });
+    return this.updateStatus(id, { status: OrderStatus.IN_TRANSIT });
   }
 
   async arriveAtStation(id: number): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.PENDING_RECEIPT);
-    return this.update(id, { status: OrderStatus.PENDING_RECEIPT });
+    return this.updateStatus(id, { status: OrderStatus.PENDING_RECEIPT });
   }
 
   async confirmReceipt(id: number): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.INSPECTING);
-    return this.update(id, { status: OrderStatus.INSPECTING });
+    return this.updateStatus(id, { status: OrderStatus.INSPECTING });
   }
 
   async finishInspection(
@@ -772,16 +925,28 @@ export class OrderService implements OnModuleInit {
           settlementAmount: result.actualAmount,
         },
       });
+
+      await tx.orderTimeline.create({
+        data: {
+          orderId: BigInt(id),
+          status: OrderStatus.INSPECTED,
+          fromStatus: order.status,
+          toStatus: OrderStatus.INSPECTED,
+          message: `状态变更为 ${OrderStatus.INSPECTED}`,
+          operator: 'SYSTEM',
+          operatorType: 'SYSTEM',
+          operatorId: null,
+          reason: null,
+          rawSnapshot: result as any,
+        },
+      });
     });
 
     return this.findById(id) as Promise<Order>;
   }
 
   async handleInspectionException(id: number, reason: string): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.INSPECTION_EXCEPTION);
-    return this.update(id, {
+    return this.updateStatus(id, {
       status: OrderStatus.INSPECTION_EXCEPTION,
       remark: `Exception: ${reason}`,
     });
@@ -804,18 +969,104 @@ export class OrderService implements OnModuleInit {
   }
 
   async confirmInbound(id: number): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.INBOUNDED);
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: BigInt(id) },
+        include: { items: true },
+      });
+      if (!order) throw new NotFoundException('Order not found');
+      this.validateTransition(order.status, OrderStatus.INBOUNDED);
 
-    // Call InventoryService to create items
-    await this.inventoryService.createFromOrder(order as any);
+      let warehouse = await tx.warehouse.findFirst({
+        where: {
+          type: 'MAIN' as any,
+          status: 'ACTIVE' as any,
+        },
+      });
+      if (!warehouse) {
+        warehouse = await tx.warehouse.create({
+          data: {
+            name: 'Default Warehouse',
+            code: 'WH-DEFAULT',
+            type: 'MAIN' as any,
+            address: 'Default Address',
+            contactPhone: '000-0000000',
+            capacity: 10000,
+            status: 'ACTIVE' as any,
+          },
+        });
+      }
 
-    // Update to INBOUNDED
-    await this.update(id, { status: OrderStatus.INBOUNDED });
+      await this.inventoryService.createFromOrder(order as any, tx);
 
-    // Auto transition to PENDING_SETTLEMENT
-    return this.update(id, { status: OrderStatus.PENDING_SETTLEMENT });
+      const now = new Date();
+      await tx.inboundReceipt.upsert({
+        where: { orderId: BigInt(id) },
+        create: {
+          orderId: BigInt(id),
+          warehouseId: warehouse.id,
+          staffId: null,
+          status: InboundStatus.INBOUNDED,
+          inspectionResult: InspectionResult.PASS,
+          exceptionReason: null,
+          photos: [],
+          receivedAt: now,
+          inspectedAt: now,
+          inboundedAt: now,
+        },
+        update: {
+          warehouseId: warehouse.id,
+          status: InboundStatus.INBOUNDED,
+          inboundedAt: now,
+          inspectedAt: now,
+          receivedAt: now,
+        },
+      });
+
+      await tx.order.update({
+        where: { id: BigInt(id) },
+        data: { status: OrderStatus.INBOUNDED },
+      });
+
+      await tx.orderTimeline.create({
+        data: {
+          orderId: BigInt(id),
+          status: OrderStatus.INBOUNDED,
+          fromStatus: order.status,
+          toStatus: OrderStatus.INBOUNDED,
+          message: `状态变更为 ${OrderStatus.INBOUNDED}`,
+          operator: 'SYSTEM',
+          operatorType: 'SYSTEM',
+          operatorId: null,
+          reason: null,
+          rawSnapshot: { action: 'confirmInbound' } as any,
+        },
+      });
+
+      const pendingSettlement = await tx.order.update({
+        where: { id: BigInt(id) },
+        data: { status: OrderStatus.PENDING_SETTLEMENT },
+      });
+
+      await tx.orderTimeline.create({
+        data: {
+          orderId: BigInt(id),
+          status: OrderStatus.PENDING_SETTLEMENT,
+          fromStatus: OrderStatus.INBOUNDED,
+          toStatus: OrderStatus.PENDING_SETTLEMENT,
+          message: `状态变更为 ${OrderStatus.PENDING_SETTLEMENT}`,
+          operator: 'SYSTEM',
+          operatorType: 'SYSTEM',
+          operatorId: null,
+          reason: null,
+          rawSnapshot: { action: 'confirmInbound:auto' } as any,
+        },
+      });
+
+      return pendingSettlement;
+    });
+
+    return updated as any;
   }
 
   /**
@@ -850,27 +1101,63 @@ export class OrderService implements OnModuleInit {
     id: number,
     options?: { method: PaymentProvider; accountInfo?: any },
   ): Promise<Order> {
+    const method = options?.method || PaymentProvider.BALANCE;
+
+    if (method === PaymentProvider.BALANCE) {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({
+          where: { id: BigInt(id) },
+        });
+        if (!order) throw new NotFoundException('Order not found');
+        this.validateTransition(order.status, OrderStatus.COMPLETED);
+
+        const settlementAmount = toNumber(order.settlementAmount);
+        if (settlementAmount > 0) {
+          await this.accountService.deposit(
+            order.userId,
+            settlementAmount,
+            order.id.toString(),
+            `Recycle Order Settlement #${order.orderNo}`,
+            tx,
+          );
+        }
+
+        const updatedOrder = await tx.order.update({
+          where: { id: BigInt(id) },
+          data: { status: OrderStatus.COMPLETED },
+        });
+
+        await tx.orderTimeline.create({
+          data: {
+            orderId: BigInt(id),
+            status: OrderStatus.COMPLETED,
+            fromStatus: order.status,
+            toStatus: OrderStatus.COMPLETED,
+            message: `状态变更为 ${OrderStatus.COMPLETED}`,
+            operator: 'SYSTEM',
+            operatorType: 'SYSTEM',
+            operatorId: null,
+            reason: null,
+            rawSnapshot: {
+              method: PaymentProvider.BALANCE,
+              settlementAmount,
+            } as any,
+          },
+        });
+
+        return updatedOrder;
+      });
+
+      return updated as any;
+    }
+
     const order = await this.findById(id);
     if (!order) throw new NotFoundException('Order not found');
     this.validateTransition(order.status, OrderStatus.COMPLETED);
 
-    // Perform settlement (deposit to user account or transfer)
-    if (order.settlementAmount > 0) {
-      const method = options?.method || PaymentProvider.BALANCE;
-
-      if (method === PaymentProvider.BALANCE) {
-        await this.accountService.deposit(
-          order.userId,
-          order.settlementAmount,
-          order.id.toString(),
-          `Recycle Order Settlement #${order.orderNo}`,
-        );
-      } else if (
-        method === PaymentProvider.WECHAT ||
-        method === PaymentProvider.ALIPAY
-      ) {
-        // Ensure we have account info
-        // If not provided in options, try to find from UserIdentity
+    const settlementAmount = toNumber(order.settlementAmount);
+    if (settlementAmount > 0) {
+      if (method === PaymentProvider.WECHAT || method === PaymentProvider.ALIPAY) {
         let accountInfo = options?.accountInfo;
         if (!accountInfo) {
           const identity = await this.prisma.userIdentity.findFirst({
@@ -883,7 +1170,7 @@ export class OrderService implements OnModuleInit {
           if (identity) {
             accountInfo = {
               openid: identity.openid,
-              // Real name might be in User profile
+              accountNo: identity.openid,
               realName: (
                 await this.prisma.user.findUnique({
                   where: { id: BigInt(order.userId) },
@@ -893,13 +1180,15 @@ export class OrderService implements OnModuleInit {
           }
         }
 
-        if (!accountInfo || !accountInfo.openid) {
+        const hasWechat = !!accountInfo?.openid;
+        const hasAlipay = !!accountInfo?.accountNo;
+        if ((method === PaymentProvider.WECHAT && !hasWechat) || (method === PaymentProvider.ALIPAY && !hasAlipay)) {
           throw new Error(`Missing account info for ${method} transfer`);
         }
 
         await this.paymentService.transferToUser(
           BigInt(order.userId),
-          order.settlementAmount,
+          settlementAmount,
           method,
           accountInfo,
           `Recycle Order Settlement #${order.orderNo}`,
@@ -908,7 +1197,7 @@ export class OrderService implements OnModuleInit {
       }
     }
 
-    return this.update(id, { status: OrderStatus.COMPLETED });
+    return this.updateStatus(id, { status: OrderStatus.COMPLETED });
   }
 
   private validateTransition(current: string, target: string): void {
@@ -922,7 +1211,10 @@ export class OrderService implements OnModuleInit {
         OrderStatus.CANCELLED,
       ],
       [OrderStatus.PICKED_UP]: [OrderStatus.IN_TRANSIT],
-      [OrderStatus.IN_TRANSIT]: [OrderStatus.PENDING_RECEIPT],
+      [OrderStatus.IN_TRANSIT]: [
+        OrderStatus.PENDING_RECEIPT,
+        OrderStatus.CANCELLED,
+      ],
       [OrderStatus.PENDING_RECEIPT]: [OrderStatus.INSPECTING],
       [OrderStatus.INSPECTING]: [
         OrderStatus.INSPECTED,

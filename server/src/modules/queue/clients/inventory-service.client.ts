@@ -36,7 +36,7 @@ export class InventoryServiceClient {
   constructor(private readonly configService: ConfigService) {
     this.baseURL =
       this.configService.get<string>('INVENTORY_SERVICE_URL') ||
-      'http://localhost:3009';
+      'http://localhost:3008';
 
     this.httpClient = axios.create({
       baseURL: this.baseURL,

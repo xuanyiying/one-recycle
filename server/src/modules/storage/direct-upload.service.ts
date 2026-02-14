@@ -15,8 +15,7 @@ import {
 } from './interfaces/storage.interface';
 import { OssConfigService } from './config/oss.config';
 import { ChunkUploadSessionService } from './services/chunk-upload-session.service';
-import { v4 as uuidv4 } from 'uuid';
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import Core from '@alicloud/pop-core';
 import { OSS_SERVICE } from './storage.constants';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -66,7 +65,7 @@ export class DirectUploadService {
       contentType,
     );
 
-    const sessionId = uuidv4();
+    const sessionId = randomUUID();
 
     this.logger.log(`Presigned URL generated: ${sessionId}`);
 
@@ -97,9 +96,10 @@ export class DirectUploadService {
       expires = 3600,
     } = request;
 
-    if (this.ossConfigService.getOssType() !== OssType.ALIYUN_OSS) {
+    const ossType = this.ossConfigService.getOssType();
+    if (ossType !== OssType.ALIYUN_OSS) {
       throw new BadRequestException(
-        'OSS type does not support Aliyun direct upload',
+        `OSS type does not support Aliyun direct upload: ${ossType}`,
       );
     }
 
@@ -571,7 +571,7 @@ export class DirectUploadService {
         fileSize: actualFileSize || 0,
         fileUrl: '',
         filePath: uploadSessionId,
-        hashMd5: uuidv4(),
+        hashMd5: randomUUID(),
         fileType: FileType.OTHER,
         userId,
         ossType: this.ossConfigService.getOssType(),
@@ -727,6 +727,7 @@ export class DirectUploadService {
         maxSize: 10 * 1024 * 1024,
         allowedTypes: [
           'image/jpeg',
+          'image/jpg',
           'image/png',
           'image/gif',
           'image/webp',
@@ -779,7 +780,7 @@ export class DirectUploadService {
     category?: string,
   ): string {
     const timestamp = Date.now();
-    const randomId = uuidv4().substring(0, 8);
+    const randomId = randomUUID().substring(0, 8);
     const ext = fileName.split('.').pop();
     const sanitizedName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
 

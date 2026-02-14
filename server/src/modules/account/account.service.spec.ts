@@ -6,12 +6,11 @@ import { ConfigService } from '@nestjs/config';
 
 describe('AccountService', () => {
   let service: AccountService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     account: {
       create: jest.fn(),
-      findFirst: jest.fn(),
+      findUnique: jest.fn(),
     },
   };
 
@@ -38,7 +37,6 @@ describe('AccountService', () => {
     }).compile();
 
     service = module.get<AccountService>(AccountService);
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -109,18 +107,18 @@ describe('AccountService', () => {
 
     it('should return account if found', async () => {
       const mockAccount = { id: BigInt(1), userId };
-      mockPrismaService.account.findFirst.mockResolvedValue(mockAccount);
+      mockPrismaService.account.findUnique.mockResolvedValue(mockAccount);
 
       const result = await service.findAccountByUserId(userId);
 
       expect(result).toEqual(mockAccount);
-      expect(mockPrismaService.account.findFirst).toHaveBeenCalledWith({
-        where: { userId },
+      expect(mockPrismaService.account.findUnique).toHaveBeenCalledWith({
+        where: { userId_accountType: { userId, accountType: 'WALLET' } },
       });
     });
 
     it('should auto-create account if not found', async () => {
-      mockPrismaService.account.findFirst.mockResolvedValue(null);
+      mockPrismaService.account.findUnique.mockResolvedValue(null);
       const mockCreatedAccount = { id: BigInt(1), userId };
       jest
         .spyOn(service, 'createAccount')

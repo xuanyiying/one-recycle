@@ -3,6 +3,7 @@ import { CourierService } from './courier.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CourierStatus } from '@prisma/client';
+import { RedisService } from '@/common';
 
 describe('CourierService', () => {
   let service: CourierService;
@@ -22,6 +23,11 @@ describe('CourierService', () => {
     get: jest.fn((key, defaultValue) => defaultValue),
   };
 
+  const mockRedisService = {
+    get: jest.fn(async () => null),
+    set: jest.fn(async () => {}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -34,11 +40,16 @@ describe('CourierService', () => {
           provide: ConfigService,
           useValue: mockConfigService,
         },
+        {
+          provide: RedisService,
+          useValue: mockRedisService,
+        },
       ],
     }).compile();
 
     service = module.get<CourierService>(CourierService);
     prisma = module.get<PrismaService>(PrismaService);
+    await service.onModuleInit();
   });
 
   afterEach(() => {

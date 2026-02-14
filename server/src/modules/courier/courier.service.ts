@@ -171,13 +171,12 @@ export class CourierService implements OnModuleInit {
     });
 
     if (response.action === 'ACCEPT') {
-      await this.prisma.courierAssignment.create({
+      await this.prisma.orderAssignment.create({
         data: {
-          id: `assignment-${Date.now()}`,
-          taskId: notification.taskId,
           orderId: notification.orderId,
-          orderNo: notification.orderNo,
           courierId: notification.courierId,
+          taskId: notification.taskId,
+          orderNo: notification.orderNo,
           waybillNo: notification.waybillNo || undefined,
           pickupCode: notification.pickupCode || undefined,
           status: 'ASSIGNED' as any,
@@ -210,7 +209,7 @@ export class CourierService implements OnModuleInit {
     if (filters?.endDate)
       where.assignedAt = { ...(where.assignedAt || {}), lte: filters.endDate };
     if (filters?.orderId) where.orderId = BigInt(filters.orderId);
-    return this.prisma.courierAssignment.findMany({
+    return this.prisma.orderAssignment.findMany({
       where,
       orderBy: { assignedAt: 'desc' },
     });
@@ -221,8 +220,8 @@ export class CourierService implements OnModuleInit {
     courierId: string,
     data: UpdateTaskStatusDto,
   ) {
-    const assignment = await this.prisma.courierAssignment.findUnique({
-      where: { id: taskId },
+    const assignment = await this.prisma.orderAssignment.findUnique({
+      where: { id: BigInt(taskId) },
     });
     if (!assignment)
       throw new NotFoundException(
@@ -253,8 +252,8 @@ export class CourierService implements OnModuleInit {
         break;
     }
 
-    return this.prisma.courierAssignment.update({
-      where: { id: taskId },
+    return this.prisma.orderAssignment.update({
+      where: { id: BigInt(taskId) },
       data: updateData,
     });
   }
@@ -265,7 +264,7 @@ export class CourierService implements OnModuleInit {
     const end = new Date(start);
     end.setMonth(end.getMonth() + 1);
 
-    const assignments = await this.prisma.courierAssignment.findMany({
+    const assignments = await this.prisma.orderAssignment.findMany({
       where: { courierId, assignedAt: { gte: start, lt: end } },
     });
 

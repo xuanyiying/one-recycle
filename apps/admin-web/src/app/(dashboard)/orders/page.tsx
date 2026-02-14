@@ -98,6 +98,7 @@ export default function OrdersPage() {
     customerInfo: true,
     amount: true,
     status: true,
+    pickupTime: true,
     createdAt: true,
     actions: true,
   });
@@ -578,6 +579,12 @@ export default function OrdersPage() {
                       状态
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem
+                      checked={visibleColumns.pickupTime}
+                      onCheckedChange={() => toggleColumn('pickupTime')}
+                    >
+                      预约上门
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
                       checked={visibleColumns.createdAt}
                       onCheckedChange={() => toggleColumn('createdAt')}
                     >
@@ -624,6 +631,7 @@ export default function OrdersPage() {
                     {visibleColumns.customerInfo && <TableHead>客户信息</TableHead>}
                     {visibleColumns.amount && <TableHead>金额</TableHead>}
                     {visibleColumns.status && <TableHead>状态</TableHead>}
+                    {visibleColumns.pickupTime && <TableHead>预约上门</TableHead>}
                     {visibleColumns.createdAt && <TableHead>创建时间</TableHead>}
                     {visibleColumns.actions && <TableHead className="text-right">操作</TableHead>}
                   </TableRow>
@@ -650,6 +658,11 @@ export default function OrdersPage() {
                         {visibleColumns.status && (
                           <TableCell>
                             <Skeleton className="h-5 w-[60px] rounded-full" />
+                          </TableCell>
+                        )}
+                        {visibleColumns.pickupTime && (
+                          <TableCell>
+                            <Skeleton className="h-4 w-[100px]" />
                           </TableCell>
                         )}
                         {visibleColumns.createdAt && (
@@ -702,6 +715,20 @@ export default function OrdersPage() {
                             <Badge variant={getStatusBadgeVariant(order.status)}>
                               {orderStatusLabels[order.status] || order.status}
                             </Badge>
+                          </TableCell>
+                        )}
+                        {visibleColumns.pickupTime && (
+                          <TableCell>
+                            <span className="text-sm">
+                              {order.expectPickupTime
+                                ? new Date(order.expectPickupTime).toLocaleString('zh-CN', {
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
+                                : '-'}
+                            </span>
                           </TableCell>
                         )}
                         {visibleColumns.createdAt && (

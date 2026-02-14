@@ -13,6 +13,83 @@ import {
 export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async resolveTenantId(explicitTenantId?: number): Promise<number> {
+    if (explicitTenantId) {
+      return explicitTenantId;
+    }
+    const tenant = await this.prisma.tenant.findFirst({
+      where: { status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!tenant) {
+      throw new Error('未找到可用租户');
+    }
+    return Number(tenant.id);
+  }
+
+  private async upsertPricingRule(
+    categoryId: number,
+    pricingRule?: CreateCategoryDto['pricingRule'],
+  ) {
+    if (!pricingRule) {
+      return;
+    }
+    const tenantId = await this.resolveTenantId(pricingRule.tenantId);
+    const existingRule = await this.prisma.recyclePricingRule.findFirst({
+      where: {
+        categoryId,
+        tenantId,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const basePrice =
+      pricingRule.basePrice !== undefined
+        ? pricingRule.basePrice
+        : (existingRule?.basePrice ?? 0);
+    const ruleJson =
+      pricingRule.ruleJson !== undefined
+        ? pricingRule.ruleJson
+        : (existingRule?.ruleJson ?? undefined);
+    const minWeight =
+      pricingRule.minWeight !== undefined
+        ? pricingRule.minWeight
+        : existingRule?.minWeight;
+    const maxWeight =
+      pricingRule.maxWeight !== undefined
+        ? pricingRule.maxWeight
+        : existingRule?.maxWeight;
+    const isActive =
+      pricingRule.isActive !== undefined
+        ? pricingRule.isActive
+        : (existingRule?.isActive ?? true);
+
+    if (existingRule) {
+      await this.prisma.recyclePricingRule.update({
+        where: { id: existingRule.id },
+        data: {
+          basePrice,
+          ruleJson,
+          minWeight,
+          maxWeight,
+          isActive,
+        },
+      });
+      return;
+    }
+
+    await this.prisma.recyclePricingRule.create({
+      data: {
+        tenantId,
+        categoryId,
+        basePrice,
+        ruleJson,
+        minWeight,
+        maxWeight,
+        isActive,
+      },
+    });
+  }
+
   async create(
     createCategoryDto: CreateCategoryDto,
   ): Promise<CategoryResponseDto> {
@@ -64,12 +141,29 @@ export class CategoryService {
       },
     });
 
-    return this.mapToCategoryResponse(category);
+    await this.upsertPricingRule(category.id, createCategoryDto.pricingRule);
+    const categoryWithRule = await this.prisma.category.findUnique({
+      where: { id: category.id },
+      include: {
+        recyclePricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    return this.mapToCategoryResponse(categoryWithRule ?? category);
   }
 
   async findOne(id: number): Promise<CategoryResponseDto> {
     const category = await this.prisma.category.findUnique({
       where: { id },
+      include: {
+        recyclePricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     if (!category) {
@@ -125,6 +219,12 @@ export class CategoryService {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
+        include: {
+          recyclePricingRules: {
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
       }),
       this.prisma.category.count({ where }),
     ]);
@@ -226,7 +326,18 @@ export class CategoryService {
       data: updateData,
     });
 
-    return this.mapToCategoryResponse(category);
+    await this.upsertPricingRule(category.id, updateCategoryDto.pricingRule);
+    const categoryWithRule = await this.prisma.category.findUnique({
+      where: { id: category.id },
+      include: {
+        recyclePricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    return this.mapToCategoryResponse(categoryWithRule ?? category);
   }
 
   async remove(id: number): Promise<void> {
@@ -258,16 +369,19 @@ export class CategoryService {
     const categories = await this.prisma.category.findMany({
       where: { parentId },
       orderBy: { sortOrder: 'asc' },
+      include: {
+        recyclePricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     const result: CategoryResponseDto[] = [];
     for (const category of categories) {
+      const children = await this.findTree(category.id);
       const categoryDto = this.mapToCategoryResponse(category);
-      // 递归获取子分类
-      if (categoryDto.parentId === null || categoryDto.parentId === parentId) {
-        const children = await this.findTree(category.id);
-        // 注意：这里为了简化没有添加children属性，实际项目中可以扩展
-      }
+      categoryDto.children = children;
       result.push(categoryDto);
     }
 
@@ -275,8 +389,12 @@ export class CategoryService {
   }
 
   private mapToCategoryResponse(data: any): CategoryResponseDto {
+    const pricingRule =
+      data?.recyclePricingRules && data.recyclePricingRules.length > 0
+        ? data.recyclePricingRules[0]
+        : undefined;
     return {
-      id: data.id.toString(),
+      id: Number(data.id),
       name: data.name,
       description: data.description,
       type: data.type as CategoryType,
@@ -289,6 +407,17 @@ export class CategoryService {
       level: data.level,
       path: data.path,
       seo: data.seo ? JSON.parse(data.seo) : undefined,
+      pricingRule: pricingRule
+        ? {
+            id: Number(pricingRule.id),
+            tenantId: Number(pricingRule.tenantId),
+            basePrice: pricingRule.basePrice,
+            minWeight: pricingRule.minWeight ?? undefined,
+            maxWeight: pricingRule.maxWeight ?? undefined,
+            ruleJson: pricingRule.ruleJson ?? undefined,
+            isActive: pricingRule.isActive,
+          }
+        : undefined,
       attributes: data.attributes ? JSON.parse(data.attributes) : undefined,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

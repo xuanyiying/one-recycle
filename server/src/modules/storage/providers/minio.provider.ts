@@ -16,7 +16,7 @@ import path from 'path';
 import { OssService, UploadResult, FileInfo } from './oss.interface';
 import { OssConfig } from '../config/oss.config';
 import { Logger } from '@nestjs/common';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export class MinIOService implements OssService {
   public bucketName: string;
@@ -218,7 +218,7 @@ export class MinIOService implements OssService {
     try {
       // Generate unique filename
       const fileExtension = path.extname(originalName);
-      const fileName = `${uuid()}${fileExtension}`;
+      const fileName = `${randomUUID()}${fileExtension}`;
       const key = folder ? `${folder}/${fileName}` : fileName;
 
       const command = new PutObjectCommand({

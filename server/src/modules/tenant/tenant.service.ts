@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Tenant, TenantAddress, AddressType } from '@prisma/client';
 import { ITenantService } from './tenant.interfaces';
+import { toDecimal } from '@/common/utils/decimal.util';
 
 @Injectable()
 export class TenantService implements ITenantService {
@@ -87,7 +88,9 @@ export class TenantService implements ITenantService {
     if (!tenant) return false;
 
     // Strict check: Available balance (total - frozen) must cover estimated amount
-    const availableBalance = tenant.balance - tenant.frozenBalance;
-    return availableBalance >= estimatedAmount;
+    const availableBalance = toDecimal(tenant.balance).minus(
+      toDecimal(tenant.frozenBalance),
+    );
+    return availableBalance.greaterThanOrEqualTo(toDecimal(estimatedAmount));
   }
 }

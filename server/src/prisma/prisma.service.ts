@@ -33,11 +33,13 @@ export class PrismaService
       errorFormat: 'colorless',
     });
 
-    // Setup query logging
-    (this as any).$on('query', (e: any) => {
-      this.logger.debug(`Query: ${e.query}`);
-      this.logger.debug(`Duration: ${e.duration}ms`);
-    });
+    const enableQueryLog = process.env.DB_LOG_QUERIES === 'true';
+    if (enableQueryLog) {
+      (this as any).$on('query', (e: any) => {
+        this.logger.debug(`Query: ${e.query}`);
+        this.logger.debug(`Duration: ${e.duration}ms`);
+      });
+    }
 
     (this as any).$on('error', (e: any) => {
       this.logger.error(`Error: ${e.message}`);

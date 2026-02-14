@@ -4,6 +4,9 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import {
   PrismaClient,
+  OrderStatus,
+  LogisticsStatus,
+  InventoryTxnType,
   PaymentStatus,
   PaymentProvider,
   RefundStatus,
@@ -35,83 +38,90 @@ const color = {
 };
 
 const statusFlow = [
-  'PENDING',
-  'PENDING_PICKUP',
-  'PICKED_UP',
-  'IN_TRANSIT',
-  'PENDING_RECEIPT',
-  'INSPECTING',
-  'INSPECTED',
-  'PENDING_INBOUND',
-  'INBOUNDED',
-  'PENDING_SETTLEMENT',
-  'COMPLETED',
-];
+  OrderStatus.PENDING,
+  OrderStatus.PENDING_PICKUP,
+  OrderStatus.PICKED_UP,
+  OrderStatus.IN_TRANSIT,
+  OrderStatus.PENDING_RECEIPT,
+  OrderStatus.INSPECTING,
+  OrderStatus.INSPECTED,
+  OrderStatus.PENDING_INBOUND,
+  OrderStatus.INBOUNDED,
+  OrderStatus.PENDING_SETTLEMENT,
+  OrderStatus.COMPLETED,
+] as const;
 
 const statusPool = [
-  'PENDING',
-  'PENDING_PICKUP',
-  'PICKED_UP',
-  'IN_TRANSIT',
-  'PENDING_RECEIPT',
-  'INSPECTING',
-  'INSPECTED',
-  'INSPECTION_EXCEPTION',
-  'MANUAL_PROCESSING',
-  'PENDING_INBOUND',
-  'INBOUNDED',
-  'PENDING_SETTLEMENT',
-  'COMPLETED',
-  'CANCELLED',
-  'REFUNDED',
-];
+  OrderStatus.PENDING,
+  OrderStatus.PENDING_PICKUP,
+  OrderStatus.PICKED_UP,
+  OrderStatus.IN_TRANSIT,
+  OrderStatus.PENDING_RECEIPT,
+  OrderStatus.INSPECTING,
+  OrderStatus.INSPECTED,
+  OrderStatus.INSPECTION_EXCEPTION,
+  OrderStatus.MANUAL_PROCESSING,
+  OrderStatus.PENDING_INBOUND,
+  OrderStatus.INBOUNDED,
+  OrderStatus.PENDING_SETTLEMENT,
+  OrderStatus.COMPLETED,
+  OrderStatus.CANCELLED,
+  OrderStatus.REFUNDED,
+] as const;
 
-function buildTimeline(status: string, variant: number): string[] {
-  if (status === 'CANCELLED') {
-    if (variant % 4 === 0) return ['PENDING', 'CANCELLED'];
-    if (variant % 4 === 1) return ['PENDING', 'PENDING_PICKUP', 'CANCELLED'];
+function buildTimeline(status: OrderStatus, variant: number): OrderStatus[] {
+  if (status === OrderStatus.CANCELLED) {
+    if (variant % 4 === 0) return [OrderStatus.PENDING, OrderStatus.CANCELLED];
+    if (variant % 4 === 1)
+      return [OrderStatus.PENDING, OrderStatus.PENDING_PICKUP, OrderStatus.CANCELLED];
     if (variant % 4 === 2)
-      return ['PENDING', 'PENDING_PICKUP', 'PICKED_UP', 'IN_TRANSIT', 'CANCELLED'];
+      return [
+        OrderStatus.PENDING,
+        OrderStatus.PENDING_PICKUP,
+        OrderStatus.PICKED_UP,
+        OrderStatus.IN_TRANSIT,
+        OrderStatus.CANCELLED,
+      ];
     return [
-      'PENDING',
-      'PENDING_PICKUP',
-      'PICKED_UP',
-      'IN_TRANSIT',
-      'PENDING_RECEIPT',
-      'INSPECTING',
-      'INSPECTION_EXCEPTION',
-      'MANUAL_PROCESSING',
-      'CANCELLED',
+      OrderStatus.PENDING,
+      OrderStatus.PENDING_PICKUP,
+      OrderStatus.PICKED_UP,
+      OrderStatus.IN_TRANSIT,
+      OrderStatus.PENDING_RECEIPT,
+      OrderStatus.INSPECTING,
+      OrderStatus.INSPECTION_EXCEPTION,
+      OrderStatus.MANUAL_PROCESSING,
+      OrderStatus.CANCELLED,
     ];
   }
 
-  if (status === 'INSPECTION_EXCEPTION') {
+  if (status === OrderStatus.INSPECTION_EXCEPTION) {
     return [
-      'PENDING',
-      'PENDING_PICKUP',
-      'PICKED_UP',
-      'IN_TRANSIT',
-      'PENDING_RECEIPT',
-      'INSPECTING',
-      'INSPECTION_EXCEPTION',
+      OrderStatus.PENDING,
+      OrderStatus.PENDING_PICKUP,
+      OrderStatus.PICKED_UP,
+      OrderStatus.IN_TRANSIT,
+      OrderStatus.PENDING_RECEIPT,
+      OrderStatus.INSPECTING,
+      OrderStatus.INSPECTION_EXCEPTION,
     ];
   }
 
-  if (status === 'MANUAL_PROCESSING') {
+  if (status === OrderStatus.MANUAL_PROCESSING) {
     return [
-      'PENDING',
-      'PENDING_PICKUP',
-      'PICKED_UP',
-      'IN_TRANSIT',
-      'PENDING_RECEIPT',
-      'INSPECTING',
-      'INSPECTION_EXCEPTION',
-      'MANUAL_PROCESSING',
+      OrderStatus.PENDING,
+      OrderStatus.PENDING_PICKUP,
+      OrderStatus.PICKED_UP,
+      OrderStatus.IN_TRANSIT,
+      OrderStatus.PENDING_RECEIPT,
+      OrderStatus.INSPECTING,
+      OrderStatus.INSPECTION_EXCEPTION,
+      OrderStatus.MANUAL_PROCESSING,
     ];
   }
 
-  if (status === 'REFUNDED') {
-    return [...statusFlow, 'REFUNDED'];
+  if (status === OrderStatus.REFUNDED) {
+    return [...statusFlow, OrderStatus.REFUNDED];
   }
 
   const index = statusFlow.indexOf(status);
@@ -119,30 +129,40 @@ function buildTimeline(status: string, variant: number): string[] {
     return statusFlow.slice(0, index + 1);
   }
 
-  return ['PENDING'];
+  return [OrderStatus.PENDING];
 }
 
-function statusRank(status: string): number {
-  if (status === 'INSPECTION_EXCEPTION' || status === 'MANUAL_PROCESSING') {
-    return statusFlow.indexOf('INSPECTING');
+function statusRank(status: OrderStatus): number {
+  if (
+    status === OrderStatus.INSPECTION_EXCEPTION ||
+    status === OrderStatus.MANUAL_PROCESSING
+  ) {
+    return statusFlow.indexOf(OrderStatus.INSPECTING);
   }
-  if (status === 'REFUNDED') return statusFlow.indexOf('COMPLETED');
-  if (status === 'CANCELLED') return statusFlow.indexOf('PENDING');
+  if (status === OrderStatus.REFUNDED) return statusFlow.indexOf(OrderStatus.COMPLETED);
+  if (status === OrderStatus.CANCELLED) return statusFlow.indexOf(OrderStatus.PENDING);
   return statusFlow.indexOf(status);
 }
 
-function logisticsStatus(status: string): string {
-  if (status === 'PICKED_UP') return 'PICKED_UP';
-  if (status === 'IN_TRANSIT') return 'IN_TRANSIT';
-  if (status === 'PENDING_RECEIPT') return 'ARRIVED';
-  if (status === 'INSPECTING' || status === 'INSPECTED') return 'DELIVERED';
-  if (status === 'INSPECTION_EXCEPTION' || status === 'MANUAL_PROCESSING')
-    return 'DELIVERED';
-  if (status === 'PENDING_INBOUND' || status === 'INBOUNDED') return 'DELIVERED';
-  if (status === 'PENDING_SETTLEMENT' || status === 'COMPLETED')
-    return 'DELIVERED';
-  if (status === 'REFUNDED') return 'DELIVERED';
-  return 'CREATED';
+function logisticsStatus(status: OrderStatus): LogisticsStatus {
+  if (status === OrderStatus.PICKED_UP) return LogisticsStatus.PICKED_UP;
+  if (status === OrderStatus.IN_TRANSIT) return LogisticsStatus.IN_TRANSIT;
+  if (
+    status === OrderStatus.PENDING_RECEIPT ||
+    status === OrderStatus.INSPECTING ||
+    status === OrderStatus.INSPECTED ||
+    status === OrderStatus.INSPECTION_EXCEPTION ||
+    status === OrderStatus.MANUAL_PROCESSING ||
+    status === OrderStatus.PENDING_INBOUND ||
+    status === OrderStatus.INBOUNDED ||
+    status === OrderStatus.PENDING_SETTLEMENT ||
+    status === OrderStatus.COMPLETED ||
+    status === OrderStatus.REFUNDED
+  ) {
+    return LogisticsStatus.DELIVERED;
+  }
+  if (status === OrderStatus.CANCELLED) return LogisticsStatus.CANCELLED;
+  return LogisticsStatus.CREATED;
 }
 
 function roundAmount(value: number): number {
@@ -351,7 +371,7 @@ async function main() {
       const baseTime = new Date(Date.now() - (orderCount - index) * 3600 * 1000);
       const estimatedAmount = roundAmount(30 + (index % 9) * 12 + Math.random() * 10);
       const discountAmount =
-        status === 'CANCELLED' ? 0 : roundAmount(Math.random() * 6);
+        status === OrderStatus.CANCELLED ? 0 : roundAmount(Math.random() * 6);
       const settlementAmount = roundAmount(
         Math.max(estimatedAmount - discountAmount, 1),
       );
@@ -359,28 +379,28 @@ async function main() {
       const rank = statusRank(status);
 
       const expectPickupTime =
-        rank >= statusRank('PENDING_PICKUP')
+        rank >= statusRank(OrderStatus.PENDING_PICKUP)
           ? new Date(baseTime.getTime() + 2 * 3600 * 1000)
           : null;
       const actualPickupTime =
-        rank >= statusRank('PICKED_UP')
+        rank >= statusRank(OrderStatus.PICKED_UP)
           ? new Date(baseTime.getTime() + 4 * 3600 * 1000)
           : null;
       const expectDeliveryTime =
-        rank >= statusRank('IN_TRANSIT')
+        rank >= statusRank(OrderStatus.IN_TRANSIT)
           ? new Date(baseTime.getTime() + 8 * 3600 * 1000)
           : null;
       const actualDeliveryTime =
-        rank >= statusRank('PENDING_RECEIPT')
+        rank >= statusRank(OrderStatus.PENDING_RECEIPT)
           ? new Date(baseTime.getTime() + 10 * 3600 * 1000)
           : null;
 
       const cancelAt =
-        status === 'CANCELLED'
+        status === OrderStatus.CANCELLED
           ? new Date(baseTime.getTime() + 3 * 3600 * 1000)
           : null;
       const completedAt =
-        status === 'COMPLETED' || status === 'REFUNDED'
+        status === OrderStatus.COMPLETED || status === OrderStatus.REFUNDED
           ? new Date(baseTime.getTime() + 24 * 3600 * 1000)
           : null;
 
@@ -451,7 +471,7 @@ async function main() {
           actualPickupTime,
           expectDeliveryTime,
           actualDeliveryTime,
-          cancelReason: status === 'CANCELLED' ? '用户主动取消' : null,
+          cancelReason: status === OrderStatus.CANCELLED ? '用户主动取消' : null,
           cancelAt,
           completedAt,
           remark: 'seed:order-status',
@@ -471,7 +491,7 @@ async function main() {
           actualPickupTime,
           expectDeliveryTime,
           actualDeliveryTime,
-          cancelReason: status === 'CANCELLED' ? '用户主动取消' : null,
+          cancelReason: status === OrderStatus.CANCELLED ? '用户主动取消' : null,
           cancelAt,
           completedAt,
           channel: 'WECHAT',
@@ -515,7 +535,7 @@ async function main() {
           categoryId: category.id,
           estimatedWeight,
           actualWeight:
-            rank >= statusRank('INSPECTED')
+            rank >= statusRank(OrderStatus.INSPECTED)
               ? roundAmount(estimatedWeight * (0.9 + Math.random() * 0.2))
               : null,
           unitPrice,
@@ -530,11 +550,11 @@ async function main() {
       itemCreated += items.length;
 
       const paymentStatus =
-        status === 'CANCELLED'
+        status === OrderStatus.CANCELLED
           ? PaymentStatus.FAILED
-          : status === 'PENDING'
+          : status === OrderStatus.PENDING
             ? PaymentStatus.PENDING
-            : status === 'REFUNDED'
+            : status === OrderStatus.REFUNDED
               ? PaymentStatus.REFUNDED
               : PaymentStatus.SUCCESS;
       if (paymentStatus !== PaymentStatus.FAILED) {
@@ -570,7 +590,7 @@ async function main() {
         });
         paymentLogCreated += 1;
 
-        if (status === 'REFUNDED') {
+        if (status === OrderStatus.REFUNDED) {
           await prisma.refund.create({
             data: {
               paymentId: payment.id,
@@ -584,7 +604,7 @@ async function main() {
         }
       }
 
-      if (status !== 'CANCELLED') {
+      if (status !== OrderStatus.CANCELLED) {
         await prisma.logisticsOrder.create({
           data: {
             orderId: order.id,
@@ -626,7 +646,7 @@ async function main() {
           unitPrice,
           totalPrice: roundAmount(100 * unitPrice),
           status:
-            statusRank(status) >= statusRank('INBOUNDED')
+            statusRank(status) >= statusRank(OrderStatus.INBOUNDED)
               ? InventoryStatus.IN_STOCK
               : InventoryStatus.RESERVED,
           itemType: ItemType.RECYCLED,
@@ -634,7 +654,7 @@ async function main() {
           sourceOrderId: order.id,
           qualityGrade: 'A',
           processingStatus:
-            statusRank(status) >= statusRank('INSPECTING')
+            statusRank(status) >= statusRank(OrderStatus.INSPECTING)
               ? ProcessingStatus.INSPECTING
               : ProcessingStatus.RECEIVED,
           weight: totalWeight,
@@ -650,7 +670,7 @@ async function main() {
       await prisma.inventoryTransaction.create({
         data: {
           itemId: inventoryItem.id,
-          type: 'OUT',
+          type: InventoryTxnType.OUT,
           quantity: roundAmount(Math.max(totalWeight, 1)),
           unitPrice,
           totalPrice: roundAmount(unitPrice * Math.max(totalWeight, 1)),
@@ -673,9 +693,9 @@ async function main() {
       reservationCreated += 1;
 
       if (
-        status === 'PENDING_SETTLEMENT' ||
-        status === 'COMPLETED' ||
-        status === 'REFUNDED'
+        status === OrderStatus.PENDING_SETTLEMENT ||
+        status === OrderStatus.COMPLETED ||
+        status === OrderStatus.REFUNDED
       ) {
         await prisma.settlementRecord.create({
           data: {
@@ -687,11 +707,11 @@ async function main() {
             platformFee: roundAmount(2 + Math.random() * 2),
             subsidyAmount: 0,
             status:
-              status === 'COMPLETED' || status === 'REFUNDED'
+              status === OrderStatus.COMPLETED || status === OrderStatus.REFUNDED
                 ? SettlementStatus.COMPLETED
                 : SettlementStatus.PENDING,
             settledAt:
-              status === 'COMPLETED' || status === 'REFUNDED'
+              status === OrderStatus.COMPLETED || status === OrderStatus.REFUNDED
                 ? new Date()
                 : null,
           },

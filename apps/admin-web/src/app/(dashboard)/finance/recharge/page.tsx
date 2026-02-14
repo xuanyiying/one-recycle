@@ -122,94 +122,126 @@ export default function RechargePage() {
               <CardDescription>选择推荐套餐，享受更多优惠</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                 {plans.map((plan) => (
-                  <div
+                  <button
+                    type="button"
                     key={plan.id}
                     onClick={() => {
                       setSelectedPlan(plan.id);
                       setCustomAmount('');
                     }}
                     className={cn(
-                      "cursor-pointer rounded-xl border-2 p-4 transition-all hover:border-primary-300",
-                      selectedPlan === plan.id 
-                        ? "border-primary-600 bg-primary-50" 
-                        : "border-secondary-100 bg-white"
+                      "group relative flex flex-col items-center justify-center rounded-lg px-3 py-3 transition-all duration-200 focus:outline-none",
+                      selectedPlan === plan.id
+                        ? "border-2 border-primary bg-primary/10 text-primary"
+                        : "border border-border bg-card hover:border-primary/50 hover:bg-primary/5"
                     )}
                   >
-                    <div className="flex justify-between items-start">
-                      <span className="text-xl font-bold">¥{plan.amount}</span>
-                      {plan.tag && (
-                        <Badge className="bg-error text-white hover:bg-error">{plan.tag}</Badge>
-                      )}
-                    </div>
-                    {plan.bonus > 0 && (
-                      <p className="text-sm text-success-600 font-medium mt-1">赠送 ¥{plan.bonus}</p>
+                    {plan.tag && (
+                      <span className={cn(
+                        "absolute -right-1 -top-2 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                        selectedPlan === plan.id
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-destructive text-destructive-foreground"
+                      )}>
+                        {plan.tag}
+                      </span>
                     )}
-                    <p className="text-xs text-secondary-400 mt-2">{plan.description}</p>
-                  </div>
+                    <span className={cn(
+                      "text-lg font-bold tracking-tight",
+                      selectedPlan === plan.id ? "text-primary" : "text-foreground"
+                    )}>
+                      ¥{plan.amount}
+                    </span>
+                    {plan.bonus > 0 && (
+                      <span className={cn(
+                        "text-xs font-medium mt-0.5",
+                        selectedPlan === plan.id ? "text-primary/80" : "text-success"
+                      )}>
+                        +¥{plan.bonus}
+                      </span>
+                    )}
+                    {selectedPlan === plan.id && (
+                      <div className="absolute bottom-1 right-1">
+                        <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                  </button>
                 ))}
               </div>
 
-              <div className="mt-6">
-                <label className="text-sm font-medium text-secondary-700 mb-2 block">自定义金额</label>
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground">¥</span>
-                    <Input 
-                      type="number" 
-                      placeholder="输入充值金额" 
-                      className="pl-8"
-                      value={customAmount}
-                      onChange={(e) => {
-                        setCustomAmount(e.target.value);
-                        setSelectedPlan(null);
-                      }}
-                    />
-                  </div>
+              <div className="mt-5">
+                <label className="text-xs font-medium text-secondary-600 mb-1.5 block">自定义金额</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">¥</span>
+                  <Input
+                    type="number"
+                    placeholder="输入金额"
+                    className="pl-7 h-9 text-sm"
+                    value={customAmount}
+                    onChange={(e) => {
+                      setCustomAmount(e.target.value);
+                      setSelectedPlan(null);
+                    }}
+                  />
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3">
-                <label className="text-sm font-medium text-secondary-700">支付方式</label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="mt-5 space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">支付方式</label>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     className={cn(
-                      'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
-                      paymentMethod === 'ALIPAY' ? 'border-primary-600 bg-primary-50' : 'border-secondary-100 bg-white'
+                      'flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-all duration-200',
+                      paymentMethod === 'ALIPAY'
+                        ? 'border-2 border-primary bg-primary/10 text-primary'
+                        : 'border border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                     )}
                     onClick={() => setPaymentMethod('ALIPAY')}
                   >
+                    <CreditCard className={cn(
+                      "h-4 w-4",
+                      paymentMethod === 'ALIPAY' ? "text-primary" : "text-muted-foreground"
+                    )} />
                     <div>
-                      <div className="text-sm font-semibold">支付宝</div>
-                      <div className="text-xs text-secondary-400">实时到账</div>
+                      <div className="text-xs font-semibold">支付宝</div>
+                      <div className="text-[10px] text-muted-foreground">实时到账</div>
                     </div>
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                   </button>
                   <button
                     type="button"
                     className={cn(
-                      'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
-                      paymentMethod === 'WECHAT' ? 'border-primary-600 bg-primary-50' : 'border-secondary-100 bg-white'
+                      'flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-all duration-200',
+                      paymentMethod === 'WECHAT'
+                        ? 'border-2 border-primary bg-primary/10 text-primary'
+                        : 'border border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                     )}
                     onClick={() => setPaymentMethod('WECHAT')}
                   >
+                    <Wallet className={cn(
+                      "h-4 w-4",
+                      paymentMethod === 'WECHAT' ? "text-primary" : "text-muted-foreground"
+                    )} />
                     <div>
-                      <div className="text-sm font-semibold">微信转账</div>
-                      <div className="text-xs text-secondary-400">财务核验</div>
+                      <div className="text-xs font-semibold">微信转账</div>
+                      <div className="text-[10px] text-muted-foreground">财务核验</div>
                     </div>
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3">
-                <label className="text-sm font-medium text-secondary-700">转账截图</label>
+              <div className="mt-5 space-y-2">
+                <label className="text-xs font-medium text-secondary-600">转账截图</label>
                 <div
                   className={cn(
-                    'flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-all',
-                    voucherDragging ? 'border-primary-500 bg-primary-50' : 'border-secondary-200'
+                    'flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-3 py-4 text-center transition-all',
+                    voucherDragging ? 'border-primary-500 bg-primary-50' : 'border-secondary-200 hover:border-primary-300'
                   )}
                   onDragOver={(event) => {
                     event.preventDefault();
@@ -223,15 +255,16 @@ export default function RechargePage() {
                   }}
                 >
                   {voucher ? (
-                    <div className="flex w-full items-center gap-4">
-                      <Image src={voucher} alt="转账截图" className="h-20 w-20 rounded-lg object-cover" />
-                      <div className="flex flex-1 flex-col items-start gap-2">
-                        <div className="text-sm font-medium text-secondary-700">{voucherName}</div>
-                        <div className="text-xs text-secondary-400">已上传，可提交充值</div>
+                    <div className="flex w-full items-center gap-3">
+                      <Image src={voucher} alt="转账截图" className="h-14 w-14 rounded-md object-cover" />
+                      <div className="flex flex-1 flex-col items-start gap-1">
+                        <div className="text-xs font-medium text-secondary-700 truncate max-w-[120px]">{voucherName}</div>
+                        <div className="text-[10px] text-secondary-400">已上传</div>
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
+                          className="h-6 text-[10px] px-2"
                           onClick={() => {
                             setVoucher(null);
                             setVoucherName('');
@@ -243,13 +276,12 @@ export default function RechargePage() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center justify-center rounded-full bg-primary-50 p-3 text-primary-600">
-                        <UploadCloud className="h-5 w-5" />
+                      <div className="flex items-center justify-center rounded-full bg-primary-50 p-2 text-primary-600">
+                        <UploadCloud className="h-4 w-4" />
                       </div>
-                      <div className="text-sm font-medium text-secondary-700">拖拽图片到此处或点击上传</div>
-                      <div className="text-xs text-secondary-400">支持 JPG/PNG，建议清晰展示转账信息</div>
-                      <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium text-secondary-600">
-                        <ImageIcon className="h-4 w-4" />
+                      <div className="text-xs font-medium text-secondary-600">拖拽或点击上传</div>
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-[10px] font-medium text-secondary-600 hover:bg-secondary-50">
+                        <ImageIcon className="h-3 w-3" />
                         选择截图
                         <input
                           type="file"
@@ -263,9 +295,9 @@ export default function RechargePage() {
                 </div>
               </div>
 
-              <div className="mt-8">
-                <Button 
-                  className="w-full h-12 text-lg" 
+              <div className="mt-6">
+                <Button
+                  className="w-full h-10 text-sm font-semibold"
                   onClick={handleRecharge}
                   disabled={loading}
                 >
@@ -332,9 +364,9 @@ export default function RechargePage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {record.status === 'SUCCESS' && <Badge className="bg-success hover:bg-success-600"><CheckCircle className="w-3 h-3 mr-1"/>成功</Badge>}
-                        {record.status === 'PENDING' && <Badge variant="secondary"><Clock className="w-3 h-3 mr-1"/>待付</Badge>}
-                        {record.status === 'FAILED' && <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1"/>失败</Badge>}
+                        {record.status === 'SUCCESS' && <Badge className="bg-success hover:bg-success-600"><CheckCircle className="w-3 h-3 mr-1" />成功</Badge>}
+                        {record.status === 'PENDING' && <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />待付</Badge>}
+                        {record.status === 'FAILED' && <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />失败</Badge>}
                       </TableCell>
                       <TableCell>
                         {record.voucher ? (

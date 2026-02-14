@@ -5,15 +5,15 @@ import {
   IsOptional,
   IsEnum,
 } from 'class-validator';
-import { TransactionType } from '../entities/inventory.entity';
+import { InventoryTxnType } from '@prisma/client';
 
 export class CreateTransactionDto {
   @IsNotEmpty()
   itemId: bigint;
 
   @IsNotEmpty()
-  @IsEnum(TransactionType)
-  type: TransactionType;
+  @IsEnum(InventoryTxnType)
+  type: InventoryTxnType;
 
   @IsNotEmpty()
   @IsNumber()

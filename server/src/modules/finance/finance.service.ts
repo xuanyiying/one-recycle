@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateRechargeDto } from './dto/create-recharge.dto';
 import * as crypto from 'crypto';
@@ -49,7 +45,7 @@ export class FinanceService {
 
   async createRechargeOrder(dto: CreateRechargeDto) {
     const orderNo = `RC${Date.now()}${Math.floor(Math.random() * 1000)}`;
-    const order = await this.prisma.rechargeOrder.create({
+    await this.prisma.rechargeOrder.create({
       data: {
         orderNo,
         amount: dto.amount,

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RankingQueryDto, RankingResponseDto } from './dto';
+import { toNumber } from '@/common/utils/decimal.util';
 
 @Injectable()
 export class RankingService {
@@ -66,7 +67,7 @@ export class RankingService {
         userId: u.userId.toString(),
         nickname,
         avatar,
-        score: Math.round(u._sum.settlementAmount || 0), // Use integer for score
+        score: Math.round(toNumber(u._sum.settlementAmount)), // Use integer for score
         trend: 'same', // Placeholder as we don't track historical rank yet
       };
     });
@@ -94,7 +95,7 @@ export class RankingService {
       _sum: { settlementAmount: true },
       where,
     });
-    const myScore = Math.round(myScoreAgg._sum.settlementAmount || 0);
+    const myScore = Math.round(toNumber(myScoreAgg._sum.settlementAmount));
 
     // 2. Count better users using Raw Query for performance
     let dateFilter = '';

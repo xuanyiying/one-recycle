@@ -32,7 +32,7 @@ describe('分布式ID生成器规范测试', () => {
       const pay = generateSecurePaymentNumber();
       const ref = generateSecureRefundNumber();
       expect(ord).toMatch(/^ORD\d+[A-Za-z0-9]+$/);
-      expect(pay).toMatch(/^PAY\d+[A-Za-z0-9]+$/);
+      expect(pay).toMatch(/^PAY\d+[-_A-Za-z0-9]+$/);
       expect(ref).toMatch(/^REF\d+[A-Za-z0-9]+$/);
     });
   });
@@ -72,7 +72,7 @@ describe('分布式ID生成器规范测试', () => {
         persistIntervalMs: 0,
       });
       await gen1.initialize();
-      const a = gen1.nextId();
+      gen1.nextId();
       const b = gen1.nextId();
 
       const gen2 = new PersistentSnowflakeIdGenerator({

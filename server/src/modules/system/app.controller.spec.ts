@@ -1,20 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CacheModule } from '@nestjs/cache-manager';
 import { SystemController } from './system.controller';
 import { SystemService } from './system.service';
-import { QAResponseDto } from './dto';
 
 describe('SystemController', () => {
   let controller: SystemController;
-  let service: SystemService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [SystemController],
       providers: [SystemService],
     }).compile();
 
     controller = module.get<SystemController>(SystemController);
-    service = module.get<SystemService>(SystemService);
   });
 
   it('should be defined', () => {

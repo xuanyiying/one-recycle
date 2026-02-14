@@ -22,14 +22,6 @@ export enum PriceType {
 }
 
 // 分类图标信息接口
-export interface CategoryIcon {
-  url: string;
-  filename: string;
-  size?: number;
-  mimeType?: string;
-  uploadedAt: string;
-}
-
 // 分类价格信息接口
 export interface CategoryPrice {
   type: PriceType;
@@ -38,6 +30,20 @@ export interface CategoryPrice {
   maxPrice?: number;
   unit: string; // 计价单位：kg, 个, 台等
   currency: string; // 货币类型
+}
+
+export interface PricingRule {
+  id?: number;
+  tenantId?: number;
+  basePrice: number;
+  minWeight?: number;
+  maxWeight?: number;
+  ruleJson?: Record<string, any>;
+  isActive: boolean;
+}
+
+export interface UploadedIcon {
+  url: string;
 }
 
 // 分类SEO信息接口
@@ -63,13 +69,12 @@ export interface Category {
   name: string;
   description?: string;
   type: CategoryType;
-  status: CategoryStatus;
 
   // 价格信息
   priceInfo: CategoryPrice;
 
   // 图标信息
-  icon?: CategoryIcon;
+  iconUrl?: string;
 
   // 层级关系
   parentId?: number;
@@ -85,6 +90,8 @@ export interface Category {
 
   // SEO信息
   seo: CategorySeo;
+
+  pricingRule?: PricingRule;
 
   // 统计信息
   stats?: CategoryStats;
@@ -103,13 +110,12 @@ export interface CreateCategoryRequest {
   name: string;
   description?: string;
   type: CategoryType;
-  status: CategoryStatus;
 
   // 价格信息
   priceInfo: CategoryPrice;
 
   // 图标信息
-  icon?: CategoryIcon;
+  iconUrl?: string;
 
   // 层级关系
   parentId?: number;
@@ -121,6 +127,8 @@ export interface CreateCategoryRequest {
 
   // SEO信息
   seo: CategorySeo;
+
+  pricingRule?: PricingRule;
 
   // 扩展属性
   attributes?: Record<string, any>;
@@ -226,7 +234,7 @@ export const categoryService = {
   },
 
   // 上传图标
-  async uploadIcon(file: File): Promise<CategoryIcon> {
+  async uploadIcon(file: File): Promise<UploadedIcon> {
     try {
       const formData = new FormData();
       formData.append('icon', file);

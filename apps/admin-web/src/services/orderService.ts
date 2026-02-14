@@ -54,11 +54,24 @@ export interface OrderItem {
 export interface OrderAssignment {
   id: number;
   orderId: number;
-  courierId: number;
+  courierId: string;
+  taskId?: string | null;
+  orderNo: string;
+  waybillNo?: string | null;
+  pickupCode?: string | null;
   status: string;
+  assignedAt: string;
   acceptedAt?: string | null;
+  startedAt?: string | null;
   arrivedAt?: string | null;
-  finishedAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+  failedAt?: string | null;
+  notes?: string | null;
+  estimatedDuration?: number | null;
+  actualDuration?: number | null;
+  pickupLocation?: unknown;
+  deliveryLocation?: unknown;
   createdAt: string;
 }
 

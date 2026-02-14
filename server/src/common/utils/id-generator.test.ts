@@ -191,7 +191,6 @@ describe('分布式ID生成器测试', () => {
         persistIntervalMs: 0,
       });
       await generator1.initialize();
-      const id1 = generator1.nextId();
       const id2 = generator1.nextId();
 
       const generator2 = new PersistentSnowflakeIdGenerator({

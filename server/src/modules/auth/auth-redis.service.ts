@@ -123,7 +123,7 @@ class AuthRedisService implements OnModuleInit {
   }
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
-    const { mobile, verificationCode, deviceFingerprint } = loginDto;
+    const { mobile, verificationCode } = loginDto;
     this.logger.log(`尝试登录: mobile=${mobile}`);
 
     // 验证手机号格式
@@ -273,7 +273,7 @@ class AuthRedisService implements OnModuleInit {
     platform: string,
     thirdPartyLoginDto: ThirdPartyLoginDto,
   ): Promise<AuthResult> {
-    const { code, nickname, avatarUrl, deviceFingerprint } = thirdPartyLoginDto;
+    const { code, nickname, avatarUrl } = thirdPartyLoginDto;
     this.logger.log(`第三方登录: platform=${platform}`);
 
     // 根据平台获取用户信息

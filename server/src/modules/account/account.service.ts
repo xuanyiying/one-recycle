@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Account, Prisma, TransactionType } from '@prisma/client';
+import { Account, AccountType, Prisma, TransactionType } from '@prisma/client';
+import { toDecimal, toNumber } from '@/common/utils/decimal.util';
 
 @Injectable()
 export class AccountService {
@@ -32,7 +33,7 @@ export class AccountService {
       const account = await client.account.create({
         data: {
           userId,
-          accountType: 'WALLET',
+          accountType: AccountType.WALLET,
           accountDetails: {},
           availableBalance: 0,
           frozenBalance: 0,
@@ -57,8 +58,8 @@ export class AccountService {
   ): Promise<Account> {
     const id = BigInt(userId);
 
-    let account = await this.prisma.account.findFirst({
-      where: { userId: id },
+    let account = await this.prisma.account.findUnique({
+      where: { userId_accountType: { userId: id, accountType: AccountType.WALLET } },
     });
 
     // 兜底策略：如果账户不存在则自动创建
@@ -84,7 +85,7 @@ export class AccountService {
       totalOrders,
       totalIncome: account.totalIncome,
       // 估算减碳量：假设每1元回收收益对应0.02kg碳减排
-      savedCarbon: account.totalIncome * this.CARBON_SAVING_RATE,
+      savedCarbon: toNumber(account.totalIncome) * this.CARBON_SAVING_RATE,
     };
   }
 
@@ -122,41 +123,75 @@ export class AccountService {
     amount: number,
     orderId: string,
     description: string = 'Order Settlement',
+    tx?: Prisma.TransactionClient,
   ): Promise<Account> {
-    return this.prisma.$transaction(async (tx) => {
-      const account = await tx.account.findFirst({
-        where: { userId },
-      });
+    const amountDecimal = toDecimal(amount);
 
-      if (!account) {
-        throw new Error(`Account not found for user ${userId}`);
+    const run = async (client: Prisma.TransactionClient) => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const account = await client.account.findUnique({
+          where: {
+            userId_accountType: {
+              userId,
+              accountType: AccountType.WALLET,
+            },
+          },
+        });
+
+        if (!account) {
+          throw new Error(`Account not found for user ${userId}`);
+        }
+
+        const balanceBefore = toDecimal(account.availableBalance);
+        const balanceAfter = balanceBefore.plus(amountDecimal);
+
+        try {
+          await client.transaction.create({
+            data: {
+              accountId: account.id,
+              type: TransactionType.ORDER_INCOME,
+              amount: amountDecimal,
+              balanceBefore,
+              balanceAfter,
+              orderId,
+              description,
+            },
+          });
+        } catch (error: any) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P2002'
+          ) {
+            return account;
+          }
+          throw error;
+        }
+
+        const updatedCount = await client.account.updateMany({
+          where: { id: account.id, version: account.version },
+          data: {
+            availableBalance: { increment: amountDecimal },
+            totalIncome: { increment: amountDecimal },
+            version: { increment: 1 },
+          },
+        });
+
+        if (updatedCount.count !== 1) {
+          continue;
+        }
+
+        return client.account.findUniqueOrThrow({
+          where: { id: account.id },
+        });
       }
 
-      const balanceBefore = account.availableBalance;
-      const balanceAfter = balanceBefore + amount;
+      throw new Error('ACCOUNT_VERSION_CONFLICT');
+    };
 
-      const updatedAccount = await tx.account.update({
-        where: { id: account.id },
-        data: {
-          availableBalance: { increment: amount },
-          totalIncome: { increment: amount },
-          version: { increment: 1 },
-        },
-      });
+    if (tx) {
+      return run(tx);
+    }
 
-      await tx.transaction.create({
-        data: {
-          accountId: account.id,
-          type: TransactionType.ORDER_INCOME,
-          amount: new Prisma.Decimal(amount),
-          balanceBefore: new Prisma.Decimal(balanceBefore),
-          balanceAfter: new Prisma.Decimal(balanceAfter),
-          orderId: orderId,
-          description: description,
-        },
-      });
-
-      return updatedAccount;
-    });
+    return this.prisma.$transaction(async (prismaTx) => run(prismaTx));
   }
 }

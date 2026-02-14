@@ -7,6 +7,7 @@ import { DispatchServiceClient } from '../clients/dispatch-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
 import { Job } from 'bull';
 import { OrderCreatedEventDto } from '../dto/order-events.dto';
+import { PricingService } from '@/modules/pricing/pricing.service';
 
 describe('OrderProcessor', () => {
   let processor: OrderProcessor;
@@ -25,10 +26,16 @@ describe('OrderProcessor', () => {
   const mockInventoryServiceClient = {
     checkInventory: jest.fn(),
     lockInventory: jest.fn(),
+    releaseInventory: jest.fn(),
   };
 
   const mockDispatchServiceClient = {};
   const mockPaymentServiceClient = {};
+  const mockPricingService = {
+    estimatePricing: jest.fn().mockResolvedValue({
+      pricing: { totalEstimate: { min: 10, max: 20 } },
+    }),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -45,6 +52,7 @@ describe('OrderProcessor', () => {
         },
         { provide: DispatchServiceClient, useValue: mockDispatchServiceClient },
         { provide: PaymentServiceClient, useValue: mockPaymentServiceClient },
+        { provide: PricingService, useValue: mockPricingService },
       ],
     }).compile();
 
@@ -77,7 +85,7 @@ describe('OrderProcessor', () => {
     expect(inventoryServiceClient.lockInventory).not.toHaveBeenCalled();
     expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
       '123',
-      'CONFIRMED',
+      'PENDING_PICKUP',
     );
   });
 
@@ -105,5 +113,25 @@ describe('OrderProcessor', () => {
 
     expect(inventoryServiceClient.checkInventory).toHaveBeenCalled();
     expect(inventoryServiceClient.lockInventory).toHaveBeenCalled();
+  });
+
+  it('should cancel and release when inventory insufficient', async () => {
+    const job = {
+      data: { ...mockJobData, orderType: 'SALE' },
+    } as Job<OrderCreatedEventDto>;
+
+    mockInventoryServiceClient.checkInventory.mockResolvedValue({
+      available: false,
+    });
+
+    await expect(processor.handleOrderCreated(job)).rejects.toThrow(
+      'Insufficient inventory',
+    );
+
+    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+      '123',
+      'INSPECTION_EXCEPTION',
+    );
+    expect(inventoryServiceClient.releaseInventory).toHaveBeenCalledWith('123');
   });
 });

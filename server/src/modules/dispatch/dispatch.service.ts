@@ -50,12 +50,12 @@ export class DispatchService implements OnModuleInit {
     }
     await this.courierService.findOne(courierId);
 
-    const assignment = await this.prisma.courierAssignment.create({
+    const assignment = await this.prisma.orderAssignment.create({
       data: {
-        id: this.idGenerator.nextId(),
         orderId: BigInt(orderId),
         orderNo: order.orderNo,
         courierId,
+        taskId: this.idGenerator.nextId().toString(),
         status: TaskStatus.ASSIGNED,
         pickupLocation: (order as any).address
           ? ({
@@ -68,38 +68,45 @@ export class DispatchService implements OnModuleInit {
     await this.orderService.update(Number(orderId), {
       status: OrderStatus.PENDING_PICKUP,
     } as any);
-    return { success: true, orderId, courierId, assignmentId: assignment.id };
+    return {
+      success: true,
+      orderId,
+      courierId,
+      assignmentId: assignment.id.toString(),
+    };
   }
 
   async getAllAssignments() {
-    return this.prisma.courierAssignment.findMany({
+    return this.prisma.orderAssignment.findMany({
       orderBy: { assignedAt: 'desc' },
     });
   }
 
   async getAssignment(id: string) {
-    const a = await this.prisma.courierAssignment.findUnique({ where: { id } });
+    const a = await this.prisma.orderAssignment.findUnique({
+      where: { id: BigInt(id) },
+    });
     if (!a) throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     return a;
   }
 
   async updateAssignmentStatus(id: string, status: TaskStatus) {
-    return this.prisma.courierAssignment.update({
-      where: { id },
+    return this.prisma.orderAssignment.update({
+      where: { id: BigInt(id) },
       data: { status },
     });
   }
 
   async acceptAssignment(id: string) {
-    return this.prisma.courierAssignment.update({
-      where: { id },
+    return this.prisma.orderAssignment.update({
+      where: { id: BigInt(id) },
       data: { status: TaskStatus.ACCEPTED, acceptedAt: new Date() },
     });
   }
 
   async rejectAssignment(id: string) {
-    return this.prisma.courierAssignment.update({
-      where: { id },
+    return this.prisma.orderAssignment.update({
+      where: { id: BigInt(id) },
       data: { status: TaskStatus.REJECTED },
     });
   }

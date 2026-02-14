@@ -8,7 +8,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('AddressService', () => {
   let service: AddressService;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     user: {
@@ -56,7 +55,6 @@ describe('AddressService', () => {
     }).compile();
 
     service = module.get<AddressService>(AddressService);
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

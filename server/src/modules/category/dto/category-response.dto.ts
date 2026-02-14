@@ -26,6 +26,29 @@ export class CategorySeoDto {
   slug: string;
 }
 
+export class CategoryPricingRuleDto {
+  @ApiProperty({ description: '规则ID', example: 1 })
+  id: number;
+
+  @ApiProperty({ description: '租户ID', example: 1 })
+  tenantId: number;
+
+  @ApiProperty({ description: '基础单价', example: 2.5 })
+  basePrice: number;
+
+  @ApiPropertyOptional({ description: '最低重量' })
+  minWeight?: number;
+
+  @ApiPropertyOptional({ description: '最高重量' })
+  maxWeight?: number;
+
+  @ApiPropertyOptional({ description: '规则JSON' })
+  ruleJson?: Record<string, any>;
+
+  @ApiProperty({ description: '是否启用', example: true })
+  isActive: boolean;
+}
+
 export class CategoryResponseDto {
   @ApiProperty({ description: '分类ID', example: 1 })
   id: number; // Changed from string to number
@@ -66,8 +89,17 @@ export class CategoryResponseDto {
   @ApiProperty({ description: 'SEO信息', type: CategorySeoDto })
   seo: CategorySeoDto;
 
+  @ApiPropertyOptional({
+    description: '计价规则',
+    type: CategoryPricingRuleDto,
+  })
+  pricingRule?: CategoryPricingRuleDto;
+
   @ApiPropertyOptional({ description: '扩展属性' })
   attributes?: Record<string, any>;
+
+  @ApiPropertyOptional({ description: '子分类', type: [CategoryResponseDto] })
+  children?: CategoryResponseDto[];
 
   @ApiProperty({ description: '创建时间' })
   createdAt: Date;

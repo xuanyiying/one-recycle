@@ -36,11 +36,16 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
       ],
     },
     {
+      title: '财务中心',
+      items: [
+        { href: '/finance/recharge', icon: Wallet, label: '财务充值' },
+        { href: '/finance/expense', icon: Database, label: '支出管理' },
+      ],
+    },
+    {
       title: '运营中心',
       items: [
         { href: '/users', icon: Users, label: '用户管理' },
-        { href: '/couriers', icon: Truck, label: '骑手管理' },
-        { href: '/finance/recharge', icon: Wallet, label: '财务充值' },
         { href: '/categories', icon: Tags, label: '分类管理' },
       ],
     },
@@ -48,6 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
       title: '系统设置',
       items: [
         { href: '/notifications', icon: Bell, label: '通知管理' },
+        { href: '/settings/logistics', icon: Truck, label: '快递接入' },
         { href: '/settings', icon: Settings, label: '系统设置' },
       ],
     },

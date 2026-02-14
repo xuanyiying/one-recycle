@@ -36,6 +36,28 @@ export class TimeSlotController {
     return this.orderService.getBatchTimeSlots(startDate, daysCount, addressId);
   }
 
+  @Get('time-slots/available')
+  @ApiOperation({ summary: '获取指定日期可用时间段' })
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    type: String,
+    description: '日期 (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'addressId',
+    required: false,
+    type: String,
+    description: '地址ID',
+  })
+  @ApiResponse({ status: 200, description: '获取时间段列表成功' })
+  async getAvailableTimeSlots(
+    @Query('date') date: string,
+    @Query('addressId') addressId?: string,
+  ) {
+    return this.orderService.getAvailableTimeSlots(date, addressId);
+  }
+
   @Get('time-slots/release')
   @ApiOperation({ summary: '释放时间槽' })
   @ApiQuery({

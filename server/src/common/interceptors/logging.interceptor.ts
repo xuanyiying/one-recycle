@@ -20,7 +20,7 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
-    const { method, url, body, query, params } = request;
+    const { method, url, query, params } = request;
     let requestId = request.headers['x-request-id'] as string;
     if (!requestId) {
       requestId = this.idGen.nextId();

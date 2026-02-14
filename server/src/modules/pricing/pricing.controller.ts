@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Logger } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { IsArray, IsOptional, IsString, IsNumber } from 'class-validator';
 import { PricingService, PricingItemInput } from './pricing.service';
@@ -36,19 +36,29 @@ class PricingEstimateRequestDto {
 @ApiTags('Pricing')
 @Controller('pricing')
 export class PricingController {
+  private readonly logger = new Logger(PricingController.name);
+
   constructor(private readonly pricingService: PricingService) {}
 
   @Post('estimate')
   @ApiOperation({ summary: 'Estimate pricing for items' })
   @ApiResponse({ status: 200, description: 'Pricing estimate success' })
   async estimate(@Body() body: PricingEstimateRequestDto) {
-    const result = await this.pricingService.estimatePricing(
-      body.items,
-      body.tenantId,
-    );
-    return {
-      success: true,
-      pricing: result.pricing,
-    };
+    try {
+      const result = await this.pricingService.estimatePricing(
+        body.items,
+        body.tenantId,
+      );
+      return result.pricing;
+    } catch (error) {
+      this.logger.error(
+        'Pricing estimate failed',
+        JSON.stringify({
+          tenantId: body.tenantId,
+          itemCount: Array.isArray(body.items) ? body.items.length : 0,
+        }),
+      );
+      throw error;
+    }
   }
 }

@@ -27,7 +27,7 @@ import {
   WarehouseType,
   WarehouseStatus,
 } from '../entities/inventory.entity';
-import { InventoryItem, Order, OrderItem } from '@prisma/client';
+import { InventoryItem, Order, Prisma, InventoryTxnType } from '@prisma/client';
 
 @Injectable()
 export class InventoryService {
@@ -39,11 +39,13 @@ export class InventoryService {
   // 创建库存项目
   async createInventoryItem(
     data: CreateInventoryItemData,
+    tx?: Prisma.TransactionClient,
   ): Promise<InventoryItem> {
     const totalPrice = data.unitPrice * data.quantity;
     const availableQty = data.quantity - (data.reservedQty || 0);
 
-    const item = await this.prisma.inventoryItem.create({
+    const client = tx ?? this.prisma;
+    const item = await client.inventoryItem.create({
       data: {
         warehouseId: data.warehouseId,
         categoryId: Number(data.categoryId as any),
@@ -315,13 +317,15 @@ export class InventoryService {
   async createTransaction(
     data: CreateTransactionData,
   ): Promise<InventoryTransactionEntity> {
+    const unitPrice = new Prisma.Decimal(data.unitPrice);
+    const quantity = new Prisma.Decimal(data.quantity);
     const transaction = await this.prisma.inventoryTransaction.create({
       data: {
         itemId: data.itemId,
         type: data.type,
         quantity: data.quantity,
-        unitPrice: data.unitPrice,
-        totalPrice: data.unitPrice * data.quantity,
+        unitPrice,
+        totalPrice: unitPrice.mul(quantity),
         referenceId: data.referenceId,
         notes: data.notes,
       },
@@ -337,19 +341,185 @@ export class InventoryService {
   async createReservation(
     data: CreateReservationData,
   ): Promise<InventoryReservationEntity> {
-    const reservation = await this.prisma.reservation.create({
-      data: {
-        itemId: data.itemId,
-        orderId: BigInt(data.orderId as any),
-        quantity: data.quantity,
-        status: data.status || ReservationStatus.PENDING,
-        reservedAt: new Date(),
-        expiresAt: data.expiresAt,
-        notes: data.notes,
-      },
+    const reservation = await this.prisma.$transaction(async (tx) => {
+      const item = await tx.inventoryItem.findUnique({
+        where: { id: data.itemId },
+      });
+      if (!item) {
+        throw new Error('Inventory item not found');
+      }
+      if (Number(item.availableQty) < data.quantity) {
+        throw new Error('Insufficient available quantity');
+      }
+
+      const created = await tx.reservation.create({
+        data: {
+          itemId: data.itemId,
+          orderId: BigInt(data.orderId as any),
+          quantity: data.quantity,
+          status: data.status || ReservationStatus.PENDING,
+          reservedAt: new Date(),
+          expiresAt: data.expiresAt,
+          notes: data.notes,
+        },
+      });
+
+      await tx.inventoryItem.update({
+        where: { id: item.id },
+        data: {
+          reservedQty: { increment: data.quantity },
+          availableQty: { decrement: data.quantity },
+        },
+      });
+
+      const unitPrice = new Prisma.Decimal(item.unitPrice);
+      const qty = new Prisma.Decimal(data.quantity);
+
+      await tx.inventoryTransaction.create({
+        data: {
+          itemId: item.id,
+          type: InventoryTxnType.RESERVE,
+          quantity: data.quantity,
+          unitPrice,
+          totalPrice: unitPrice.mul(qty),
+          referenceId: data.orderId,
+          notes: 'reservation:create',
+        },
+      });
+
+      return created;
     });
 
     return reservation as unknown as InventoryReservationEntity;
+  }
+
+  async confirmReservation(reservationId: bigint) {
+    return this.prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id: reservationId },
+      });
+      if (!reservation) throw new Error('Reservation not found');
+      if (reservation.status !== ReservationStatus.PENDING) return reservation;
+
+      return tx.reservation.update({
+        where: { id: reservationId },
+        data: {
+          status: ReservationStatus.CONFIRMED,
+          confirmedAt: new Date(),
+        },
+      });
+    });
+  }
+
+  async cancelReservation(reservationId: bigint) {
+    return this.prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id: reservationId },
+      });
+      if (!reservation) throw new Error('Reservation not found');
+      if (
+        reservation.status === ReservationStatus.CANCELLED ||
+        reservation.status === ReservationStatus.EXPIRED
+      ) {
+        return reservation;
+      }
+
+      await tx.reservation.update({
+        where: { id: reservationId },
+        data: {
+          status: ReservationStatus.CANCELLED,
+          cancelledAt: new Date(),
+        },
+      });
+
+      await tx.inventoryItem.update({
+        where: { id: reservation.itemId },
+        data: {
+          reservedQty: { decrement: reservation.quantity },
+          availableQty: { increment: reservation.quantity },
+        },
+      });
+
+      const item = await tx.inventoryItem.findUnique({
+        where: { id: reservation.itemId },
+      });
+      if (item) {
+        const unitPrice = new Prisma.Decimal(item.unitPrice);
+        const qty = new Prisma.Decimal(reservation.quantity);
+        await tx.inventoryTransaction.create({
+          data: {
+            itemId: item.id,
+            type: InventoryTxnType.RELEASE,
+            quantity: reservation.quantity,
+            unitPrice,
+            totalPrice: unitPrice.mul(qty),
+            referenceId: reservation.orderId.toString(),
+            notes: 'reservation:cancel',
+          },
+        });
+      }
+
+      return tx.reservation.findUniqueOrThrow({ where: { id: reservationId } });
+    });
+  }
+
+  async expireReservations(now: Date = new Date()) {
+    const expired = await this.prisma.reservation.findMany({
+      where: {
+        status: ReservationStatus.PENDING,
+        expiresAt: { lt: now },
+      },
+      select: { id: true },
+      take: 200,
+    });
+
+    for (const r of expired) {
+      await this.prisma.$transaction(async (tx) => {
+        const reservation = await tx.reservation.findUnique({
+          where: { id: r.id },
+        });
+        if (!reservation) return;
+        if (reservation.status !== ReservationStatus.PENDING) return;
+        if (!reservation.expiresAt || reservation.expiresAt >= now) return;
+
+        await tx.reservation.update({
+          where: { id: reservation.id },
+          data: {
+            status: ReservationStatus.EXPIRED,
+            expiredAt: now,
+          },
+        });
+
+        await tx.inventoryItem.update({
+          where: { id: reservation.itemId },
+          data: {
+            reservedQty: { decrement: reservation.quantity },
+            availableQty: { increment: reservation.quantity },
+          },
+        });
+
+        const item = await tx.inventoryItem.findUnique({
+          where: { id: reservation.itemId },
+        });
+        if (item) {
+          const unitPrice = new Prisma.Decimal(item.unitPrice);
+          const qty = new Prisma.Decimal(reservation.quantity);
+          await tx.inventoryTransaction.create({
+            data: {
+              itemId: item.id,
+              type: InventoryTxnType.RELEASE,
+              quantity: reservation.quantity,
+              unitPrice,
+              totalPrice: unitPrice.mul(qty),
+              referenceId: reservation.orderId.toString(),
+              notes: 'reservation:expire',
+            },
+          });
+        }
+      });
+    }
+
+    return { expiredCount: expired.length };
   }
 
   // 创建质量检查
@@ -391,11 +561,16 @@ export class InventoryService {
   }
 
   // 从订单创建库存项目
-  async createFromOrder(order: Order & { items: any[] }): Promise<void> {
+  async createFromOrder(
+    order: Order & { items: any[] },
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
     if (!order.items || order.items.length === 0) return;
 
+    const client = tx ?? this.prisma;
+
     // Find default warehouse
-    let warehouse = await this.prisma.warehouse.findFirst({
+    let warehouse = await client.warehouse.findFirst({
       where: {
         type: WarehouseType.MAIN as any,
         status: WarehouseStatus.ACTIVE,
@@ -404,7 +579,7 @@ export class InventoryService {
 
     // If no warehouse, create one
     if (!warehouse) {
-      warehouse = await this.prisma.warehouse.create({
+      warehouse = await client.warehouse.create({
         data: {
           name: 'Default Warehouse',
           code: `WH-DEFAULT`,
@@ -421,7 +596,7 @@ export class InventoryService {
 
     // Fetch categories to get names
     const categoryIds = order.items.map((i) => i.categoryId);
-    const categories = await this.prisma.category.findMany({
+    const categories = await client.category.findMany({
       where: { id: { in: categoryIds } },
     });
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
@@ -430,7 +605,8 @@ export class InventoryService {
       const category = categoryMap.get(item.categoryId);
       const name = item.brandModel || category?.name || 'Recycled Item';
 
-      await this.createInventoryItem({
+      await this.createInventoryItem(
+        {
         warehouseId: warehouseId,
         categoryId: BigInt(item.categoryId),
         name: name,
@@ -444,7 +620,9 @@ export class InventoryService {
         condition: ItemCondition.GOOD,
         sourceOrderId: order.id.toString(),
         processingStatus: ProcessingStatus.RECEIVED,
-      });
+        },
+        client,
+      );
     }
   }
 }

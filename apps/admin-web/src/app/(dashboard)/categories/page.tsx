@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  categoryService, 
-  Category, 
-  CategoryType, 
-  CategoryStatus 
+import {
+  categoryService,
+  Category,
+  CategoryType,
+  PriceType,
 } from '@/services/categoryService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +18,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  ChevronRight, 
-  ChevronDown, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  ChevronRight,
+  ChevronDown,
   Search,
   GripVertical,
   Image as ImageIcon,
@@ -33,6 +33,8 @@ import {
   Boxes
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils/cn';
 
@@ -65,11 +67,35 @@ export default function CategoriesPage() {
     { id: 'tier-2', min: '1', max: '5', price: '1.8' },
     { id: 'tier-3', min: '5', max: '', price: '1.5' },
   ]);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
+  const [categorySlug, setCategorySlug] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryType, setCategoryType] = useState<CategoryType>(CategoryType.RECYCLE);
+  const [categorySortOrder, setCategorySortOrder] = useState('0');
+  const [categoryIsVisible, setCategoryIsVisible] = useState(true);
+  const [categoryIsFeatured, setCategoryIsFeatured] = useState(false);
+  const [categoryParentId, setCategoryParentId] = useState('');
 
   const effectiveIcon = useMemo(() => {
     if (customIcon) return customIcon;
     return iconLibrary.find((icon) => icon.id === selectedIconId)?.url || '';
   }, [customIcon, iconLibrary, selectedIconId]);
+
+  const parentOptions = useMemo(() => {
+    const result: { id: number; name: string; depth: number }[] = [];
+    const walk = (nodes: Category[], depth: number) => {
+      nodes.forEach((node) => {
+        result.push({ id: node.id, name: node.name, depth });
+        if (node.children && node.children.length > 0) {
+          walk(node.children, depth + 1);
+        }
+      });
+    };
+    walk(categories, 0);
+    return result;
+  }, [categories]);
 
   const loadCategories = async () => {
     try {
@@ -183,6 +209,99 @@ export default function CategoriesPage() {
     return Math.max(result, 0).toFixed(2);
   }, [marketPrice, discount, fixedFee]);
 
+  const createDefaultTiers = () => ([
+    { id: 'tier-1', min: '0', max: '1', price: '2.0' },
+    { id: 'tier-2', min: '1', max: '5', price: '1.8' },
+    { id: 'tier-3', min: '5', max: '', price: '1.5' },
+  ]);
+
+  const resetCategoryForm = () => {
+    setEditingCategoryId(null);
+    setCategoryName('');
+    setCategorySlug('');
+    setCategoryDescription('');
+    setCategoryType(CategoryType.RECYCLE);
+    setCategorySortOrder('0');
+    setCategoryIsVisible(true);
+    setCategoryIsFeatured(false);
+    setCategoryParentId('');
+    setPriceMode('fixed');
+    setFixedPrice('2.2');
+    setPriceUnit('kg');
+    setMarketPrice('3.5');
+    setDiscount('0.9');
+    setFixedFee('0.2');
+    setBillingMode('weight');
+    setTiers(createDefaultTiers());
+    setCustomIcon(null);
+    setCustomIconName('');
+    setSelectedIconId('icon-1');
+  };
+
+  const resolveSlug = (value: string) => {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-]/g, '');
+  };
+
+  const buildPricingPayload = (): {
+    priceInfo: {
+      type: PriceType;
+      unitPrice: number;
+      unit: string;
+      currency: string;
+    };
+    pricingRule: {
+      basePrice: number;
+      minWeight?: number;
+      maxWeight?: number;
+      isActive: boolean;
+      ruleJson: Record<string, any>;
+    };
+  } => {
+    const basePrice =
+      priceMode === 'fixed' ? Number(fixedPrice || 0) : Number(computedFormulaPrice || 0);
+    const normalizedTiers = tiers
+      .map((tier) => ({
+        minWeight: Number(tier.min || 0),
+        maxWeight: tier.max === '' ? undefined : Number(tier.max),
+        price: Number(tier.price || 0),
+      }))
+      .filter((tier) => !Number.isNaN(tier.price));
+    const minWeight = normalizedTiers.length > 0 ? normalizedTiers[0].minWeight : undefined;
+    const lastTier = normalizedTiers[normalizedTiers.length - 1];
+    const maxWeight = lastTier?.maxWeight;
+
+    return {
+      priceInfo: {
+        type: PriceType.FIXED,
+        unitPrice: basePrice,
+        unit: priceUnit || 'kg',
+        currency: 'CNY',
+      },
+      pricingRule: {
+        basePrice,
+        minWeight,
+        maxWeight,
+        isActive: true,
+        ruleJson: {
+          pricingMode: priceMode,
+          basePrice,
+          unit: priceUnit || 'kg',
+          billingMode,
+          formula: {
+            marketPrice: Number(marketPrice || 0),
+            discount: Number(discount || 0),
+            fixedFee: Number(fixedFee || 0),
+          },
+          weightTiers: normalizedTiers,
+        },
+      },
+    };
+  };
+
   const toggleExpand = (id: number) => {
     const newExpanded = new Set(expandedRows);
     if (newExpanded.has(id)) {
@@ -205,6 +324,105 @@ export default function CategoriesPage() {
     }
   };
 
+  const handleEdit = (category: Category) => {
+    setEditingCategoryId(category.id);
+    setCategoryName(category.name);
+    setCategorySlug(category.seo?.slug || '');
+    setCategoryDescription(category.description || '');
+    setCategoryType(category.type);
+    setCategorySortOrder(String(category.sortOrder ?? 0));
+    setCategoryIsVisible(category.isVisible ?? true);
+    setCategoryIsFeatured(category.isFeatured ?? false);
+    setCategoryParentId(category.parentId ? String(category.parentId) : '');
+
+    const ruleJson = category.pricingRule?.ruleJson as Record<string, any> | undefined;
+    const currentMode = ruleJson?.pricingMode === 'formula' ? 'formula' : 'fixed';
+    setPriceMode(currentMode);
+    const unit = ruleJson?.unit || category.priceInfo?.unit || 'kg';
+    setPriceUnit(unit);
+    const basePrice = category.priceInfo?.unitPrice ?? category.pricingRule?.basePrice;
+    if (basePrice !== undefined) {
+      setFixedPrice(String(basePrice));
+    }
+    const formula = ruleJson?.formula;
+    setMarketPrice(String(formula?.marketPrice ?? '3.5'));
+    setDiscount(String(formula?.discount ?? '0.9'));
+    setFixedFee(String(formula?.fixedFee ?? '0.2'));
+    setBillingMode(ruleJson?.billingMode === 'count' ? 'count' : 'weight');
+
+    if (Array.isArray(ruleJson?.weightTiers) && ruleJson.weightTiers.length > 0) {
+      setTiers(
+        ruleJson.weightTiers.map((tier: any, index: number) => ({
+          id: `tier-${Date.now()}-${index}`,
+          min: String(tier.minWeight ?? ''),
+          max: tier.maxWeight === undefined || tier.maxWeight === null ? '' : String(tier.maxWeight),
+          price: String(tier.price ?? ''),
+        }))
+      );
+    } else {
+      setTiers(createDefaultTiers());
+    }
+
+    const iconUrl = category.iconUrl || '';
+    const matchedIcon = iconLibrary.find((icon) => icon.url === iconUrl);
+    if (matchedIcon) {
+      setSelectedIconId(matchedIcon.id);
+      setCustomIcon(null);
+      setCustomIconName('');
+    } else if (iconUrl) {
+      setSelectedIconId(null);
+      setCustomIcon(iconUrl);
+      setCustomIconName('');
+    } else {
+      setSelectedIconId('icon-1');
+      setCustomIcon(null);
+      setCustomIconName('');
+    }
+  };
+
+  const handleSaveCategory = async () => {
+    if (!categoryName.trim()) {
+      toast.error('请输入分类名称');
+      return;
+    }
+    const slugValue = categorySlug.trim() || resolveSlug(categoryName);
+    if (!slugValue) {
+      toast.error('请输入分类标识');
+      return;
+    }
+    const pricingPayload = buildPricingPayload();
+    const payload = {
+      name: categoryName.trim(),
+      description: categoryDescription || undefined,
+      type: categoryType,
+      parentId: categoryParentId ? Number(categoryParentId) : undefined,
+      iconUrl: effectiveIcon || undefined,
+      sortOrder: Number(categorySortOrder || 0),
+      isVisible: categoryIsVisible,
+      isFeatured: categoryIsFeatured,
+      seo: {
+        slug: slugValue,
+      },
+      priceInfo: pricingPayload.priceInfo,
+      pricingRule: pricingPayload.pricingRule,
+    };
+
+    setIsSaving(true);
+    try {
+      const saved = editingCategoryId
+        ? await categoryService.updateCategory(editingCategoryId, payload)
+        : await categoryService.createCategory(payload);
+      toast.success(editingCategoryId ? '分类已更新' : '分类已创建');
+      setEditingCategoryId(saved.id);
+      setCategorySlug(saved.seo?.slug || slugValue);
+      await loadCategories();
+    } catch (error) {
+      toast.error(editingCategoryId ? '更新失败' : '创建失败');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const renderCategoryRow = (category: Category, level: number = 0) => {
     const hasChildren = category.children && category.children.length > 0;
     const isExpanded = expandedRows.has(category.id);
@@ -213,20 +431,20 @@ export default function CategoriesPage() {
     // Simple filtering: if search query exists, show matching rows and their parents (logic simplified here to just show matching)
     if (searchQuery && !isVisible) {
       // If has children matching, might need to show. For now simple filter.
-       if (!hasChildren) return null;
-       // If children match, we might want to show parent. Complex tree filtering skipped for MVP.
+      if (!hasChildren) return null;
+      // If children match, we might want to show parent. Complex tree filtering skipped for MVP.
     }
 
     return (
       <React.Fragment key={category.id}>
         <TableRow>
           <TableCell className="font-medium">
-            <div 
-              className="flex items-center" 
+            <div
+              className="flex items-center"
               style={{ paddingLeft: `${level * 24}px` }}
             >
               {hasChildren ? (
-                <button 
+                <button
                   onClick={() => toggleExpand(category.id)}
                   className="mr-2 p-1 hover:bg-secondary-100 rounded"
                 >
@@ -235,11 +453,11 @@ export default function CategoriesPage() {
               ) : (
                 <span className="w-6 mr-2" />
               )}
-              {category.icon && (
-                <img 
-                  src={category.icon.url} 
-                  alt={category.name} 
-                  className="w-6 h-6 mr-2 rounded object-cover" 
+              {category.iconUrl && (
+                <img
+                  src={category.iconUrl}
+                  alt={category.name}
+                  className="w-6 h-6 mr-2 rounded object-cover"
                 />
               )}
               {category.name}
@@ -251,26 +469,26 @@ export default function CategoriesPage() {
             </Badge>
           </TableCell>
           <TableCell>
-             {category.priceInfo.type === 'fixed' ? (
-               `¥${category.priceInfo.unitPrice}/${category.priceInfo.unit}`
-             ) : category.priceInfo.type === 'range' ? (
-               `¥${category.priceInfo.minPrice}-${category.priceInfo.maxPrice}/${category.priceInfo.unit}`
-             ) : '面议'}
+            {category.priceInfo.type === 'fixed' ? (
+              `¥${category.priceInfo.unitPrice}/${category.priceInfo.unit}`
+            ) : category.priceInfo.type === 'range' ? (
+              `¥${category.priceInfo.minPrice}-${category.priceInfo.maxPrice}/${category.priceInfo.unit}`
+            ) : '面议'}
           </TableCell>
           <TableCell>
-            <Badge variant={category.status === CategoryStatus.ACTIVE ? 'outline' : 'secondary'}>
-              {category.status === CategoryStatus.ACTIVE ? '启用' : '禁用'}
+            <Badge variant={category.isVisible ? 'outline' : 'secondary'}>
+              {category.isVisible ? '显示' : '隐藏'}
             </Badge>
           </TableCell>
           <TableCell>{category.sortOrder}</TableCell>
           <TableCell className="text-right">
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="text-error hover:text-error/90"
                 onClick={() => handleDelete(category.id)}
               >
@@ -288,7 +506,7 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight text-foreground">分类管理</h2>
-        <Button>
+        <Button onClick={resetCategoryForm}>
           <Plus className="mr-2 h-4 w-4" />
           新增分类
         </Button>
@@ -298,6 +516,115 @@ export default function CategoriesPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>分类基础信息</CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {editingCategoryId ? `编辑 #${editingCategoryId}` : '新建分类'}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">分类名称</label>
+                  <Input
+                    value={categoryName}
+                    onChange={(event) => setCategoryName(event.target.value)}
+                    onBlur={() => {
+                      if (!categorySlug.trim()) {
+                        setCategorySlug(resolveSlug(categoryName));
+                      }
+                    }}
+                    placeholder="如：废旧家电"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">标识</label>
+                  <Input
+                    value={categorySlug}
+                    onChange={(event) => setCategorySlug(event.target.value)}
+                    placeholder="如：appliances"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">描述</label>
+                <textarea
+                  value={categoryDescription}
+                  onChange={(event) => setCategoryDescription(event.target.value)}
+                  className="min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:border-primary"
+                  placeholder="可选，描述分类特征或注意事项"
+                />
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">分类类型</label>
+                  <Select value={categoryType} onChange={(event) => setCategoryType(event.target.value as CategoryType)}>
+                    <option value={CategoryType.RECYCLE}>回收</option>
+                    <option value={CategoryType.SALE}>销售</option>
+                    <option value={CategoryType.BOTH}>通用</option>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">父级分类</label>
+                  <Select value={categoryParentId} onChange={(event) => setCategoryParentId(event.target.value)}>
+                    <option value="">顶级分类</option>
+                    {parentOptions
+                      .filter((option) => option.id !== editingCategoryId)
+                      .map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {`${'—'.repeat(option.depth)} ${option.name}`}
+                        </option>
+                      ))}
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">排序</label>
+                  <Input
+                    value={categorySortOrder}
+                    onChange={(event) => setCategorySortOrder(event.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="flex items-center justify-between rounded-lg border border-secondary-100 bg-secondary-50 px-4 py-3">
+                  <div>
+                    <div className="text-sm font-medium">前台展示</div>
+                    <div className="text-xs text-muted-foreground">控制是否在小程序展示</div>
+                  </div>
+                  <Switch checked={categoryIsVisible} onCheckedChange={setCategoryIsVisible} />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-secondary-100 bg-secondary-50 px-4 py-3">
+                  <div>
+                    <div className="text-sm font-medium">推荐分类</div>
+                    <div className="text-xs text-muted-foreground">用于首页推荐位</div>
+                  </div>
+                  <Switch checked={categoryIsFeatured} onCheckedChange={setCategoryIsFeatured} />
+                </div>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
+                <div>
+                  <div className="font-medium">价格预览</div>
+                  <div className="text-xs text-muted-foreground">保存后同步至计价规则</div>
+                </div>
+                <div className="font-semibold">
+                  {pricingPreview}
+                  {priceMode === 'formula' && ` ≈ ¥${computedFormulaPrice}/${priceUnit}`}
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" onClick={resetCategoryForm} disabled={isSaving}>
+                  重置
+                </Button>
+                <Button onClick={handleSaveCategory} disabled={isSaving}>
+                  {isSaving ? '保存中...' : editingCategoryId ? '保存更新' : '创建分类'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
               <CardTitle>回收价格定义</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -305,30 +632,30 @@ export default function CategoriesPage() {
                 <button
                   type="button"
                   className={cn(
-                    'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
-                    priceMode === 'fixed' ? 'border-primary-600 bg-primary-50' : 'border-secondary-100 bg-white'
+                    'flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all',
+                    priceMode === 'fixed' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                   )}
                   onClick={() => setPriceMode('fixed')}
                 >
                   <div>
                     <div className="text-sm font-semibold">固定单价</div>
-                    <div className="text-xs text-secondary-400">每单位统一价格</div>
+                    <div className="text-xs text-muted-foreground">每单位统一价格</div>
                   </div>
-                  <Scale className="h-4 w-4 text-muted-foreground" />
+                  <Scale className={cn("h-4 w-4", priceMode === 'fixed' ? "text-primary" : "text-muted-foreground")} />
                 </button>
                 <button
                   type="button"
                   className={cn(
-                    'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
-                    priceMode === 'formula' ? 'border-primary-600 bg-primary-50' : 'border-secondary-100 bg-white'
+                    'flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all',
+                    priceMode === 'formula' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                   )}
                   onClick={() => setPriceMode('formula')}
                 >
                   <div>
                     <div className="text-sm font-semibold">公式定价</div>
-                    <div className="text-xs text-secondary-400">市场价*折扣-固定费</div>
+                    <div className="text-xs text-muted-foreground">市场价*折扣-固定费</div>
                   </div>
-                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <Calculator className={cn("h-4 w-4", priceMode === 'formula' ? "text-primary" : "text-muted-foreground")} />
                 </button>
               </div>
 
@@ -379,30 +706,30 @@ export default function CategoriesPage() {
                 <button
                   type="button"
                   className={cn(
-                    'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
-                    billingMode === 'weight' ? 'border-primary-600 bg-primary-50' : 'border-secondary-100 bg-white'
+                    'flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all',
+                    billingMode === 'weight' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                   )}
                   onClick={() => setBillingMode('weight')}
                 >
                   <div>
                     <div className="text-sm font-semibold">按重量计费</div>
-                    <div className="text-xs text-secondary-400">单位 kg</div>
+                    <div className="text-xs text-muted-foreground">单位 kg</div>
                   </div>
-                  <Scale className="h-4 w-4 text-muted-foreground" />
+                  <Scale className={cn("h-4 w-4", billingMode === 'weight' ? "text-primary" : "text-muted-foreground")} />
                 </button>
                 <button
                   type="button"
                   className={cn(
-                    'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
-                    billingMode === 'count' ? 'border-primary-600 bg-primary-50' : 'border-secondary-100 bg-white'
+                    'flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all',
+                    billingMode === 'count' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                   )}
                   onClick={() => setBillingMode('count')}
                 >
                   <div>
                     <div className="text-sm font-semibold">按件数计费</div>
-                    <div className="text-xs text-secondary-400">单位 件</div>
+                    <div className="text-xs text-muted-foreground">单位 件</div>
                   </div>
-                  <Boxes className="h-4 w-4 text-muted-foreground" />
+                  <Boxes className={cn("h-4 w-4", billingMode === 'count' ? "text-primary" : "text-muted-foreground")} />
                 </button>
               </div>
 
@@ -524,8 +851,8 @@ export default function CategoriesPage() {
                     <div
                       key={icon.id}
                       className={cn(
-                        'group flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all',
-                        selectedIconId === icon.id && !customIcon ? 'border-primary-500 bg-primary-50' : 'border-secondary-100'
+                        'group flex cursor-pointer items-center gap-2 rounded-lg border-2 px-3 py-2 text-xs transition-all',
+                        selectedIconId === icon.id && !customIcon ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card hover:border-primary/50 hover:bg-primary/5'
                       )}
                       draggable
                       onDragStart={() => setIconDraggingId(icon.id)}
@@ -538,8 +865,8 @@ export default function CategoriesPage() {
                       }}
                     >
                       <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-lg" />
-                      <span className="flex-1 truncate text-secondary-600">{icon.name}</span>
-                      <GripVertical className="h-4 w-4 text-secondary-300" />
+                      <span className={cn("flex-1 truncate", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground")}>{icon.name}</span>
+                      <GripVertical className={cn("h-4 w-4", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground/50")} />
                     </div>
                   ))}
                 </div>
@@ -554,8 +881,8 @@ export default function CategoriesPage() {
           <div className="flex items-center justify-between">
             <CardTitle>分类列表</CardTitle>
             <div className="flex w-full max-w-sm items-center space-x-2">
-              <Input 
-                placeholder="搜索分类..." 
+              <Input
+                placeholder="搜索分类..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -572,7 +899,7 @@ export default function CategoriesPage() {
                 <TableHead className="w-[300px]">名称</TableHead>
                 <TableHead>类型</TableHead>
                 <TableHead>价格</TableHead>
-                <TableHead>状态</TableHead>
+                <TableHead>显示</TableHead>
                 <TableHead>排序</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>

@@ -16,24 +16,6 @@ export interface OssConfig {
 }
 
 // Provider-specific config interfaces
-export interface MinIOConfig extends OssConfig {
-  port?: number;
-  useSSL?: boolean;
-}
-
-export interface AwsS3Config extends OssConfig {
-  region: string;
-}
-
-export interface AliyunOssConfig extends OssConfig {
-  region: string;
-}
-
-export interface TencentCosConfig extends OssConfig {
-  region: string;
-  appId: string;
-}
-
 export interface OssConfigOptions {
   type: OssType;
   config: OssConfig;
@@ -42,7 +24,7 @@ export interface OssConfigOptions {
 @Injectable()
 export class OssConfigService {
   private readonly logger = new Logger(OssConfigService.name);
-  private ossConfig: OssConfigOptions;
+  private readonly ossConfig: OssConfigOptions;
 
   constructor() {
     this.ossConfig = this.getOssConfig();
@@ -84,6 +66,7 @@ export class OssConfigService {
 
   private buildOssConfig(type: OssType): OssConfig {
     const isMinio = type === OssType.MINIO;
+    const isAliyun = type === OssType.ALIYUN_OSS;
     const secure = process.env.OSS_SECURE === 'true';
     const minioEndpoint = process.env.MINIO_ENDPOINT;
     const minioPort = process.env.MINIO_PORT;
@@ -95,12 +78,33 @@ export class OssConfigService {
             ? `${minioEndpoint}:${minioPort}`
             : minioEndpoint
           : undefined
-        : undefined) ||
+        : isAliyun
+          ? `${process.env.OSS_REGION || 'oss-cn-hangzhou'}.aliyuncs.com`
+          : undefined) ||
       'http://localhost:9000';
-    const endpoint = this.normalizeEndpoint(rawEndpoint, secure);
+    let endpoint = this.normalizeEndpoint(rawEndpoint, secure);
+    let bucket =
+      process.env.OSS_BUCKET || process.env.OSS_BUCKET_NAME || 'one-recycle';
+    if (isAliyun) {
+      bucket = bucket.trim().toLowerCase();
+      endpoint = endpoint.replace(/^https?:\/\//i, '');
+      if (endpoint.startsWith(`${bucket}.`)) {
+        endpoint = endpoint.slice(bucket.length + 1);
+      }
+      endpoint = this.normalizeEndpoint(endpoint, secure);
+      const validBucket = /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(bucket);
+      if (!validBucket) {
+        throw new Error(`Invalid Aliyun OSS bucket name: ${bucket}`);
+      }
+    }
+    const region = process.env.OSS_REGION
+      ? process.env.OSS_REGION
+      : isAliyun
+        ? this.inferAliyunRegion(endpoint) || 'oss-cn-hangzhou'
+        : 'us-east-1';
     return {
       endpoint,
-      region: process.env.OSS_REGION || 'us-east-1',
+      region,
       accessKeyId:
         process.env.OSS_ACCESS_KEY ||
         (isMinio ? process.env.MINIO_ACCESS_KEY : undefined) ||
@@ -109,11 +113,16 @@ export class OssConfigService {
         process.env.OSS_SECRET_KEY ||
         (isMinio ? process.env.MINIO_SECRET_KEY : undefined) ||
         'minioadmin',
-      bucket:
-        process.env.OSS_BUCKET || process.env.OSS_BUCKET_NAME || 'one-recycle',
+      bucket,
       appId: process.env.OSS_APP_ID || 'defualt',
       secure,
     };
+  }
+
+  private inferAliyunRegion(endpoint: string): string | null {
+    const normalized = endpoint.replace(/^https?:\/\//i, '').toLowerCase();
+    const match = normalized.match(/oss-[a-z0-9-]+/);
+    return match ? match[0] : null;
   }
 
   /**
@@ -122,23 +131,6 @@ export class OssConfigService {
   getConfig(): OssConfigOptions {
     return this.ossConfig;
   }
-
-  /**
-   * Validate configuration
-   */
-  validateConfig(): boolean {
-    try {
-      const config = this.ossConfig.config;
-      if (!config) {
-        return false;
-      }
-      return true;
-    } catch (error) {
-      this.logger.error('OSS configuration validation failed:', error);
-      return false;
-    }
-  }
-
   /**
    * Get current OSS type
    */

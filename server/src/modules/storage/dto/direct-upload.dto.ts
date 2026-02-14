@@ -6,6 +6,7 @@ import {
   Min,
   IsNotEmpty,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { FileType, MiniProgramPlatform } from '../interfaces/storage.interface';
 
 export class GeneratePresignedUrlDto {
@@ -21,6 +22,9 @@ export class GeneratePresignedUrlDto {
   @IsNotEmpty()
   contentType: string;
 
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
   @IsEnum(FileType)
   fileType: FileType;
 
@@ -46,6 +50,9 @@ export class GenerateMiniProgramPolicyDto {
   @IsNotEmpty()
   contentType: string;
 
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
   @IsEnum(FileType)
   fileType: FileType;
 

@@ -61,6 +61,32 @@ export class SeoInfoDto {
   slug!: string;
 }
 
+export class PricingRuleDto {
+  @IsNumber()
+  @IsOptional()
+  basePrice?: number;
+
+  @IsNumber()
+  @IsOptional()
+  minWeight?: number;
+
+  @IsNumber()
+  @IsOptional()
+  maxWeight?: number;
+
+  @IsObject()
+  @IsOptional()
+  ruleJson?: Record<string, any>;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  tenantId?: number;
+}
+
 export class CreateCategoryDto {
   @IsString()
   name!: string;
@@ -99,6 +125,11 @@ export class CreateCategoryDto {
   @ValidateNested()
   @Type(() => SeoInfoDto)
   seo!: SeoInfoDto;
+
+  @ValidateNested()
+  @Type(() => PricingRuleDto)
+  @IsOptional()
+  pricingRule?: PricingRuleDto;
 
   @IsObject()
   @IsOptional()

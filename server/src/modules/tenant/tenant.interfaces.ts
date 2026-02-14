@@ -1,4 +1,4 @@
-import { Order, Tenant, TenantAddress } from '@prisma/client';
+import { Tenant, TenantAddress } from '@prisma/client';
 
 export interface CreateTenantDto {
   name: string;

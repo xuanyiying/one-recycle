@@ -9,5 +9,19 @@
   },
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "collectCoverageFrom": [
+    "../src/modules/order/**/*.(t|j)s",
+    "../src/modules/payment/**/*.(t|j)s",
+    "../src/modules/queue/processors/**/*.(t|j)s",
+    "!**/*.spec.ts"
+  ],
+  "coverageThreshold": {
+    "global": {
+      "branches": 0.8,
+      "functions": 0.8,
+      "lines": 0.8,
+      "statements": 0.8
+    }
   }
 }

@@ -13,7 +13,7 @@ import {
   ItemType,
   ProcessingStatus,
   ReservationStatus,
-  TransactionType,
+  InventoryTxnType,
   CheckType,
   CheckResult,
 } from './entities/inventory.entity';
@@ -121,7 +121,11 @@ describe('InventoryController', () => {
         '1',
       );
 
-      expect(service.getInventoryItems).toHaveBeenCalledWith(filters);
+      expect(service.getInventoryItems).toHaveBeenCalledWith(
+        filters,
+        undefined,
+        { page: 1, pageSize: 10 },
+      );
       expect(result).toEqual(expectedResult);
     });
   });
@@ -210,7 +214,7 @@ describe('InventoryController', () => {
     it('should create a new transaction', async () => {
       const createDto: CreateTransactionDto = {
         itemId: BigInt(1),
-        type: TransactionType.ORDER_INCOME,
+        type: InventoryTxnType.IN,
         quantity: 50,
         unitPrice: 10.0,
         referenceId: 'REF-001',

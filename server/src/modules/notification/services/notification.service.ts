@@ -298,7 +298,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
   }
 
   async updateTemplate(id: string, data: UpdateTemplateData): Promise<any> {
-    const template = await this.findTemplateById(id);
+    await this.findTemplateById(id);
 
     const updatedTemplate = await this.prisma.notificationTemplate.update({
       where: { id: BigInt(id) },

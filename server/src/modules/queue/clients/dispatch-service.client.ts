@@ -45,7 +45,7 @@ export class DispatchServiceClient {
   constructor(private readonly configService: ConfigService) {
     this.baseURL =
       this.configService.get<string>('DISPATCH_SERVICE_URL') ||
-      'http://localhost:3006';
+      'http://localhost:3008';
 
     this.httpClient = axios.create({
       baseURL: this.baseURL,

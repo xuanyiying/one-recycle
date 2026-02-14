@@ -24,16 +24,9 @@ export interface AlipayUserInfo {
 @Injectable()
 export class AlipayPlatform {
   private readonly appId: string;
-  private readonly appSecret: string;
-  private readonly privateKey: string;
-  private readonly publicKey: string;
 
   constructor(private readonly configService: ConfigService) {
     this.appId = this.configService.get<string>('ALIPAY_APP_ID') || '';
-    this.appSecret = this.configService.get<string>('ALIPAY_APP_SECRET') || '';
-    this.privateKey =
-      this.configService.get<string>('ALIPAY_PRIVATE_KEY') || '';
-    this.publicKey = this.configService.get<string>('ALIPAY_PUBLIC_KEY') || '';
   }
 
   async getAccessToken(authCode: string): Promise<AlipayUserInfo> {

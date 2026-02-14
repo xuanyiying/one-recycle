@@ -3,13 +3,13 @@ import {
   InventoryStatus,
   ItemCondition,
   ItemType,
+  InventoryTxnType,
   ProcessingStatus,
   ReservationStatus,
   WarehouseStatus,
   WarehouseType,
 } from '@prisma/client';
 import {
-  TransactionType,
   CheckType,
   CheckResult,
   AlertType,
@@ -95,7 +95,7 @@ export interface PaginationOptions {
 // 创建交易数据接口
 export interface CreateTransactionData {
   itemId: bigint;
-  type: TransactionType;
+  type: InventoryTxnType;
   quantity: number;
   unitPrice: number;
   referenceId?: string;

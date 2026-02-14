@@ -103,8 +103,6 @@ export default function LoginPage() {
           localStorage.removeItem('remember_tenant_code');
         }
 
-        document.cookie = `auth_token=${res.accessToken}; path=/; max-age=${res.expiresIn || 86400}; SameSite=Strict`;
-
         toast.success('登录成功');
         router.push('/dashboard');
       }

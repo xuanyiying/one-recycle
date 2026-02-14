@@ -2,7 +2,7 @@
 // npm install ali-oss @types/ali-oss
 import OSS from 'ali-oss';
 import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { OssService, UploadResult, FileInfo } from './oss.interface';
 import { Readable } from 'stream';
 import { OssConfig } from '../config/oss.config';
@@ -29,6 +29,18 @@ export class AliyunOssService implements OssService {
       bucket: config.bucket,
       endpoint: config.endpoint,
       secure: config.secure !== false, // Default to HTTPS
+    });
+    this.initializeBucket().catch((error) => {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to initialize Aliyun OSS bucket: ${errorMessage}`,
+        JSON.stringify({
+          bucket: this.bucket,
+          endpoint: this.config.endpoint,
+          region: this.config.region,
+        }),
+      );
     });
   }
 
@@ -161,7 +173,7 @@ export class AliyunOssService implements OssService {
     try {
       // Generate unique filename
       const fileExtension = path.extname(originalName);
-      const fileName = `${uuidv4()}${fileExtension}`;
+      const fileName = `${randomUUID()}${fileExtension}`;
       const key = folder ? `${folder}/${fileName}` : fileName;
 
       // Get file size
@@ -202,8 +214,15 @@ export class AliyunOssService implements OssService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error uploading file to OSS: ${errorMessage}`);
-      throw new Error('Failed to upload file to OSS');
+      this.logger.error(
+        `Error uploading file to OSS: ${errorMessage}`,
+        JSON.stringify({
+          bucket: this.bucket,
+          endpoint: this.config.endpoint,
+          region: this.config.region,
+        }),
+      );
+      throw new Error(`Failed to upload file to OSS: ${errorMessage}`);
     }
   }
   /**

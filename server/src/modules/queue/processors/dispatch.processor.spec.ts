@@ -1,18 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DispatchProcessor } from './dispatch.processor';
-import { JdlLogisticsService } from '@/modules/logistics/providers/jd-provider';
+import { LogisticsIntegrationService } from '@/modules/logistics/logistics-integration.service';
 import { OrderService } from '@/modules/order/services/order.service';
+import { TenantService } from '@/modules/tenant/tenant.service';
+import { SettlementService } from '@/modules/tenant/settlement.service';
+import { OrderStatus } from '@/common';
 import { Job } from 'bull';
 
 describe('DispatchProcessor', () => {
   let processor: DispatchProcessor;
-  let jdlLogisticsService: JdlLogisticsService;
-  let orderService: OrderService;
 
   const mockOrder = {
     id: 123n,
     orderNo: 'ORDER123',
-    status: 'CONFIRMED',
+    status: OrderStatus.PENDING_PICKUP,
+    tenantId: null,
     address: {
       name: 'John Doe',
       mobile: '13800000000',
@@ -21,10 +23,7 @@ describe('DispatchProcessor', () => {
       district: 'Chaoyang',
       detail: 'No.1 Street',
     },
-    items: [
-      { categoryId: 1, estimatedWeight: 1.5 },
-      { categoryId: 2, estimatedWeight: 0.5 },
-    ],
+    items: [{ categoryId: 1, quantity: 1 }],
   };
 
   const mockJob = {
@@ -33,15 +32,22 @@ describe('DispatchProcessor', () => {
     name: 'dispatch-order',
   } as Job;
 
-  const mockJdlLogisticsService = {
-    createOrder: jest.fn(),
+  const mockLogisticsIntegrationService = {
+    createPickupOrder: jest.fn(),
+  };
+
+  const mockTenantService = {
+    assignTenant: jest.fn(),
+    getReceiptAddress: jest.fn(),
+  };
+
+  const mockSettlementService = {
+    initSettlement: jest.fn(),
   };
 
   const mockOrderService = {
     findOne: jest.fn(),
     findLogisticsOrder: jest.fn(),
-    createLogisticsOrder: jest.fn(),
-    update: jest.fn(),
     saveDispatchResult: jest.fn(),
   };
 
@@ -50,60 +56,47 @@ describe('DispatchProcessor', () => {
       providers: [
         DispatchProcessor,
         {
-          provide: JdlLogisticsService,
-          useValue: mockJdlLogisticsService,
+          provide: LogisticsIntegrationService,
+          useValue: mockLogisticsIntegrationService,
         },
-        {
-          provide: OrderService,
-          useValue: mockOrderService,
-        },
+        { provide: OrderService, useValue: mockOrderService },
+        { provide: TenantService, useValue: mockTenantService },
+        { provide: SettlementService, useValue: mockSettlementService },
       ],
     }).compile();
 
     processor = module.get<DispatchProcessor>(DispatchProcessor);
-    jdlLogisticsService = module.get<JdlLogisticsService>(JdlLogisticsService);
-    orderService = module.get<OrderService>(OrderService);
-
     jest.clearAllMocks();
   });
 
   it('should process dispatch order successfully', async () => {
-    // Mock successful order retrieval
     mockOrderService.findOne.mockResolvedValue(mockOrder);
-    // Mock no existing logistics order
     mockOrderService.findLogisticsOrder.mockResolvedValue(null);
-    // Mock successful JD API call
-    mockJdlLogisticsService.createOrder.mockResolvedValue({
-      waybillCode: 'JD123456',
-      orderId: 'ORDER123',
+    mockTenantService.assignTenant.mockResolvedValue({ id: 7 });
+    mockTenantService.getReceiptAddress.mockResolvedValue({
+      contactName: 'EcoRecycle Center',
+      contactPhone: '13800138000',
+      province: 'Beijing',
+      city: 'Beijing',
+      district: 'Haidian',
+      detail: 'No.100 Road',
+    });
+    mockLogisticsIntegrationService.createPickupOrder.mockResolvedValue({
+      logisticsNo: 'JD123456',
+      logisticsCompany: 'JD',
+      status: 'CREATED',
+      providerData: {},
     });
 
     const result = await processor.handleDispatchOrder(mockJob);
 
     expect(mockOrderService.findOne).toHaveBeenCalledWith(123);
-
-    // Verify that sender is the user and receiver is the center
-    expect(mockJdlLogisticsService.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderId: 'ORDER123',
-        senderName: 'John Doe',
-        senderMobile: '13800000000',
-        senderAddress: 'BeijingBeijingChaoyangNo.1 Street',
-        receiverName: 'EcoRecycle Center',
-        receiverMobile: '13800138000',
-        receiverAddress: 'Beijing, China',
-      }),
-    );
-
+    expect(mockLogisticsIntegrationService.createPickupOrder).toHaveBeenCalled();
     expect(mockOrderService.saveDispatchResult).toHaveBeenCalledWith(
       '123',
-      expect.objectContaining({
-        logisticsNo: 'JD123456',
-        status: 'CREATED',
-        senderName: 'John Doe',
-        receiverName: 'EcoRecycle Center',
-      }),
+      expect.objectContaining({ logisticsNo: 'JD123456', status: 'CREATED' }),
     );
+    expect(mockSettlementService.initSettlement).toHaveBeenCalledWith(123, 7, 10);
     expect(result).toEqual({
       success: true,
       orderId: '123',
@@ -121,7 +114,7 @@ describe('DispatchProcessor', () => {
     await processor.handleDispatchOrder(mockJob);
 
     expect(mockOrderService.findLogisticsOrder).toHaveBeenCalledWith('123');
-    expect(mockJdlLogisticsService.createOrder).not.toHaveBeenCalled();
+    expect(mockLogisticsIntegrationService.createPickupOrder).not.toHaveBeenCalled();
     expect(mockOrderService.saveDispatchResult).not.toHaveBeenCalled();
   });
 
@@ -130,42 +123,37 @@ describe('DispatchProcessor', () => {
 
     await processor.handleDispatchOrder(mockJob);
 
-    expect(mockJdlLogisticsService.createOrder).not.toHaveBeenCalled();
+    expect(mockLogisticsIntegrationService.createPickupOrder).not.toHaveBeenCalled();
   });
 
-  it('should skip if order is not confirmed', async () => {
+  it('should skip if order is not in dispatchable status', async () => {
     mockOrderService.findOne.mockResolvedValue({
       ...mockOrder,
-      status: 'PENDING',
+      status: OrderStatus.COMPLETED,
     });
 
     await processor.handleDispatchOrder(mockJob);
 
-    expect(mockJdlLogisticsService.createOrder).not.toHaveBeenCalled();
+    expect(mockLogisticsIntegrationService.createPickupOrder).not.toHaveBeenCalled();
     expect(mockOrderService.saveDispatchResult).not.toHaveBeenCalled();
   });
 
-  it('should throw error if JD API fails', async () => {
+  it('should throw error if logistics integration fails', async () => {
     mockOrderService.findOne.mockResolvedValue(mockOrder);
     mockOrderService.findLogisticsOrder.mockResolvedValue(null);
-    mockJdlLogisticsService.createOrder.mockRejectedValue(
+    mockTenantService.assignTenant.mockResolvedValue({ id: 7 });
+    mockTenantService.getReceiptAddress.mockResolvedValue({
+      province: 'Beijing',
+      city: 'Beijing',
+      district: 'Haidian',
+      detail: 'No.100 Road',
+      contactName: 'EcoRecycle Center',
+      contactPhone: '13800138000',
+    });
+    mockLogisticsIntegrationService.createPickupOrder.mockRejectedValue(
       new Error('API Error'),
     );
 
-    await expect(processor.handleDispatchOrder(mockJob)).rejects.toThrow(
-      'API Error',
-    );
-  });
-
-  it('should throw error if JD returns no waybill code', async () => {
-    mockOrderService.findOne.mockResolvedValue(mockOrder);
-    mockOrderService.findLogisticsOrder.mockResolvedValue(null);
-    mockJdlLogisticsService.createOrder.mockResolvedValue({
-      waybillCode: null,
-    });
-
-    await expect(processor.handleDispatchOrder(mockJob)).rejects.toThrow(
-      'Failed to get logistics number from JDL',
-    );
+    await expect(processor.handleDispatchOrder(mockJob)).rejects.toThrow('API Error');
   });
 });

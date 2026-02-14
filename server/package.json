@@ -17,11 +17,16 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:cov:unit": "jest --coverage --runInBand",
+    "test:cov:e2e": "jest --config ./test/jest-e2e.json --coverage --runInBand",
+     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:report": "jest --runInBand --reporters=default --reporters=jest-allure2-reporter --reporters=jest-extent-reporter",
+    "test:e2e:report": "jest --config ./test/jest-e2e.json --runInBand --reporters=default --reporters=jest-allure2-reporter --reporters=jest-extent-reporter",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -90,6 +95,8 @@
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
+    "jest-allure2-reporter": "^1.2.0",
+    "jest-extent-reporter": "^1.1.0",
     "jest": "^30.0.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.4.2",
@@ -126,8 +133,19 @@
       "^uuid$": "<rootDir>/../test/mocks/uuid.ts"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "modules/order/**/*.(t|j)s",
+      "modules/payment/**/*.(t|j)s",
+      "modules/queue/processors/**/*.(t|j)s",
+      "!**/*.spec.ts"
     ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 0.9,
+        "functions": 0.9,
+        "lines": 0.9,
+        "statements": 0.9
+      }
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

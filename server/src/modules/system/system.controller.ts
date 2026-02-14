@@ -1,4 +1,4 @@
-import { Controller, Get, UseFilters, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { SystemService } from './system.service';
@@ -8,12 +8,10 @@ import {
   QAResponseDto,
   SystemRankingResponseDto as RankingResponseDto,
 } from './dto';
-import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
 import { CACHE_TTL } from '@/common';
 
 @ApiTags('system')
 @Controller('system')
-@UseFilters(GlobalExceptionFilter)
 export class SystemController {
   constructor(private readonly systemService: SystemService) {}
 

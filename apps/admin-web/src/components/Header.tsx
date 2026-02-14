@@ -1,13 +1,18 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, User, LogOut, Settings, Moon, Sun } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { authService } from '@/services/authService';
+import { toast } from '@/components/ui/toast';
 
 const Header: React.FC = () => {
+  const router = useRouter();
   const [isDark, setIsDark] = React.useState(false);
+  const [loggingOut, setLoggingOut] = React.useState(false);
 
   React.useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -17,6 +22,26 @@ const Header: React.FC = () => {
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark');
     setIsDark(!isDark);
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await authService.logout();
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('login_mode');
+      toast.success('已退出登录');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('login_mode');
+      router.push('/login');
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -68,9 +93,13 @@ const Header: React.FC = () => {
             设置
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={handleLogout}
+            disabled={loggingOut}
+          >
             <LogOut className="mr-2 h-4 w-4" />
-            退出登录
+            {loggingOut ? '退出中...' : '退出登录'}
           </DropdownMenuItem>
         </DropdownMenu>
       </div>

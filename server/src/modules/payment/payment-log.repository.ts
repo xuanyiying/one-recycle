@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PaymentProvider, PaymentStatus } from '@prisma/client';
+import { toNumber } from '@/common/utils/decimal.util';
 
 export interface PaymentLogData {
   transactionId: string;
@@ -74,10 +75,10 @@ export class PaymentLogRepository {
       (log) => log.status === PaymentStatus.PENDING,
     ).length;
 
-    const totalAmount = logs.reduce((sum, log) => sum + log.amount, 0);
+    const totalAmount = logs.reduce((sum, log) => sum + toNumber(log.amount), 0);
     const successfulAmount = logs
       .filter((log) => log.status === PaymentStatus.SUCCESS)
-      .reduce((sum, log) => sum + log.amount, 0);
+      .reduce((sum, log) => sum + toNumber(log.amount), 0);
 
     return {
       totalTransactions,

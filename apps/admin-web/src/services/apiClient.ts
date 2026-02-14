@@ -207,10 +207,28 @@ export class ApiClient {
     if (
       responseData &&
       typeof responseData === 'object' &&
-      'success' in (responseData as Record<string, unknown>) &&
-      'data' in (responseData as Record<string, unknown>)
+      'success' in (responseData as Record<string, unknown>)
     ) {
-      return (responseData as { data: T }).data;
+      const resp = responseData as { 
+        success: boolean; 
+        data?: T; 
+        message?: string;
+        code?: string;
+        error?: { code: string; message: string; details?: any };
+      };
+      
+      if (resp.success === false) {
+        const errorMessage = resp.error?.message || resp.message || '请求失败';
+        const errorCode = resp.error?.code || resp.code || 'API_ERROR';
+        const error: any = new Error(errorMessage);
+        error.code = errorCode;
+        error.details = resp.error?.details;
+        throw error;
+      }
+      
+      if ('data' in resp) {
+        return resp.data as T;
+      }
     }
     return responseData as unknown as T;
   }

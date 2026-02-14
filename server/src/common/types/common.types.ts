@@ -7,10 +7,14 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
-  error?: string;
   code?: string;
-  timestamp?: string;
+  timestamp: string;
   path?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
 }
 
 // 分页参数
