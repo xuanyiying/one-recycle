@@ -42,14 +42,7 @@ export interface RequestConfig extends AxiosRequestConfig {
   showError?: boolean;
   showSuccess?: boolean;
   successMessage?: string;
-  retry?: number;
-  retryDelay?: number;
 }
-
-type RetryConfig = {
-  retry?: number;
-  retryDelay?: number;
-};
 
 export class ApiClient {
   private instance: AxiosInstance;
@@ -99,28 +92,6 @@ export class ApiClient {
         return response;
       },
       (error: AxiosError) => {
-        const config = error.config as AxiosRequestConfig & RetryConfig & {
-          __retryCount?: number;
-        };
-
-        // Retry logic
-        if (config && config.retry && config.retry > 0) {
-          config.__retryCount = config.__retryCount || 0;
-
-          if (config.__retryCount < config.retry) {
-            config.__retryCount += 1;
-            const backoff = new Promise(resolve => {
-              setTimeout(resolve, config.retryDelay || 1000);
-            });
-
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[${serviceName || 'API'}] Retrying request (${config.__retryCount}/${config.retry}): ${config.url}`);
-            }
-
-            return backoff.then(() => this.instance(config));
-          }
-        }
-
         console.error(`[${serviceName || 'API'}] Error:`, error.message);
         this.handleError(error);
         return Promise.reject(error);
@@ -191,18 +162,6 @@ export class ApiClient {
     return this.instance;
   }
 
-  private buildRetryConfig(
-    defaultRetry: number,
-    config?: RequestConfig,
-  ): RequestConfig & RetryConfig {
-    const { retry, retryDelay, ...axiosConfig } = config || {};
-    return {
-      ...axiosConfig,
-      retry: retry ?? defaultRetry,
-      retryDelay: retryDelay ?? 1000,
-    };
-  }
-
   private unwrapResponseData<T>(responseData: unknown): T {
     if (
       responseData &&
@@ -235,8 +194,7 @@ export class ApiClient {
 
   async get<T = any>(url: string, params?: any, config?: RequestConfig): Promise<T> {
     try {
-      const requestConfig = this.buildRetryConfig(3, config);
-      requestConfig.params = params;
+      const requestConfig = { ...config, params };
       const response = await this.instance.get<ApiResponse<T>>(url, requestConfig);
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
@@ -249,12 +207,7 @@ export class ApiClient {
 
   async post<T = any>(url: string, data?: unknown, config?: RequestConfig): Promise<T> {
     try {
-      const requestConfig = this.buildRetryConfig(0, config);
-      const response = await this.instance.post<ApiResponse<T>>(
-        url,
-        data,
-        requestConfig,
-      );
+      const response = await this.instance.post<ApiResponse<T>>(url, data, config);
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
       }
@@ -266,12 +219,7 @@ export class ApiClient {
 
   async put<T = any>(url: string, data?: unknown, config?: RequestConfig): Promise<T> {
     try {
-      const requestConfig = this.buildRetryConfig(3, config);
-      const response = await this.instance.put<ApiResponse<T>>(
-        url,
-        data,
-        requestConfig,
-      );
+      const response = await this.instance.put<ApiResponse<T>>(url, data, config);
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
       }
@@ -283,12 +231,7 @@ export class ApiClient {
 
   async patch<T = any>(url: string, data?: unknown, config?: RequestConfig): Promise<T> {
     try {
-      const requestConfig = this.buildRetryConfig(3, config);
-      const response = await this.instance.patch<ApiResponse<T>>(
-        url,
-        data,
-        requestConfig,
-      );
+      const response = await this.instance.patch<ApiResponse<T>>(url, data, config);
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
       }
@@ -300,8 +243,7 @@ export class ApiClient {
 
   async delete<T = any>(url: string, data?: any, config?: RequestConfig): Promise<T> {
     try {
-      const requestConfig = this.buildRetryConfig(3, config);
-      requestConfig.data = data;
+      const requestConfig = { ...config, data };
       const response = await this.instance.delete<ApiResponse<T>>(url, requestConfig);
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
@@ -314,8 +256,7 @@ export class ApiClient {
 
   async upload<T = any>(url: string, data: FormData, config?: RequestConfig): Promise<T> {
     try {
-      const requestConfig = this.buildRetryConfig(0, config);
-      requestConfig.headers = { 'Content-Type': 'multipart/form-data' };
+      const requestConfig = { ...config, headers: { 'Content-Type': 'multipart/form-data' } };
       const response = await this.instance.post<ApiResponse<T>>(
         url,
         data,
