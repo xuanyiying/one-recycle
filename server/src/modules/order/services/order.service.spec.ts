@@ -32,6 +32,9 @@ describe('OrderService', () => {
     user: {
       findUnique: jest.fn(),
     },
+    address: {
+      findUnique: jest.fn(),
+    },
     order: {
       create: jest.fn(),
       findMany: jest.fn(),
@@ -48,7 +51,7 @@ describe('OrderService', () => {
     orderTimeline: {
       create: jest.fn(),
     },
-    logisticsOrder: {
+    logistics_order: {
       findFirst: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
@@ -67,7 +70,7 @@ describe('OrderService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
     },
-    inboundReceipt: {
+    inbound_receipt: {
       upsert: jest.fn(),
     },
     orderPhoto: {
@@ -200,6 +203,7 @@ describe('OrderService', () => {
 
       mockRedisClient.incr.mockResolvedValue(1);
       mockPrismaService.user.findUnique.mockResolvedValue({ id: BigInt(1) });
+      mockPrismaService.address.findUnique.mockResolvedValue({ id: BigInt(1) });
       mockPrismaService.storage.findMany.mockResolvedValue([]);
       mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
         cb({
@@ -234,6 +238,77 @@ describe('OrderService', () => {
       expect(orderQueueService.handleOrderCreated).toHaveBeenCalled();
       expect(result.status).toBe(OrderStatus.PENDING);
     });
+
+    it('should throw when address is missing', async () => {
+      const createOrderDto = {
+        userId: '1',
+        addressId: '99',
+        items: [
+          { categoryId: 1, estimatedWeight: 5, unitPrice: 10, quantity: 1 },
+        ],
+        timeSlotId: 'slot_2026-02-11_0',
+        channel: 'APP',
+      };
+
+      mockRedisClient.incr.mockResolvedValue(1);
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: BigInt(1) });
+      mockPrismaService.address.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.create(createOrderDto as any),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('should not throw when queue publish fails', async () => {
+      const createOrderDto = {
+        userId: '1',
+        addressId: '1',
+        items: [
+          { categoryId: 1, estimatedWeight: 5, unitPrice: 10, quantity: 1 },
+        ],
+        timeSlotId: 'slot_2026-02-11_0',
+        channel: 'APP',
+      };
+
+      mockRedisClient.incr.mockResolvedValue(1);
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: BigInt(1) });
+      mockPrismaService.address.findUnique.mockResolvedValue({ id: BigInt(1) });
+      mockPrismaService.storage.findMany.mockResolvedValue([]);
+      mockOrderQueueService.handleOrderCreated.mockRejectedValue(
+        new Error('queue down'),
+      );
+      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
+        cb({
+          order: {
+            create: jest.fn().mockResolvedValue({
+              ...baseOrder,
+              id: BigInt(1),
+              userId: BigInt(1),
+              addressId: BigInt(1),
+              items: [
+                {
+                  id: BigInt(10),
+                  orderId: BigInt(1),
+                  categoryId: 1,
+                  estimatedWeight: 5,
+                  unitPrice: 10,
+                  quantity: 1,
+                  amount: 50,
+                },
+              ],
+              address: { detail: 'Test Address' },
+            }),
+          },
+          storage: mockPrismaService.storage,
+          orderPhoto: mockPrismaService.orderPhoto,
+        }),
+      );
+
+      const result = await service.create(createOrderDto as any);
+
+      expect(result.status).toBe(OrderStatus.PENDING);
+      expect(orderQueueService.handleOrderCreated).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe('dispatch', () => {
@@ -243,16 +318,18 @@ describe('OrderService', () => {
         id: BigInt(9),
       });
       const orderUpdate = jest.fn().mockResolvedValue({
-        id: BigInt(1),
+        id: BigInt(orderId),
         status: OrderStatus.PENDING_PICKUP,
       });
       mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
         cb({
-          logisticsOrder: {
+          logistics_order: {
             create: logisticsCreate,
           },
           order: {
-            findUnique: jest.fn().mockResolvedValue({ status: OrderStatus.PENDING }),
+            findUnique: jest
+              .fn()
+              .mockResolvedValue({ status: OrderStatus.PENDING }),
             update: orderUpdate,
           },
           orderTimeline: {
@@ -413,7 +490,7 @@ describe('OrderService', () => {
       const updatedOrder = {
         ...order,
         status: OrderStatus.INSPECTED,
-        settlementAmount: 88,
+        settlement_amount: 88,
       };
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...order,
@@ -427,6 +504,8 @@ describe('OrderService', () => {
             update: jest.fn().mockResolvedValue({
               ...updatedOrder,
               id: BigInt(order.id),
+              userId: BigInt(order.userId),
+              addressId: BigInt(order.addressId),
             }),
           },
           orderItem: {
@@ -527,8 +606,10 @@ describe('OrderService', () => {
 
     it('should move PENDING_INBOUND to INBOUNDED then PENDING_SETTLEMENT', async () => {
       const order = { ...baseOrder, status: OrderStatus.PENDING_INBOUND };
-      mockPrismaService.warehouse.findFirst.mockResolvedValue({ id: BigInt(1) });
-      mockPrismaService.inboundReceipt.upsert.mockResolvedValue({});
+      mockPrismaService.warehouse.findFirst.mockResolvedValue({
+        id: BigInt(1),
+      });
+      mockPrismaService.inbound_receipt.upsert.mockResolvedValue({});
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...order,
         id: BigInt(order.id),
@@ -561,7 +642,7 @@ describe('OrderService', () => {
       const order = {
         ...baseOrder,
         status: OrderStatus.PENDING_SETTLEMENT,
-        settlementAmount: 66,
+        settlement_amount: 66,
       };
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...order,

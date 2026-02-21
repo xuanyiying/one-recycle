@@ -226,7 +226,10 @@ export class OrderController {
       data: {
         logisticsOrderId: logisticsOrder?.id,
         orderId: BigInt(id),
-        providerCode: data?.providerData?.providerCode || logisticsOrder?.logisticsCompany || 'UNKNOWN',
+        providerCode:
+          data?.providerData?.providerCode ||
+          logisticsOrder?.logisticsCompany ||
+          'UNKNOWN',
         headers: req.headers as any,
         rawBody: JSON.stringify(data),
         parsedBody: data.providerData ?? data,
@@ -257,7 +260,9 @@ export class OrderController {
         data: {
           processed: true,
           processedAt: new Date(),
-          processError: error?.message ? String(error.message) : 'UNKNOWN_ERROR',
+          processError: error?.message
+            ? String(error.message)
+            : 'UNKNOWN_ERROR',
         },
       });
       throw error;

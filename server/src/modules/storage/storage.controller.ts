@@ -30,6 +30,7 @@ import {
   CancelUploadDto,
   GetUploadProgressDto,
 } from './dto/direct-upload.dto';
+import { UnauthorizedException } from '@/common/exceptions/business.exception';
 
 interface RequestWithUser extends Request {
   user?: {
@@ -185,8 +186,11 @@ export class StorageController {
     @Body() body: GeneratePresignedUrlDto,
     @Req() req: RequestWithUser,
   ) {
+    if (!req.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.directUploadService.generatePresignedUrl({
-      userId: req.user?.id || 'anonymous',
+      userId: req.user?.id,
       fileName: body.fileName,
       fileSize: body.fileSize,
       contentType: body.contentType,
@@ -201,8 +205,11 @@ export class StorageController {
     @Body() body: GeneratePresignedUrlDto,
     @Req() req: RequestWithUser,
   ) {
+    if (!req.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.directUploadService.generateAliyunPostPolicy({
-      userId: req.user?.id || 'anonymous',
+      userId: req.user?.id,
       fileName: body.fileName,
       fileSize: body.fileSize,
       contentType: body.contentType,
@@ -247,7 +254,7 @@ export class StorageController {
       fileName: body.fileName as string,
       fileSize: body.fileSize as number,
       contentType: body.contentType as string,
-      fileType: body.fileType as FileType,
+      fileType: body.file_type as FileType,
       category: body.category as string,
       totalChunks: body.totalChunks as number,
       chunkSize: body.chunkSize as number,
@@ -295,7 +302,7 @@ export class StorageController {
   ) {
     return this.directUploadService.completeChunkUpload({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user?.id || 'anonymous', // req.user is populated by JwtStrategy
     });
   }
 
@@ -307,9 +314,12 @@ export class StorageController {
     @Body() body: ConfirmUploadDto,
     @Req() req: RequestWithUser,
   ) {
+    if (!req.user?.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
     return this.directUploadService.confirmUpload({
       uploadSessionId: body.uploadSessionId,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user?.id, // req.user is populated by JwtStrategy
       actualFileSize: body.actualFileSize,
     });
   }

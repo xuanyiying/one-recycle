@@ -5,10 +5,10 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '@/modules/user/services/user.service';
 import { NotificationService } from '../notification/services/notification.service';
-import { WeChatPlatform } from './platforms/wechat.platform';
-import { AlipayPlatform } from './platforms/alipay.platform';
-import { TikTokPlatform } from './platforms/tiktok.platform';
-import { KuaishouPlatform } from './platforms/kuaishou.platform';
+import { WeChatPlatform } from '@/modules/auth/platforms';
+import { AlipayPlatform } from '@/modules/auth/platforms';
+import { TikTokPlatform } from '@/modules/auth/platforms';
+import { KuaishouPlatform } from '@/modules/auth/platforms';
 
 describe('AuthFlow Integration', () => {
   let service: AuthRedisService;

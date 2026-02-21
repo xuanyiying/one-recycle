@@ -194,6 +194,9 @@ export class OrderProcessor {
       }
 
       // 3. 发送状态变更通知
+      this.logger.log(
+        `Sending order status notification for: ${orderId} (${newStatus})`,
+      );
       await this.notificationQueueService.sendOrderStatusNotification(
         updatedBy,
         orderId,
@@ -394,6 +397,9 @@ export class OrderProcessor {
       );
 
       // 6. 通知用户订单已取消
+      this.logger.log(
+        `Notifying user ${userId} about cancellation: ${orderId}`,
+      );
       await this.notificationQueueService.sendOrderStatusNotification(
         userId,
         orderId,

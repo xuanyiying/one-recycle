@@ -82,8 +82,14 @@ export class LogisticsIntegrationService {
     requestPayload?: any;
     handler: () => Promise<T>;
   }): Promise<T> {
-    const { orderId, logisticsOrderId, providerCode, action, requestPayload, handler } =
-      params;
+    const {
+      orderId,
+      logisticsOrderId,
+      providerCode,
+      action,
+      requestPayload,
+      handler,
+    } = params;
     const idempotencyKey = `${providerCode}:${action}:${orderId.toString()}`;
 
     let lastError: any;
@@ -125,7 +131,9 @@ export class LogisticsIntegrationService {
           retryCount: attempt,
         });
         if (attempt < 2) {
-          await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+          await new Promise((resolve) =>
+            setTimeout(resolve, 200 * (attempt + 1)),
+          );
         }
       }
     }
@@ -160,7 +168,8 @@ export class LogisticsIntegrationService {
   }> {
     const providerCode = 'JD';
     const customerCode =
-      this.configService.get<string>('JDL_CUSTOMER_CODE') || 'YOUR_CUSTOMER_CODE';
+      this.configService.get<string>('JDL_CUSTOMER_CODE') ||
+      'YOUR_CUSTOMER_CODE';
 
     await this.callWithRetry({
       orderId: params.orderId,

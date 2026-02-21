@@ -59,7 +59,9 @@ export class AccountService {
     const id = BigInt(userId);
 
     let account = await this.prisma.account.findUnique({
-      where: { userId_accountType: { userId: id, accountType: AccountType.WALLET } },
+      where: {
+        userId_accountType: { userId: id, accountType: AccountType.WALLET },
+      },
     });
 
     // 兜底策略：如果账户不存在则自动创建

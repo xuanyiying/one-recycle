@@ -56,3 +56,19 @@ export class UpdateOrderDto extends PartialType(CreateOrderDto) {
   @IsNumber()
   payAmount?: number;
 }
+export class UpdateOrderItemDto {
+  @ApiPropertyOptional({ description: '商品ID' })
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiPropertyOptional({ description: '商品分类ID' })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: '商品分类名称' })
+  @IsOptional()
+  @IsString()
+  categoryName?: string;
+}

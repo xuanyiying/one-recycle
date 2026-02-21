@@ -18,10 +18,10 @@ import {
 class OrderPhotoInput {
   @IsInt()
   @Min(1)
-  orderId!: number;
+  order_id!: number;
 
   @IsString()
-  storageId!: string;
+  storage_id!: string;
 
   @IsString()
   @MaxLength(255)
@@ -29,33 +29,33 @@ class OrderPhotoInput {
 
   @IsString()
   @MaxLength(255)
-  originalName!: string;
+  original_name!: string;
 
   @IsUrl()
   @MaxLength(2048)
-  photoUrl!: string;
+  photo_url!: string;
 
   @IsString()
   @MaxLength(512)
-  filePath!: string;
+  file_path!: string;
 
   @IsInt()
   @Min(1)
-  fileSize!: number;
+  file_size!: number;
 
   @IsString()
   @MaxLength(100)
-  mimeType!: string;
+  mime_type!: string;
 
   @IsString()
   @MaxLength(32)
-  hashMd5!: string;
+  hash_md5!: string;
 
   @IsEnum(FileType)
-  fileType!: FileType;
+  file_type!: FileType;
 
   @IsEnum(OssType)
-  ossType!: OssType;
+  oss_type!: OssType;
 
   @IsOptional()
   @IsString()
@@ -65,29 +65,29 @@ class OrderPhotoInput {
   @IsOptional()
   @IsUrl()
   @MaxLength(2048)
-  thumbnailUrl?: string;
+  thumbnail_url?: string;
 
   @IsDateString()
-  uploadedAt!: string;
+  uploaded_at!: string;
 }
 
 describe('OrderPhoto model validation example', () => {
   it('accepts a complete and valid payload', async () => {
     const payload = plainToInstance(OrderPhotoInput, {
-      orderId: 1001,
-      storageId: 'stor_123',
+      order_id: 1001,
+      storage_id: 'stor_123',
       filename: '1001_1700000000_abcd.jpg',
-      originalName: 'original.jpg',
-      photoUrl: 'https://cdn.example.com/orders/1001/photos/1.jpg',
-      filePath: 'orders/1001/photos/2026/02/06/1001_1700000000_abcd.jpg',
-      fileSize: 2048,
-      mimeType: 'image/jpeg',
-      hashMd5: '098f6bcd4621d373cade4e832627b4f6',
-      fileType: FileType.IMAGE,
-      ossType: OssType.MINIO,
+      original_name: 'original.jpg',
+      photo_url: 'https://cdn.example.com/orders/1001/photos/1.jpg',
+      file_path: 'orders/1001/photos/2026/02/06/1001_1700000000_abcd.jpg',
+      file_size: 2048,
+      mime_type: 'image/jpeg',
+      hash_md5: '098f6bcd4621d373cade4e832627b4f6',
+      file_type: FileType.IMAGE,
+      oss_type: OssType.MINIO,
       category: 'ORDER_PHOTO',
-      thumbnailUrl: 'https://cdn.example.com/orders/1001/photos/1_thumb.jpg',
-      uploadedAt: new Date().toISOString(),
+      thumbnail_url: 'https://cdn.example.com/orders/1001/photos/1_thumb.jpg',
+      uploaded_at: new Date().toISOString(),
     });
 
     const errors = await validate(payload);
@@ -96,18 +96,18 @@ describe('OrderPhoto model validation example', () => {
 
   it('rejects missing required fields', async () => {
     const payload = plainToInstance(OrderPhotoInput, {
-      orderId: 0,
-      storageId: '',
+      order_id: 0,
+      storage_id: '',
       filename: '',
-      originalName: '',
-      photoUrl: 'not-a-url',
-      filePath: '',
-      fileSize: 0,
-      mimeType: '',
-      hashMd5: '',
-      fileType: FileType.IMAGE,
-      ossType: OssType.MINIO,
-      uploadedAt: 'invalid-date',
+      original_name: '',
+      photo_url: 'not-a-url',
+      file_path: '',
+      file_size: 0,
+      mime_type: '',
+      hash_md5: '',
+      file_type: FileType.IMAGE,
+      oss_type: OssType.MINIO,
+      uploaded_at: 'invalid-date',
     });
 
     const errors = await validate(payload);

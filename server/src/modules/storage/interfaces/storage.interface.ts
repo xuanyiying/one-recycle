@@ -37,7 +37,9 @@ export interface StorageFile {
   originalName: string;
   fileSize: number;
   mimeType: string;
-  url: string;
+  fileUrl: string;
+  filePath: string;
+  hashMd5: string;
   fileType: FileType;
   createdAt: Date;
   updatedAt: Date;

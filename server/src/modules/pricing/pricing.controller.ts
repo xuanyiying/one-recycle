@@ -31,6 +31,10 @@ class PricingEstimateRequestDto {
   @IsOptional()
   @IsString()
   tenantId?: string;
+
+  @IsOptional()
+  @IsString()
+  orderType?: string;
 }
 
 @ApiTags('Pricing')
@@ -48,6 +52,7 @@ export class PricingController {
       const result = await this.pricingService.estimatePricing(
         body.items,
         body.tenantId,
+        body.orderType,
       );
       return result.pricing;
     } catch (error) {

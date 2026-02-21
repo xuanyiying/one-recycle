@@ -607,19 +607,19 @@ export class InventoryService {
 
       await this.createInventoryItem(
         {
-        warehouseId: warehouseId,
-        categoryId: BigInt(item.categoryId),
-        name: name,
-        description: item.notes || `From Order #${order.orderNo}`,
-        unit: 'kg', // Default unit
-        quantity:
-          item.actualWeight || item.estimatedWeight || item.quantity || 1,
-        unitPrice: item.unitPrice,
-        status: InventoryStatus.IN_STOCK,
-        itemType: ItemType.RECYCLED,
-        condition: ItemCondition.GOOD,
-        sourceOrderId: order.id.toString(),
-        processingStatus: ProcessingStatus.RECEIVED,
+          warehouseId: warehouseId,
+          categoryId: BigInt(item.categoryId),
+          name: name,
+          description: item.notes,
+          unit: 'kg', // Default unit
+          quantity:
+            item.actualWeight || item.estimatedWeight || item.quantity || 1,
+          unitPrice: item.unitPrice,
+          status: InventoryStatus.IN_STOCK,
+          itemType: ItemType.RECYCLED,
+          condition: ItemCondition.GOOD,
+          sourceOrderId: order.id.toString(),
+          processingStatus: ProcessingStatus.RECEIVED,
         },
         client,
       );

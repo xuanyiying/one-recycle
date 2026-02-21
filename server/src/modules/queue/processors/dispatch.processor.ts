@@ -73,10 +73,12 @@ export class DispatchProcessor {
         address: `${receiptAddress.province}${receiptAddress.city}${receiptAddress.district}${receiptAddress.detail}`,
       };
 
-      this.logger.log(`[Dispatch] Calling logistics integration for ${orderId}`);
+      this.logger.log(
+        `[Dispatch] Calling logistics integration for ${orderId}`,
+      );
 
       const cargo = order.items.map((item: any) => ({
-        name: String(item.categoryId),
+        name: String(item.name),
         count: Math.max(1, Number(item.quantity || 1)),
       }));
 
@@ -101,7 +103,9 @@ export class DispatchProcessor {
         cargo,
       });
 
-      this.logger.log(`[Dispatch] Logistics order created: ${result.logisticsNo}`);
+      this.logger.log(
+        `[Dispatch] Logistics order created: ${result.logisticsNo}`,
+      );
 
       // 5. 更新本地物流信息并更新订单状态 (事务)
       await this.orderService.saveDispatchResult(orderId, {

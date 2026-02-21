@@ -200,7 +200,7 @@ describe('DirectUploadService', () => {
 
       mockChunkUploadSessionService.getSession.mockResolvedValue(session);
       mockChunkUploadSessionService.isUploadComplete.mockResolvedValue(true);
-      mockOssConfigService.getOssType.mockReturnValue('aliyun-oss');
+      mockOssConfigService.getOssType.mockReturnValue(OssTypeEnum.ALIYUN_OSS);
       mockOssService.getFileUrl.mockReturnValue('http://url');
       mockPrismaService.storage.create.mockResolvedValue({
         id: 'file-1',

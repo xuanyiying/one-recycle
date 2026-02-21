@@ -20,22 +20,62 @@ async function main() {
   const prisma = new PrismaClient({ adapter });
 
   try {
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { code: 'test_tenant' },
+      select: { id: true },
+    });
+    let tenantId = existingTenant?.id;
+    if (!tenantId) {
+      const createdTenant = await prisma.tenant.create({
+        data: {
+          name: '测试租户',
+          code: 'test_tenant',
+        },
+        select: { id: true },
+      });
+      tenantId = createdTenant.id;
+    }
+
     const categories = [
       {
         name: '旧书',
         description: '各类二手书籍回收',
         type: 'RECYCLE',
-        priceInfo: '{}',
+        priceInfo: JSON.stringify({
+          type: 'fixed',
+          unitPrice: 2.2,
+          unit: 'kg',
+          currency: 'CNY',
+        }),
         seo: '{}',
         sortOrder: 1,
+        pricingRule: {
+          basePrice: 2.2,
+          minWeight: 0.1,
+          maxWeight: 200,
+          ruleJson: { basePrice: 2.2 },
+          isActive: true,
+        },
       },
       {
         name: '旧衣',
         description: '各类旧衣物回收',
         type: 'RECYCLE',
-        priceInfo: '{}',
+        priceInfo: JSON.stringify({
+          type: 'fixed',
+          unitPrice: 3.5,
+          unit: 'kg',
+          currency: 'CNY',
+        }),
         seo: '{}',
         sortOrder: 2,
+        pricingRule: {
+          basePrice: 3.5,
+          minWeight: 0.1,
+          maxWeight: 200,
+          ruleJson: { basePrice: 3.5 },
+          isActive: true,
+        },
       },
     ];
 
@@ -46,17 +86,70 @@ async function main() {
         where: { name: data.name },
       });
 
+      let categoryId = existing?.id;
       if (!existing) {
-        await prisma.category.create({
+        const created = await prisma.category.create({
           data: {
-            ...data,
+            name: data.name,
+            description: data.description,
+            type: data.type,
+            priceInfo: data.priceInfo,
+            seo: data.seo,
+            sortOrder: data.sortOrder,
             level: 1,
             path: '0',
           },
         });
+        categoryId = created.id;
         console.log(`✅ 已创建分类: ${data.name}`);
       } else {
+        await prisma.category.update({
+          where: { id: existing.id },
+          data: {
+            description: data.description,
+            type: data.type,
+            priceInfo: data.priceInfo,
+            seo: data.seo,
+            sortOrder: data.sortOrder,
+          },
+        });
         console.log(`ℹ️ 分类已存在: ${data.name}`);
+      }
+
+      if (categoryId) {
+        const pricingRule = data.pricingRule;
+        const existingRule = await prisma.recyclePricingRule.findFirst({
+          where: {
+            categoryId,
+            tenantId,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (existingRule) {
+          await prisma.recyclePricingRule.update({
+            where: { id: existingRule.id },
+            data: {
+              basePrice: pricingRule.basePrice,
+              minWeight: pricingRule.minWeight,
+              maxWeight: pricingRule.maxWeight,
+              ruleJson: pricingRule.ruleJson,
+              isActive: pricingRule.isActive,
+            },
+          });
+        } else {
+          await prisma.recyclePricingRule.create({
+            data: {
+              tenantId,
+              categoryId,
+              basePrice: pricingRule.basePrice,
+              minWeight: pricingRule.minWeight,
+              maxWeight: pricingRule.maxWeight,
+              ruleJson: pricingRule.ruleJson,
+              isActive: pricingRule.isActive,
+            },
+          });
+        }
       }
     }
 

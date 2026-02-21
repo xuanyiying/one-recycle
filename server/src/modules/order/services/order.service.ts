@@ -5,6 +5,7 @@ import {
   Inject,
   forwardRef,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -26,6 +27,7 @@ import {
   ReservationStatus,
 } from '@prisma/client';
 import { toDecimal, toNumber } from '@/common/utils/decimal.util';
+import { delay } from '@/common/utils/common.util';
 import { OrderQueueService } from '../../queue/services/order-queue.service';
 import { InventoryService } from '@/modules/inventory/services/inventory.service';
 import { AccountService } from '@/modules/account/account.service';
@@ -35,6 +37,7 @@ import { PaymentProvider } from '@prisma/client';
 @Injectable()
 export class OrderService implements OnModuleInit {
   private readonly idGenerator: PersistentSnowflakeIdGenerator;
+  private readonly logger = new Logger(OrderService.name);
 
   private readonly defaultTimeSlots = [
     { start: '09:00', end: '11:00', quota: 5 },
@@ -139,12 +142,22 @@ export class OrderService implements OnModuleInit {
     }
 
     // 检查用户是否存在
+    const userId = this.parseBigInt(createOrderData.userId, 'userId');
     const user = await this.prisma.user.findUnique({
-      where: { id: BigInt(createOrderData.userId) },
+      where: { id: userId },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    const addressId = this.parseBigInt(createOrderData.addressId, 'addressId');
+    const address = await this.prisma.address.findUnique({
+      where: { id: addressId },
+    });
+
+    if (!address) {
+      throw new NotFoundException('Address not found');
     }
 
     const order = await this.prisma.$transaction(async (prisma) => {
@@ -155,8 +168,8 @@ export class OrderService implements OnModuleInit {
       const order = await prisma.order.create({
         data: {
           orderNo: orderNo.toString(),
-          userId: BigInt(createOrderData.userId!),
-          addressId: BigInt(createOrderData.addressId),
+          userId: userId,
+          addressId: addressId,
           status: createOrderData.status || OrderStatus.PENDING,
           channel: createOrderData.channel || 'APP',
           remark: remark,
@@ -224,34 +237,7 @@ export class OrderService implements OnModuleInit {
     });
 
     // 发送订单创建消息到队列
-    await this.orderQueueService.handleOrderCreated({
-      orderId: order.id.toString(),
-      userId: order.userId.toString(),
-      items: order.items.map((item) => ({
-        categoryId: item.categoryId.toString(),
-        quantity: item.quantity,
-        estimatedPrice: toNumber(item.unitPrice),
-        weight: item.estimatedWeight,
-        condition: item.condition || undefined,
-        description: item.notes || undefined,
-      })),
-      address: {
-        id: order.addressId.toString(),
-        fullAddress: order.address.detail || '',
-        coordinates:
-          order.latitude && order.longitude
-            ? {
-                lat: order.latitude,
-                lng: order.longitude,
-              }
-            : undefined,
-      },
-      scheduledTime:
-        order.expectPickupTime?.toISOString() || new Date().toISOString(),
-      totalAmount: toNumber(order.estimatedAmount),
-      createdAt: order.createdAt.toISOString(),
-      orderType: order.orderType,
-    });
+    await this.publishOrderCreatedEvent(order);
 
     return this.mapToOrder(order);
   }
@@ -507,7 +493,8 @@ export class OrderService implements OnModuleInit {
       updateData.actualDeliveryTime = new Date(data.actualDeliveryTime);
     if (data.settlementAmount !== undefined)
       updateData.settlementAmount = toDecimal(data.settlementAmount);
-    if (data.payAmount !== undefined) updateData.payAmount = toDecimal(data.payAmount);
+    if (data.payAmount !== undefined)
+      updateData.payAmount = toDecimal(data.payAmount);
     if (data.remark) updateData.remark = data.remark;
     if (data.priority) updateData.priority = data.priority as unknown as number;
 
@@ -837,7 +824,8 @@ export class OrderService implements OnModuleInit {
       baseOrder.estimatedAmount = toNumber(order.estimatedAmount);
     if (order.settlementAmount !== undefined)
       baseOrder.settlementAmount = toNumber(order.settlementAmount);
-    if (order.payAmount !== undefined) baseOrder.payAmount = toNumber(order.payAmount);
+    if (order.payAmount !== undefined)
+      baseOrder.payAmount = toNumber(order.payAmount);
     if (order.discountAmount !== undefined)
       baseOrder.discountAmount = toNumber(order.discountAmount);
 
@@ -860,6 +848,61 @@ export class OrderService implements OnModuleInit {
     }
 
     return baseOrder as Order;
+  }
+
+  private parseBigInt(value: string | number, fieldName: string): bigint {
+    try {
+      return BigInt(value);
+    } catch (error) {
+      throw new BadRequestException(`${fieldName} is invalid`);
+    }
+  }
+
+  private async publishOrderCreatedEvent(order: any): Promise<void> {
+    const payload = {
+      orderId: order.id.toString(),
+      userId: order.userId.toString(),
+      items: order.items.map((item: any) => ({
+        categoryId: item.categoryId.toString(),
+        quantity: item.quantity,
+        estimatedPrice: toNumber(item.unitPrice),
+        weight: item.estimatedWeight,
+        condition: item.condition || undefined,
+        description: item.notes || undefined,
+      })),
+      address: {
+        id: order.addressId.toString(),
+        fullAddress: order.address?.detail || '',
+        coordinates:
+          order.latitude && order.longitude
+            ? {
+                lat: order.latitude,
+                lng: order.longitude,
+              }
+            : undefined,
+      },
+      scheduledTime:
+        order.expectPickupTime?.toISOString() || new Date().toISOString(),
+      totalAmount: toNumber(order.estimatedAmount),
+      createdAt: order.createdAt.toISOString(),
+      orderType: order.orderType,
+    };
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        await this.orderQueueService.handleOrderCreated(payload);
+        return;
+      } catch (error) {
+        if (attempt < 3) {
+          await delay(100 * attempt);
+          continue;
+        }
+        this.logger.error(
+          `Order created event publish failed for ${payload.orderId}: ${(error as Error).message}`,
+          (error as Error).stack,
+        );
+      }
+    }
   }
 
   // State Machine Transitions
@@ -1157,7 +1200,10 @@ export class OrderService implements OnModuleInit {
 
     const settlementAmount = toNumber(order.settlementAmount);
     if (settlementAmount > 0) {
-      if (method === PaymentProvider.WECHAT || method === PaymentProvider.ALIPAY) {
+      if (
+        method === PaymentProvider.WECHAT ||
+        method === PaymentProvider.ALIPAY
+      ) {
         let accountInfo = options?.accountInfo;
         if (!accountInfo) {
           const identity = await this.prisma.userIdentity.findFirst({
@@ -1182,7 +1228,10 @@ export class OrderService implements OnModuleInit {
 
         const hasWechat = !!accountInfo?.openid;
         const hasAlipay = !!accountInfo?.accountNo;
-        if ((method === PaymentProvider.WECHAT && !hasWechat) || (method === PaymentProvider.ALIPAY && !hasAlipay)) {
+        if (
+          (method === PaymentProvider.WECHAT && !hasWechat) ||
+          (method === PaymentProvider.ALIPAY && !hasAlipay)
+        ) {
           throw new Error(`Missing account info for ${method} transfer`);
         }
 

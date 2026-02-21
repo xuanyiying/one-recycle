@@ -56,6 +56,7 @@ export class UploadFileDto {
   originalName: string;
   mimetype: string;
   size: number;
+  buffer: Buffer;
   userId: string;
   fileType: FileType;
   category?: string;

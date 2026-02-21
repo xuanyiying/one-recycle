@@ -279,6 +279,7 @@ export class NotificationProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to send withdrawal created notification: ${withdrawalId}`,
+        (error as Error).message,
         (error as Error).stack,
       );
       throw error;
@@ -329,6 +330,17 @@ export class NotificationProcessor {
           title = '提现失败';
           content = `您的提现申请处理失败，金额：¥${amount.toFixed(2)}，已退回账户余额`;
           smsTemplate = 'WITHDRAWAL_FAILED';
+          smsParams = {
+            amount: amount.toFixed(2),
+            transactionId: transactionId || '',
+            completedAt: new Date(completedAt).toLocaleString('zh-CN'),
+          };
+          break;
+
+        case 'PENDING':
+          title = '提现处理中';
+          content = `您的提现申请正在处理中，金额：¥${amount.toFixed(2)}`;
+          smsTemplate = 'WITHDRAWAL_PENDING';
           smsParams = {
             amount: amount.toFixed(2),
             completedAt: new Date(completedAt).toLocaleString('zh-CN'),

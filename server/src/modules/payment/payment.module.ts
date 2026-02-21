@@ -5,7 +5,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { PaymentService } from './payment.service';
 import { PaymentLogRepository } from './payment-log.repository';
 import { PaymentProviderModule } from './payment-provider.module';
-import { WithdrawalService } from './withdrawal.service';
+import WithdrawalService from './withdrawal.service';
 import { WithdrawalController } from './withdrawal.controller';
 
 @Module({

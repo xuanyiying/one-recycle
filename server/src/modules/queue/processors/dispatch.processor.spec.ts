@@ -91,12 +91,18 @@ describe('DispatchProcessor', () => {
     const result = await processor.handleDispatchOrder(mockJob);
 
     expect(mockOrderService.findOne).toHaveBeenCalledWith(123);
-    expect(mockLogisticsIntegrationService.createPickupOrder).toHaveBeenCalled();
+    expect(
+      mockLogisticsIntegrationService.createPickupOrder,
+    ).toHaveBeenCalled();
     expect(mockOrderService.saveDispatchResult).toHaveBeenCalledWith(
       '123',
       expect.objectContaining({ logisticsNo: 'JD123456', status: 'CREATED' }),
     );
-    expect(mockSettlementService.initSettlement).toHaveBeenCalledWith(123, 7, 10);
+    expect(mockSettlementService.initSettlement).toHaveBeenCalledWith(
+      123,
+      7,
+      10,
+    );
     expect(result).toEqual({
       success: true,
       orderId: '123',
@@ -114,7 +120,9 @@ describe('DispatchProcessor', () => {
     await processor.handleDispatchOrder(mockJob);
 
     expect(mockOrderService.findLogisticsOrder).toHaveBeenCalledWith('123');
-    expect(mockLogisticsIntegrationService.createPickupOrder).not.toHaveBeenCalled();
+    expect(
+      mockLogisticsIntegrationService.createPickupOrder,
+    ).not.toHaveBeenCalled();
     expect(mockOrderService.saveDispatchResult).not.toHaveBeenCalled();
   });
 
@@ -123,7 +131,9 @@ describe('DispatchProcessor', () => {
 
     await processor.handleDispatchOrder(mockJob);
 
-    expect(mockLogisticsIntegrationService.createPickupOrder).not.toHaveBeenCalled();
+    expect(
+      mockLogisticsIntegrationService.createPickupOrder,
+    ).not.toHaveBeenCalled();
   });
 
   it('should skip if order is not in dispatchable status', async () => {
@@ -134,7 +144,9 @@ describe('DispatchProcessor', () => {
 
     await processor.handleDispatchOrder(mockJob);
 
-    expect(mockLogisticsIntegrationService.createPickupOrder).not.toHaveBeenCalled();
+    expect(
+      mockLogisticsIntegrationService.createPickupOrder,
+    ).not.toHaveBeenCalled();
     expect(mockOrderService.saveDispatchResult).not.toHaveBeenCalled();
   });
 
@@ -154,6 +166,8 @@ describe('DispatchProcessor', () => {
       new Error('API Error'),
     );
 
-    await expect(processor.handleDispatchOrder(mockJob)).rejects.toThrow('API Error');
+    await expect(processor.handleDispatchOrder(mockJob)).rejects.toThrow(
+      'API Error',
+    );
   });
 });

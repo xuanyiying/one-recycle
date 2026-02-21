@@ -38,8 +38,7 @@ export class PaymentProcessor {
    */
   @Process({ name: 'process-payment-callback', concurrency: 5 })
   async handlePaymentCallback(job: Job<PaymentCallbackEventDto>): Promise<any> {
-    const { transactionId, orderId, amount, status, provider, rawData } =
-      job.data;
+    const { transactionId, orderId, amount, status, provider } = job.data;
 
     const normalizedStatus = status as PaymentCallbackStatus;
 
@@ -109,7 +108,7 @@ export class PaymentProcessor {
           OrderStatus.CANCELLED,
           {
             transactionId,
-            failReason: rawData?.message || 'Payment failed',
+            failReason: job.data?.callbackData?.message || 'Payment failed',
           },
         );
 

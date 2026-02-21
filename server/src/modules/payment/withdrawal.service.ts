@@ -18,7 +18,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class WithdrawalService implements OnModuleInit {
+class WithdrawalService implements OnModuleInit {
   private readonly idGenerator: PersistentSnowflakeIdGenerator;
 
   constructor(
@@ -77,7 +77,8 @@ export class WithdrawalService implements OnModuleInit {
           if (!account) throw new Error('ACCOUNT_NOT_FOUND');
 
           const available = toDecimal(account.availableBalance);
-          if (available.lessThan(amount)) throw new Error('INSUFFICIENT_BALANCE');
+          if (available.lessThan(amount))
+            throw new Error('INSUFFICIENT_BALANCE');
 
           if (params.idempotencyKey) {
             const existing = await tx.withdrawal.findFirst({
@@ -102,7 +103,9 @@ export class WithdrawalService implements OnModuleInit {
                 status: WithdrawalStatus.PENDING,
                 accountInfo: {
                   ...(params.accountInfo || {}),
-                  tenantId: params.tenantId ? params.tenantId.toString() : undefined,
+                  tenantId: params.tenantId
+                    ? params.tenantId.toString()
+                    : undefined,
                 },
               },
             });
@@ -142,7 +145,8 @@ export class WithdrawalService implements OnModuleInit {
               version: { increment: 1 },
             },
           });
-          if (updatedAccount.count !== 1) throw new Error('ACCOUNT_VERSION_CONFLICT');
+          if (updatedAccount.count !== 1)
+            throw new Error('ACCOUNT_VERSION_CONFLICT');
 
           const platformWallet = await this.ensurePlatformWallet(tx);
           if (toDecimal(platformWallet.balance).lessThan(amount)) {
@@ -156,7 +160,8 @@ export class WithdrawalService implements OnModuleInit {
               version: { increment: 1 },
             },
           });
-          if (updatedPlatform.count !== 1) throw new Error('PLATFORM_VERSION_CONFLICT');
+          if (updatedPlatform.count !== 1)
+            throw new Error('PLATFORM_VERSION_CONFLICT');
 
           await tx.platformTransaction.create({
             data: {
@@ -197,7 +202,7 @@ export class WithdrawalService implements OnModuleInit {
                   amount: toDecimal(0),
                   balanceAfter: tenant.balance,
                   relatedType: 'WITHDRAWAL',
-                  relatedId: `FREEZE:${outTradeNo}`,
+                  relatedId: `FREEZE:${withdrawal.outTradeNo}`,
                   remark: 'Frozen payout for withdrawal request',
                 },
               });
@@ -303,7 +308,9 @@ export class WithdrawalService implements OnModuleInit {
         if (tenantIdRaw) {
           const tenantId = BigInt(tenantIdRaw);
           for (let i = 0; i < 3; i += 1) {
-            const tenant = await tx.tenant.findUnique({ where: { id: tenantId } });
+            const tenant = await tx.tenant.findUnique({
+              where: { id: tenantId },
+            });
             if (!tenant) break;
             const updated = await tx.tenant.updateMany({
               where: { id: tenant.id, version: tenant.version },
@@ -398,11 +405,14 @@ export class WithdrawalService implements OnModuleInit {
         if (tenantIdRaw) {
           const tenantId = BigInt(tenantIdRaw);
           for (let i = 0; i < 3; i += 1) {
-            const tenant = await tx.tenant.findUnique({ where: { id: tenantId } });
+            const tenant = await tx.tenant.findUnique({
+              where: { id: tenantId },
+            });
             if (!tenant) break;
             const updated = await tx.tenant.updateMany({
               where: { id: tenant.id, version: tenant.version },
               data: {
+                balance: { decrement: amount },
                 frozenBalance: { decrement: amount },
                 version: { increment: 1 },
               },
@@ -428,7 +438,9 @@ export class WithdrawalService implements OnModuleInit {
           data: {
             status: WithdrawalStatus.FAILED,
             processedAt: new Date(),
-            rejectedReason: error?.message ? String(error.message) : 'UNKNOWN_ERROR',
+            rejectedReason: error?.message
+              ? String(error.message)
+              : 'UNKNOWN_ERROR',
             callbackData: {
               error: error?.message ? String(error.message) : 'UNKNOWN_ERROR',
             },
@@ -498,7 +510,9 @@ export class WithdrawalService implements OnModuleInit {
         if (tenantIdRaw) {
           const tenantId = BigInt(tenantIdRaw);
           for (let i = 0; i < 3; i += 1) {
-            const tenant = await tx.tenant.findUnique({ where: { id: tenantId } });
+            const tenant = await tx.tenant.findUnique({
+              where: { id: tenantId },
+            });
             if (!tenant) break;
             const updated = await tx.tenant.updateMany({
               where: { id: tenant.id, version: tenant.version },
@@ -547,7 +561,9 @@ export class WithdrawalService implements OnModuleInit {
     }
 
     const targetStatus =
-      params.status === 'TIMEOUT' ? WithdrawalStatus.TIMEOUT : WithdrawalStatus.FAILED;
+      params.status === 'TIMEOUT'
+        ? WithdrawalStatus.TIMEOUT
+        : WithdrawalStatus.FAILED;
 
     return this.prisma.$transaction(async (tx) => {
       const account = await tx.account.findUniqueOrThrow({
@@ -596,11 +612,14 @@ export class WithdrawalService implements OnModuleInit {
       if (tenantIdRaw) {
         const tenantId = BigInt(tenantIdRaw);
         for (let i = 0; i < 3; i += 1) {
-          const tenant = await tx.tenant.findUnique({ where: { id: tenantId } });
+          const tenant = await tx.tenant.findUnique({
+            where: { id: tenantId },
+          });
           if (!tenant) break;
           const updated = await tx.tenant.updateMany({
             where: { id: tenant.id, version: tenant.version },
             data: {
+              balance: { decrement: amount },
               frozenBalance: { decrement: amount },
               version: { increment: 1 },
             },
@@ -637,3 +656,5 @@ export class WithdrawalService implements OnModuleInit {
     });
   }
 }
+
+export default WithdrawalService

@@ -45,7 +45,6 @@ export class LogisticsService {
   }
 
   async calculateFreight(weight: number, volume: number, distance: number) {
-    // 简单的运费计算逻辑示例
     // 实际应根据 isActive 的 provider 调用外部 API 或使用 config 中的规则
     const activeProviders = await this.prisma.logisticsProvider.findMany({
       where: { isActive: true },

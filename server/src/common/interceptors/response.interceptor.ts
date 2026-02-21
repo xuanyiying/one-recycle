@@ -24,7 +24,12 @@ export class ResponseInterceptor<T> implements NestInterceptor<
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
       map((data) => {
-        if (data && typeof data === 'object' && 'data' in data && 'message' in data) {
+        if (
+          data &&
+          typeof data === 'object' &&
+          'data' in data &&
+          'message' in data
+        ) {
           const responseWithData = data as ResponseWithMessage;
           return {
             success: true,

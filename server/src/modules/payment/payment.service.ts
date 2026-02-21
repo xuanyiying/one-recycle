@@ -297,7 +297,7 @@ export class PaymentService implements OnModuleInit {
       select: { refundAmount: true },
     });
     const totalRefundAmount = totalRefundAmountResult.reduce(
-      (sum, refund) => sum + Number(refund.refundAmount),
+      (sum, refund) => sum + toNumber(refund.refundAmount),
       0,
     );
 

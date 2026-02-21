@@ -8,7 +8,11 @@ import { LogisticsIntegrationService } from './logistics-integration.service';
 @Module({
   imports: [PrismaModule],
   controllers: [LogisticsController],
-  providers: [LogisticsService, JdlLogisticsService, LogisticsIntegrationService],
+  providers: [
+    LogisticsService,
+    JdlLogisticsService,
+    LogisticsIntegrationService,
+  ],
   exports: [LogisticsService, JdlLogisticsService, LogisticsIntegrationService],
 })
 export class LogisticsModule {}

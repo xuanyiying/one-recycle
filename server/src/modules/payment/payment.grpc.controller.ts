@@ -37,7 +37,9 @@ export class PaymentGrpcController {
   @GrpcMethod('PaymentService', 'GetPayment')
   async getPayment(data: GetPaymentRequest): Promise<GetPaymentResponse> {
     try {
-      const payment = await this.paymentService.findOne(BigInt(data.paymentId)); // 转换为bigint
+      const payment = await this.paymentService.findOne(
+        BigInt(data.paymentId), // 转换为bigint
+      );
       return {
         payment: payment ? this.mapToPayment(payment) : undefined,
       };
@@ -66,11 +68,11 @@ export class PaymentGrpcController {
   ): Promise<UpdatePaymentStatusResponse> {
     try {
       await this.paymentService.updatePaymentStatus(
-        data.transactionId, // 保持为bigint
+        data.transactionId, // 转换为bigint
         data.status as any,
       );
       const payment = await this.paymentService.findByTransactionId(
-        data.transactionId, // 保持为bigint
+        data.transactionId, // 转换为bigint
       );
       return { success: true, payment: this.mapToPayment(payment) };
     } catch (error) {
@@ -223,7 +225,10 @@ export class PaymentGrpcController {
       const success = logs.filter((log) => log.status === 'SUCCESS').length;
       const failed = logs.filter((log) => log.status === 'FAILED').length;
       const pending = logs.filter((log) => log.status === 'PENDING').length;
-      const totalAmount = logs.reduce((sum, log) => sum + toNumber(log.amount), 0);
+      const totalAmount = logs.reduce(
+        (sum, log) => sum + toNumber(log.amount),
+        0,
+      );
 
       return {
         total,

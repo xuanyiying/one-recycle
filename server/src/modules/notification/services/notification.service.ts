@@ -354,6 +354,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
 
     return this.prisma.notification.findMany({
       where: { deliveryOptions: { path: ['batchId'], equals: batchId } },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

@@ -660,7 +660,7 @@ export class DirectUploadService {
         status: 'not_found',
         fileName: 'unknown',
         fileSize: 0,
-        fileType: 'image',
+        fileType: FileType.IMAGE,
       };
     }
 
@@ -675,7 +675,7 @@ export class DirectUploadService {
     fileName: string,
     fileSize: number,
     contentType: string,
-    fileType: string,
+    fileType: FileType,
   ): void {
     const config = this.getFileTypeConfig(fileType);
 
@@ -715,15 +715,15 @@ export class DirectUploadService {
     return provider;
   }
 
-  private getFileTypeConfig(fileType: string): {
+  private getFileTypeConfig(fileType: FileType): {
     maxSize: number;
     allowedTypes: string[];
   } {
     const fileTypeConfigs: Record<
-      string,
+      FileType,
       { maxSize: number; allowedTypes: string[] }
     > = {
-      image: {
+      [FileType.IMAGE]: {
         maxSize: 10 * 1024 * 1024,
         allowedTypes: [
           'image/jpeg',
@@ -734,7 +734,7 @@ export class DirectUploadService {
           'image/svg+xml',
         ],
       },
-      video: {
+      [FileType.VIDEO]: {
         maxSize: 100 * 1024 * 1024,
         allowedTypes: [
           'video/mp4',
@@ -743,7 +743,7 @@ export class DirectUploadService {
           'video/x-msvideo',
         ],
       },
-      document: {
+      [FileType.DOCUMENT]: {
         maxSize: 10 * 1024 * 1024,
         allowedTypes: [
           'application/pdf',
@@ -755,17 +755,17 @@ export class DirectUploadService {
           'application/octet-stream',
         ],
       },
-      audio: {
+      [FileType.AUDIO]: {
         maxSize: 20 * 1024 * 1024,
         allowedTypes: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4'],
       },
-      other: {
+      [FileType.OTHER]: {
         maxSize: 10 * 1024 * 1024,
         allowedTypes: ['*'],
       },
     };
 
-    const config = fileTypeConfigs[fileType.toLowerCase()];
+    const config = fileTypeConfigs[fileType];
 
     if (!config) {
       throw new BadRequestException(`Unsupported file type: ${fileType}`);
@@ -787,8 +787,8 @@ export class DirectUploadService {
     return `${fileType}s/${category || 'other'}/${userId}/${timestamp}_${randomId}_${sanitizedName}.${ext}`;
   }
 
-  private mapFileTypeToEnum(fileType: string): FileType {
-    const normalizedType = fileType.toLowerCase();
+  private mapFileTypeToEnum(file_type: string): FileType {
+    const normalizedType = file_type.toLowerCase();
     const mapping: Record<string, FileType> = {
       video: FileType.VIDEO,
       image: FileType.IMAGE,

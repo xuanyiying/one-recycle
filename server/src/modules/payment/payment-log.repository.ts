@@ -75,7 +75,10 @@ export class PaymentLogRepository {
       (log) => log.status === PaymentStatus.PENDING,
     ).length;
 
-    const totalAmount = logs.reduce((sum, log) => sum + toNumber(log.amount), 0);
+    const totalAmount = logs.reduce(
+      (sum, log) => sum + toNumber(log.amount),
+      0,
+    );
     const successfulAmount = logs
       .filter((log) => log.status === PaymentStatus.SUCCESS)
       .reduce((sum, log) => sum + toNumber(log.amount), 0);

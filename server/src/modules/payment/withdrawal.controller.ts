@@ -1,6 +1,6 @@
 import { Body, Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { WithdrawalService } from './withdrawal.service';
+import WithdrawalService from './withdrawal.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 
 @ApiTags('withdrawals')

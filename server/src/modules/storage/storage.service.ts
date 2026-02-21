@@ -171,7 +171,7 @@ export class StorageService {
     const file = await this.prisma.storage.create({
       data: {
         filename: path.basename(uploadResult.key),
-        originalName: originalName,
+        originalName,
         mimeType: data.mimetype,
         fileSize: data.size,
         fileUrl: uploadResult.url,
@@ -179,7 +179,7 @@ export class StorageService {
         hashMd5: fileHash,
         fileType: data.fileType,
         userId: data.userId,
-        ossType: ossType,
+        ossType,
         category: data.category,
       },
     });
@@ -619,7 +619,9 @@ export class StorageService {
       originalName: file.originalName,
       fileSize: file.fileSize,
       mimeType: file.mimeType,
-      url: file.fileUrl,
+      fileUrl: file.fileUrl,
+      filePath: file.filePath,
+      hashMd5: file.hashMd5,
       fileType: file.fileType as unknown as FileType,
       createdAt: file.createdAt,
       updatedAt: file.updatedAt,
