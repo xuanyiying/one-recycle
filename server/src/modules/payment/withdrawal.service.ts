@@ -657,4 +657,4 @@ class WithdrawalService implements OnModuleInit {
   }
 }
 
-export default WithdrawalService
+export default WithdrawalService;

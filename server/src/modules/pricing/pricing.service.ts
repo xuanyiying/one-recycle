@@ -197,10 +197,8 @@ export class PricingService {
         priceInfo.minPrice > 0 &&
         priceInfo.maxPrice > 0
       ) {
-        const minUnit =
-          priceInfo.minPrice * conditionMultiplier * weightFactor;
-        const maxUnit =
-          priceInfo.maxPrice * conditionMultiplier * weightFactor;
+        const minUnit = priceInfo.minPrice * conditionMultiplier * weightFactor;
+        const maxUnit = priceInfo.maxPrice * conditionMultiplier * weightFactor;
         const dimensionMultiplier = hasWeight ? weight : quantity;
         const minTotal = Math.max(minUnit, 0) * dimensionMultiplier;
         const maxTotal = Math.max(maxUnit, 0) * dimensionMultiplier;
