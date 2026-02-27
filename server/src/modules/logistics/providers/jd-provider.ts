@@ -1,8 +1,7 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Logger, BadRequestException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { ConfigService } from '@nestjs/config';
 import {
   EcapResponse,
   PrecheckDto,
@@ -16,36 +15,25 @@ import {
   QueryStatusDto,
   QueryFeeDto,
 } from '../dto/jdl.dto';
+import {
+  ILogisticsProvider,
+  LogisticsProviderConfig,
+} from './logistics-provider.interface';
 
-@Injectable()
-export class JdlLogisticsService {
-  private readonly logger = new Logger(JdlLogisticsService.name);
+export class JdlLogisticsProvider implements ILogisticsProvider {
+  readonly code = 'JD';
+  readonly name = '京东物流';
+  private readonly logger = new Logger(JdlLogisticsProvider.name);
   private readonly axiosInstance: AxiosInstance;
-  private readonly baseUrl: string;
-  private readonly apiKey: string;
-  private readonly customerCode: string;
 
-  constructor(private readonly config: ConfigService) {
-    this.baseUrl = this.config.get<string>(
-      'JDL_BASE_URL',
-      'https://api.jdl.com',
-    );
-    this.apiKey = this.config.get<string>('JDL_API_KEY', '');
-    this.customerCode = this.config.get<string>('JDL_CUSTOMER_CODE', '');
-
-    if (!this.apiKey || !this.customerCode) {
-      this.logger.warn(
-        'JDL API Key or Customer Code not configured. Set JDL_API_KEY and JDL_CUSTOMER_CODE environment variables.',
-      );
-    }
-
+  constructor(private readonly config: LogisticsProviderConfig) {
     this.axiosInstance = axios.create({
-      baseURL: this.baseUrl,
+      baseURL: this.config.apiUrl || 'https://api.jdl.com',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-        'X-Api-Key': this.apiKey,
-        'X-Customer-Code': this.customerCode,
+        'X-Api-Key': this.config.appSecret || '',
+        'X-Customer-Code': this.config.appId || '',
       },
     });
 
@@ -111,8 +99,8 @@ export class JdlLogisticsService {
     } catch (errors) {
       const messages = Array.isArray(errors)
         ? errors
-          .map((e) => Object.values(e.constraints || {}).join(', '))
-          .join('; ')
+            .map((e) => Object.values(e.constraints || {}).join(', '))
+            .join('; ')
         : String(errors);
       throw new BadRequestException(`Parameter Validation Failed: ${messages}`);
     }

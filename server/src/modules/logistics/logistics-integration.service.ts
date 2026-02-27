@@ -1,16 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { LogisticsApiAction, LogisticsStatus } from '@prisma/client';
-import { JdlLogisticsService } from './providers/jd-provider';
-import { ConfigService } from '@nestjs/config';
+import { LogisticsProviderFactory } from './providers/logistics-provider.factory';
+import { PrecheckDto, CreateOrderDto, SubscribeTraceDto } from './dto/jdl.dto';
 
 @Injectable()
 export class LogisticsIntegrationService {
+  private readonly logger = new Logger(LogisticsIntegrationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jdlLogisticsService: JdlLogisticsService,
-    private readonly configService: ConfigService,
-  ) { }
+    private readonly providerFactory: LogisticsProviderFactory,
+  ) {}
 
   private async upsertCallLog(params: {
     idempotencyKey: string;
@@ -143,6 +144,7 @@ export class LogisticsIntegrationService {
 
   async createPickupOrder(params: {
     orderId: bigint;
+    providerCode?: string;
     sender: {
       name: string;
       phone: string;
@@ -166,14 +168,26 @@ export class LogisticsIntegrationService {
     status: LogisticsStatus;
     providerData?: any;
   }> {
-    const providerCode = 'JD';
-    const customerCode = this.configService.get<string>('JDL_CUSTOMER_CODE');
+    this.logger.log(`Creating pickup order for orderId: ${params.orderId}`);
+
+    // 动态创建 provider 实例并获取配置（类似 Java 工厂模式）
+    const { provider, config } = params.providerCode
+      ? await this.providerFactory.getProviderWithConfig(params.providerCode)
+      : await this.providerFactory.getActiveProviderWithConfig();
+
+    const providerCode = provider.code;
+    const customerCode = config.appId;
 
     if (!customerCode) {
-      throw new Error(
-        'JDL_CUSTOMER_CODE is not configured. Please set JDL_CUSTOMER_CODE environment variable.',
+      throw new BadRequestException(
+        `Customer code (appId) is not configured for provider '${providerCode}'. ` +
+          `Please configure it in the database.`,
       );
     }
+
+    this.logger.debug(
+      `Using provider: ${providerCode}, customerCode: ${customerCode}`,
+    );
 
     await this.callWithRetry({
       orderId: params.orderId,
@@ -181,14 +195,14 @@ export class LogisticsIntegrationService {
       action: LogisticsApiAction.PRECHECK,
       requestPayload: params,
       handler: async () =>
-        this.jdlLogisticsService.precheck({
+        provider.precheck({
           customerCode,
           pickupAddress: params.sender.address,
           pickupProvince: params.sender.province,
           pickupCity: params.sender.city,
           pickupCounty: params.sender.district,
           deliveryAddress: params.receiver.address,
-        }),
+        } as PrecheckDto),
     });
 
     const orderRes = await this.callWithRetry({
@@ -197,7 +211,7 @@ export class LogisticsIntegrationService {
       action: LogisticsApiAction.CREATE_ORDER,
       requestPayload: params,
       handler: async () =>
-        this.jdlLogisticsService.createOrder({
+        provider.createOrder({
           customerCode,
           orderId: params.orderId.toString(),
           senderName: params.sender.name,
@@ -209,7 +223,7 @@ export class LogisticsIntegrationService {
           packageCount: 1,
           weight: 1,
           goodsName: params.cargo.map((c) => c.name).join(','),
-        }),
+        } as CreateOrderDto),
     });
 
     const waybillCode =
@@ -225,11 +239,13 @@ export class LogisticsIntegrationService {
       action: LogisticsApiAction.SUBSCRIBE_TRACE,
       requestPayload: { waybillCode },
       handler: async () =>
-        this.jdlLogisticsService.subscribeTrace({
+        provider.subscribeTrace({
           customerCode,
           waybillCode,
-        }),
+        } as SubscribeTraceDto),
     });
+
+    this.logger.log(`Successfully created pickup order: ${waybillCode}`);
 
     return {
       logisticsNo: String(waybillCode),

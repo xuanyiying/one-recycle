@@ -1,18 +1,23 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { LogisticsService } from './logistics.service';
 import { LogisticsController } from './logistics.controller';
 import { PrismaModule } from '@/prisma/prisma.module';
-import { JdlLogisticsService } from './providers/jd-provider';
 import { LogisticsIntegrationService } from './logistics-integration.service';
+import { LogisticsProviderFactory } from './providers/logistics-provider.factory';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, ConfigModule],
   controllers: [LogisticsController],
   providers: [
     LogisticsService,
-    JdlLogisticsService,
+    LogisticsProviderFactory,
     LogisticsIntegrationService,
   ],
-  exports: [LogisticsService, JdlLogisticsService, LogisticsIntegrationService],
+  exports: [
+    LogisticsService,
+    LogisticsIntegrationService,
+    LogisticsProviderFactory,
+  ],
 })
 export class LogisticsModule {}
