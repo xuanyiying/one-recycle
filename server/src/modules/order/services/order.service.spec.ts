@@ -9,7 +9,7 @@ import { InventoryService } from '@/modules/inventory/services/inventory.service
 import { AccountService } from '@/modules/account/account.service';
 import { PaymentService } from '@/modules/payment/payment.service';
 import { OrderQueueService } from '@/modules/queue/services/order-queue.service';
-import { PaymentProvider } from '@prisma/client';
+import { PaymentProvider, Prisma } from '@prisma/client';
 
 describe('OrderService', () => {
   let service: OrderService;
@@ -51,7 +51,7 @@ describe('OrderService', () => {
     orderTimeline: {
       create: jest.fn(),
     },
-    logistics_order: {
+    logisticsOrder: {
       findFirst: jest.fn(),
       update: jest.fn(),
       create: jest.fn(),
@@ -70,7 +70,7 @@ describe('OrderService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
     },
-    inbound_receipt: {
+    inboundReceipt: {
       upsert: jest.fn(),
     },
     orderPhoto: {
@@ -323,7 +323,7 @@ describe('OrderService', () => {
       });
       mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
         cb({
-          logistics_order: {
+          logisticsOrder: {
             create: logisticsCreate,
           },
           order: {
@@ -490,7 +490,7 @@ describe('OrderService', () => {
       const updatedOrder = {
         ...order,
         status: OrderStatus.INSPECTED,
-        settlement_amount: 88,
+        settlementAmount: 88,
       };
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...order,
@@ -506,6 +506,7 @@ describe('OrderService', () => {
               id: BigInt(order.id),
               userId: BigInt(order.userId),
               addressId: BigInt(order.addressId),
+              settlementAmount: new Prisma.Decimal(88),
             }),
           },
           orderItem: {
@@ -521,6 +522,7 @@ describe('OrderService', () => {
         id: BigInt(order.id),
         userId: BigInt(order.userId),
         addressId: BigInt(order.addressId),
+        settlementAmount: new Prisma.Decimal(88),
       });
 
       const result = await service.finishInspection(order.id, {
@@ -609,7 +611,7 @@ describe('OrderService', () => {
       mockPrismaService.warehouse.findFirst.mockResolvedValue({
         id: BigInt(1),
       });
-      mockPrismaService.inbound_receipt.upsert.mockResolvedValue({});
+      mockPrismaService.inboundReceipt.upsert.mockResolvedValue({});
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...order,
         id: BigInt(order.id),
@@ -642,21 +644,38 @@ describe('OrderService', () => {
       const order = {
         ...baseOrder,
         status: OrderStatus.PENDING_SETTLEMENT,
-        settlement_amount: 66,
+        settlementAmount: 66,
       };
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...order,
         id: BigInt(order.id),
         userId: BigInt(order.userId),
         addressId: BigInt(order.addressId),
+        settlementAmount: new Prisma.Decimal(66),
       });
-      mockPrismaService.order.update.mockResolvedValue({
-        ...order,
-        status: OrderStatus.COMPLETED,
-        id: BigInt(order.id),
-        userId: BigInt(order.userId),
-        addressId: BigInt(order.addressId),
-      });
+      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
+        cb({
+          order: {
+            findUnique: jest.fn().mockResolvedValue({
+              ...order,
+              id: BigInt(order.id),
+              userId: BigInt(order.userId),
+              addressId: BigInt(order.addressId),
+              settlementAmount: new Prisma.Decimal(66),
+            }),
+            update: jest.fn().mockResolvedValue({
+              ...order,
+              status: OrderStatus.COMPLETED,
+              id: BigInt(order.id),
+              userId: BigInt(order.userId),
+              addressId: BigInt(order.addressId),
+            }),
+          },
+          orderTimeline: {
+            create: jest.fn().mockResolvedValue({}),
+          },
+        }),
+      );
 
       const result = await service.completeSettlement(order.id, {
         method: PaymentProvider.BALANCE,

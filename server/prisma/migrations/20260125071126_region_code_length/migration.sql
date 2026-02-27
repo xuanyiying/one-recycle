@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "regions" ALTER COLUMN "code" SET DATA TYPE VARCHAR(12),
+ALTER COLUMN "parent_code" SET DATA TYPE VARCHAR(12);

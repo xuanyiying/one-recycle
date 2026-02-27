@@ -254,7 +254,7 @@ export class RedisSnowflakeStateStore implements SnowflakeStateStore {
       get<T = any>(key: string): Promise<T | null>;
       set(key: string, value: any, ttl?: number): Promise<void>;
     },
-  ) {}
+  ) { }
 
   async load(key: string): Promise<SnowflakeState | null> {
     return await this.store.get<SnowflakeState>(key);
@@ -716,7 +716,7 @@ export function generateShortId(size?: number): string {
  * 格式: ORD + 雪花算法ID + 校验码
  * 示例: ORD1234567890123456789A1B
  */
-export function generateOrderNumber(prefix: string = 'ORD'): string {
+export function generateorderNo(prefix: string = 'ORD'): string {
   const snowflakeId = defaultSnowflakeGenerator.nextId();
   const checksum = generateChecksum(snowflakeId);
   return `${prefix}${snowflakeId}${checksum}`;
@@ -1186,15 +1186,15 @@ export class IdValidator {
   /**
    * 验证订单号格式
    */
-  public static validateOrderNumber(
-    orderNumber: string,
+  public static validateorderNo(
+    orderNo: string,
     prefix: string = 'ORD',
   ): boolean {
-    if (!orderNumber.startsWith(prefix)) {
+    if (!orderNo.startsWith(prefix)) {
       return false;
     }
 
-    const idPart = orderNumber.substring(prefix.length);
+    const idPart = orderNo.substring(prefix.length);
     // 检查是否包含雪花算法ID和校验码
     return idPart.length >= 20; // 最少19位雪花ID + 1位校验码
   }
@@ -1286,8 +1286,8 @@ export function safeGenerateId<T extends (...args: any[]) => string>(
 /**
  * 增强版订单号生成器（带监控和错误处理）
  */
-export const generateSecureOrderNumber = withMetrics(
-  safeGenerateId(generateOrderNumber, 'order'),
+export const generateSecureorderNo = withMetrics(
+  safeGenerateId(generateorderNo, 'order'),
   'secure-order',
 );
 
@@ -1317,7 +1317,7 @@ export const generateSecureRefundNumber = withMetrics(
  * @example
  * ```typescript
  * // 1. 基本使用
- * const orderId = generateOrderNumber(); // ORD1234567890123456789A1B
+ * const orderId = generateorderNo(); // ORD1234567890123456789A1B
  * const paymentId = generatePaymentNumber(); // PAY1640995200000ABC123DEF456G7H
  * const refundId = generateRefundNumber(); // REF1234567890123456789XYZ
  *
@@ -1342,14 +1342,14 @@ export const generateSecureRefundNumber = withMetrics(
  * const batchIds = snowflake.nextIds(100);
  *
  * // 6. 安全生成（带错误处理）
- * const secureOrderId = generateSecureOrderNumber('ORD');
+ * const secureOrderId = generateSecureorderNo('ORD');
  *
  * // 7. 性能监控
  * const metrics = IdGeneratorMetrics.getMetrics('secure-order');
  * console.log(`平均生成时间: ${metrics?.avgTime}ms`);
  *
  * // 8. ID验证
- * const isValid = IdValidator.validateOrderNumber(orderId);
+ * const isValid = IdValidator.validateorderNo(orderId);
  *
  * // 9. 解析时间戳
  * const timestamp = snowflake.parseTimestamp(uniqueId);

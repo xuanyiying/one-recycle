@@ -109,6 +109,9 @@ model User {
   orderFeedback    OrderFeedback[]
   withdrawals      Withdrawal[]
   accounts         Account[]
+  chatSessions     ChatSession[]
+  serviceTickets   ServiceTicket[]
+  aiConversationLogs AIConversationLog[]
 
   @@index([mobile])
   @@index([email])
@@ -236,6 +239,7 @@ model Order {
   tenantId BigInt?  @map("tenant_id")
   settlementRecord SettlementRecord?
   inboundReceipt InboundReceipt?
+  serviceTickets ServiceTicket[]
 
   @@index([userId])
   @@index([status])
@@ -1235,6 +1239,10 @@ model Staff {
   tenant Tenant @relation(fields: [tenantId], references: [id])
   role Role @relation(fields: [roleId], references: [id])
   inbound_receipts InboundReceipt[]
+  chatSessions ChatSession[]
+  serviceTickets ServiceTicket[] @relation("StaffToServiceTicket")
+  ticketHistories TicketHistory[]
+  quickReplies QuickReply[]
 
   @@index([tenantId])
   @@index([roleId])
@@ -1409,40 +1417,22 @@ model InboundReceipt {
   @@map("inbound_receipts")
 }
 
-
-// Storage
-
-/// 文件存储记录
-/// 字段与服务端 StorageService 上传/读取/删除接口完全对齐
-/// - filename: 文件名（不含路径）
-/// - originalName: 原始上传名（用于展示）
-/// - fileSize: 文件大小（字节）
-/// - mimeType: MIME 类型（如 image/jpeg）
-/// - fileUrl: 访问 URL（可能为预签名或公开地址）
-/// - filePath: 存储对象键（如 orders/{orderId}/photos/{ts}_{rand}.jpg）
-/// - hashMd5: 文件内容 MD5（用于秒传/去重）
-/// - fileType: 文件类型枚举（IMAGE/VIDEO/DOCUMENT/AUDIO/OTHER）
-/// - category: 业务分类（例如 'ORDER_PHOTO'）
-/// - thumbnailUrl: 缩略图 URL（如图片生成的预览）
-/// - ossType: 存储后端类型（MINIO/S3/OSS/...）
-/// - isPublic: 是否公开访问（影响访问权限）
-/// - downloadCount: 下载次数（统计用途）
 model Storage {
   id String @id @default(uuid()) @map("id")
-  userId String  @map("userId")
+  userId String  @map("user_id")
   filename String  @map("filename")
-  originalName String  @map("originalName")
-  fileSize Int  @map("fileSize")
-  mimeType String  @map("mimeType")
-  fileUrl String  @map("fileUrl")
-  filePath String  @map("filePath")
-  hashMd5 String  @map("hashMd5")
-  fileType FileType  @map("fileType")
+  originalName String  @map("original_name")
+  fileSize Int  @map("file_size")
+  mimeType String  @map("mime_type")
+  fileUrl String  @map("file_url")
+  filePath String  @map("file_path")
+  hashMd5 String  @map("hash_md5")
+  fileType FileType  @map("file_type")
   category String?  @map("category")
-  thumbnailUrl String?  @map("thumbnailUrl")  
-  ossType OssType  @map("ossType")
-  createdAt DateTime @default(now()) @map("createdAt")
-  updatedAt DateTime @updatedAt @map("updatedAt")
+  thumbnailUrl String?  @map("thumbnail_url")  
+  ossType OssType  @map("oss_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   orderPhotos OrderPhoto[]
 
   @@index([userId])
@@ -1506,4 +1496,275 @@ model OrderPhoto {
   @@index([uploadedAt])
   @@unique([orderId, filePath]) // 防止同一订单重复对象键
   @@map("order_photos")
+}
+
+// ============================================
+// Customer Service Module - 智能客服模块
+// ============================================
+
+/// 客服会话表
+model ChatSession {
+  id BigInt @id @default(autoincrement()) @map("id")
+  userId BigInt @map("user_id")
+  agentId BigInt? @map("agent_id")
+  type ChatSessionType @default(AUTO) @map("type") // AUTO:智能客服, MANUAL:人工客服
+  status ChatSessionStatus @default(ACTIVE) @map("status")
+  topic String? @db.VarChar(200) @map("topic")
+  context Json? @map("context") // 会话上下文信息
+  satisfactionRating Int? @map("satisfaction_rating") // 1-5星
+  feedback String? @map("feedback") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  closedAt DateTime? @map("closed_at")
+
+  user User @relation(fields: [userId], references: [id])
+  agent Staff? @relation(fields: [agentId], references: [id])
+  messages ChatMessage[]
+  tickets ServiceTicket[]
+
+  @@index([userId])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("chat_sessions")
+}
+
+/// 聊天消息表
+model ChatMessage {
+  id BigInt @id @default(autoincrement()) @map("id")
+  sessionId BigInt @map("session_id")
+  senderType ChatSenderType @map("sender_type") // USER, AGENT, SYSTEM, AI
+  senderId BigInt? @map("sender_id")
+  messageType ChatMessageType @default(TEXT) @map("message_type") // TEXT, IMAGE, ORDER_CARD, TICKET_CARD, QUICK_ACTION
+  content String? @db.Text @map("content")
+  mediaUrl String? @map("media_url") @db.VarChar(512)
+  extraData Json? @map("extra_data") // 订单卡片、工单卡片等额外数据
+  status ChatMessageStatus @default(SENT) @map("status") // SENDING, SENT, DELIVERED, READ
+  isRead Boolean @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session ChatSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@index([senderType])
+  @@map("chat_messages")
+}
+
+/// 知识库表
+model KnowledgeBase {
+  id BigInt @id @default(autoincrement()) @map("id")
+  category KnowledgeCategory @map("category") // ORDER, RECYCLE, PAYMENT, LOGISTICS, GENERAL
+  question String @db.Text @map("question")
+  answer String @db.Text @map("answer")
+  keywords String[] @map("keywords")
+  intent String? @db.VarChar(100) @map("intent") // 意图识别标签
+  priority Int @default(0) @map("priority")
+  isActive Boolean @default(true) @map("is_active")
+  hitCount Int @default(0) @map("hit_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([isActive])
+  @@index([intent])
+  @@map("knowledge_base")
+}
+
+/// 客服工单表
+model ServiceTicket {
+  id BigInt @id @default(autoincrement()) @map("id")
+  ticketNo String @unique @db.VarChar(32) @map("ticket_no")
+  sessionId BigInt? @map("session_id")
+  userId BigInt @map("user_id")
+  orderId BigInt? @map("order_id")
+  type TicketType @map("type")
+  priority TicketPriority @default(NORMAL) @map("priority")
+  status TicketStatus @default(PENDING) @map("status")
+  title String @db.VarChar(200) @map("title")
+  description String? @db.Text @map("description")
+  attachments String[] @map("attachments")
+  assignedTo BigInt? @map("assigned_to")
+  resolution String? @db.Text @map("resolution")
+  resolvedAt DateTime? @map("resolved_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  closedAt DateTime? @map("closed_at")
+
+  session ChatSession? @relation(fields: [sessionId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+  assignee Staff? @relation("StaffToServiceTicket", fields: [assignedTo], references: [id])
+  histories TicketHistory[]
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@index([type])
+  @@index([assignedTo])
+  @@index([createdAt])
+  @@map("service_tickets")
+}
+
+/// 工单处理记录表
+model TicketHistory {
+  id BigInt @id @default(autoincrement()) @map("id")
+  ticketId BigInt @map("ticket_id")
+  operatorId BigInt? @map("operator_id")
+  action TicketAction @map("action") // CREATE, ASSIGN, UPDATE, RESOLVE, CLOSE, REOPEN
+  fromStatus TicketStatus? @map("from_status")
+  toStatus TicketStatus? @map("to_status")
+  comment String? @db.Text @map("comment")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket ServiceTicket @relation(fields: [ticketId], references: [id])
+  operator Staff? @relation(fields: [operatorId], references: [id])
+
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("ticket_histories")
+}
+
+/// 快捷回复表
+model QuickReply {
+  id BigInt @id @default(autoincrement()) @map("id")
+  agentId BigInt? @map("agent_id")
+  title String @db.VarChar(100) @map("title")
+  content String @db.Text @map("content")
+  category String? @db.VarChar(50) @map("category")
+  sortOrder Int @default(0) @map("sort_order")
+  isGlobal Boolean @default(false) @map("is_global")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agent Staff? @relation(fields: [agentId], references: [id])
+
+  @@index([agentId])
+  @@index([category])
+  @@map("quick_replies")
+}
+
+/// 客服统计表
+model CustomerServiceStats {
+  id BigInt @id @default(autoincrement()) @map("id")
+  date DateTime @db.Date @unique @map("date")
+  totalSessions Int @default(0) @map("total_sessions")
+  autoSessions Int @default(0) @map("auto_sessions")
+  manualSessions Int @default(0) @map("manual_sessions")
+  totalTickets Int @default(0) @map("total_tickets")
+  resolvedTickets Int @default(0) @map("resolved_tickets")
+  avgResponseTime Int? @map("avg_response_time") // 毫秒
+  avgSatisfaction Decimal? @map("avg_satisfaction") @db.Decimal(3,2)
+  aiResolveRate Decimal? @map("ai_resolve_rate") @db.Decimal(5,2) // AI解决率
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@map("customer_service_stats")
+}
+
+/// AI对话记录表（用于分析和优化）
+model AIConversationLog {
+  id BigInt @id @default(autoincrement()) @map("id")
+  sessionId BigInt @map("session_id")
+  userId BigInt @map("user_id")
+  userMessage String @db.Text @map("user_message")
+  intent String? @db.VarChar(100) @map("intent")
+  entities Json? @map("entities") // 提取的实体
+  aiResponse String? @db.Text @map("ai_response")
+  confidence Decimal? @map("confidence") @db.Decimal(5,4)
+  isHelpful Boolean? @map("is_helpful") // 用户反馈是否有帮助
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([intent])
+  @@index([createdAt])
+  @@map("ai_conversation_logs")
+}
+
+// ============================================
+// Customer Service Enums
+// ============================================
+
+enum ChatSessionType {
+  AUTO      // 智能客服
+  MANUAL    // 人工客服
+}
+
+enum ChatSessionStatus {
+  ACTIVE    // 进行中
+  WAITING   // 排队等待
+  CLOSED    // 已关闭
+}
+
+enum ChatSenderType {
+  USER      // 用户
+  AGENT     // 客服人员
+  SYSTEM    // 系统消息
+  AI        // AI回复
+}
+
+enum ChatMessageType {
+  TEXT          // 文本消息
+  IMAGE         // 图片消息
+  VOICE         // 语音消息
+  ORDER_CARD    // 订单卡片
+  TICKET_CARD   // 工单卡片
+  QUICK_ACTION  // 快捷操作
+  SYSTEM_NOTICE // 系统通知
+}
+
+enum ChatMessageStatus {
+  SENDING   // 发送中
+  SENT      // 已发送
+  DELIVERED // 已送达
+  READ      // 已读
+  FAILED    // 发送失败
+}
+
+enum KnowledgeCategory {
+  ORDER      // 订单相关
+  RECYCLE    // 回收相关
+  PAYMENT    // 支付相关
+  LOGISTICS  // 物流相关
+  ACCOUNT    // 账户相关
+  GENERAL    // 通用问题
+}
+
+enum TicketType {
+  ORDER_CANCEL      // 订单取消
+  ORDER_MODIFY      // 订单修改
+  REFUND_REQUEST    // 退款申请
+  LOGISTICS_ISSUE   // 物流异常
+  RECYCLE_ISSUE     // 回收问题
+  PRICE_DISPUTE     // 价格异议
+  TIME_RESCHEDULE   // 时间调整
+  COMPLAINT         // 投诉建议
+  OTHER             // 其他
+}
+
+enum TicketPriority {
+  LOW       // 低优先级
+  NORMAL    // 普通
+  HIGH      // 高优先级
+  URGENT    // 紧急
+}
+
+enum TicketStatus {
+  PENDING     // 待处理
+  PROCESSING  // 处理中
+  RESOLVED    // 已解决
+  CLOSED      // 已关闭
+  REOPENED    // 已重开
+}
+
+enum TicketAction {
+  CREATE    // 创建
+  ASSIGN    // 分配
+  UPDATE    // 更新
+  RESOLVE   // 解决
+  CLOSE     // 关闭
+  REOPEN    // 重开
 }

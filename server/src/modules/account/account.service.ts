@@ -58,19 +58,21 @@ export class AccountService {
   ): Promise<Account> {
     const id = BigInt(userId);
 
-    let account = await this.prisma.account.findUnique({
+    const account = await this.prisma.account.upsert({
       where: {
         userId_accountType: { userId: id, accountType: AccountType.WALLET },
       },
+      update: {},
+      create: {
+        userId: id,
+        accountType: AccountType.WALLET,
+        accountDetails: {},
+        availableBalance: 0,
+        frozenBalance: 0,
+        totalIncome: 0,
+        totalWithdrawal: 0,
+      },
     });
-
-    // 兜底策略：如果账户不存在则自动创建
-    if (!account) {
-      this.logger.warn(
-        `Account not found for user ${userId}, auto-creating...`,
-      );
-      account = await this.createAccount(id);
-    }
 
     return account;
   }
@@ -83,11 +85,12 @@ export class AccountService {
       where: { userId: id },
     });
 
+    const totalIncome = toNumber(account.totalIncome);
+
     return {
       totalOrders,
-      totalIncome: account.totalIncome,
-      // 估算减碳量：假设每1元回收收益对应0.02kg碳减排
-      savedCarbon: toNumber(account.totalIncome) * this.CARBON_SAVING_RATE,
+      totalIncome,
+      savedCarbon: totalIncome * this.CARBON_SAVING_RATE,
     };
   }
 

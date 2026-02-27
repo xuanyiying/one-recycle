@@ -13,7 +13,7 @@
 import {
   generateUniqueId,
   generateShortId,
-  generateSecureOrderNumber,
+  generateSecureorderNo,
   generateSecurePaymentNumber,
   SnowflakeIdGenerator,
   NanoIdGenerator,
@@ -252,7 +252,7 @@ async function runPerformanceTests(): Promise<void> {
     );
     results.push(testGeneratorPerformance('NanoID', () => generateShortId()));
     results.push(
-      testGeneratorPerformance('订单号', () => generateSecureOrderNumber()),
+      testGeneratorPerformance('订单号', () => generateSecureorderNo()),
     );
     results.push(
       testGeneratorPerformance('支付单号', () => generateSecurePaymentNumber()),
@@ -281,7 +281,7 @@ async function runPerformanceTests(): Promise<void> {
     );
     results.push(
       await testConcurrentPerformance('订单号', () =>
-        generateSecureOrderNumber(),
+        generateSecureorderNo(),
       ),
     );
 

@@ -10,7 +10,7 @@ export class LogisticsIntegrationService {
     private readonly prisma: PrismaService,
     private readonly jdlLogisticsService: JdlLogisticsService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private async upsertCallLog(params: {
     idempotencyKey: string;
@@ -167,9 +167,13 @@ export class LogisticsIntegrationService {
     providerData?: any;
   }> {
     const providerCode = 'JD';
-    const customerCode =
-      this.configService.get<string>('JDL_CUSTOMER_CODE') ||
-      'YOUR_CUSTOMER_CODE';
+    const customerCode = this.configService.get<string>('JDL_CUSTOMER_CODE');
+
+    if (!customerCode) {
+      throw new Error(
+        'JDL_CUSTOMER_CODE is not configured. Please set JDL_CUSTOMER_CODE environment variable.',
+      );
+    }
 
     await this.callWithRetry({
       orderId: params.orderId,

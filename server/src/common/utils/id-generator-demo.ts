@@ -7,7 +7,7 @@ import {
   SnowflakeIdGenerator,
   NanoIdGenerator,
   IdValidator,
-  generateSecureOrderNumber,
+  generateSecureorderNo,
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
   generateUniqueId,
@@ -31,15 +31,15 @@ function demonstrateBasicIdGeneration() {
   console.log('短ID验证:', IdValidator.validateNanoId(shortId));
 
   // 生成业务ID
-  const orderNumber = generateSecureOrderNumber();
+  const orderNo = generateSecureorderNo();
   const paymentNumber = generateSecurePaymentNumber();
   const refundNumber = generateSecureRefundNumber();
 
-  console.log('订单号:', orderNumber);
+  console.log('订单号:', orderNo);
   console.log('支付单号:', paymentNumber);
   console.log('退款单号:', refundNumber);
 
-  console.log('订单号验证:', IdValidator.validateOrderNumber(orderNumber));
+  console.log('订单号验证:', IdValidator.validateorderNo(orderNo));
   console.log(
     '支付单号验证:',
     IdValidator.validatePaymentNumber(paymentNumber),
@@ -174,8 +174,8 @@ function demonstrateBusinessScenarios() {
 
   // 模拟创建订单
   const orderId = generateUniqueId();
-  const orderNumber = generateSecureOrderNumber();
-  console.log('订单信息:', { orderId, orderNumber });
+  const orderNo = generateSecureorderNo();
+  console.log('订单信息:', { orderId, orderNo });
 
   // 模拟支付流程
   const paymentId = generateUniqueId();
@@ -210,7 +210,7 @@ async function runDemo() {
     console.log('\n📋 使用说明:');
     console.log('1. 使用 generateUniqueId() 生成全局唯一的雪花算法ID');
     console.log('2. 使用 generateShortId() 生成短的NanoID');
-    console.log('3. 使用 generateSecureOrderNumber() 生成安全的订单号');
+    console.log('3. 使用 generateSecureorderNo() 生成安全的订单号');
     console.log('4. 使用 generateSecurePaymentNumber() 生成安全的支付单号');
     console.log('5. 使用 generateSecureRefundNumber() 生成安全的退款单号');
     console.log('6. 使用 IdValidator 验证各种ID格式');

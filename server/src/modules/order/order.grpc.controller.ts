@@ -10,11 +10,11 @@ import {
   ListOrdersRequest,
   ListOrdersResponse,
 } from '../../proto/order.pb';
-import { generateSecureOrderNumber } from '@/common';
+import { generateSecureorderNo } from '@/common';
 
 @Controller()
 export class OrderGrpcController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) { }
 
   @GrpcMethod('OrderService', 'GetOrder')
   async getOrder(data: GetOrderRequest): Promise<GetOrderResponse> {
@@ -29,7 +29,7 @@ export class OrderGrpcController {
   @GrpcMethod('OrderService', 'CreateOrder')
   async createOrder(data: CreateOrderRequest): Promise<GetOrderResponse> {
     try {
-      const orderNo = generateSecureOrderNumber();
+      const orderNo = generateSecureorderNo();
       const order = await this.orderService.createRecycleOrder({
         orderNo,
         userId: data.userId,

@@ -1,6 +1,5 @@
-import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { AccountService } from '@/modules/account/account.service';
 import {
   NotFoundException,
   ValidationException,
@@ -13,17 +12,13 @@ import {
   QueryUserDto,
 } from '@/modules/user/dto';
 import { UserRole } from '@/common/types/auth.types';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User, AccountType } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(forwardRef(() => AccountService))
-    private readonly accountService: AccountService,
-  ) {}
+  ) { }
 
   async getStats(): Promise<{
     totalUsers: number;
@@ -50,7 +45,6 @@ export class UserService {
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    // 检查手机号是否已存在
     if (createUserDto.mobile) {
       const existingUser = await this.prisma.user.findUnique({
         where: { mobile: createUserDto.mobile },
@@ -61,35 +55,43 @@ export class UserService {
       }
     }
 
-    // 1. 创建用户
-    const newUser = await this.prisma.user.create({
-      data: {
-        mobile: createUserDto.mobile,
-        nickname: createUserDto.nickname,
-        avatarUrl: createUserDto.avatarUrl,
-      },
-      select: {
-        id: true,
-        email: true,
-        mobile: true,
-        nickname: true,
-        avatarUrl: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          mobile: createUserDto.mobile,
+          nickname: createUserDto.nickname,
+          avatarUrl: createUserDto.avatarUrl,
+        },
+        select: {
+          id: true,
+          email: true,
+          mobile: true,
+          nickname: true,
+          avatarUrl: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      await tx.account.create({
+        data: {
+          userId: newUser.id,
+          accountType: AccountType.WALLET,
+          accountDetails: {},
+          availableBalance: 0,
+          frozenBalance: 0,
+          totalIncome: 0,
+          totalWithdrawal: 0,
+        },
+      });
+
+      return newUser;
     });
 
-    // 2. 异步创建关联账户
-    this.accountService.createAccount(newUser.id).catch((error) => {
-      this.logger.error(
-        `Failed to create account for user ${newUser.id} asynchronously: ${error.message}`,
-        error.stack,
-      );
-    });
-
-    return this.mapToUserResponse(newUser);
+    return this.mapToUserResponse(result);
   }
+
 
   async findOne(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({

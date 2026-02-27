@@ -22,15 +22,31 @@ export class JdlLogisticsService {
   private readonly logger = new Logger(JdlLogisticsService.name);
   private readonly axiosInstance: AxiosInstance;
   private readonly baseUrl: string;
+  private readonly apiKey: string;
+  private readonly customerCode: string;
 
   constructor(private readonly config: ConfigService) {
     this.baseUrl = this.config.get<string>(
       'JDL_BASE_URL',
       'https://api.jdl.com',
     );
+    this.apiKey = this.config.get<string>('JDL_API_KEY', '');
+    this.customerCode = this.config.get<string>('JDL_CUSTOMER_CODE', '');
+
+    if (!this.apiKey || !this.customerCode) {
+      this.logger.warn(
+        'JDL API Key or Customer Code not configured. Set JDL_API_KEY and JDL_CUSTOMER_CODE environment variables.',
+      );
+    }
+
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
       timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-Key': this.apiKey,
+        'X-Customer-Code': this.customerCode,
+      },
     });
 
     // Logging Interceptor
@@ -95,8 +111,8 @@ export class JdlLogisticsService {
     } catch (errors) {
       const messages = Array.isArray(errors)
         ? errors
-            .map((e) => Object.values(e.constraints || {}).join(', '))
-            .join('; ')
+          .map((e) => Object.values(e.constraints || {}).join(', '))
+          .join('; ')
         : String(errors);
       throw new BadRequestException(`Parameter Validation Failed: ${messages}`);
     }

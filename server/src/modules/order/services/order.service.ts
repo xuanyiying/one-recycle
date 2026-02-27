@@ -239,7 +239,10 @@ export class OrderService implements OnModuleInit {
     // 发送订单创建消息到队列
     await this.publishOrderCreatedEvent(order);
 
-    return this.mapToOrder(order);
+    const photoIds = this.extractPhotoIds([order]);
+    const storageMap = await this.getStorageMap(photoIds);
+
+    return this.mapToOrder(order, storageMap);
   }
 
   /**
@@ -397,8 +400,11 @@ export class OrderService implements OnModuleInit {
       this.prisma.order.count({ where }),
     ]);
 
+    const photoIds = this.extractPhotoIds(orders);
+    const storageMap = await this.getStorageMap(photoIds);
+
     return {
-      orders: orders.map((order) => this.mapToOrder(order)),
+      orders: orders.map((order) => this.mapToOrder(order, storageMap)),
       total,
     };
   }
@@ -421,7 +427,10 @@ export class OrderService implements OnModuleInit {
       throw new NotFoundException('Order not found');
     }
 
-    return this.mapToOrder(order);
+    const photoIds = this.extractPhotoIds([order]);
+    const storageMap = await this.getStorageMap(photoIds);
+
+    return this.mapToOrder(order, storageMap);
   }
 
   async findById(id: number): Promise<Order | null> {
@@ -433,7 +442,14 @@ export class OrderService implements OnModuleInit {
       },
     });
 
-    return order ? this.mapToOrder(order) : null;
+    if (!order) {
+      return null;
+    }
+
+    const photoIds = this.extractPhotoIds([order]);
+    const storageMap = await this.getStorageMap(photoIds);
+
+    return this.mapToOrder(order, storageMap);
   }
 
   /**
@@ -468,7 +484,10 @@ export class OrderService implements OnModuleInit {
       },
     });
 
-    return this.mapToOrder(order);
+    const photoIds = this.extractPhotoIds([order]);
+    const storageMap = await this.getStorageMap(photoIds);
+
+    return this.mapToOrder(order, storageMap);
   }
 
   async updateStatus(id: number, data: UpdateOrderDto): Promise<Order> {
@@ -525,7 +544,10 @@ export class OrderService implements OnModuleInit {
         });
       }
 
-      return this.mapToOrder(updated);
+      const photoIds = this.extractPhotoIds([updated]);
+      const storageMap = await this.getStorageMap(photoIds);
+
+      return this.mapToOrder(updated, storageMap);
     });
   }
 
@@ -658,7 +680,10 @@ export class OrderService implements OnModuleInit {
         },
       });
 
-      return this.mapToOrder(updated);
+      const photoIds = this.extractPhotoIds([updated]);
+      const storageMap = await this.getStorageMap(photoIds);
+
+      return this.mapToOrder(updated, storageMap);
     });
   }
 
@@ -715,7 +740,11 @@ export class OrderService implements OnModuleInit {
         address: true,
       },
     });
-    return orders.map((order) => this.mapToOrder(order));
+
+    const photoIds = this.extractPhotoIds(orders);
+    const storageMap = await this.getStorageMap(photoIds);
+
+    return orders.map((order) => this.mapToOrder(order, storageMap));
   }
 
   /**
@@ -810,7 +839,7 @@ export class OrderService implements OnModuleInit {
     return this.create(data);
   }
 
-  private mapToOrder(order: any): Order {
+  private mapToOrder(order: any, storageMap?: Map<string, { fileUrl: string; thumbnailUrl?: string | null }>): Order {
     const baseOrder: any = {
       ...order,
       id: Number(order.id),
@@ -830,12 +859,27 @@ export class OrderService implements OnModuleInit {
       baseOrder.discountAmount = toNumber(order.discountAmount);
 
     if (order.items) {
-      baseOrder.items = order.items.map((item: any) => ({
-        ...item,
-        id: Number(item.id),
-        orderId: Number(item.orderId),
-        categoryId: Number(item.categoryId),
-      }));
+      baseOrder.items = order.items.map((item: any) => {
+        const mappedItem: any = {
+          ...item,
+          id: Number(item.id),
+          orderId: Number(item.orderId),
+          categoryId: Number(item.categoryId),
+        };
+
+        if (item.photos && Array.isArray(item.photos) && storageMap) {
+          mappedItem.photos = item.photos.map((photoId: string) => {
+            const storage = storageMap.get(photoId);
+            return storage ? storage.fileUrl : photoId;
+          });
+          mappedItem.thumbnailUrls = item.photos.map((photoId: string) => {
+            const storage = storageMap.get(photoId);
+            return storage?.thumbnailUrl || storage?.fileUrl || null;
+          }).filter(Boolean);
+        }
+
+        return mappedItem;
+      });
     }
 
     if (order.assignments) {
@@ -848,6 +892,46 @@ export class OrderService implements OnModuleInit {
     }
 
     return baseOrder as Order;
+  }
+
+  private async getStorageMap(photoIds: string[]): Promise<Map<string, { fileUrl: string; thumbnailUrl?: string | null }>> {
+    const storageMap = new Map<string, { fileUrl: string; thumbnailUrl?: string | null }>();
+
+    if (!photoIds || photoIds.length === 0) {
+      return storageMap;
+    }
+
+    const storages = await this.prisma.storage.findMany({
+      where: { id: { in: photoIds } },
+      select: { id: true, fileUrl: true, thumbnailUrl: true },
+    });
+
+    for (const storage of storages) {
+      storageMap.set(storage.id, {
+        fileUrl: storage.fileUrl,
+        thumbnailUrl: storage.thumbnailUrl,
+      });
+    }
+
+    return storageMap;
+  }
+
+  private extractPhotoIds(orders: any[]): string[] {
+    const photoIds: string[] = [];
+    for (const order of orders) {
+      if (order.items) {
+        for (const item of order.items) {
+          if (item.photos && Array.isArray(item.photos)) {
+            for (const photoId of item.photos) {
+              if (typeof photoId === 'string' && photoId.length > 0) {
+                photoIds.push(photoId);
+              }
+            }
+          }
+        }
+      }
+    }
+    return [...new Set(photoIds)];
   }
 
   private parseBigInt(value: string | number, fieldName: string): bigint {
@@ -876,9 +960,9 @@ export class OrderService implements OnModuleInit {
         coordinates:
           order.latitude && order.longitude
             ? {
-                lat: order.latitude,
-                lng: order.longitude,
-              }
+              lat: order.latitude,
+              lng: order.longitude,
+            }
             : undefined,
       },
       scheduledTime:

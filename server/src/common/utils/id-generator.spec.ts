@@ -6,7 +6,7 @@ import {
   PersistentSnowflakeIdGenerator,
   RedisSnowflakeStateStore,
   IdGeneratorMetrics,
-  generateSecureOrderNumber,
+  generateSecureorderNo,
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
   generateUniqueId,
@@ -28,7 +28,7 @@ describe('分布式ID生成器规范测试', () => {
     });
 
     test('订单/支付/退款单号格式正确', () => {
-      const ord = generateSecureOrderNumber();
+      const ord = generateSecureorderNo();
       const pay = generateSecurePaymentNumber();
       const ref = generateSecureRefundNumber();
       expect(ord).toMatch(/^ORD\d+[A-Za-z0-9]+$/);

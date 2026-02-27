@@ -16,7 +16,7 @@
 
 ```bash
 # 项目内部使用，无需额外安装
-import { generateUniqueId, generateSecureOrderNumber } from './common.util';
+import { generateUniqueId, generateSecureorderNo } from './common.util';
 ```
 
 ## 🔧 快速开始
@@ -27,7 +27,7 @@ import { generateUniqueId, generateSecureOrderNumber } from './common.util';
 import {
   generateUniqueId,
   generateShortId,
-  generateSecureOrderNumber,
+  generateSecureorderNo,
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
   IdValidator
@@ -42,17 +42,17 @@ const shortId = generateShortId();
 console.log('短ID:', shortId); // 输出: V1StGXR8_Z5jdHi6B-myT
 
 // 生成业务单号
-const orderNumber = generateSecureOrderNumber();
+const orderNo = generateSecureorderNo();
 const paymentNumber = generateSecurePaymentNumber();
 const refundNumber = generateSecureRefundNumber();
 
-console.log('订单号:', orderNumber);   // 输出: ORD1703123456789ABC123ABCD
+console.log('订单号:', orderNo);   // 输出: ORD1703123456789ABC123ABCD
 console.log('支付单号:', paymentNumber); // 输出: PAY1703123456789XYZ456EFGH
 console.log('退款单号:', refundNumber);  // 输出: REF1703123456789DEF789IJKL
 
 // 验证ID格式
 console.log('ID验证:', IdValidator.validateSnowflakeId(uniqueId));
-console.log('订单号验证:', IdValidator.validateOrderNumber(orderNumber));
+console.log('订单号验证:', IdValidator.validateorderNo(orderNo));
 ```
 
 ### 高级使用
@@ -110,7 +110,7 @@ console.log('批量NanoID:', ids);
 |--------|------|--------|------|
 | `generateUniqueId()` | 生成全局唯一ID（雪花算法） | `string` | `"1234567890123456789"` |
 | `generateShortId(size?)` | 生成短ID（NanoID） | `string` | `"V1StGXR8_Z5jdHi6B"` |
-| `generateSecureOrderNumber()` | 生成安全订单号 | `string` | `"ORD1703123456789ABC123ABCD"` |
+| `generateSecureorderNo()` | 生成安全订单号 | `string` | `"ORD1703123456789ABC123ABCD"` |
 | `generateSecurePaymentNumber()` | 生成安全支付单号 | `string` | `"PAY1703123456789XYZ456EFGH"` |
 | `generateSecureRefundNumber()` | 生成安全退款单号 | `string` | `"REF1703123456789DEF789IJKL"` |
 
@@ -158,7 +158,7 @@ interface NanoIdConfig {
 |--------|------|------|--------|
 | `validateSnowflakeId(id)` | 验证雪花算法ID | `id: string` | `boolean` |
 | `validateNanoId(id, size?)` | 验证NanoID | `id: string, size?: number` | `boolean` |
-| `validateOrderNumber(orderNumber, prefix?)` | 验证订单号 | `orderNumber: string, prefix?: string` | `boolean` |
+| `validateorderNo(orderNo, prefix?)` | 验证订单号 | `orderNo: string, prefix?: string` | `boolean` |
 | `validatePaymentNumber(paymentNumber, prefix?)` | 验证支付单号 | `paymentNumber: string, prefix?: string` | `boolean` |
 
 ## 🔒 安全特性

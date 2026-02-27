@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { LogisticsService } from './logistics.service';
+import { LogisticsService, LogisticsProviderQueryParams } from './logistics.service';
 import { CreateLogisticsProviderDto } from './dto/create-provider.dto';
 import { UpdateLogisticsProviderDto } from './dto/update-provider.dto';
 
@@ -23,8 +23,23 @@ export class LogisticsController {
   }
 
   @Get('providers')
-  findAll() {
-    return this.logisticsService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('sortBy') sortBy?: 'name' | 'createdAt',
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ) {
+    const params: LogisticsProviderQueryParams = {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+      isActive: isActive !== undefined ? isActive === 'true' : undefined,
+      sortBy,
+      sortOrder,
+    };
+    return this.logisticsService.findAll(params);
   }
 
   @Get('providers/:id')

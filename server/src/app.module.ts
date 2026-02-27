@@ -32,6 +32,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { TenantModule } from './modules/tenant/tenant.module';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { CustomerServiceModule } from './modules/customer/customer.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -85,6 +86,7 @@ import { HealthModule } from './modules/health/health.module';
     TenantModule,
     PricingModule,
     StorageModule,
+    CustomerServiceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

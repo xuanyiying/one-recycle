@@ -11,7 +11,7 @@ import {
   PersistentSnowflakeIdGenerator,
   RedisSnowflakeStateStore,
   IdGeneratorMetrics,
-  generateSecureOrderNumber,
+  generateSecureorderNo,
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
   generateUniqueId,
@@ -292,23 +292,23 @@ describe('分布式ID生成器测试', () => {
 
   describe('订单号生成测试', () => {
     test('应该生成有效的订单号', () => {
-      const orderNumber = generateSecureOrderNumber();
+      const orderNo = generateSecureorderNo();
 
-      expect(orderNumber).toMatch(/^ORD\d+[A-Z0-9]+$/);
-      expect(IdValidator.validateOrderNumber(orderNumber)).toBe(true);
+      expect(orderNo).toMatch(/^ORD\d+[A-Z0-9]+$/);
+      expect(IdValidator.validateorderNo(orderNo)).toBe(true);
     });
 
     test('应该生成唯一的订单号', () => {
-      const orderNumbers = new Set();
+      const orderNos = new Set();
       const count = 1000;
 
       for (let i = 0; i < count; i++) {
-        const orderNumber = generateSecureOrderNumber();
-        expect(orderNumbers.has(orderNumber)).toBe(false);
-        orderNumbers.add(orderNumber);
+        const orderNo = generateSecureorderNo();
+        expect(orderNos.has(orderNo)).toBe(false);
+        orderNos.add(orderNo);
       }
 
-      expect(orderNumbers.size).toBe(count);
+      expect(orderNos.size).toBe(count);
     });
   });
 
@@ -383,11 +383,11 @@ describe('分布式ID生成器测试', () => {
     });
 
     test('应该正确验证订单号格式', () => {
-      const validOrderNumber = generateSecureRefundNumber();
+      const validorderNo = generateSecureRefundNumber();
 
-      expect(IdValidator.validateOrderNumber(validOrderNumber)).toBe(true);
-      expect(IdValidator.validateOrderNumber('ORD123')).toBe(false);
-      expect(IdValidator.validateOrderNumber('INVALID')).toBe(false);
+      expect(IdValidator.validateorderNo(validorderNo)).toBe(true);
+      expect(IdValidator.validateorderNo('ORD123')).toBe(false);
+      expect(IdValidator.validateorderNo('INVALID')).toBe(false);
     });
   });
 
