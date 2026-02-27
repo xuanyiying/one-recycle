@@ -94,7 +94,7 @@ export default function OrdersPage() {
   ]);
 
   const [visibleColumns, setVisibleColumns] = useState({
-    orderNumber: true,
+    orderNo: true,
     customerInfo: true,
     amount: true,
     status: true,
@@ -555,8 +555,8 @@ export default function OrdersPage() {
                     <DropdownMenuLabel>切换列</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuCheckboxItem
-                      checked={visibleColumns.orderNumber}
-                      onCheckedChange={() => toggleColumn('orderNumber')}
+                      checked={visibleColumns.orderNo}
+                      onCheckedChange={() => toggleColumn('orderNo')}
                     >
                       订单号
                     </DropdownMenuCheckboxItem>
@@ -627,7 +627,7 @@ export default function OrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {visibleColumns.orderNumber && <TableHead>订单号</TableHead>}
+                    {visibleColumns.orderNo && <TableHead>订单号</TableHead>}
                     {visibleColumns.customerInfo && <TableHead>客户信息</TableHead>}
                     {visibleColumns.amount && <TableHead>金额</TableHead>}
                     {visibleColumns.status && <TableHead>状态</TableHead>}
@@ -640,7 +640,7 @@ export default function OrdersPage() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, index) => (
                       <TableRow key={index} className={density === 'compact' ? 'h-10' : 'h-16'}>
-                        {visibleColumns.orderNumber && (
+                        {visibleColumns.orderNo && (
                           <TableCell>
                             <Skeleton className="h-4 w-[120px]" />
                           </TableCell>
@@ -689,7 +689,7 @@ export default function OrdersPage() {
                   ) : (
                     data?.orders.map((order) => (
                       <TableRow key={order.id} className={density === 'compact' ? 'py-1' : ''}>
-                        {visibleColumns.orderNumber && (
+                        {visibleColumns.orderNo && (
                           <TableCell className="font-medium">{order.orderNo}</TableCell>
                         )}
                         {visibleColumns.customerInfo && (

@@ -16,12 +16,15 @@ import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { staffService } from '@/services/staffService';
+import { userService, UserStats } from '@/services/userService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, UserListResponse, UserRole, UserQueryParams } from '@/types/user';
+import { User, UserListResponse, UserRole, UserQueryParams, UserStatus } from '@/types/user';
 import { toast } from '@/components/ui/toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Plus, Search, Edit, Trash2, RotateCw } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, RotateCw, Eye, Download, UserPlus, Users, UserCheck, UserX } from 'lucide-react';
 import UserModal from './components/UserModal';
+import UserDetailModal from './components/UserDetailModal';
+import UserStatsCards from './components/UserStatsCards';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UsersPage() {
@@ -29,34 +32,32 @@ export default function UsersPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // URL Params
   const page = Number(searchParams.get('page')) || 1;
   const limit = Number(searchParams.get('limit')) || 10;
   const search = searchParams.get('search') || '';
   const role = searchParams.get('role') || '';
 
-  // Local State
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<UserListResponse | null>(null);
   const [searchInput, setSearchInput] = useState(search);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
   const debouncedSearch = useDebounce(searchInput, 500);
 
-  // Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
 
-  // Sync Search Input with URL
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
 
-  // Update URL on Search Change (Debounced)
   useEffect(() => {
     if (debouncedSearch !== search) {
       updateUrl({ search: debouncedSearch, page: 1 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
   const fetchUsers = useCallback(async () => {
@@ -78,9 +79,19 @@ export default function UsersPage() {
     }
   }, [page, limit, search, role]);
 
+  const fetchUserStats = useCallback(async () => {
+    try {
+      const stats = await userService.getUserStats();
+      setUserStats(stats);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchUserStats();
+  }, [fetchUsers, fetchUserStats]);
 
   const updateUrl = (newParams: Partial<UserQueryParams>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -112,6 +123,7 @@ export default function UsersPage() {
       await staffService.deleteStaff(id);
       toast.success('删除成功');
       fetchUsers();
+      fetchUserStats();
     } catch (error) {
       console.error(error);
       toast.error('删除失败');
@@ -126,6 +138,28 @@ export default function UsersPage() {
   const handleCreate = () => {
     setEditingUser(null);
     setModalVisible(true);
+  };
+
+  const handleViewDetail = (user: User) => {
+    setSelectedUser(user);
+    setDetailModalVisible(true);
+  };
+
+  const handleToggleStatus = async (user: User) => {
+    const newStatus = user.status === UserStatus.ACTIVE ? UserStatus.SUSPENDED : UserStatus.ACTIVE;
+    const actionText = newStatus === UserStatus.SUSPENDED ? '禁用' : '启用';
+    
+    if (!confirm(`确定要${actionText}该用户吗？`)) return;
+
+    try {
+      await userService.updateUserStatus(user.id, newStatus);
+      toast.success(`${actionText}成功`);
+      fetchUsers();
+      fetchUserStats();
+    } catch (error) {
+      console.error(error);
+      toast.error(`${actionText}失败`);
+    }
   };
 
   const handleModalOk = async (values: any) => {
@@ -146,6 +180,7 @@ export default function UsersPage() {
       }
       setModalVisible(false);
       fetchUsers();
+      fetchUserStats();
     } catch (error) {
       console.error(error);
       toast.error(editingUser ? '更新失败' : '创建失败');
@@ -154,15 +189,44 @@ export default function UsersPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const blob = await userService.exportUsers({
+        role: (role as UserRole) || undefined,
+        search: search || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `users_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('导出成功');
+    } catch (error) {
+      console.error(error);
+      toast.error('导出失败');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">用户管理</h1>
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          添加用户
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            导出
+          </Button>
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            添加用户
+          </Button>
+        </div>
       </div>
+
+      <UserStatsCards stats={userStats} />
 
       <Card>
         <CardHeader className="p-4">
@@ -189,7 +253,7 @@ export default function UsersPage() {
                 <option value={UserRole.CUSTOMER}>客户</option>
               </Select>
             </div>
-            <Button variant="outline" size="icon" onClick={() => fetchUsers()} title="刷新">
+            <Button variant="outline" size="icon" onClick={() => { fetchUsers(); fetchUserStats(); }} title="刷新">
               <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
@@ -209,11 +273,17 @@ export default function UsersPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    加载中...
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-8 w-[180px]" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[150px]" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-[60px] rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-[50px] rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                    <TableCell><Skeleton className="h-8 w-[120px] ml-auto" /></TableCell>
+                  </TableRow>
+                ))
               ) : data?.items?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
@@ -222,8 +292,8 @@ export default function UsersPage() {
                 </TableRow>
               ) : (
                 data?.items?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
+                  <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleViewDetail(user)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           {user.avatar ? (
@@ -253,18 +323,33 @@ export default function UsersPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                        {user.status}
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        user.status === 'active' ? 'bg-green-100 text-green-800' : 
+                        user.status === 'suspended' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.status === 'active' ? '活跃' : user.status === 'suspended' ? '已禁用' : user.status}
                       </span>
                     </TableCell>
                     <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(user)}>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end space-x-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetail(user)} title="查看详情">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(user)} title="编辑">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(user.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleToggleStatus(user)} 
+                          title={user.status === UserStatus.ACTIVE ? '禁用' : '启用'}
+                          className={user.status === UserStatus.ACTIVE ? 'text-orange-600 hover:text-orange-700' : 'text-green-600 hover:text-green-700'}
+                        >
+                          {user.status === UserStatus.ACTIVE ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(user.id)} title="删除" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -294,6 +379,12 @@ export default function UsersPage() {
         onCancel={() => setModalVisible(false)}
         onOk={handleModalOk}
         loading={modalLoading}
+      />
+
+      <UserDetailModal
+        visible={detailModalVisible}
+        user={selectedUser}
+        onCancel={() => setDetailModalVisible(false)}
       />
     </div>
   );

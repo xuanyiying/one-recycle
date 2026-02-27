@@ -6,6 +6,7 @@ import { dashboardApi, DashboardStats, RecentOrder, InventoryAlert } from '@/ser
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -20,12 +21,35 @@ import {
   Users,
   Clock,
   TrendingUp,
+  TrendingDown,
   AlertTriangle,
   RefreshCw,
   Eye,
+  BarChart3,
+  LineChart,
 } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  LineChart as RechartsLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  Legend,
+} from 'recharts';
+
+interface TrendData {
+  date: string;
+  orders: number;
+  revenue: number;
+  users: number;
+}
 
 const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -44,7 +68,25 @@ const DashboardPage: React.FC = () => {
 
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>([]);
+  const [trendData, setTrendData] = useState<TrendData[]>([]);
+  const [trendPeriod, setTrendPeriod] = useState<'7d' | '30d'>('7d');
   const [error, setError] = useState<string | null>(null);
+
+  const generateMockTrendData = (days: number): TrendData[] => {
+    const data: TrendData[] = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      data.push({
+        date: date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }),
+        orders: Math.floor(Math.random() * 50) + 20,
+        revenue: Math.floor(Math.random() * 10000) + 5000,
+        users: Math.floor(Math.random() * 20) + 5,
+      });
+    }
+    return data;
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -54,6 +96,7 @@ const DashboardPage: React.FC = () => {
       setStats(data.stats);
       setRecentOrders(data.recentOrders);
       setInventoryAlerts(data.inventoryAlerts);
+      setTrendData(generateMockTrendData(trendPeriod === '7d' ? 7 : 30));
     } catch (error: any) {
       console.error('Failed to load dashboard data:', error);
       setError(error.message || '加载数据失败，请检查网络连接');
@@ -65,6 +108,10 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  useEffect(() => {
+    setTrendData(generateMockTrendData(trendPeriod === '7d' ? 7 : 30));
+  }, [trendPeriod]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -94,6 +141,10 @@ const DashboardPage: React.FC = () => {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
+  };
+
+  const formatCurrency = (value: number) => {
+    return `¥${value.toLocaleString()}`;
   };
 
   if (error) {
@@ -144,8 +195,14 @@ const DashboardPage: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalOrders}</div>
                 <p className="text-xs text-muted-foreground flex items-center mt-1">
-                  <TrendingUp className="mr-1 h-3 w-3 text-success" />
-                  <span className="text-success">+{stats.orderGrowth}%</span>
+                  {stats.orderGrowth >= 0 ? (
+                    <TrendingUp className="mr-1 h-3 w-3 text-success" />
+                  ) : (
+                    <TrendingDown className="mr-1 h-3 w-3 text-destructive" />
+                  )}
+                  <span className={stats.orderGrowth >= 0 ? 'text-success' : 'text-destructive'}>
+                    {stats.orderGrowth >= 0 ? '+' : ''}{stats.orderGrowth}%
+                  </span>
                   <span className="ml-1">较上月</span>
                 </p>
               </CardContent>
@@ -158,8 +215,14 @@ const DashboardPage: React.FC = () => {
               <CardContent>
                 <div className="text-2xl font-bold">¥{stats.totalRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground flex items-center mt-1">
-                  <TrendingUp className="mr-1 h-3 w-3 text-success" />
-                  <span className="text-success">+{stats.revenueGrowth}%</span>
+                  {stats.revenueGrowth >= 0 ? (
+                    <TrendingUp className="mr-1 h-3 w-3 text-success" />
+                  ) : (
+                    <TrendingDown className="mr-1 h-3 w-3 text-destructive" />
+                  )}
+                  <span className={stats.revenueGrowth >= 0 ? 'text-success' : 'text-destructive'}>
+                    {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}%
+                  </span>
                   <span className="ml-1">较上月</span>
                 </p>
               </CardContent>
@@ -190,6 +253,120 @@ const DashboardPage: React.FC = () => {
             </Card>
           </>
         )}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center">
+              <LineChart className="mr-2 h-5 w-5" />
+              订单趋势
+            </CardTitle>
+            <div className="flex space-x-1">
+              <Button
+                variant={trendPeriod === '7d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTrendPeriod('7d')}
+              >
+                近7天
+              </Button>
+              <Button
+                variant={trendPeriod === '30d' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTrendPeriod('30d')}
+              >
+                近30天
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="orders" 
+                    stroke="hsl(var(--primary))" 
+                    fillOpacity={1} 
+                    fill="url(#colorOrders)"
+                    name="订单数"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BarChart3 className="mr-2 h-5 w-5" />
+              收入趋势
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={(value: number | undefined) => value !== undefined ? [`¥${value.toLocaleString()}`, '收入'] : ['', '']}
+                  />
+                  <Bar 
+                    dataKey="revenue" 
+                    fill="hsl(var(--primary))" 
+                    radius={[4, 4, 0, 0]}
+                    name="收入"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
