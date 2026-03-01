@@ -85,33 +85,34 @@ model Category {
 
 /// 用户主表
 model User {
-  id               BigInt            @id @default(autoincrement())
-  mobile           String?           @unique @db.VarChar(20)
-  email            String?           @unique @db.VarChar(100)
-  nickname         String?           @db.VarChar(50)
-  realName         String?           @map("real_name") @db.VarChar(50)
-  avatarUrl        String?           @map("avatar_url") @db.VarChar(255)
-  gender           String? // male, female, other
-  birthday         DateTime?
-  status           UserStatus        @default(ACTIVE)
-  level            Int               @default(0) // 用户等级
-  points           Int               @default(0) @map("points") // 积分
-  balance          Decimal           @default(0) @map("balance") @db.Decimal(12, 2) // 余额
-  lastLogin        DateTime?         @map("last_login")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
-  identities       UserIdentity[]
-  addresses        Address[]
-  orders           Order[]
-  favorites        UserFavorite[]
-  feedbacks        UserFeedback[]
-  courierFeedbacks CourierFeedback[]
-  orderFeedback    OrderFeedback[]
-  withdrawals      Withdrawal[]
-  accounts         Account[]
-  chatSessions     ChatSession[]
-  serviceTickets   ServiceTicket[]
+  id                 BigInt              @id @default(autoincrement())
+  mobile             String?             @unique @db.VarChar(20)
+  email              String?             @unique @db.VarChar(100)
+  nickname           String?             @db.VarChar(50)
+  realName           String?             @map("real_name") @db.VarChar(50)
+  avatarUrl          String?             @map("avatar_url") @db.VarChar(255)
+  gender             String? // male, female, other
+  birthday           DateTime?
+  status             UserStatus          @default(ACTIVE)
+  level              Int                 @default(0) // 用户等级
+  points             Int                 @default(0) @map("points") // 积分
+  balance            Decimal             @default(0) @map("balance") @db.Decimal(12, 2) // 余额
+  lastLogin          DateTime?           @map("last_login")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  identities         UserIdentity[]
+  addresses          Address[]
+  orders             Order[]
+  favorites          UserFavorite[]
+  feedbacks          UserFeedback[]
+  courierFeedbacks   CourierFeedback[]
+  orderFeedback      OrderFeedback[]
+  withdrawals        Withdrawal[]
+  accounts           Account[]
+  chatSessions       ChatSession[]
+  serviceTickets     ServiceTicket[]
   aiConversationLogs AIConversationLog[]
+  voiceOrderSessions VoiceOrderSession[]
 
   @@index([mobile])
   @@index([email])
@@ -121,22 +122,22 @@ model User {
 
 /// 用户地址表
 model Address {
-  id BigInt @id @default(autoincrement()) @map("id")
-  userId BigInt @map("user_id")
-  name String @db.VarChar(50) @map("name") // 收货人
-  mobile String @db.VarChar(20) @map("mobile") // 手机号
-  province String @db.VarChar(50) @map("province") // 省
-  city String @db.VarChar(50) @map("city") // 市
-  district String @db.VarChar(50) @map("district") // 县 / 区
-  town String @db.VarChar(50) @map("town") // 乡镇 /街道办
-  street String @db.VarChar(50) @map("street") // 街道
-  zipCode String @map("zip_code") @db.VarChar(10) // 邮编
-  detail String @db.VarChar(255) @map("detail") // 详细地址
-  isDefault Boolean @default(false) @map("is_default")
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  userId    BigInt   @map("user_id")
+  name      String   @map("name") @db.VarChar(50) // 收货人
+  mobile    String   @map("mobile") @db.VarChar(20) // 手机号
+  province  String   @map("province") @db.VarChar(50) // 省
+  city      String   @map("city") @db.VarChar(50) // 市
+  district  String   @map("district") @db.VarChar(50) // 县 / 区
+  town      String   @map("town") @db.VarChar(50) // 乡镇 /街道办
+  street    String   @map("street") @db.VarChar(50) // 街道
+  zipCode   String   @map("zip_code") @db.VarChar(10) // 邮编
+  detail    String   @map("detail") @db.VarChar(255) // 详细地址
+  isDefault Boolean  @default(false) @map("is_default")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id])
-  orders Order[]
+  user      User     @relation(fields: [userId], references: [id])
+  orders    Order[]
 
   @@index([userId])
   @@map("addresses")
@@ -144,21 +145,21 @@ model Address {
 
 /// 用户多平台身份
 model UserIdentity {
-  id BigInt @id @default(autoincrement()) @map("id")
-  userId BigInt @map("user_id")
-  provider String @db.VarChar(20) @map("provider") // 'wechat', 'alipay', 'douyin', 'kuaishou'
-  appId String @map("app_id") @db.VarChar(100) // 平台应用ID
-  openid String @db.VarChar(100) @map("openid")
-  unionid String? @db.VarChar(100) @map("unionid")
-  sessionKey String? @map("session_key") @db.VarChar(100)
-  accessToken String? @map("access_token")
-  refreshToken String? @map("refresh_token")
-  expiresIn Int? @map("expires_in")
-  scope String? @db.VarChar(200) @map("scope")
-  extraData Json? @map("extra_data")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id])
+  id           BigInt   @id @default(autoincrement()) @map("id")
+  userId       BigInt   @map("user_id")
+  provider     String   @map("provider") @db.VarChar(20) // 'wechat', 'alipay', 'douyin', 'kuaishou'
+  appId        String   @map("app_id") @db.VarChar(100) // 平台应用ID
+  openid       String   @map("openid") @db.VarChar(100)
+  unionid      String?  @map("unionid") @db.VarChar(100)
+  sessionKey   String?  @map("session_key") @db.VarChar(100)
+  accessToken  String?  @map("access_token")
+  refreshToken String?  @map("refresh_token")
+  expiresIn    Int?     @map("expires_in")
+  scope        String?  @map("scope") @db.VarChar(200)
+  extraData    Json?    @map("extra_data")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  user         User     @relation(fields: [userId], references: [id])
 
   @@unique([provider, openid])
   @@index([userId])
@@ -173,73 +174,73 @@ enum UserStatus {
 }
 
 enum OrderStatus {
-  PENDING              // 待处理
-  PENDING_PICKUP       // 待取件
-  PICKED_UP            // 已取件
-  IN_TRANSIT           // 运输中
-  PENDING_RECEIPT      // 待收货
-  INSPECTING           // 验货中
-  INSPECTED            // 已验货
+  PENDING // 待处理
+  PENDING_PICKUP // 待取件
+  PICKED_UP // 已取件
+  IN_TRANSIT // 运输中
+  PENDING_RECEIPT // 待收货
+  INSPECTING // 验货中
+  INSPECTED // 已验货
   INSPECTION_EXCEPTION // 验货异常
-  MANUAL_PROCESSING    // 人工处理
-  PENDING_INBOUND      // 待入库
-  INBOUNDED            // 已入库
-  PENDING_SETTLEMENT   // 待结算
-  COMPLETED            // 已完成
-  REFUNDED             // 已退款
-  CANCELLED            // 已取消
+  MANUAL_PROCESSING // 人工处理
+  PENDING_INBOUND // 待入库
+  INBOUNDED // 已入库
+  PENDING_SETTLEMENT // 待结算
+  COMPLETED // 已完成
+  REFUNDED // 已退款
+  CANCELLED // 已取消
 }
 
 /// 订单表
 model Order {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderNo String @unique @map("order_no")
-  userId BigInt @map("user_id")
-  addressId BigInt @map("address_id")
-  orderType String @default("RECYCLE") @map("order_type")
-  status OrderStatus @default(PENDING) @map("status")
-  priority Int @default(0) @map("priority")
-  expectPickupTime DateTime? @map("expect_pickup_time")
-  actualPickupTime DateTime? @map("actual_pickup_time")
-  expectDeliveryTime DateTime? @map("expect_delivery_time")
-  actualDeliveryTime DateTime? @map("actual_delivery_time")
-  estimatedAmount Decimal @map("estimated_amount") @db.Decimal(12, 2)
-  settlementAmount Decimal @map("settlement_amount") @db.Decimal(12, 2)
-  payAmount Decimal @map("pay_amount") @db.Decimal(12, 2)
-  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(12, 2)
-  couponId String? @map("coupon_id")
-  channel String  @map("channel")
-  remark String?  @map("remark")
-  source String? @map("source") // 来源平台
-  sourceAppVersion String? @map("source_app_version")
-  longitude Float? @map("longitude") // 经度
-  latitude Float? @map("latitude") // 纬度
-  cancelReason String? @map("cancel_reason")
-  cancelAt DateTime? @map("cancel_at")
-  closedAt DateTime? @map("closed_at")
-  completedAt DateTime? @map("completed_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id])
-  address Address @relation(fields: [addressId], references: [id])
-  items OrderItem[]
-  assignments OrderAssignment[]
-  payments Payment[]
-  reservations Reservation[]
-  payment_logs PaymentLog[]
-  feedback OrderFeedback?
-  timeline OrderTimeline[]
-  userFeedbacks UserFeedback[]
-  courierFeedbacks CourierFeedback[]
-  logisticsOrder LogisticsOrder? // 物流单
-  logisticsApiCalls LogisticsApiCall[]
+  id                 BigInt                 @id @default(autoincrement()) @map("id")
+  orderNo            String                 @unique @map("order_no")
+  userId             BigInt                 @map("user_id")
+  addressId          BigInt                 @map("address_id")
+  orderType          String                 @default("RECYCLE") @map("order_type")
+  status             OrderStatus            @default(PENDING) @map("status")
+  priority           Int                    @default(0) @map("priority")
+  expectPickupTime   DateTime?              @map("expect_pickup_time")
+  actualPickupTime   DateTime?              @map("actual_pickup_time")
+  expectDeliveryTime DateTime?              @map("expect_delivery_time")
+  actualDeliveryTime DateTime?              @map("actual_delivery_time")
+  estimatedAmount    Decimal                @map("estimated_amount") @db.Decimal(12, 2)
+  settlementAmount   Decimal                @map("settlement_amount") @db.Decimal(12, 2)
+  payAmount          Decimal                @map("pay_amount") @db.Decimal(12, 2)
+  discountAmount     Decimal                @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  couponId           String?                @map("coupon_id")
+  channel            String                 @map("channel")
+  remark             String?                @map("remark")
+  source             String?                @map("source") // 来源平台
+  sourceAppVersion   String?                @map("source_app_version")
+  longitude          Float?                 @map("longitude") // 经度
+  latitude           Float?                 @map("latitude") // 纬度
+  cancelReason       String?                @map("cancel_reason")
+  cancelAt           DateTime?              @map("cancel_at")
+  closedAt           DateTime?              @map("closed_at")
+  completedAt        DateTime?              @map("completed_at")
+  createdAt          DateTime               @default(now()) @map("created_at")
+  updatedAt          DateTime               @updatedAt @map("updated_at")
+  user               User                   @relation(fields: [userId], references: [id])
+  address            Address                @relation(fields: [addressId], references: [id])
+  items              OrderItem[]
+  assignments        OrderAssignment[]
+  payments           Payment[]
+  reservations       Reservation[]
+  payment_logs       PaymentLog[]
+  feedback           OrderFeedback?
+  timeline           OrderTimeline[]
+  userFeedbacks      UserFeedback[]
+  courierFeedbacks   CourierFeedback[]
+  logisticsOrder     LogisticsOrder? // 物流单
+  logisticsApiCalls  LogisticsApiCall[]
   logisticsCallbacks LogisticsCallbackLog[]
-  photos OrderPhoto[] // 订单照片（与存储关联）
-  tenant Tenant? @relation(fields: [tenantId], references: [id])
-  tenantId BigInt?  @map("tenant_id")
-  settlementRecord SettlementRecord?
-  inboundReceipt InboundReceipt?
-  serviceTickets ServiceTicket[]
+  photos             OrderPhoto[] // 订单照片（与存储关联）
+  tenant             Tenant?                @relation(fields: [tenantId], references: [id])
+  tenantId           BigInt?                @map("tenant_id")
+  settlementRecord   SettlementRecord?
+  inboundReceipt     InboundReceipt?
+  serviceTickets     ServiceTicket[]
 
   @@index([userId])
   @@index([status])
@@ -270,28 +271,28 @@ enum LogisticsApiAction {
 
 /// 物流订单表
 model LogisticsOrder {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @map("order_id")
-  logisticsNo String? @unique @map("logistics_no") // 物流运单号
-  logisticsCompany String? @map("logistics_company") // 物流公司编码 (JD, SF, etc.)
-  status LogisticsStatus @default(CREATED) @map("status") // 物流状态
-  providerStatus String? @map("provider_status") @db.VarChar(50)
+  id               BigInt          @id @default(autoincrement()) @map("id")
+  orderId          BigInt          @map("order_id")
+  logisticsNo      String?         @unique @map("logistics_no") // 物流运单号
+  logisticsCompany String?         @map("logistics_company") // 物流公司编码 (JD, SF, etc.)
+  status           LogisticsStatus @default(CREATED) @map("status") // 物流状态
+  providerStatus   String?         @map("provider_status") @db.VarChar(50)
 
   // 寄件人快照
-  senderName String? @map("sender_name")
-  senderPhone String? @map("sender_phone")
+  senderName    String? @map("sender_name")
+  senderPhone   String? @map("sender_phone")
   senderAddress String? @map("sender_address")
 
   // 收件人快照
-  receiverName String? @map("receiver_name")
-  receiverPhone String? @map("receiver_phone")
+  receiverName    String? @map("receiver_name")
+  receiverPhone   String? @map("receiver_phone")
   receiverAddress String? @map("receiver_address")
 
   // 时间信息
-  estimatedPickupTime DateTime? @map("estimated_pickup_time")
-  actualPickupTime DateTime? @map("actual_pickup_time")
+  estimatedPickupTime   DateTime? @map("estimated_pickup_time")
+  actualPickupTime      DateTime? @map("actual_pickup_time")
   estimatedDeliveryTime DateTime? @map("estimated_delivery_time")
-  actualDeliveryTime DateTime? @map("actual_delivery_time")
+  actualDeliveryTime    DateTime? @map("actual_delivery_time")
 
   // 费用
   deliveryFee Decimal? @map("delivery_fee") @db.Decimal(12, 2)
@@ -302,8 +303,8 @@ model LogisticsOrder {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  order Order @relation(fields: [orderId], references: [id])
-  apiCalls LogisticsApiCall[]
+  order        Order                  @relation(fields: [orderId], references: [id])
+  apiCalls     LogisticsApiCall[]
   callbackLogs LogisticsCallbackLog[]
 
   @@unique([orderId])
@@ -312,23 +313,23 @@ model LogisticsOrder {
 }
 
 model LogisticsApiCall {
-  id BigInt @id @default(autoincrement()) @map("id")
-  logisticsOrderId BigInt? @map("logistics_order_id")
-  orderId BigInt @map("order_id")
-  providerCode String @map("provider_code") @db.VarChar(20)
-  action LogisticsApiAction  @map("action")
-  idempotencyKey String? @unique @map("idempotency_key") @db.VarChar(64)
-  requestPayload Json? @map("request_payload")
-  responsePayload Json? @map("response_payload")
-  httpStatus Int? @map("http_status")
-  durationMs Int? @map("duration_ms")
-  success Boolean @default(false) @map("success")
-  errorCode String? @map("error_code") @db.VarChar(50)
-  errorMessage String? @map("error_message") @db.VarChar(255)
-  retryCount Int @default(0) @map("retry_count")
-  createdAt DateTime @default(now()) @map("created_at")
+  id               BigInt             @id @default(autoincrement()) @map("id")
+  logisticsOrderId BigInt?            @map("logistics_order_id")
+  orderId          BigInt             @map("order_id")
+  providerCode     String             @map("provider_code") @db.VarChar(20)
+  action           LogisticsApiAction @map("action")
+  idempotencyKey   String?            @unique @map("idempotency_key") @db.VarChar(64)
+  requestPayload   Json?              @map("request_payload")
+  responsePayload  Json?              @map("response_payload")
+  httpStatus       Int?               @map("http_status")
+  durationMs       Int?               @map("duration_ms")
+  success          Boolean            @default(false) @map("success")
+  errorCode        String?            @map("error_code") @db.VarChar(50)
+  errorMessage     String?            @map("error_message") @db.VarChar(255)
+  retryCount       Int                @default(0) @map("retry_count")
+  createdAt        DateTime           @default(now()) @map("created_at")
 
-  order Order @relation(fields: [orderId], references: [id])
+  order          Order           @relation(fields: [orderId], references: [id])
   logisticsOrder LogisticsOrder? @relation(fields: [logisticsOrderId], references: [id])
 
   @@index([orderId, providerCode, action])
@@ -338,20 +339,20 @@ model LogisticsApiCall {
 }
 
 model LogisticsCallbackLog {
-  id BigInt @id @default(autoincrement()) @map("id")
-  logisticsOrderId BigInt? @map("logistics_order_id")
-  orderId BigInt? @map("order_id")
-  providerCode String @map("provider_code") @db.VarChar(20)
-  headers Json? @map("headers")
-  rawBody String @map("raw_body")
-  parsedBody Json? @map("parsed_body")
-  signatureValid Boolean? @map("signature_valid")
-  processed Boolean @default(false) @map("processed")
-  processedAt DateTime? @map("processed_at")
-  processError String? @map("process_error") @db.VarChar(255)
-  receivedAt DateTime @default(now()) @map("received_at")
+  id               BigInt    @id @default(autoincrement()) @map("id")
+  logisticsOrderId BigInt?   @map("logistics_order_id")
+  orderId          BigInt?   @map("order_id")
+  providerCode     String    @map("provider_code") @db.VarChar(20)
+  headers          Json?     @map("headers")
+  rawBody          String    @map("raw_body")
+  parsedBody       Json?     @map("parsed_body")
+  signatureValid   Boolean?  @map("signature_valid")
+  processed        Boolean   @default(false) @map("processed")
+  processedAt      DateTime? @map("processed_at")
+  processError     String?   @map("process_error") @db.VarChar(255)
+  receivedAt       DateTime  @default(now()) @map("received_at")
 
-  order Order? @relation(fields: [orderId], references: [id])
+  order          Order?          @relation(fields: [orderId], references: [id])
   logisticsOrder LogisticsOrder? @relation(fields: [logisticsOrderId], references: [id])
 
   @@index([providerCode, receivedAt])
@@ -362,29 +363,29 @@ model LogisticsCallbackLog {
 
 /// 订单分配表
 model OrderAssignment {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @map("order_id")
-  courierId String @map("courier_id")
-  taskId String? @map("task_id")
-  orderNo String @map("order_no")
-  waybillNo String? @map("waybill_no")
-  pickupCode String? @map("pickup_code")
-  status TaskStatus  @map("status")
-  assignedAt DateTime @default(now()) @map("assigned_at")
-  acceptedAt DateTime? @map("accepted_at")
-  startedAt DateTime? @map("started_at")
-  arrivedAt DateTime? @map("arrived_at")
-  completedAt DateTime? @map("completed_at")
-  cancelledAt DateTime? @map("cancelled_at")
-  failedAt DateTime? @map("failed_at")
-  notes String?  @map("notes")
-  estimatedDuration Int? @map("estimated_duration")
-  actualDuration Int? @map("actual_duration")
-  pickupLocation Json? @map("pickup_location")
-  deliveryLocation Json? @map("delivery_location")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                BigInt     @id @default(autoincrement()) @map("id")
+  orderId           BigInt     @map("order_id")
+  courierId         String     @map("courier_id")
+  taskId            String?    @map("task_id")
+  orderNo           String     @map("order_no")
+  waybillNo         String?    @map("waybill_no")
+  pickupCode        String?    @map("pickup_code")
+  status            TaskStatus @map("status")
+  assignedAt        DateTime   @default(now()) @map("assigned_at")
+  acceptedAt        DateTime?  @map("accepted_at")
+  startedAt         DateTime?  @map("started_at")
+  arrivedAt         DateTime?  @map("arrived_at")
+  completedAt       DateTime?  @map("completed_at")
+  cancelledAt       DateTime?  @map("cancelled_at")
+  failedAt          DateTime?  @map("failed_at")
+  notes             String?    @map("notes")
+  estimatedDuration Int?       @map("estimated_duration")
+  actualDuration    Int?       @map("actual_duration")
+  pickupLocation    Json?      @map("pickup_location")
+  deliveryLocation  Json?      @map("delivery_location")
+  createdAt         DateTime   @default(now()) @map("created_at")
 
-  order Order @relation(fields: [orderId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
   courier Courier @relation(fields: [courierId], references: [id])
 
   @@index([courierId])
@@ -394,21 +395,21 @@ model OrderAssignment {
 
 /// 订单项表
 model OrderItem {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @map("order_id")
-  categoryId Int @map("category_id")
-  estimatedWeight Float @map("estimated_weight")
-  actualWeight Float? @map("actual_weight")
-  unitPrice Decimal @map("unit_price") @db.Decimal(12, 2)
-  amount Decimal @db.Decimal(12, 2) @map("amount")
-  quantity Int @default(1) @map("quantity")
-  condition String? @db.VarChar(50) @map("condition")
-  photos Json?  @map("photos")
-  brandModel String? @map("brand_model") @db.VarChar(100)
-  notes String? @db.VarChar(500) @map("notes")
-  createdAt DateTime @default(now()) @map("created_at")
-  order Order @relation(fields: [orderId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
+  id              BigInt   @id @default(autoincrement()) @map("id")
+  orderId         BigInt   @map("order_id")
+  categoryId      Int      @map("category_id")
+  estimatedWeight Float    @map("estimated_weight")
+  actualWeight    Float?   @map("actual_weight")
+  unitPrice       Decimal  @map("unit_price") @db.Decimal(12, 2)
+  amount          Decimal  @map("amount") @db.Decimal(12, 2)
+  quantity        Int      @default(1) @map("quantity")
+  condition       String?  @map("condition") @db.VarChar(50)
+  photos          Json?    @map("photos")
+  brandModel      String?  @map("brand_model") @db.VarChar(100)
+  notes           String?  @map("notes") @db.VarChar(500)
+  createdAt       DateTime @default(now()) @map("created_at")
+  order           Order    @relation(fields: [orderId], references: [id])
+  category        Category @relation(fields: [categoryId], references: [id])
 
   @@index([orderId])
   @@index([categoryId])
@@ -417,21 +418,21 @@ model OrderItem {
 
 /// 支付表
 model Payment {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @map("order_id")
-  transactionId BigInt @unique @map("transaction_id")
-  outTradeNo String @unique @map("out_trade_no")
-  total Decimal @db.Decimal(12, 2) @map("total")
-  status PaymentStatus  @map("status")
-  provider PaymentProvider  @map("provider")
-  notifyRaw String? @map("notify_raw")
-  paidAt DateTime? @map("paid_at")
-  closedAt DateTime? @map("closed_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  order Order @relation(fields: [orderId], references: [id])
-  refunds Refund[]
-  logs PaymentLog[]
+  id            BigInt          @id @default(autoincrement()) @map("id")
+  orderId       BigInt          @map("order_id")
+  transactionId BigInt          @unique @map("transaction_id")
+  outTradeNo    String          @unique @map("out_trade_no")
+  total         Decimal         @map("total") @db.Decimal(12, 2)
+  status        PaymentStatus   @map("status")
+  provider      PaymentProvider @map("provider")
+  notifyRaw     String?         @map("notify_raw")
+  paidAt        DateTime?       @map("paid_at")
+  closedAt      DateTime?       @map("closed_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  order         Order           @relation(fields: [orderId], references: [id])
+  refunds       Refund[]
+  logs          PaymentLog[]
 
   @@index([orderId])
   @@index([transactionId])
@@ -443,17 +444,17 @@ model Payment {
 
 /// 支付日志表
 model PaymentLog {
-  id BigInt @id @default(autoincrement()) @map("id")
-  transactionId BigInt @map("transaction_id")
-  orderId BigInt @map("order_id")
-  amount Decimal @db.Decimal(12, 2) @map("amount")
-  status PaymentStatus  @map("status")
-  provider PaymentProvider  @map("provider")
-  rawData String? @map("raw_data")
-  processedAt DateTime? @map("processed_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  order Order? @relation(fields: [orderId], references: [id])
-  payment Payment? @relation(fields: [transactionId], references: [transactionId])
+  id            BigInt          @id @default(autoincrement()) @map("id")
+  transactionId BigInt          @map("transaction_id")
+  orderId       BigInt          @map("order_id")
+  amount        Decimal         @map("amount") @db.Decimal(12, 2)
+  status        PaymentStatus   @map("status")
+  provider      PaymentProvider @map("provider")
+  rawData       String?         @map("raw_data")
+  processedAt   DateTime?       @map("processed_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  order         Order?          @relation(fields: [orderId], references: [id])
+  payment       Payment?        @relation(fields: [transactionId], references: [transactionId])
 
   @@index([transactionId])
   @@index([orderId])
@@ -462,15 +463,15 @@ model PaymentLog {
 
 /// 地区数据表
 model Region {
-  id Int @id @default(autoincrement()) @map("id")
-  code String @unique @db.VarChar(12) @map("code") // 行政区划代码
-  name String @db.VarChar(100) @map("name") // 名称
-  level Int @map("level") // 层级: 1-省, 2-市, 3-区, 4-街道
-  parentCode String? @map("parent_code") @db.VarChar(12) // 父级代码
-  pinyin String? @db.VarChar(100) @map("pinyin") // 拼音
-  abbr String? @db.VarChar(50) @map("abbr") // 简称/缩写
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         Int      @id @default(autoincrement()) @map("id")
+  code       String   @unique @map("code") @db.VarChar(12) // 行政区划代码
+  name       String   @map("name") @db.VarChar(100) // 名称
+  level      Int      @map("level") // 层级: 1-省, 2-市, 3-区, 4-街道
+  parentCode String?  @map("parent_code") @db.VarChar(12) // 父级代码
+  pinyin     String?  @map("pinyin") @db.VarChar(100) // 拼音
+  abbr       String?  @map("abbr") @db.VarChar(50) // 简称/缩写
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([parentCode])
   @@index([level])
@@ -479,16 +480,16 @@ model Region {
 
 /// 退款表
 model Refund {
-  id BigInt @id @default(autoincrement()) @map("id")
-  paymentId BigInt @map("payment_id")
-  outRefundNo String @unique @map("out_refund_no")
-  refundAmount Decimal @db.Decimal(12, 2) @map("refund_amount")
-  status RefundStatus  @map("status")
-  reason String?  @map("reason")
-  notifyRaw String? @map("notify_raw")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  payment Payment @relation(fields: [paymentId], references: [id])
+  id           BigInt       @id @default(autoincrement()) @map("id")
+  paymentId    BigInt       @map("payment_id")
+  outRefundNo  String       @unique @map("out_refund_no")
+  refundAmount Decimal      @map("refund_amount") @db.Decimal(12, 2)
+  status       RefundStatus @map("status")
+  reason       String?      @map("reason")
+  notifyRaw    String?      @map("notify_raw")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  payment      Payment      @relation(fields: [paymentId], references: [id])
 
   @@index([paymentId])
   @@index([outRefundNo])
@@ -517,19 +518,19 @@ enum PaymentProvider {
 
 /// 通知表
 model Notification {
-  id BigInt @id @map("id")
-  type NotificationType  @map("type")
-  status NotificationStatus  @map("status")
-  priority NotificationPriority  @map("priority")
-  recipient Json  @map("recipient")
-  content String  @map("content")
-  deliveryOptions Json? @map("delivery_options")
-  sentAt DateTime? @map("sent_at")
-  deliveredAt DateTime? @map("delivered_at")
-  failedAt DateTime? @map("failed_at")
-  result Json?  @map("result")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              BigInt               @id @map("id")
+  type            NotificationType     @map("type")
+  status          NotificationStatus   @map("status")
+  priority        NotificationPriority @map("priority")
+  recipient       Json                 @map("recipient")
+  content         String               @map("content")
+  deliveryOptions Json?                @map("delivery_options")
+  sentAt          DateTime?            @map("sent_at")
+  deliveredAt     DateTime?            @map("delivered_at")
+  failedAt        DateTime?            @map("failed_at")
+  result          Json?                @map("result")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
 
   @@index([status])
   @@index([type])
@@ -538,32 +539,32 @@ model Notification {
 
 /// 通知模板表
 model NotificationTemplate {
-  id BigInt @id @map("id")
-  name String  @map("name")
-  type TemplateType  @map("type")
-  subject String?  @map("subject")
-  content String  @map("content")
-  variables String[]  @map("variables")
-  isActive Boolean @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id        BigInt       @id @map("id")
+  name      String       @map("name")
+  type      TemplateType @map("type")
+  subject   String?      @map("subject")
+  content   String       @map("content")
+  variables String[]     @map("variables")
+  isActive  Boolean      @default(true) @map("is_active")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   @@map("notification_templates")
 }
 
 /// 通知批次表
 model NotificationBatch {
-  id BigInt @id @map("id")
-  name String  @map("name")
-  description String?  @map("description")
-  totalCount Int @map("total_count")
-  sentCount Int @map("sent_count")
-  deliveredCount Int @map("delivered_count")
-  failedCount Int @map("failed_count")
-  status String  @map("status")
-  completedAt DateTime? @map("completed_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             BigInt    @id @map("id")
+  name           String    @map("name")
+  description    String?   @map("description")
+  totalCount     Int       @map("total_count")
+  sentCount      Int       @map("sent_count")
+  deliveredCount Int       @map("delivered_count")
+  failedCount    Int       @map("failed_count")
+  status         String    @map("status")
+  completedAt    DateTime? @map("completed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@map("notification_batches")
 }
@@ -601,41 +602,41 @@ enum TemplateType {
 
 /// 库存项目表
 model InventoryItem {
-  id BigInt @id @default(autoincrement()) @map("id")
-  warehouseId BigInt @map("warehouse_id")
-  categoryId Int @map("category_id")
-  name String  @map("name")
-  description String?  @map("description")
-  unit String  @map("unit")
-  quantity Float  @map("quantity")
-  reservedQty Float @default(0) @map("reserved_qty")
-  availableQty Float @map("available_qty")
-  unitPrice Float @map("unit_price")
-  totalPrice Float @map("total_price") 
-  location String?  @map("location")
-  status InventoryStatus  @map("status")
-  itemType ItemType @map("item_type")
-  condition ItemCondition  @map("condition")
-  sourceOrderId BigInt? @map("source_order_id")
-  qualityGrade String? @map("quality_grade")
-  processingStatus ProcessingStatus @map("processing_status")
-  expiryDate DateTime? @map("expiry_date")
-  batchNumber String? @map("batch_number")
-  minStockLevel Float? @map("min_stock_level")
-  maxStockLevel Float? @map("max_stock_level")
-  weight Float? @map("weight") // 物品重量
-  volume Float? @map("volume") // 物品体积
-  brand String? @map("brand") // 品牌
-  model String? @map("model") // 型号
-  images String[] @map("images") // 图片URL列表
-  tags String[] @map("tags") // 标签
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
-  transactions InventoryTransaction[]
-  reservations Reservation[]
-  qualityChecks QualityCheck[]
+  id               BigInt                 @id @default(autoincrement()) @map("id")
+  warehouseId      BigInt                 @map("warehouse_id")
+  categoryId       Int                    @map("category_id")
+  name             String                 @map("name")
+  description      String?                @map("description")
+  unit             String                 @map("unit")
+  quantity         Float                  @map("quantity")
+  reservedQty      Float                  @default(0) @map("reserved_qty")
+  availableQty     Float                  @map("available_qty")
+  unitPrice        Float                  @map("unit_price")
+  totalPrice       Float                  @map("total_price")
+  location         String?                @map("location")
+  status           InventoryStatus        @map("status")
+  itemType         ItemType               @map("item_type")
+  condition        ItemCondition          @map("condition")
+  sourceOrderId    BigInt?                @map("source_order_id")
+  qualityGrade     String?                @map("quality_grade")
+  processingStatus ProcessingStatus       @map("processing_status")
+  expiryDate       DateTime?              @map("expiry_date")
+  batchNumber      String?                @map("batch_number")
+  minStockLevel    Float?                 @map("min_stock_level")
+  maxStockLevel    Float?                 @map("max_stock_level")
+  weight           Float?                 @map("weight") // 物品重量
+  volume           Float?                 @map("volume") // 物品体积
+  brand            String?                @map("brand") // 品牌
+  model            String?                @map("model") // 型号
+  images           String[]               @map("images") // 图片URL列表
+  tags             String[]               @map("tags") // 标签
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  warehouse        Warehouse              @relation(fields: [warehouseId], references: [id])
+  category         Category               @relation(fields: [categoryId], references: [id])
+  transactions     InventoryTransaction[]
+  reservations     Reservation[]
+  qualityChecks    QualityCheck[]
 
   @@index([warehouseId])
   @@index([categoryId])
@@ -647,16 +648,16 @@ model InventoryItem {
 
 /// 库存交易表
 model InventoryTransaction {
-  id BigInt @id @default(autoincrement()) @map("id")
-  itemId BigInt @map("item_id")
-  type InventoryTxnType  @map("type")
-  quantity Float  @map("quantity")
-  unitPrice Decimal @map("unit_price") @db.Decimal(12, 2)
-  totalPrice Decimal @map("total_price") @db.Decimal(12, 2)
-  referenceId String? @map("reference_id")
-  notes String?  @map("notes")
-  createdAt DateTime @default(now()) @map("created_at")
-  item InventoryItem @relation(fields: [itemId], references: [id])
+  id          BigInt           @id @default(autoincrement()) @map("id")
+  itemId      BigInt           @map("item_id")
+  type        InventoryTxnType @map("type")
+  quantity    Float            @map("quantity")
+  unitPrice   Decimal          @map("unit_price") @db.Decimal(12, 2)
+  totalPrice  Decimal          @map("total_price") @db.Decimal(12, 2)
+  referenceId String?          @map("reference_id")
+  notes       String?          @map("notes")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  item        InventoryItem    @relation(fields: [itemId], references: [id])
 
   @@index([itemId])
   @@map("inventory_transactions")
@@ -672,20 +673,20 @@ enum InventoryTxnType {
 
 /// 库存预订表
 model Reservation {
-  id BigInt @id @default(autoincrement()) @map("id")
-  itemId BigInt @map("item_id")
-  orderId BigInt @map("order_id")
-  quantity Float  @map("quantity")
-  status ReservationStatus  @map("status")
-  reservedAt DateTime @map("reserved_at")
-  confirmedAt DateTime? @map("confirmed_at")
-  cancelledAt DateTime? @map("cancelled_at")
-  expiresAt DateTime? @map("expires_at")
-  expiredAt DateTime? @map("expired_at")
-  notes String?  @map("notes")
-  createdAt DateTime @default(now()) @map("created_at")
-  item InventoryItem @relation(fields: [itemId], references: [id])
-  order Order @relation(fields: [orderId], references: [id])
+  id          BigInt            @id @default(autoincrement()) @map("id")
+  itemId      BigInt            @map("item_id")
+  orderId     BigInt            @map("order_id")
+  quantity    Float             @map("quantity")
+  status      ReservationStatus @map("status")
+  reservedAt  DateTime          @map("reserved_at")
+  confirmedAt DateTime?         @map("confirmed_at")
+  cancelledAt DateTime?         @map("cancelled_at")
+  expiresAt   DateTime?         @map("expires_at")
+  expiredAt   DateTime?         @map("expired_at")
+  notes       String?           @map("notes")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  item        InventoryItem     @relation(fields: [itemId], references: [id])
+  order       Order             @relation(fields: [orderId], references: [id])
 
   @@index([itemId])
   @@index([orderId])
@@ -695,17 +696,17 @@ model Reservation {
 
 /// 质量检查表
 model QualityCheck {
-  id BigInt @id @default(autoincrement()) @map("id")
-  itemId BigInt @map("item_id")
-  checkerId BigInt @map("checker_id")
-  checkType String @map("check_type")
-  result String  @map("result")
-  score Int?  @map("score")
-  notes String?  @map("notes")
-  images String[]  @map("images")
-  checkedAt DateTime @map("checked_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  item InventoryItem @relation(fields: [itemId], references: [id])
+  id        BigInt        @id @default(autoincrement()) @map("id")
+  itemId    BigInt        @map("item_id")
+  checkerId BigInt        @map("checker_id")
+  checkType String        @map("check_type")
+  result    String        @map("result")
+  score     Int?          @map("score")
+  notes     String?       @map("notes")
+  images    String[]      @map("images")
+  checkedAt DateTime      @map("checked_at")
+  createdAt DateTime      @default(now()) @map("created_at")
+  item      InventoryItem @relation(fields: [itemId], references: [id])
 
   @@index([itemId])
   @@map("quality_checks")
@@ -713,20 +714,20 @@ model QualityCheck {
 
 /// 仓库表
 model Warehouse {
-  id BigInt @id @default(autoincrement()) @map("id")
-  name String  @map("name")
-  code String @unique @map("code")
-  type WarehouseType  @map("type")
-  address String  @map("address")
-  contactPhone String @map("contact_phone")
-  capacity Float?  @map("capacity")
-  status WarehouseStatus  @map("status")
-  description String?  @map("description")
-  tenantId BigInt? @map("tenant_id")
-  tenant Tenant? @relation(fields: [tenantId], references: [id])
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  inventoryItems InventoryItem[]
+  id              BigInt           @id @default(autoincrement()) @map("id")
+  name            String           @map("name")
+  code            String           @unique @map("code")
+  type            WarehouseType    @map("type")
+  address         String           @map("address")
+  contactPhone    String           @map("contact_phone")
+  capacity        Float?           @map("capacity")
+  status          WarehouseStatus  @map("status")
+  description     String?          @map("description")
+  tenantId        BigInt?          @map("tenant_id")
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id])
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  inventoryItems  InventoryItem[]
   inboundReceipts InboundReceipt[]
 
   @@map("warehouses")
@@ -804,32 +805,32 @@ enum TaskStatus {
 
 /// 快递员表
 model Courier {
-  id String @id @map("id")
-  name String  @map("name")
-  phone String @unique @map("phone")
-  email String? @unique @map("email")
-  idCard String? @unique @map("id_card")
-  avatarUrl String? @map("avatar_url")
-  status CourierStatus @default(OFFLINE) @map("status")
-  latitude Float?  @map("latitude")
-  longitude Float?  @map("longitude")
-  address String?  @map("address")
-  workingHours Json?  @map("workingHours")
-  serviceAreas String[]  @map("serviceAreas")
-  vehicleType String? @map("vehicle_type")
-  vehiclePlate String? @map("vehicle_plate")
-  rating Float @default(0) @map("rating")
-  totalOrders Int @default(0) @map("totalOrders")
-  completedOrders Int @default(0) @map("completedOrders")
-  cancelledOrders Int @default(0) @map("cancelled_orders")
-  rejectedOrders Int @default(0) @map("rejected_orders")
-  lastOnlineAt DateTime? @map("last_online_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              String        @id @map("id")
+  name            String        @map("name")
+  phone           String        @unique @map("phone")
+  email           String?       @unique @map("email")
+  idCard          String?       @unique @map("id_card")
+  avatarUrl       String?       @map("avatar_url")
+  status          CourierStatus @default(OFFLINE) @map("status")
+  latitude        Float?        @map("latitude")
+  longitude       Float?        @map("longitude")
+  address         String?       @map("address")
+  workingHours    Json?         @map("workingHours")
+  serviceAreas    String[]      @map("serviceAreas")
+  vehicleType     String?       @map("vehicle_type")
+  vehiclePlate    String?       @map("vehicle_plate")
+  rating          Float         @default(0) @map("rating")
+  totalOrders     Int           @default(0) @map("totalOrders")
+  completedOrders Int           @default(0) @map("completedOrders")
+  cancelledOrders Int           @default(0) @map("cancelled_orders")
+  rejectedOrders  Int           @default(0) @map("rejected_orders")
+  lastOnlineAt    DateTime?     @map("last_online_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   orderAssignments OrderAssignment[]
-  orderFeedback OrderFeedback[]
-  courierFeedback CourierFeedback[] @relation("CourierToCourierFeedback")
+  orderFeedback    OrderFeedback[]
+  courierFeedback  CourierFeedback[] @relation("CourierToCourierFeedback")
 
   @@index([status])
   @@index([phone])
@@ -838,20 +839,20 @@ model Courier {
 
 /// 取件通知（快递员）
 model PickupNotification {
-  id String @id @map("id")
-  taskId String  @map("taskId")
-  orderId BigInt @map("order_id")
-  orderNo String @map("order_no")
-  courierId String @map("courier_id")
-  waybillNo String? @map("waybill_no")
-  pickupCode String? @map("pickup_code")
-  senderInfo Json @map("sender_info")
-  receiverInfo Json @map("receiver_info")
-  priority String?  @map("priority")
-  status String  @map("status")
-  createdAt DateTime @default(now()) @map("created_at")
-  respondedAt DateTime?  @map("respondedAt")
-  response Json?  @map("response")
+  id           String    @id @map("id")
+  taskId       String    @map("taskId")
+  orderId      BigInt    @map("order_id")
+  orderNo      String    @map("order_no")
+  courierId    String    @map("courier_id")
+  waybillNo    String?   @map("waybill_no")
+  pickupCode   String?   @map("pickup_code")
+  senderInfo   Json      @map("sender_info")
+  receiverInfo Json      @map("receiver_info")
+  priority     String?   @map("priority")
+  status       String    @map("status")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  respondedAt  DateTime? @map("respondedAt")
+  response     Json?     @map("response")
 
   @@index([courierId])
   @@index([orderId])
@@ -860,12 +861,12 @@ model PickupNotification {
 
 /// 用户收藏表
 model UserFavorite {
-  id BigInt @id @default(autoincrement()) @map("id")
-  userId BigInt @map("user_id")
-  itemId BigInt @map("item_id")
-  type String @map("type") // CATEGORY, PRODUCT, etc.
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  userId    BigInt   @map("user_id")
+  itemId    BigInt   @map("item_id")
+  type      String   @map("type") // CATEGORY, PRODUCT, etc.
   createdAt DateTime @default(now()) @map("created_at")
-  user User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([itemId])
@@ -874,19 +875,19 @@ model UserFavorite {
 
 /// 用户反馈表
 model UserFeedback {
-  id BigInt @id @default(autoincrement()) @map("id")
-  userId BigInt @map("user_id")
-  orderId BigInt? @map("order_id")
-  type String @map("type") // COMPLAINT, SUGGESTION, PRAISE
-  content String  @map("content")
-  images String[]  @map("images")
-  status String @default("PENDING") @map("status") // PENDING, PROCESSED, RESOLVED
-  reply String?  @map("reply")
+  id        BigInt    @id @default(autoincrement()) @map("id")
+  userId    BigInt    @map("user_id")
+  orderId   BigInt?   @map("order_id")
+  type      String    @map("type") // COMPLAINT, SUGGESTION, PRAISE
+  content   String    @map("content")
+  images    String[]  @map("images")
+  status    String    @default("PENDING") @map("status") // PENDING, PROCESSED, RESOLVED
+  reply     String?   @map("reply")
   repliedAt DateTime? @map("replied_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user User @relation(fields: [userId], references: [id])
-  order Order? @relation(fields: [orderId], references: [id])
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User      @relation(fields: [userId], references: [id])
+  order     Order?    @relation(fields: [orderId], references: [id])
 
   @@index([userId])
   @@index([orderId])
@@ -896,19 +897,19 @@ model UserFeedback {
 
 /// 订单时间线表
 model OrderTimeline {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @map("order_id")
-  status String  @map("status")
-  fromStatus OrderStatus? @map("from_status")
-  toStatus OrderStatus? @map("to_status")
-  message String  @map("message")
-  operator String? @map("operator") // SYSTEM, USER, COURIER, ADMIN
-  operatorType String? @map("operator_type") @db.VarChar(20)
-  operatorId BigInt? @map("operator_id")
-  reason String? @map("reason") @db.VarChar(255)
-  rawSnapshot Json? @map("raw_snapshot")
-  createdAt DateTime @default(now()) @map("created_at")
-  order Order @relation(fields: [orderId], references: [id])
+  id           BigInt       @id @default(autoincrement()) @map("id")
+  orderId      BigInt       @map("order_id")
+  status       String       @map("status")
+  fromStatus   OrderStatus? @map("from_status")
+  toStatus     OrderStatus? @map("to_status")
+  message      String       @map("message")
+  operator     String?      @map("operator") // SYSTEM, USER, COURIER, ADMIN
+  operatorType String?      @map("operator_type") @db.VarChar(20)
+  operatorId   BigInt?      @map("operator_id")
+  reason       String?      @map("reason") @db.VarChar(255)
+  rawSnapshot  Json?        @map("raw_snapshot")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  order        Order        @relation(fields: [orderId], references: [id])
 
   @@index([orderId])
   @@index([status])
@@ -918,18 +919,18 @@ model OrderTimeline {
 
 /// 快递员反馈表
 model CourierFeedback {
-  id BigInt @id @default(autoincrement()) @map("id")
-  courierId String @map("courier_id")
-  userId BigInt? @map("user_id")
-  orderId BigInt? @map("order_id")
-  rating Int @map("rating") // 1-5星
-  content String?  @map("content")
-  images String[]  @map("images")
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  courierId String   @map("courier_id")
+  userId    BigInt?  @map("user_id")
+  orderId   BigInt?  @map("order_id")
+  rating    Int      @map("rating") // 1-5星
+  content   String?  @map("content")
+  images    String[] @map("images")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  courier Courier @relation(fields: [courierId], references: [id], name: "CourierToCourierFeedback")
-  user User? @relation(fields: [userId], references: [id])
-  order Order? @relation(fields: [orderId], references: [id])
+  courier   Courier  @relation(fields: [courierId], references: [id], name: "CourierToCourierFeedback")
+  user      User?    @relation(fields: [userId], references: [id])
+  order     Order?   @relation(fields: [orderId], references: [id])
 
   @@index([courierId])
   @@index([userId])
@@ -938,18 +939,18 @@ model CourierFeedback {
 
 /// 订单反馈表
 model OrderFeedback {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @unique @map("order_id")
-  userId BigInt @map("user_id")
-  courierId String @map("courier_id")
-  rating Int @map("rating") // 1-5星
-  content String?  @map("content")
-  images String[]  @map("images")
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  orderId   BigInt   @unique @map("order_id")
+  userId    BigInt   @map("user_id")
+  courierId String   @map("courier_id")
+  rating    Int      @map("rating") // 1-5星
+  content   String?  @map("content")
+  images    String[] @map("images")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  order Order @relation(fields: [orderId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-  courier Courier @relation(fields: [courierId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  courier   Courier  @relation(fields: [courierId], references: [id])
 
   @@index([orderId])
   @@index([userId])
@@ -958,26 +959,26 @@ model OrderFeedback {
 }
 
 model Account {
-  id BigInt @id @default(autoincrement()) @map("id")
-  userId BigInt @map("user_id")
-  availableBalance Decimal @default(0) @map("available_balance") @db.Decimal(12, 2) // 可用余额
-  frozenBalance Decimal @default(0) @map("frozen_balance") @db.Decimal(12, 2) // 冻结余额
-  totalIncome Decimal @default(0) @map("total_income") @db.Decimal(12, 2) // 收益总额
-  totalWithdrawal Decimal @default(0) @map("total_withdrawal") @db.Decimal(12, 2) // 提现总额
-  version Int @default(0) @map("version") // 版本号，用于乐观锁
-  accountType AccountType @default(WALLET) @map("account_type")
-  accountDetails Json @map("account_details") // 存储账户信息的JSON
-  isVerified Boolean @default(false) @map("is_verified") // 是否已验证
-  paymentPassword String? @map("payment_password") @db.VarChar(255) // 支付密码
-  createdAt DateTime @default(now()) @map("created_at") // 创建时间
-  updatedAt DateTime @updatedAt @map("updated_at") // 更新时间
-  user User @relation(fields: [userId], references: [id])
-  transactions Transaction[]
-  withdrawals Withdrawal[]
+  id               BigInt        @id @default(autoincrement()) @map("id")
+  userId           BigInt        @map("user_id")
+  availableBalance Decimal       @default(0) @map("available_balance") @db.Decimal(12, 2) // 可用余额
+  frozenBalance    Decimal       @default(0) @map("frozen_balance") @db.Decimal(12, 2) // 冻结余额
+  totalIncome      Decimal       @default(0) @map("total_income") @db.Decimal(12, 2) // 收益总额
+  totalWithdrawal  Decimal       @default(0) @map("total_withdrawal") @db.Decimal(12, 2) // 提现总额
+  version          Int           @default(0) @map("version") // 版本号，用于乐观锁
+  accountType      AccountType   @default(WALLET) @map("account_type")
+  accountDetails   Json          @map("account_details") // 存储账户信息的JSON
+  isVerified       Boolean       @default(false) @map("is_verified") // 是否已验证
+  paymentPassword  String?       @map("payment_password") @db.VarChar(255) // 支付密码
+  createdAt        DateTime      @default(now()) @map("created_at") // 创建时间
+  updatedAt        DateTime      @updatedAt @map("updated_at") // 更新时间
+  user             User          @relation(fields: [userId], references: [id])
+  transactions     Transaction[]
+  withdrawals      Withdrawal[]
 
+  @@unique([userId, accountType])
   @@index([userId])
   @@index([accountType])
-  @@unique([userId, accountType])
   @@map("accounts")
 }
 
@@ -988,26 +989,26 @@ enum AccountType {
 
 // 提现记录
 model Withdrawal {
-  id BigInt @id @default(autoincrement()) @map("id")
-  accountId BigInt @map("account_id")
-  userId BigInt @map("user_id")
-  amount Decimal @db.Decimal(10, 2) @map("amount")
-  provider PaymentProvider  @map("provider")
-  outTradeNo String @unique @map("out_trade_no") @db.VarChar(128)
-  idempotencyKey String? @unique @map("idempotency_key") @db.VarChar(64)
-  transactionId BigInt? @map("transaction_id")
-  status WithdrawalStatus @default(PENDING) @map("status")
-  accountInfo Json @map("account_info") // 提现账户信息
-  adminId BigInt? @map("admin_id")
-  processedAt DateTime? @map("processed_at")
-  rejectedReason String? @map("rejected_reason") @db.VarChar(255)
-  callbackData Json? @map("callback_data")
-  version Int @default(0) @map("version")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  account Account @relation(fields: [accountId], references: [id])  
-  transactions Transaction[]
-  user User @relation(fields: [userId], references: [id])
+  id             BigInt           @id @default(autoincrement()) @map("id")
+  accountId      BigInt           @map("account_id")
+  userId         BigInt           @map("user_id")
+  amount         Decimal          @map("amount") @db.Decimal(10, 2)
+  provider       PaymentProvider  @map("provider")
+  outTradeNo     String           @unique @map("out_trade_no") @db.VarChar(128)
+  idempotencyKey String?          @unique @map("idempotency_key") @db.VarChar(64)
+  transactionId  BigInt?          @map("transaction_id")
+  status         WithdrawalStatus @default(PENDING) @map("status")
+  accountInfo    Json             @map("account_info") // 提现账户信息
+  adminId        BigInt?          @map("admin_id")
+  processedAt    DateTime?        @map("processed_at")
+  rejectedReason String?          @map("rejected_reason") @db.VarChar(255)
+  callbackData   Json?            @map("callback_data")
+  version        Int              @default(0) @map("version")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  account        Account          @relation(fields: [accountId], references: [id])
+  transactions   Transaction[]
+  user           User             @relation(fields: [userId], references: [id])
 
   @@index([accountId])
   @@index([userId])
@@ -1018,19 +1019,21 @@ model Withdrawal {
 
 // 交易记录
 model Transaction {
-  id BigInt @id @default(autoincrement()) @map("id")
-  accountId BigInt @map("account_id")
-  type TransactionType  @map("type")
-  amount Decimal @db.Decimal(10, 2) @map("amount")
-  balanceBefore Decimal @map("balance_before") @db.Decimal(10, 2)
-  balanceAfter Decimal @map("balance_after") @db.Decimal(10, 2)
-  orderId String? @map("order_id") @db.VarChar(64)
-  withdrawalId BigInt? @map("withdrawal_id")
-  description String @db.VarChar(255) @map("description")
-  createdAt DateTime @default(now()) @map("created_at")
-  account Account @relation(fields: [accountId], references: [id])
-  withdrawal Withdrawal? @relation(fields: [withdrawalId], references: [id])
+  id            BigInt          @id @default(autoincrement()) @map("id")
+  accountId     BigInt          @map("account_id")
+  type          TransactionType @map("type")
+  amount        Decimal         @map("amount") @db.Decimal(10, 2)
+  balanceBefore Decimal         @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter  Decimal         @map("balance_after") @db.Decimal(10, 2)
+  orderId       String?         @map("order_id") @db.VarChar(64)
+  withdrawalId  BigInt?         @map("withdrawal_id")
+  description   String          @map("description") @db.VarChar(255)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  account       Account         @relation(fields: [accountId], references: [id])
+  withdrawal    Withdrawal?     @relation(fields: [withdrawalId], references: [id])
 
+  @@unique([type, orderId])
+  @@unique([type, withdrawalId])
   @@index([accountId])
   @@index([orderId])
   @@index([withdrawalId])
@@ -1038,8 +1041,6 @@ model Transaction {
   @@index([type])
   @@index([accountId, type])
   @@index([accountId, createdAt])
-  @@unique([type, orderId])
-  @@unique([type, withdrawalId])
   @@map("transactions")
 }
 
@@ -1064,15 +1065,15 @@ enum WithdrawalStatus {
 
 /// 物流服务商配置
 model LogisticsProvider {
-  id Int @id @default(autoincrement()) @map("id")
-  name String @db.VarChar(50) @map("name")
-  code String @unique @db.VarChar(20) @map("code") // jd, sf
-  apiUrl String? @map("api_url") @db.VarChar(255)
-  tenantId String? @map("tenant_id") @db.VarChar(100)
-  appId String? @map("app_id") @db.VarChar(100)
-  appSecret String? @map("app_secret") @db.VarChar(255)
-  config Json? @map("config") // 运费规则等配置
-  isActive Boolean @default(true) @map("is_active")
+  id        Int      @id @default(autoincrement()) @map("id")
+  name      String   @map("name") @db.VarChar(50)
+  code      String   @unique @map("code") @db.VarChar(20) // jd, sf
+  apiUrl    String?  @map("api_url") @db.VarChar(255)
+  tenantId  String?  @map("tenant_id") @db.VarChar(100)
+  appId     String?  @map("app_id") @db.VarChar(100)
+  appSecret String?  @map("app_secret") @db.VarChar(255)
+  config    Json?    @map("config") // 运费规则等配置
+  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1081,30 +1082,30 @@ model LogisticsProvider {
 
 /// 平台/租户钱包
 model PlatformWallet {
-  id Int @id @default(autoincrement()) @map("id")
-  balance Decimal @default(0) @db.Decimal(12, 2) @map("balance") // 可用余额
-  frozenAmount Decimal @default(0) @map("frozen_amount") @db.Decimal(12, 2) // 冻结金额
-  totalRecharge Decimal @default(0) @map("total_recharge") @db.Decimal(12, 2) // 累计充值
-  totalPayout Decimal @default(0) @map("total_payout") @db.Decimal(12, 2) // 累计支出
-  paymentPassword String? @map("payment_password") @db.VarChar(255) // 支付密码(Hash)
-  version Int @default(0) @map("version") // 乐观锁
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              Int      @id @default(autoincrement()) @map("id")
+  balance         Decimal  @default(0) @map("balance") @db.Decimal(12, 2) // 可用余额
+  frozenAmount    Decimal  @default(0) @map("frozen_amount") @db.Decimal(12, 2) // 冻结金额
+  totalRecharge   Decimal  @default(0) @map("total_recharge") @db.Decimal(12, 2) // 累计充值
+  totalPayout     Decimal  @default(0) @map("total_payout") @db.Decimal(12, 2) // 累计支出
+  paymentPassword String?  @map("payment_password") @db.VarChar(255) // 支付密码(Hash)
+  version         Int      @default(0) @map("version") // 乐观锁
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("platform_wallets")
 }
 
 /// 平台交易记录
 model PlatformTransaction {
-  id BigInt @id @default(autoincrement()) @map("id")
-  walletId Int @map("wallet_id")
-  type String @db.VarChar(20) @map("type") // RECHARGE, PAYOUT, REFUND
-  amount Decimal @db.Decimal(12, 2) @map("amount")
-  balanceBefore Decimal @map("balance_before") @db.Decimal(12, 2)
-  balanceAfter Decimal @map("balance_after") @db.Decimal(12, 2)
-  relatedOrderNo String? @map("related_order_no") @db.VarChar(64) // 关联订单号
-  description String? @db.VarChar(255) @map("description")
-  createdAt DateTime @default(now()) @map("created_at")
+  id             BigInt   @id @default(autoincrement()) @map("id")
+  walletId       Int      @map("wallet_id")
+  type           String   @map("type") @db.VarChar(20) // RECHARGE, PAYOUT, REFUND
+  amount         Decimal  @map("amount") @db.Decimal(12, 2)
+  balanceBefore  Decimal  @map("balance_before") @db.Decimal(12, 2)
+  balanceAfter   Decimal  @map("balance_after") @db.Decimal(12, 2)
+  relatedOrderNo String?  @map("related_order_no") @db.VarChar(64) // 关联订单号
+  description    String?  @map("description") @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
 
   @@index([walletId])
   @@index([type])
@@ -1114,14 +1115,14 @@ model PlatformTransaction {
 
 /// 平台充值订单
 model RechargeOrder {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderNo String @unique @map("order_no") @db.VarChar(64)
-  amount Decimal @db.Decimal(12, 2) @map("amount")
-  paymentMethod String @map("payment_method") @db.VarChar(20) // ALIPAY, WECHAT
-  status String @default("PENDING") @db.VarChar(20) @map("status") // PENDING, SUCCESS, FAILED
-  paidAt DateTime? @map("paid_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id            BigInt    @id @default(autoincrement()) @map("id")
+  orderNo       String    @unique @map("order_no") @db.VarChar(64)
+  amount        Decimal   @map("amount") @db.Decimal(12, 2)
+  paymentMethod String    @map("payment_method") @db.VarChar(20) // ALIPAY, WECHAT
+  status        String    @default("PENDING") @map("status") @db.VarChar(20) // PENDING, SUCCESS, FAILED
+  paidAt        DateTime? @map("paid_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   @@index([status])
   @@map("recharge_orders")
@@ -1129,11 +1130,11 @@ model RechargeOrder {
 
 /// 充值计划
 model RechargePlan {
-  id Int @id @default(autoincrement()) @map("id")
-  amount Decimal @db.Decimal(12, 2) @map("amount") // 充值金额
-  bonus Decimal @default(0) @db.Decimal(12, 2) @map("bonus") // 赠送金额
-  isActive Boolean @default(true) @map("is_active")
-  sortOrder Int @default(0) @map("sort_order")
+  id        Int      @id @default(autoincrement()) @map("id")
+  amount    Decimal  @map("amount") @db.Decimal(12, 2) // 充值金额
+  bonus     Decimal  @default(0) @map("bonus") @db.Decimal(12, 2) // 赠送金额
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1142,47 +1143,47 @@ model RechargePlan {
 
 /// 租户主表
 model Tenant {
-  id BigInt @id @default(autoincrement()) @map("id")
-  name String @db.VarChar(100) @map("name")
-  code String @unique @db.VarChar(50) @map("code")
-  contactName String? @map("contact_name") @db.VarChar(50)
-  contactPhone String? @map("contact_phone") @db.VarChar(20)
-  status TenantStatus @default(ACTIVE) @map("status")
+  id           BigInt       @id @default(autoincrement()) @map("id")
+  name         String       @map("name") @db.VarChar(100)
+  code         String       @unique @map("code") @db.VarChar(50)
+  contactName  String?      @map("contact_name") @db.VarChar(50)
+  contactPhone String?      @map("contact_phone") @db.VarChar(20)
+  status       TenantStatus @default(ACTIVE) @map("status")
 
   // 财务属性
-  balance Decimal @default(0) @db.Decimal(12, 2) @map("balance")
-  frozenBalance Decimal @default(0) @map("frozen_balance") @db.Decimal(12, 2) // 冻结金额
+  balance         Decimal         @default(0) @map("balance") @db.Decimal(12, 2)
+  frozenBalance   Decimal         @default(0) @map("frozen_balance") @db.Decimal(12, 2) // 冻结金额
   settlementCycle SettlementCycle @default(MONTHLY) @map("settlement_cycle")
-  version Int @default(0) @map("version")
+  version         Int             @default(0) @map("version")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  addresses TenantAddress[]
-  warehouses Warehouse[]
-  orders Order[]
+  addresses    TenantAddress[]
+  warehouses   Warehouse[]
+  orders       Order[]
   transactions TenantTransaction[]
-  settlements SettlementRecord[]
+  settlements  SettlementRecord[]
   pricingRules RecyclePricingRule[]
-  staffs Staff[]
-  roles Role[]
+  staffs       Staff[]
+  roles        Role[]
 
   @@map("tenants")
 }
 
 /// 租户角色表
 model Role {
-  id Int @id @default(autoincrement()) @map("id")
-  tenantId BigInt? @map("tenant_id") // 如果为 null，则是系统预设角色
-  name String @db.VarChar(50) @map("name")
-  code String @unique @db.VarChar(50) @map("code")
-  description String? @db.VarChar(200) @map("description")
-  isAdmin Boolean @default(false) @map("is_admin")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          Int      @id @default(autoincrement()) @map("id")
+  tenantId    BigInt?  @map("tenant_id") // 如果为 null，则是系统预设角色
+  name        String   @map("name") @db.VarChar(50)
+  code        String   @unique @map("code") @db.VarChar(50)
+  description String?  @map("description") @db.VarChar(200)
+  isAdmin     Boolean  @default(false) @map("is_admin")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  tenant Tenant? @relation(fields: [tenantId], references: [id])
-  staffs Staff[]
+  tenant      Tenant?          @relation(fields: [tenantId], references: [id])
+  staffs      Staff[]
   permissions RolePermission[]
 
   @@index([tenantId])
@@ -1191,18 +1192,18 @@ model Role {
 
 /// 权限项表
 model Permission {
-  id Int @id @default(autoincrement()) @map("id")
-  name String @db.VarChar(50) @map("name")
-  code String @unique @db.VarChar(100) @map("code")
-  type String @db.VarChar(20) @map("type") // MENU, BUTTON, API
-  parentId Int? @map("parent_id")
-  description String? @db.VarChar(200) @map("description")
-  createdAt DateTime @default(now()) @map("created_at") 
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          Int      @id @default(autoincrement()) @map("id")
+  name        String   @map("name") @db.VarChar(50)
+  code        String   @unique @map("code") @db.VarChar(100)
+  type        String   @map("type") @db.VarChar(20) // MENU, BUTTON, API
+  parentId    Int?     @map("parent_id")
+  description String?  @map("description") @db.VarChar(200)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  parent Permission? @relation("PermissionHierarchy", fields: [parentId], references: [id])
-  children Permission[] @relation("PermissionHierarchy")
-  roles RolePermission[]
+  parent   Permission?      @relation("PermissionHierarchy", fields: [parentId], references: [id])
+  children Permission[]     @relation("PermissionHierarchy")
+  roles    RolePermission[]
 
   @@index([parentId])
   @@map("permissions")
@@ -1210,10 +1211,10 @@ model Permission {
 
 /// 角色权限关联表
 model RolePermission {
-  roleId Int @map("role_id")
+  roleId       Int @map("role_id")
   permissionId Int @map("permission_id")
 
-  role Role @relation(fields: [roleId], references: [id])
+  role       Role       @relation(fields: [roleId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
 
   @@id([roleId, permissionId])
@@ -1222,27 +1223,27 @@ model RolePermission {
 
 /// 租户员工表
 model Staff {
-  id BigInt @id @default(autoincrement()) @map("id")
-  tenantId BigInt @map("tenant_id")
-  roleId Int @map("role_id")
-  username String @unique @db.VarChar(50) @map("username")
-  password String @db.VarChar(255) @map("password")
-  realName String? @map("real_name") @db.VarChar(50)
-  mobile String? @db.VarChar(20) @map("mobile")
-  email String? @db.VarChar(100) @map("email")
-  avatarUrl String? @map("avatar_url") @db.VarChar(255)
-  status StaffStatus @default(ACTIVE) @map("status")
-  lastLoginAt DateTime? @map("last_login_at")
-  createdAt DateTime @default(now()) @map("created_at") 
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          BigInt      @id @default(autoincrement()) @map("id")
+  tenantId    BigInt      @map("tenant_id")
+  roleId      Int         @map("role_id")
+  username    String      @unique @map("username") @db.VarChar(50)
+  password    String      @map("password") @db.VarChar(255)
+  realName    String?     @map("real_name") @db.VarChar(50)
+  mobile      String?     @map("mobile") @db.VarChar(20)
+  email       String?     @map("email") @db.VarChar(100)
+  avatarUrl   String?     @map("avatar_url") @db.VarChar(255)
+  status      StaffStatus @default(ACTIVE) @map("status")
+  lastLoginAt DateTime?   @map("last_login_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  role Role @relation(fields: [roleId], references: [id])
+  tenant           Tenant           @relation(fields: [tenantId], references: [id])
+  role             Role             @relation(fields: [roleId], references: [id])
   inbound_receipts InboundReceipt[]
-  chatSessions ChatSession[]
-  serviceTickets ServiceTicket[] @relation("StaffToServiceTicket")
-  ticketHistories TicketHistory[]
-  quickReplies QuickReply[]
+  chatSessions     ChatSession[]
+  serviceTickets   ServiceTicket[]  @relation("StaffToServiceTicket")
+  ticketHistories  TicketHistory[]
+  quickReplies     QuickReply[]
 
   @@index([tenantId])
   @@index([roleId])
@@ -1257,19 +1258,19 @@ enum StaffStatus {
 
 /// 租户地址表
 model TenantAddress {
-  id BigInt @id @default(autoincrement()) @map("id")
-  tenantId BigInt @map("tenant_id")
-  type AddressType @map("type") // BUSINESS, RETURN, INVOICE, RECEIPT
-  province String @db.VarChar(50) @map("province")
-  city String @db.VarChar(50) @map("city")
-  district String @db.VarChar(50) @map("district")
-  street String? @db.VarChar(100) @map("street")
-  detail String @db.VarChar(255) @map("detail")
-  contactName String @map("contact_name") @db.VarChar(50) 
-  contactPhone String @map("contact_phone") @db.VarChar(20)
-  isDefault Boolean @default(false) @map("is_default")
+  id           BigInt      @id @default(autoincrement()) @map("id")
+  tenantId     BigInt      @map("tenant_id")
+  type         AddressType @map("type") // BUSINESS, RETURN, INVOICE, RECEIPT
+  province     String      @map("province") @db.VarChar(50)
+  city         String      @map("city") @db.VarChar(50)
+  district     String      @map("district") @db.VarChar(50)
+  street       String?     @map("street") @db.VarChar(100)
+  detail       String      @map("detail") @db.VarChar(255)
+  contactName  String      @map("contact_name") @db.VarChar(50)
+  contactPhone String      @map("contact_phone") @db.VarChar(20)
+  isDefault    Boolean     @default(false) @map("is_default")
 
-  createdAt DateTime @default(now()) @map("created_at") 
+  createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
@@ -1280,19 +1281,19 @@ model TenantAddress {
 
 /// 回收定价规则表
 model RecyclePricingRule {
-  id BigInt @id @default(autoincrement()) @map("id")
-  tenantId BigInt @map("tenant_id")
-  categoryId Int @map("category_id")
-  basePrice Float @map("base_price") // 基础单价
-  minWeight Float? @map("min_weight")
-  maxWeight Float? @map("max_weight")
-  ruleJson Json? @map("rule_json") // 复杂计费规则
-  isActive Boolean @default(true) @map("is_active")
+  id         BigInt  @id @default(autoincrement()) @map("id")
+  tenantId   BigInt  @map("tenant_id")
+  categoryId Int     @map("category_id")
+  basePrice  Float   @map("base_price") // 基础单价
+  minWeight  Float?  @map("min_weight")
+  maxWeight  Float?  @map("max_weight")
+  ruleJson   Json?   @map("rule_json") // 复杂计费规则
+  isActive   Boolean @default(true) @map("is_active")
 
-  createdAt DateTime @default(now()) @map("created_at") 
+  createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
   category Category @relation(fields: [categoryId], references: [id])
 
   @@index([tenantId])
@@ -1302,46 +1303,46 @@ model RecyclePricingRule {
 
 /// 租户交易流水表
 model TenantTransaction {
-  id BigInt @id @default(autoincrement()) @map("id")
-  tenantId BigInt @map("tenant_id")
-  type TenantTransactionType  @map("type")
-  amount Decimal @db.Decimal(12, 2) @map("amount")
-  balanceAfter Decimal @map("balance_after") @db.Decimal(12, 2)
-  relatedType String? @map("related_type") // ORDER, WITHDRAWAL 
-  relatedId String? @map("related_id")
-  remark String?  @map("remark")
+  id           BigInt                @id @default(autoincrement()) @map("id")
+  tenantId     BigInt                @map("tenant_id")
+  type         TenantTransactionType @map("type")
+  amount       Decimal               @map("amount") @db.Decimal(12, 2)
+  balanceAfter Decimal               @map("balance_after") @db.Decimal(12, 2)
+  relatedType  String?               @map("related_type") // ORDER, WITHDRAWAL 
+  relatedId    String?               @map("related_id")
+  remark       String?               @map("remark")
 
   createdAt DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id])
 
-  @@index([tenantId])
   @@unique([tenantId, type, relatedId])
+  @@index([tenantId])
   @@map("tenant_transactions")
 }
 
 /// 结算记录表
 model SettlementRecord {
-  id BigInt @id @default(autoincrement()) @map("id")
+  id       BigInt @id @default(autoincrement()) @map("id")
   tenantId BigInt @map("tenant_id")
-  orderId BigInt @unique @map("order_id")
+  orderId  BigInt @unique @map("order_id")
 
-  totalAmount Decimal @map("total_amount") @db.Decimal(12, 2) // 最终结算金额
-  goodsAmount Decimal @map("goods_amount") @db.Decimal(12, 2) // 货款 
-  expressFee Decimal @map("express_fee") @db.Decimal(12, 2) // 快递费
-  platformFee Decimal @map("platform_fee") @db.Decimal(12, 2) // 平台服务费
+  totalAmount   Decimal @map("total_amount") @db.Decimal(12, 2) // 最终结算金额
+  goodsAmount   Decimal @map("goods_amount") @db.Decimal(12, 2) // 货款 
+  expressFee    Decimal @map("express_fee") @db.Decimal(12, 2) // 快递费
+  platformFee   Decimal @map("platform_fee") @db.Decimal(12, 2) // 平台服务费
   subsidyAmount Decimal @default(0) @map("subsidy_amount") @db.Decimal(12, 2) // 补贴金额
 
-  status SettlementStatus @default(PENDING) @map("status")
-  settledAt DateTime? @map("settled_at")
+  status    SettlementStatus @default(PENDING) @map("status")
+  settledAt DateTime?        @map("settled_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id]) 
-  order Order @relation(fields: [orderId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  order  Order  @relation(fields: [orderId], references: [id])
 
-  @@index([tenantId])   
+  @@index([tenantId])
   @@index([status])
   @@map("settlement_records")
 }
@@ -1394,23 +1395,23 @@ enum InspectionResult {
 }
 
 model InboundReceipt {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @unique @map("order_id")
-  warehouseId BigInt @map("warehouse_id")
-  staffId BigInt? @map("staff_id")  
-  status InboundStatus @default(RECEIVED) @map("status")
+  id               BigInt            @id @default(autoincrement()) @map("id")
+  orderId          BigInt            @unique @map("order_id")
+  warehouseId      BigInt            @map("warehouse_id")
+  staffId          BigInt?           @map("staff_id")
+  status           InboundStatus     @default(RECEIVED) @map("status")
   inspectionResult InspectionResult? @map("inspection_result")
-  exceptionReason String? @map("exception_reason") @db.VarChar(255)
-  photos String[]  @map("photos")
-  receivedAt DateTime? @map("received_at")
-  inspectedAt DateTime? @map("inspected_at")
-  inboundedAt DateTime? @map("inbounded_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  exceptionReason  String?           @map("exception_reason") @db.VarChar(255)
+  photos           String[]          @map("photos")
+  receivedAt       DateTime?         @map("received_at")
+  inspectedAt      DateTime?         @map("inspected_at")
+  inboundedAt      DateTime?         @map("inbounded_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
 
-  order Order @relation(fields: [orderId], references: [id])
+  order     Order     @relation(fields: [orderId], references: [id])
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
-  staff Staff? @relation(fields: [staffId], references: [id])
+  staff     Staff?    @relation(fields: [staffId], references: [id])
 
   @@index([warehouseId])
   @@index([status])
@@ -1418,29 +1419,28 @@ model InboundReceipt {
 }
 
 model Storage {
-  id String @id @default(uuid()) @map("id")
-  userId String  @map("user_id")
-  filename String  @map("filename")
-  originalName String  @map("original_name")
-  fileSize Int  @map("file_size")
-  mimeType String  @map("mime_type")
-  fileUrl String  @map("file_url")
-  filePath String  @map("file_path")
-  hashMd5 String  @map("hash_md5")
-  fileType FileType  @map("file_type")
-  category String?  @map("category")
-  thumbnailUrl String?  @map("thumbnail_url")  
-  ossType OssType  @map("oss_type")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  orderPhotos OrderPhoto[]
+  id           String       @id @default(uuid()) @map("id")
+  userId       String       @map("user_id")
+  filename     String       @map("filename")
+  originalName String       @map("original_name")
+  fileSize     Int          @map("file_size")
+  mimeType     String       @map("mime_type")
+  fileUrl      String       @map("file_url")
+  filePath     String       @map("file_path")
+  hashMd5      String       @map("hash_md5")
+  fileType     FileType     @map("file_type")
+  category     String?      @map("category")
+  thumbnailUrl String?      @map("thumbnail_url")
+  ossType      OssType      @map("oss_type")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  orderPhotos  OrderPhoto[]
 
   @@index([userId])
   @@index([fileType])
   @@index([hashMd5])
   @@map("storages")
 }
-
 
 enum FileType {
   IMAGE
@@ -1469,32 +1469,32 @@ enum OssType {
 /// 访问权限：
 ///   isPublic = false（默认私有）；如需公开展示可设为 true
 model OrderPhoto {
-  id BigInt @id @default(autoincrement()) @map("id")
-  orderId BigInt @map("order_id")
-  storageId String @map("storage_id")
-  filename String @db.VarChar(255)  @map("filename")
-  originalName String @db.VarChar(255)  @map("original_name")
-  photoUrl String @db.VarChar(2048) @map("photo_url")
-  filePath String @db.VarChar(512)  @map("file_path")
-  fileSize Int @map("file_size")
-  mimeType String @db.VarChar(100)  @map("mime_type") 
-  hashMd5 String @db.VarChar(32)   @map("hash_md5")
-  fileType FileType @default(IMAGE)   @map("file_type")
-  category String? @db.VarChar(50)   @map("category")
-  thumbnailUrl String? @db.VarChar(2048) @map("thumbnail_url")
-  ossType OssType @map("oss_type")
-  uploadedAt DateTime @default(now())   @map("uploaded_at")
-  created_at DateTime @default(now())   @map("created_at")
-  updated_at DateTime @updatedAt        @map("updated_at")
+  id           BigInt   @id @default(autoincrement()) @map("id")
+  orderId      BigInt   @map("order_id")
+  storageId    String   @map("storage_id")
+  filename     String   @map("filename") @db.VarChar(255)
+  originalName String   @map("original_name") @db.VarChar(255)
+  photoUrl     String   @map("photo_url") @db.VarChar(2048)
+  filePath     String   @map("file_path") @db.VarChar(512)
+  fileSize     Int      @map("file_size")
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  hashMd5      String   @map("hash_md5") @db.VarChar(32)
+  fileType     FileType @default(IMAGE) @map("file_type")
+  category     String?  @map("category") @db.VarChar(50)
+  thumbnailUrl String?  @map("thumbnail_url") @db.VarChar(2048)
+  ossType      OssType  @map("oss_type")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+  created_at   DateTime @default(now()) @map("created_at")
+  updated_at   DateTime @updatedAt @map("updated_at")
 
-  order Order @relation(fields: [orderId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id])
   storage Storage @relation(fields: [storageId], references: [id])
 
+  @@unique([orderId, filePath]) // 防止同一订单重复对象键
   // 性能与约束：高并发检索与去重
   @@index([orderId])
-  @@index([storageId])  
+  @@index([storageId])
   @@index([uploadedAt])
-  @@unique([orderId, filePath]) // 防止同一订单重复对象键
   @@map("order_photos")
 }
 
@@ -1504,23 +1504,23 @@ model OrderPhoto {
 
 /// 客服会话表
 model ChatSession {
-  id BigInt @id @default(autoincrement()) @map("id")
-  userId BigInt @map("user_id")
-  agentId BigInt? @map("agent_id")
-  type ChatSessionType @default(AUTO) @map("type") // AUTO:智能客服, MANUAL:人工客服
-  status ChatSessionStatus @default(ACTIVE) @map("status")
-  topic String? @db.VarChar(200) @map("topic")
-  context Json? @map("context") // 会话上下文信息
-  satisfactionRating Int? @map("satisfaction_rating") // 1-5星
-  feedback String? @map("feedback") @db.VarChar(500)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  closedAt DateTime? @map("closed_at")
+  id                 BigInt            @id @default(autoincrement()) @map("id")
+  userId             BigInt            @map("user_id")
+  agentId            BigInt?           @map("agent_id")
+  type               ChatSessionType   @default(AUTO) @map("type") // AUTO:智能客服, MANUAL:人工客服
+  status             ChatSessionStatus @default(ACTIVE) @map("status")
+  topic              String?           @map("topic") @db.VarChar(200)
+  context            Json?             @map("context") // 会话上下文信息
+  satisfactionRating Int?              @map("satisfaction_rating") // 1-5星
+  feedback           String?           @map("feedback") @db.VarChar(500)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  closedAt           DateTime?         @map("closed_at")
 
-  user User @relation(fields: [userId], references: [id])
-  agent Staff? @relation(fields: [agentId], references: [id])
+  user     User            @relation(fields: [userId], references: [id])
+  agent    Staff?          @relation(fields: [agentId], references: [id])
   messages ChatMessage[]
-  tickets ServiceTicket[]
+  tickets  ServiceTicket[]
 
   @@index([userId])
   @@index([agentId])
@@ -1531,17 +1531,17 @@ model ChatSession {
 
 /// 聊天消息表
 model ChatMessage {
-  id BigInt @id @default(autoincrement()) @map("id")
-  sessionId BigInt @map("session_id")
-  senderType ChatSenderType @map("sender_type") // USER, AGENT, SYSTEM, AI
-  senderId BigInt? @map("sender_id")
-  messageType ChatMessageType @default(TEXT) @map("message_type") // TEXT, IMAGE, ORDER_CARD, TICKET_CARD, QUICK_ACTION
-  content String? @db.Text @map("content")
-  mediaUrl String? @map("media_url") @db.VarChar(512)
-  extraData Json? @map("extra_data") // 订单卡片、工单卡片等额外数据
-  status ChatMessageStatus @default(SENT) @map("status") // SENDING, SENT, DELIVERED, READ
-  isRead Boolean @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          BigInt            @id @default(autoincrement()) @map("id")
+  sessionId   BigInt            @map("session_id")
+  senderType  ChatSenderType    @map("sender_type") // USER, AGENT, SYSTEM, AI
+  senderId    BigInt?           @map("sender_id")
+  messageType ChatMessageType   @default(TEXT) @map("message_type") // TEXT, IMAGE, ORDER_CARD, TICKET_CARD, QUICK_ACTION
+  content     String?           @map("content") @db.Text
+  mediaUrl    String?           @map("media_url") @db.VarChar(512)
+  extraData   Json?             @map("extra_data") // 订单卡片、工单卡片等额外数据
+  status      ChatMessageStatus @default(SENT) @map("status") // SENDING, SENT, DELIVERED, READ
+  isRead      Boolean           @default(false) @map("is_read")
+  createdAt   DateTime          @default(now()) @map("created_at")
 
   session ChatSession @relation(fields: [sessionId], references: [id])
 
@@ -1553,17 +1553,17 @@ model ChatMessage {
 
 /// 知识库表
 model KnowledgeBase {
-  id BigInt @id @default(autoincrement()) @map("id")
-  category KnowledgeCategory @map("category") // ORDER, RECYCLE, PAYMENT, LOGISTICS, GENERAL
-  question String @db.Text @map("question")
-  answer String @db.Text @map("answer")
-  keywords String[] @map("keywords")
-  intent String? @db.VarChar(100) @map("intent") // 意图识别标签
-  priority Int @default(0) @map("priority")
-  isActive Boolean @default(true) @map("is_active")
-  hitCount Int @default(0) @map("hit_count")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id        BigInt            @id @default(autoincrement()) @map("id")
+  category  KnowledgeCategory @map("category") // ORDER, RECYCLE, PAYMENT, LOGISTICS, GENERAL
+  question  String            @map("question") @db.Text
+  answer    String            @map("answer") @db.Text
+  keywords  String[]          @map("keywords")
+  intent    String?           @map("intent") @db.VarChar(100) // 意图识别标签
+  priority  Int               @default(0) @map("priority")
+  isActive  Boolean           @default(true) @map("is_active")
+  hitCount  Int               @default(0) @map("hit_count")
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
 
   @@index([category])
   @@index([isActive])
@@ -1573,28 +1573,28 @@ model KnowledgeBase {
 
 /// 客服工单表
 model ServiceTicket {
-  id BigInt @id @default(autoincrement()) @map("id")
-  ticketNo String @unique @db.VarChar(32) @map("ticket_no")
-  sessionId BigInt? @map("session_id")
-  userId BigInt @map("user_id")
-  orderId BigInt? @map("order_id")
-  type TicketType @map("type")
-  priority TicketPriority @default(NORMAL) @map("priority")
-  status TicketStatus @default(PENDING) @map("status")
-  title String @db.VarChar(200) @map("title")
-  description String? @db.Text @map("description")
-  attachments String[] @map("attachments")
-  assignedTo BigInt? @map("assigned_to")
-  resolution String? @db.Text @map("resolution")
-  resolvedAt DateTime? @map("resolved_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  closedAt DateTime? @map("closed_at")
+  id          BigInt         @id @default(autoincrement()) @map("id")
+  ticketNo    String         @unique @map("ticket_no") @db.VarChar(32)
+  sessionId   BigInt?        @map("session_id")
+  userId      BigInt         @map("user_id")
+  orderId     BigInt?        @map("order_id")
+  type        TicketType     @map("type")
+  priority    TicketPriority @default(NORMAL) @map("priority")
+  status      TicketStatus   @default(PENDING) @map("status")
+  title       String         @map("title") @db.VarChar(200)
+  description String?        @map("description") @db.Text
+  attachments String[]       @map("attachments")
+  assignedTo  BigInt?        @map("assigned_to")
+  resolution  String?        @map("resolution") @db.Text
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  closedAt    DateTime?      @map("closed_at")
 
-  session ChatSession? @relation(fields: [sessionId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-  order Order? @relation(fields: [orderId], references: [id])
-  assignee Staff? @relation("StaffToServiceTicket", fields: [assignedTo], references: [id])
+  session   ChatSession?    @relation(fields: [sessionId], references: [id])
+  user      User            @relation(fields: [userId], references: [id])
+  order     Order?          @relation(fields: [orderId], references: [id])
+  assignee  Staff?          @relation("StaffToServiceTicket", fields: [assignedTo], references: [id])
   histories TicketHistory[]
 
   @@index([userId])
@@ -1608,17 +1608,17 @@ model ServiceTicket {
 
 /// 工单处理记录表
 model TicketHistory {
-  id BigInt @id @default(autoincrement()) @map("id")
-  ticketId BigInt @map("ticket_id")
-  operatorId BigInt? @map("operator_id")
-  action TicketAction @map("action") // CREATE, ASSIGN, UPDATE, RESOLVE, CLOSE, REOPEN
+  id         BigInt        @id @default(autoincrement()) @map("id")
+  ticketId   BigInt        @map("ticket_id")
+  operatorId BigInt?       @map("operator_id")
+  action     TicketAction  @map("action") // CREATE, ASSIGN, UPDATE, RESOLVE, CLOSE, REOPEN
   fromStatus TicketStatus? @map("from_status")
-  toStatus TicketStatus? @map("to_status")
-  comment String? @db.Text @map("comment")
-  createdAt DateTime @default(now()) @map("created_at")
+  toStatus   TicketStatus? @map("to_status")
+  comment    String?       @map("comment") @db.Text
+  createdAt  DateTime      @default(now()) @map("created_at")
 
-  ticket ServiceTicket @relation(fields: [ticketId], references: [id])
-  operator Staff? @relation(fields: [operatorId], references: [id])
+  ticket   ServiceTicket @relation(fields: [ticketId], references: [id])
+  operator Staff?        @relation(fields: [operatorId], references: [id])
 
   @@index([ticketId])
   @@index([createdAt])
@@ -1627,13 +1627,13 @@ model TicketHistory {
 
 /// 快捷回复表
 model QuickReply {
-  id BigInt @id @default(autoincrement()) @map("id")
-  agentId BigInt? @map("agent_id")
-  title String @db.VarChar(100) @map("title")
-  content String @db.Text @map("content")
-  category String? @db.VarChar(50) @map("category")
-  sortOrder Int @default(0) @map("sort_order")
-  isGlobal Boolean @default(false) @map("is_global")
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  agentId   BigInt?  @map("agent_id")
+  title     String   @map("title") @db.VarChar(100)
+  content   String   @map("content") @db.Text
+  category  String?  @map("category") @db.VarChar(50)
+  sortOrder Int      @default(0) @map("sort_order")
+  isGlobal  Boolean  @default(false) @map("is_global")
   createdAt DateTime @default(now()) @map("created_at")
 
   agent Staff? @relation(fields: [agentId], references: [id])
@@ -1645,18 +1645,18 @@ model QuickReply {
 
 /// 客服统计表
 model CustomerServiceStats {
-  id BigInt @id @default(autoincrement()) @map("id")
-  date DateTime @db.Date @unique @map("date")
-  totalSessions Int @default(0) @map("total_sessions")
-  autoSessions Int @default(0) @map("auto_sessions")
-  manualSessions Int @default(0) @map("manual_sessions")
-  totalTickets Int @default(0) @map("total_tickets")
-  resolvedTickets Int @default(0) @map("resolved_tickets")
-  avgResponseTime Int? @map("avg_response_time") // 毫秒
-  avgSatisfaction Decimal? @map("avg_satisfaction") @db.Decimal(3,2)
-  aiResolveRate Decimal? @map("ai_resolve_rate") @db.Decimal(5,2) // AI解决率
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              BigInt   @id @default(autoincrement()) @map("id")
+  date            DateTime @unique @map("date") @db.Date
+  totalSessions   Int      @default(0) @map("total_sessions")
+  autoSessions    Int      @default(0) @map("auto_sessions")
+  manualSessions  Int      @default(0) @map("manual_sessions")
+  totalTickets    Int      @default(0) @map("total_tickets")
+  resolvedTickets Int      @default(0) @map("resolved_tickets")
+  avgResponseTime Int?     @map("avg_response_time") // 毫秒
+  avgSatisfaction Decimal? @map("avg_satisfaction") @db.Decimal(3, 2)
+  aiResolveRate   Decimal? @map("ai_resolve_rate") @db.Decimal(5, 2) // AI解决率
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@index([date])
   @@map("customer_service_stats")
@@ -1664,16 +1664,16 @@ model CustomerServiceStats {
 
 /// AI对话记录表（用于分析和优化）
 model AIConversationLog {
-  id BigInt @id @default(autoincrement()) @map("id")
-  sessionId BigInt @map("session_id")
-  userId BigInt @map("user_id")
-  userMessage String @db.Text @map("user_message")
-  intent String? @db.VarChar(100) @map("intent")
-  entities Json? @map("entities") // 提取的实体
-  aiResponse String? @db.Text @map("ai_response")
-  confidence Decimal? @map("confidence") @db.Decimal(5,4)
-  isHelpful Boolean? @map("is_helpful") // 用户反馈是否有帮助
-  createdAt DateTime @default(now()) @map("created_at")
+  id          BigInt   @id @default(autoincrement()) @map("id")
+  sessionId   BigInt   @map("session_id")
+  userId      BigInt   @map("user_id")
+  userMessage String   @map("user_message") @db.Text
+  intent      String?  @map("intent") @db.VarChar(100)
+  entities    Json?    @map("entities") // 提取的实体
+  aiResponse  String?  @map("ai_response") @db.Text
+  confidence  Decimal? @map("confidence") @db.Decimal(5, 4)
+  isHelpful   Boolean? @map("is_helpful") // 用户反馈是否有帮助
+  createdAt   DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -1689,82 +1689,149 @@ model AIConversationLog {
 // ============================================
 
 enum ChatSessionType {
-  AUTO      // 智能客服
-  MANUAL    // 人工客服
+  AUTO // 智能客服
+  MANUAL // 人工客服
 }
 
 enum ChatSessionStatus {
-  ACTIVE    // 进行中
-  WAITING   // 排队等待
-  CLOSED    // 已关闭
+  ACTIVE // 进行中
+  WAITING // 排队等待
+  CLOSED // 已关闭
 }
 
 enum ChatSenderType {
-  USER      // 用户
-  AGENT     // 客服人员
-  SYSTEM    // 系统消息
-  AI        // AI回复
+  USER // 用户
+  AGENT // 客服人员
+  SYSTEM // 系统消息
+  AI // AI回复
 }
 
 enum ChatMessageType {
-  TEXT          // 文本消息
-  IMAGE         // 图片消息
-  VOICE         // 语音消息
-  ORDER_CARD    // 订单卡片
-  TICKET_CARD   // 工单卡片
-  QUICK_ACTION  // 快捷操作
+  TEXT // 文本消息
+  IMAGE // 图片消息
+  VOICE // 语音消息
+  ORDER_CARD // 订单卡片
+  TICKET_CARD // 工单卡片
+  QUICK_ACTION // 快捷操作
   SYSTEM_NOTICE // 系统通知
 }
 
 enum ChatMessageStatus {
-  SENDING   // 发送中
-  SENT      // 已发送
+  SENDING // 发送中
+  SENT // 已发送
   DELIVERED // 已送达
-  READ      // 已读
-  FAILED    // 发送失败
+  READ // 已读
+  FAILED // 发送失败
 }
 
 enum KnowledgeCategory {
-  ORDER      // 订单相关
-  RECYCLE    // 回收相关
-  PAYMENT    // 支付相关
-  LOGISTICS  // 物流相关
-  ACCOUNT    // 账户相关
-  GENERAL    // 通用问题
+  ORDER // 订单相关
+  RECYCLE // 回收相关
+  PAYMENT // 支付相关
+  LOGISTICS // 物流相关
+  ACCOUNT // 账户相关
+  GENERAL // 通用问题
 }
 
 enum TicketType {
-  ORDER_CANCEL      // 订单取消
-  ORDER_MODIFY      // 订单修改
-  REFUND_REQUEST    // 退款申请
-  LOGISTICS_ISSUE   // 物流异常
-  RECYCLE_ISSUE     // 回收问题
-  PRICE_DISPUTE     // 价格异议
-  TIME_RESCHEDULE   // 时间调整
-  COMPLAINT         // 投诉建议
-  OTHER             // 其他
+  ORDER_CANCEL // 订单取消
+  ORDER_MODIFY // 订单修改
+  REFUND_REQUEST // 退款申请
+  LOGISTICS_ISSUE // 物流异常
+  RECYCLE_ISSUE // 回收问题
+  PRICE_DISPUTE // 价格异议
+  TIME_RESCHEDULE // 时间调整
+  COMPLAINT // 投诉建议
+  OTHER // 其他
 }
 
 enum TicketPriority {
-  LOW       // 低优先级
-  NORMAL    // 普通
-  HIGH      // 高优先级
-  URGENT    // 紧急
+  LOW // 低优先级
+  NORMAL // 普通
+  HIGH // 高优先级
+  URGENT // 紧急
 }
 
 enum TicketStatus {
-  PENDING     // 待处理
-  PROCESSING  // 处理中
-  RESOLVED    // 已解决
-  CLOSED      // 已关闭
-  REOPENED    // 已重开
+  PENDING // 待处理
+  PROCESSING // 处理中
+  RESOLVED // 已解决
+  CLOSED // 已关闭
+  REOPENED // 已重开
 }
 
 enum TicketAction {
-  CREATE    // 创建
-  ASSIGN    // 分配
-  UPDATE    // 更新
-  RESOLVE   // 解决
-  CLOSE     // 关闭
-  REOPEN    // 重开
+  CREATE // 创建
+  ASSIGN // 分配
+  UPDATE // 更新
+  RESOLVE // 解决
+  CLOSE // 关闭
+  REOPEN // 重开
+}
+
+// 语音下单会话表
+model VoiceOrderSession {
+  id            String    @id @default(uuid())
+  userId        BigInt    @map("user_id")
+  currentStep   String    @map("current_step") // DialogStep 枚举
+  collectedData Json      @map("collected_data")
+  context       Json?
+  status        String    @default("ACTIVE") // ACTIVE, COMPLETED, ABANDONED
+  orderNo       String?   @map("order_no")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  completedAt   DateTime? @map("completed_at")
+
+  user User                  @relation(fields: [userId], references: [id])
+  logs VoiceRecognitionLog[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("voice_order_sessions")
+}
+
+// 语音识别日志表
+model VoiceRecognitionLog {
+  id             String   @id @default(uuid())
+  sessionId      String   @map("session_id")
+  userId         BigInt   @map("user_id")
+  step           String // 对话步骤
+  audioUrl       String?  @map("audio_url")
+  recognizedText String   @map("recognized_text")
+  intent         String? // 识别的意图
+  entities       Json?
+  confidence     Float?
+  duration       Int? // 音频时长 (秒)
+  status         String // SUCCESS, FAILED, TIMEOUT
+  errorMessage   String?  @map("error_message")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  session VoiceOrderSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("voice_recognition_logs")
+}
+
+// 话术模板表
+model DialogTemplate {
+  id           Int      @id @default(autoincrement())
+  step         String // DialogStep
+  templateCode String   @map("template_code")
+  templateText String   @map("template_text")
+  variables    String[] @default([])
+  priority     Int      @default(0)
+  isActive     Boolean  @default(true) @map("is_active")
+  testGroup    String?  @map("test_group") // A/B 测试分组
+  hitCount     Int      @default(0) @map("hit_count")
+  successRate  Float?   @map("success_rate")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([step, templateCode])
+  @@index([step])
+  @@index([isActive])
+  @@map("dialog_templates")
 }

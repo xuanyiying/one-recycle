@@ -33,6 +33,7 @@ import { TenantModule } from './modules/tenant/tenant.module';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { CustomerServiceModule } from './modules/customer/customer.module';
+import { VoiceOrderModule } from './modules/voice-order/voice-order.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -87,6 +88,7 @@ import { HealthModule } from './modules/health/health.module';
     PricingModule,
     StorageModule,
     CustomerServiceModule,
+    VoiceOrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],

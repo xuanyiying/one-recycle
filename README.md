@@ -1,6 +1,7 @@
 # One Recycle - 微服务架构平台
 
 One Recycle 是一个基于微服务架构的回收平台，包含账户、订单、支付、调度等多个服务。项目采用混合架构模式，在开发/测试环境使用单体应用提高开发效率，在生产环境使用微服务架构确保系统的可扩展性和稳定性。
+这是一个旧物回收平台，用户发起回收订单预约，系统调用第三方快递接口进行下单通知第三方快递员上门上门取件、 发货 ，仓库人员收货，验货，入库，入库成功，需要后需要自动支付回收物品的钱，以积分的形式转给用户，用户发起提现操作时，完成真正的支付操作，从平台租户账户扣款，转给用户，分析数据模型定义的完整性与合理性，进行优化， 同时修改相关代码
 
 ## 项目结构
 
@@ -309,6 +310,38 @@ npm run test:all
 npm run test:auth
 ```
 
+### 测试指南
+
+```bash
+# 安装后端依赖
+cd server
+npm install
+
+# 单元测试与覆盖率（>=90%）
+npm run test:cov:unit
+
+# 集成测试与覆盖率（>=80%）
+npm run test:cov:e2e
+
+# 仅运行单元测试
+npm run test
+
+# 仅运行集成测试
+npm run test:e2e
+
+# 生成 Allure / Extent 报告
+npm run test:report
+npm run test:e2e:report
+```
+
+测试数据 SQL：`server/test/fixtures/order-state-test-data.sql`
+
+Mock 脚本位置：`server/test/mocks/payment-gateway.mock.ts`、`server/test/mocks/inventory-service.mock.ts`、`server/test/mocks/queue.mock.ts`
+
+Allure 结果默认输出到 `server/allure-results`，Extent 报告默认输出到 `server/extent-report.html`（可在 CI 中归档）
+
+CI 失败诊断建议：设置 `LOG_LEVEL=debug` 与 `DB_LOG_QUERIES=true`，请求与 SQL 日志会自动输出，便于排查失败用例
+
 ## 部署
 
 ### 开发/测试环境
@@ -326,3 +359,102 @@ npm run test:auth
 ## 许可证
 
 MIT
+
+sequenceDiagram
+participant User
+participant OrderService
+participant DispatchProcessor
+participant TenantService
+participant JD_Logistics
+participant SettlementService
+
+    User->>OrderService: Create Order
+    OrderService->>DispatchProcessor: Queue Job (dispatch-order)
+    
+    rect rgb(240, 248, 255)
+        note right of DispatchProcessor: New Logic
+        DispatchProcessor->>OrderService: Get Order Details
+        DispatchProcessor->>TenantService: Assign Tenant (if null)
+        TenantService-->>DispatchProcessor: Return Tenant ID
+        
+        DispatchProcessor->>TenantService: Get Receipt Address
+        TenantService-->>DispatchProcessor: Return Address (Beijing Warehouse...)
+    end
+    
+    DispatchProcessor->>JD_Logistics: Create Order (Sender=User, Receiver=Tenant)
+    JD_Logistics-->>DispatchProcessor: Waybill Code & Est. Fee
+    
+    rect rgb(255, 240, 245)
+        note right of DispatchProcessor: Financial Integration
+        DispatchProcessor->>SettlementService: Init Settlement Record
+        SettlementService->>SettlementService: Calculate Estimated Fees
+        SettlementService-->>DispatchProcessor: Ack
+    end
+    
+    DispatchProcessor->>OrderService: Update Order Status (CREATED)
+
+
+stateDiagram-v2
+    [*] --> 待接单
+    待接单 --> 待取件 : 系统智能派单<br/>（基于位置/负载/好评率）
+    待取件 --> 已取件 : 回收员APP扫码确认取件<br/>+ 上传物品实拍图
+    已取件 --> 运输中 : 回收员出发（自动导航）
+    运输中 --> 待收货 : 到达回收站
+    待收货 --> 验货中 : 回收站扫码收货
+    验货中 --> 已验货 : AI图像识别+人工复核<br/>（材质/成色/重量校准）
+    验货中 --> 验货异常 : 识别不符/质量不达标
+    验货异常 --> 人工处理 : 触发客服介入
+    人工处理 --> 已验货 : 协商确认（调整重量/价格）
+    人工处理 --> 已取消 : 用户确认终止
+    已验货 --> 待入库 : 生成入库清单
+    待入库 --> 已入库 : 仓库扫码入库<br/>+ 区块链存证
+    已入库 --> 待结算 : 系统自动计算收益
+    待结算 --> 已完成 : 微信支付商户号转账至用户零钱
+    已完成 --> [*]
+    
+    待接单 --> 已取消 : 用户主动取消
+    待取件 --> 已取消 : 回收员拒单/超时未接
+    运输中 --> 已取消 : 异常情况（如物品不符）
+    
+    已取消 --> [*]
+    
+    note right of 验货中
+        技术增强：
+        • YOLOv8图像识别（准确率≥92%）
+        • 重量自动校准算法
+        • 验货视频存证（可选）
+    end note
+    
+    note right of 待结算
+        支付安全：
+        • prepay_id有效期监控
+        • 异常订单自动关单
+        • 退款通道预置
+    end note
+
+### 调试与种子数据
+
+在 server 目录执行：
+
+```bash
+npm run seed
+```
+
+订单状态全链路种子脚本：server/scripts/seed-order-status.ts
+
+可配置参数（环境变量）：
+
+- SEED_ORDER_COUNT：生成订单数量，默认 50
+- SEED_CLEAR_OLD：是否清空旧数据，默认 true
+- SEED_WITH_RELATIONS：是否生成关联数据，默认 true
+
+示例：
+
+```bash
+SEED_ORDER_COUNT=20 SEED_CLEAR_OLD=false SEED_WITH_RELATIONS=true npm run seed
+```
+
+说明：
+
+- 优惠券使用记录通过订单 couponId 字段模拟
+- 发票记录暂以订单 remark 字段描述，后续如有发票表可替换

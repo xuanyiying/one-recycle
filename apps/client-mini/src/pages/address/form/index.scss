@@ -1,7 +1,0 @@
-@use '../../../styles/global.scss' as *;
-
-.address-form-page {
-  min-height: 100vh;
-  background-color: var(--background-color, #f5f5f5);
-  @include responsive-page-padding;
-}
