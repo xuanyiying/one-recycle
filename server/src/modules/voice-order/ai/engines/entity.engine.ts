@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { AddressParser } from '../utils/address-parser.util';
-import { QuantityParser } from '../utils/quantity-parser.util';
+import { AddressParser } from '../../utils/address-parser.util';
+import { QuantityParser } from '../../utils/quantity-parser.util';
 
 @Injectable()
 export class EntityEngine {
@@ -99,10 +99,7 @@ export class EntityEngine {
    * 模糊匹配物品类型
    */
   private async fuzzyItemTypeMatch(text: string): Promise<{ itemCategoryId?: number; itemName?: string; matchedKeyword?: string } | null> {
-    // 简化的模糊匹配实现
-    // 实际项目中可以使用 edit-distance 或 node-nlp 库
-
-    const keywords = ['衣服', '书', '家电', '家具', '纸板', '塑料', '金属'];
+    const keywords = ['衣服', '书'];
 
     for (const keyword of keywords) {
       if (text.includes(keyword)) {

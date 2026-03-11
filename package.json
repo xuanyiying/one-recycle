@@ -7,5 +7,8 @@
     "jsdom": "^27.4.0",
     "sass": "^1.97.3",
     "ts-jest": "^29.4.6"
+  },
+  "dependencies": {
+    "openai": "^6.25.0"
   }
 }

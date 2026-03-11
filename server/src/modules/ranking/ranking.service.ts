@@ -115,7 +115,7 @@ export class RankingService {
     const sql = `
             SELECT COUNT(*) as count FROM (
                 SELECT "user_id", SUM("settlement_amount") as score
-                FROM "Order"
+                FROM "orders"
                 WHERE "status" = 'COMPLETED' ${dateFilter}
                 GROUP BY "user_id"
                 HAVING SUM("settlement_amount") > ${myScore}

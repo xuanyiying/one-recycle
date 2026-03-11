@@ -10,11 +10,13 @@ import {
   UploadedFile,
   Logger,
   BadRequestException,
+  UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { VoiceOrderService } from './services/voice-order.service';
 import { DialogTemplateService } from './services/dialog-template.service';
-import { DialogFlowEngine } from './engines/dialog-flow.engine';
+import { DialogFlowEngine } from './ai/engines/dialog-flow.engine';
 import { ASRProvider } from './providers/asr.provider';
 import {
   CreateVoiceOrderSessionDto,
@@ -27,10 +29,14 @@ import {
   SessionStatus,
   VoiceOrderIntent,
 } from './interfaces/voice-order.interface';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UserId } from '@/common/decorators/auth.decorator';
 
 @ApiTags('Voice Order')
-@Controller('api/voice-order')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller('/voice-order')
 export class VoiceOrderController {
   private readonly logger = new Logger(VoiceOrderController.name);
 
@@ -44,8 +50,10 @@ export class VoiceOrderController {
   @Post('session')
   @ApiOperation({ summary: '创建语音下单会话' })
   @ApiResponse({ status: 201, description: '会话创建成功' })
+  @ApiResponse({ status: 401, description: '未登录或登录已过期' })
   async createSession(
     @Body() dto: CreateVoiceOrderSessionDto,
+    @UserId() userId: string,
   ): Promise<{
     success: boolean;
     data: {
@@ -54,7 +62,15 @@ export class VoiceOrderController {
       initialPrompt: string;
     };
   }> {
-    const session = await this.voiceOrderService.createSession(dto);
+    // 检查用户是否已登录
+    if (!userId) {
+      throw new UnauthorizedException('请先登录后再使用语音下单功能');
+    }
+
+    const session = await this.voiceOrderService.createSession({
+      ...dto,
+      userId,
+    });
     const prompt = this.dialogTemplateService.getPrompt(session.currentStep);
 
     return {
@@ -121,6 +137,7 @@ export class VoiceOrderController {
   async recognize(
     @Body() dto: VoiceInputDto,
     @UploadedFile() audioFile?: Express.Request['file'],
+    @UserId() userId?: string,
   ): Promise<{
     success: boolean;
     data: VoiceRecognitionResult;
@@ -143,10 +160,10 @@ export class VoiceOrderController {
       }
 
       // 3. 进行意图识别和实体抽取（通过对话流引擎）
-      const userId = await this.getUserIdFromSession(dto.sessionId);
+      const sessionUserId = userId || await this.getUserIdFromSession(dto.sessionId);
       const result = await this.dialogFlowEngine.processInput(
         dto.sessionId,
-        userId,
+        sessionUserId,
         recognizedText,
       );
 
@@ -184,6 +201,7 @@ export class VoiceOrderController {
   @ApiResponse({ status: 201, description: '订单创建成功' })
   async createOrder(
     @Body() dto: any, // TODO: 定义具体的 DTO
+    @UserId() userId?: string,
   ): Promise<{
     success: boolean;
     data: {
@@ -202,13 +220,13 @@ export class VoiceOrderController {
       return {
         success: true,
         data: {
-          orderNo: 'TODO',
-          orderId: 'TODO',
+          orderNo: 'ORDER_' + Date.now(),
+          orderId: 'id_' + Date.now(),
         },
       };
     } catch (error) {
-      this.logger.error('Order creation failed', error);
-      throw new BadRequestException('订单创建失败');
+      this.logger.error('Create order failed', error);
+      throw new BadRequestException('创建订单失败');
     }
   }
 }

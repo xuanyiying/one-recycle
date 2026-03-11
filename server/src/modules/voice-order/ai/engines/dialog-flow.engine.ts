@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { VoiceOrderService } from '../services/voice-order.service';
-import { DialogTemplateService } from '../services/dialog-template.service';
+import { VoiceOrderService } from '../../services/voice-order.service';
+import { DialogTemplateService } from '../../services/dialog-template.service';
 import { IntentEngine } from './intent.engine';
 import {
   DialogFlowResult,
   VoiceOrderIntent,
   DialogContext,
   DialogAction,
-} from '../interfaces/voice-order.interface';
+} from '../../interfaces/voice-order.interface';
 import {
   DialogStep,
   CollectedDataDto,
-} from '../dto/voice-input.dto';
+} from '../../dto/voice-input.dto';
 
 @Injectable()
 export class DialogFlowEngine {

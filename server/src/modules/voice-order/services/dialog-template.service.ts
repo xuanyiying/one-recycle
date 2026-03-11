@@ -62,8 +62,8 @@ export class DialogTemplateService {
    */
   private getDefaultPrompt(step: DialogStep): string {
     const defaultPrompts: Record<DialogStep, string> = {
-      GREETING: '您好！我是您的回收助手，请问您今天想回收什么物品呢？',
-      ITEM_TYPE: '好的，请问您要回收什么物品呢？我们有旧衣服、旧书籍、旧家电等。',
+      GREETING: '您好！我是您的回收AI助手，请问您今天想回收什么物品呢？',
+      ITEM_TYPE: '好的，请问您要回收什么物品呢？我们有旧衣服、旧书籍等。',
       QUANTITY: '明白了，请问大概有多少呢？可以说"5 公斤"、"10 件"等。',
       ADDRESS: '好的，请问您的取件地址是？请详细到门牌号哦。',
       CONTACT: '请问您的联系电话是？说"使用默认"可以用当前账号的手机号。',
@@ -72,7 +72,7 @@ export class DialogTemplateService {
       COMPLETED: '订单创建成功！感谢您的使用。',
     };
 
-    return defaultPrompts[step] || '请继续';
+    return defaultPrompts[step] || '请继续使用AI助手进行操作。';
   }
 
   /**

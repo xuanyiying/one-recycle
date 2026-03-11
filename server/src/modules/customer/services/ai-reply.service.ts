@@ -5,6 +5,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { OrderService } from '@/modules/order/services/order.service';
 import { KnowledgeService } from './knowledge.service';
+import { AIService, ChatMessage } from '@/modules/ai';
 
 export enum UserIntent {
   ORDER_QUERY = 'ORDER_QUERY',
@@ -69,17 +70,75 @@ export class AIReplyService {
   private readonly orderNoPattern = /\d{15,20}/g;
   private readonly phonePattern = /1[3-9]\d{9}/g;
 
+  // 会话历史记录缓存（生产环境应使用 Redis）
+  private sessionHistory: Map<string, ChatMessage[]> = new Map();
+  private readonly maxHistoryLength = 10;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderService: OrderService,
     private readonly knowledgeService: KnowledgeService,
-  ) { }
+    private readonly aiService: AIService,
+  ) {
+    // 判断是否启用大模型（需要配置 OPENAI_API_KEY）
+  }
 
   async processMessage(
     sessionId: string,
     userId: string,
     message: string,
   ): Promise<AIResponse> {
+    // 如果启用大模型，使用大模型处理
+    if (this.aiService.hasAvailableProvider) {
+      try {
+        const history = this.getSessionHistory(sessionId);
+
+        // 构建系统提示词
+        const systemPrompt = this.buildSystemPrompt();
+
+        // 构建消息列表
+        const messages = [
+          { role: 'system' as const, content: systemPrompt },
+          ...history,
+          { role: 'user' as const, content: message },
+        ];
+
+        // 调用 AI 服务
+        const result = await this.aiService.chat({
+          messages,
+          config: {
+            temperature: 0.7,
+            maxTokens: 1000,
+          },
+        });
+
+        if (result.success && result.response) {
+          const content = result.response.content;
+
+          // 更新会话历史
+          this.addToHistory(sessionId, { role: 'user', content: message });
+          this.addToHistory(sessionId, { role: 'assistant', content });
+
+          // 记录对话
+          await this.logConversation(sessionId, userId, message, {
+            intent: UserIntent.GENERAL_QUESTION,
+            confidence: 0.9,
+            entities: {},
+          });
+
+          return {
+            content,
+            intent: UserIntent.GENERAL_QUESTION,
+            confidence: 0.9,
+            needTransfer: false,
+          };
+        }
+      } catch (error) {
+        this.logger.error('LLM processing failed, fallback to traditional method', error);
+      }
+    }
+
+    // 传统基于关键词的意图识别方法
     const intentResult = await this.detectIntent(message);
 
     await this.logConversation(sessionId, userId, message, intentResult);
@@ -116,6 +175,35 @@ export class AIReplyService {
     }
 
     return response;
+  }
+
+  /**
+   * 获取会话历史记录
+   */
+  private getSessionHistory(sessionId: string): ChatMessage[] {
+    return this.sessionHistory.get(sessionId) || [];
+  }
+
+  /**
+   * 添加消息到历史记录
+   */
+  private addToHistory(sessionId: string, message: ChatMessage): void {
+    const history = this.getSessionHistory(sessionId);
+    history.push(message);
+
+    // 限制历史长度
+    if (history.length > this.maxHistoryLength) {
+      history.shift();
+    }
+
+    this.sessionHistory.set(sessionId, history);
+  }
+
+  /**
+   * 清除会话历史
+   */
+  clearSessionHistory(sessionId: string): void {
+    this.sessionHistory.delete(sessionId);
   }
 
   private async detectIntent(message: string): Promise<IntentResult> {
@@ -500,5 +588,23 @@ export class AIReplyService {
     } catch (error) {
       this.logger.error('Failed to log conversation', error);
     }
+  }
+
+  /**
+   * 构建系统提示词
+   */
+  private buildSystemPrompt(): string {
+    return `你是一个专业的回收平台AI客服助手，帮助用户解决订单查询、回收预约、价格咨询等问题。
+
+你的职责：
+1. 友好、专业地回答用户问题
+2. 如果用户问题无法解决，建议转接人工客服
+3. 保持回复简洁明了
+
+注意事项：
+- 订单查询需要订单号或手机号
+- 取消订单需要订单处于待处理状态
+- 价格咨询时说明需要现场验货才能确定准确价格
+- 保持礼貌和耐心`;
   }
 }

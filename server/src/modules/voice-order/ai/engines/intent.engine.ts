@@ -3,7 +3,7 @@ import {
   VoiceOrderIntent,
   IntentRecognitionResult,
   DialogContext,
-} from '../interfaces/voice-order.interface';
+} from '../../interfaces/voice-order.interface';
 
 @Injectable()
 export class IntentEngine {
@@ -16,11 +16,6 @@ export class IntentEngine {
       '回收', '要卖', '有', '是', '想', '打算',
       '旧衣服', '衣服', '衣物', '服装',
       '旧书', '书籍', '书本', '图书', '书',
-      '旧家电', '家电', '电器',
-      '旧家具', '家具',
-      '纸板', '纸箱', '盒子',
-      '塑料', '瓶子',
-      '金属', '铁', '铜', '铝',
     ]],
 
     // 数量
@@ -81,20 +76,6 @@ export class IntentEngine {
     ['书本', '旧书籍'],
     ['图书', '旧书籍'],
     ['书', '旧书籍'],
-    ['旧家电', '旧家电'],
-    ['家电', '旧家电'],
-    ['电器', '旧家电'],
-    ['旧家具', '旧家具'],
-    ['家具', '旧家具'],
-    ['纸板', '纸板'],
-    ['纸箱', '纸板'],
-    ['盒子', '纸板'],
-    ['塑料', '塑料'],
-    ['瓶子', '塑料'],
-    ['金属', '金属'],
-    ['铁', '金属'],
-    ['铜', '金属'],
-    ['铝', '金属'],
   ]);
 
   constructor() { }

@@ -27,7 +27,8 @@ export class VoiceOrderService {
    */
   async createSession(dto: CreateVoiceOrderSessionDto): Promise<VoiceOrderSession> {
     const sessionId = uuidv4();
-    const userId = dto.userId || 'anonymous';
+    // 使用 0 作为匿名用户的 ID，因为数据库要求 BigInt 类型
+    const userId = dto.userId || '0';
 
     const session: VoiceOrderSession = {
       id: sessionId,

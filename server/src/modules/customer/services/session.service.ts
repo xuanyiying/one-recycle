@@ -27,7 +27,10 @@ export class SessionService {
   ) { }
 
   async create(dto: CreateSessionDto): Promise<ChatSession> {
-    const userId = BigInt(dto.userId);
+    const userId = BigInt(dto.userId || '');
+    if (!userId) {
+      throw new BadRequestException('用户ID不能为空');
+    }
 
     const activeSession = await this.prisma.chatSession.findFirst({
       where: {

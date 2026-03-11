@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SessionService } from './services/session.service';
@@ -54,6 +55,10 @@ export class CustomerServiceController {
     @Request() req: any,
   ) {
     const userId = dto.userId || req.user?.sub;
+    if (!userId) {
+      console.error('[CreateSession] Missing userId. dto.userId:', dto.userId, 'req.user?.sub:', req.user?.sub, 'req.user:', req.user);
+      throw new BadRequestException('无法获取用户ID，请重新登录');
+    }
     return this.sessionService.create({ ...dto, userId });
   }
 

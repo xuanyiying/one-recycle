@@ -88,7 +88,7 @@
 
 ### Requirement 6: 地址管理增强
 
-**User Story:** 作为回收用户，我需要管理多个收货地址，以便在不同地点使用回收服务。
+**User Story:** 作为回收用户，我需要管理多个取货地址，以便在不同地点使用回收服务。
 
 #### Acceptance Criteria
 

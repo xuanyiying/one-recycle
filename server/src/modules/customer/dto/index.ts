@@ -23,9 +23,10 @@ import {
 } from '@prisma/client';
 
 export class CreateSessionDto {
-  @ApiProperty({ description: '用户ID' })
+  @ApiPropertyOptional({ description: '用户ID' })
+  @IsOptional()
   @IsString()
-  userId: string;
+  userId?: string;
 
   @ApiPropertyOptional({ description: '会话类型', enum: ChatSessionType })
   @IsOptional()

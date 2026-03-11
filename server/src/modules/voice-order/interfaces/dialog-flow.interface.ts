@@ -30,7 +30,7 @@ export const DEFAULT_DIALOG_FLOW_CONFIG: DialogFlowConfig = {
     {
       step: 'GREETING',
       prompts: [
-        '您好！我是您的回收助手，请问您今天想回收什么物品呢？',
+        '您好！我是您的回收AI助手，请问您今天想回收什么物品呢？',
         '欢迎使用语音下单！告诉我您要回收什么吧~',
       ],
       requiredFields: [],
@@ -39,8 +39,8 @@ export const DEFAULT_DIALOG_FLOW_CONFIG: DialogFlowConfig = {
     {
       step: 'ITEM_TYPE',
       prompts: [
-        '好的，请问您要回收什么物品呢？我们有旧衣服、旧书籍、旧家电等。',
-        '请告诉我物品类型，比如旧衣服、书籍、家电等。',
+        '好的，请问您要回收什么物品呢？我们有旧衣服、旧书籍等。',
+        '请告诉我物品类型，比如旧衣服、书籍等。',
       ],
       requiredFields: ['itemType'],
       nextStep: 'QUANTITY',
