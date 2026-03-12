@@ -9,14 +9,14 @@ import { PointsProduct, CreateProductDto } from '@/services/pointsService';
 
 interface ProductModalProps {
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateProductDto) => Promise<void>;
   initialData?: PointsProduct;
 }
 
 export default function ProductModal({
   open,
-  onClose,
+  onOpenChange,
   onSubmit,
   initialData,
 }: ProductModalProps) {
@@ -85,15 +85,15 @@ export default function ProductModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onOpenChange={onOpenChange}
       title={initialData ? '编辑商品' : '新增商品'}
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button onClick={handleSubmit} loading={loading}>
-            确定
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? '提交中...' : '确定'}
           </Button>
         </>
       }

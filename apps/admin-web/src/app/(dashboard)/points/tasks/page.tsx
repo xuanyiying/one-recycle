@@ -244,7 +244,7 @@ export default function PointsTasksPage() {
       {/* 新增/编辑弹窗 */}
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onOpenChange={setModalOpen}
         title={editingTask ? '编辑任务' : '新增任务'}
         footer={
           <>

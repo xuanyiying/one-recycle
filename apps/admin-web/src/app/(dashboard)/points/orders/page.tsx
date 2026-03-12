@@ -209,7 +209,7 @@ export default function PointsOrdersPage() {
       {/* 发货弹窗 */}
       <ShipOrderModal
         open={shipModalOpen}
-        onClose={() => setShipModalOpen(false)}
+        onOpenChange={setShipModalOpen}
         onSubmit={handleSubmitShip}
       />
     </div>

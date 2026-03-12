@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 
 interface ShipOrderModalProps {
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   onSubmit: (data: { logisticsNo: string; logisticsCompany: string }) => Promise<void>;
 }
 
 export default function ShipOrderModal({
   open,
-  onClose,
+  onOpenChange,
   onSubmit,
 }: ShipOrderModalProps) {
   const [formData, setFormData] = useState({
@@ -39,15 +39,15 @@ export default function ShipOrderModal({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onOpenChange={onOpenChange}
       title="发货"
       footer={
         <>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button onClick={handleSubmit} loading={loading}>
-            确定
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? '提交中...' : '确定'}
           </Button>
         </>
       }

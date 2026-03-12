@@ -250,7 +250,7 @@ export default function PointsProductsPage() {
       {/* 新增/编辑弹窗 */}
       <ProductModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onOpenChange={setModalOpen}
         onSubmit={handleSubmit}
         initialData={editingProduct || undefined}
       />

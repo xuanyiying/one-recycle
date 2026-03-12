@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 
 export interface PointsStats {
   totalProducts: number;
@@ -171,6 +171,17 @@ export const pointsOrderApi = {
   },
 };
 
+export interface UpdateTaskDto {
+  name?: string;
+  description?: string;
+  type?: string;
+  points?: number;
+  icon?: string;
+  config?: any;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
 export const pointsTaskApi = {
   /**
    * 获取任务列表
@@ -199,7 +210,7 @@ export const pointsTaskApi = {
   /**
    * 更新任务
    */
-  async updateTask(id: number, data: any) {
+  async updateTask(id: number, data: UpdateTaskDto) {
     const response = await apiClient.post(`/admin/points/tasks/${id}`, data);
     return response.data;
   },
