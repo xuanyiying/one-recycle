@@ -113,6 +113,12 @@ model User {
   serviceTickets     ServiceTicket[]
   aiConversationLogs AIConversationLog[]
   voiceOrderSessions VoiceOrderSession[]
+  pointsRecords      PointsRecord[]
+  pointsOrders       PointsOrder[]
+  signInRecords      SignInRecord[]
+  taskRecords        TaskRecord[]
+  invites            InviteRecord[]  @relation("UserInvites")
+  invitedBy          InviteRecord?   @relation("UserInvitedBy")
 
   @@index([mobile])
   @@index([email])
@@ -141,6 +147,7 @@ model Address {
 
   @@index([userId])
   @@map("addresses")
+  pointsOrders PointsOrder[]
 }
 
 /// 用户多平台身份
@@ -1834,4 +1841,211 @@ model DialogTemplate {
   @@index([step])
   @@index([isActive])
   @@map("dialog_templates")
+}
+
+// ============================================
+// Points Mall Module - 积分商城模块
+// ============================================
+
+/// 商品类型
+enum ProductType {
+  VIRTUAL   // 虚拟商品
+  PHYSICAL  // 实物商品
+}
+
+/// 商品状态
+enum ProductStatus {
+  ACTIVE    // 上架
+  INACTIVE  // 下架
+}
+
+/// 积分订单状态
+enum PointsOrderStatus {
+  PENDING   // 待处理
+  SHIPPED   // 已发货（实物）
+  COMPLETED // 已完成
+  CANCELLED // 已取消
+}
+
+/// 积分类型
+enum PointsType {
+  ORDER_REWARD   // 订单奖励
+  SIGN_IN        // 签到
+  INVITE         // 邀请好友
+  TASK           // 任务奖励
+  EXCHANGE       // 兑换消费
+  ADJUST         // 管理员调整
+  REFUND         // 退款返还
+}
+
+/// 任务类型
+enum TaskType {
+  PROFILE_COMPLETE  // 完善资料
+  FIRST_ORDER       // 首单
+  REVIEW            // 评价
+  SHARE             // 分享
+  CUSTOM            // 自定义
+}
+
+/// 任务记录状态
+enum TaskRecordStatus {
+  COMPLETED  // 已完成
+}
+
+/// 积分商品表
+model PointsProduct {
+  id          BigInt            @id @default(autoincrement())
+  name        String            @db.VarChar(100)
+  description String?           @db.Text
+  coverImage  String?           @map("cover_image") @db.VarChar(500)
+  images      String[]          @map("images")
+  type        ProductType       @default(VIRTUAL) @map("type")
+  points      Int               @map("points") // 兑换所需积分
+  stock       Int               @default(0) @map("stock")
+  soldCount   Int               @default(0) @map("sold_count")
+  status      ProductStatus     @default(ACTIVE) @map("status")
+  sortOrder   Int               @default(0) @map("sort_order")
+  categoryId  Int?              @map("category_id")
+  extraData   Json?             @map("extra_data") // 虚拟商品扩展数据
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  orders      PointsOrder[]
+  pointsProductCategories PointsProductCategory[]
+
+  @@index([status, sortOrder])
+  @@map("points_products")
+}
+
+/// 积分商品分类表
+model PointsProductCategory {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(50)
+  icon      String?   @db.VarChar(200)
+  sortOrder Int       @default(0) @map("sort_order")
+  isActive  Boolean   @default(true) @map("is_active")
+  products  PointsProduct[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("points_product_categories")
+}
+
+/// 积分兑换订单表
+model PointsOrder {
+  id              BigInt              @id @default(autoincrement())
+  orderNo         String              @unique @map("order_no") @db.VarChar(64)
+  userId          BigInt              @map("user_id")
+  productId       BigInt              @map("product_id")
+  productName     String              @map("product_name") @db.VarChar(100)
+  productImage    String?             @map("product_image") @db.VarChar(500)
+  productType     ProductType         @map("product_type")
+  points          Int                 @map("points")
+  quantity        Int                 @default(1) @map("quantity")
+  status          PointsOrderStatus   @default(PENDING) @map("status")
+  addressId       BigInt?             @map("address_id")
+  addressSnapshot Json?               @map("address_snapshot")
+  logisticsNo     String?             @map("logistics_no") @db.VarChar(100)
+  logisticsCompany String?            @map("logistics_company") @db.VarChar(50)
+  remark          String?             @db.VarChar(255)
+  shippedAt       DateTime?           @map("shipped_at")
+  completedAt     DateTime?           @map("completed_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  user    User          @relation(fields: [userId], references: [id])
+  product PointsProduct @relation(fields: [productId], references: [id])
+  address Address?      @relation(fields: [addressId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("points_orders")
+}
+
+/// 积分记录表
+model PointsRecord {
+  id           BigInt      @id @default(autoincrement())
+  userId       BigInt      @map("user_id")
+  type         PointsType  @map("type")
+  points       Int         @map("points") // 正数为获取，负数为消费
+  balanceAfter Int         @map("balance_after") // 变更后余额
+  sourceType   String?     @map("source_type") @db.VarChar(20)
+  sourceId     String?     @map("source_id") @db.VarChar(64)
+  description  String      @db.VarChar(255)
+  operatorId   BigInt?     @map("operator_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([type])
+  @@map("points_records")
+}
+
+/// 签到记录表
+model SignInRecord {
+  id              BigInt   @id @default(autoincrement())
+  userId          BigInt   @map("user_id")
+  signInDate      DateTime @map("sign_in_date") @db.Date
+  continuousDays  Int      @default(1) @map("continuous_days")
+  points          Int      @map("points")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, signInDate])
+  @@index([userId])
+  @@map("sign_in_records")
+}
+
+/// 积分任务表
+model PointsTask {
+  id          BigInt            @id @default(autoincrement())
+  name        String            @db.VarChar(100)
+  description String?           @db.VarChar(255)
+  type        TaskType          @map("type")
+  points      Int               @map("points")
+  icon        String?           @db.VarChar(200)
+  config      Json?             @map("config")
+  isActive    Boolean           @default(true) @map("is_active")
+  sortOrder   Int               @default(0) @map("sort_order")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  records     TaskRecord[]
+
+  @@index([isActive, sortOrder])
+  @@map("points_tasks")
+}
+
+/// 任务完成记录表
+model TaskRecord {
+  id        BigInt             @id @default(autoincrement())
+  userId    BigInt             @map("user_id")
+  taskId    BigInt             @map("task_id")
+  status    TaskRecordStatus   @default(COMPLETED) @map("status")
+  points    Int                @map("points")
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+  task PointsTask @relation(fields: [taskId], references: [id])
+
+  @@unique([userId, taskId])
+  @@index([userId])
+  @@map("task_records")
+}
+
+/// 邀请记录表
+model InviteRecord {
+  id           BigInt   @id @default(autoincrement())
+  inviterId    BigInt   @map("inviter_id")
+  inviteeId    BigInt   @map("invitee_id")
+  rewardPoints Int      @default(0) @map("reward_points")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  inviter User @relation("UserInvites", fields: [inviterId], references: [id])
+  invitee User @relation("UserInvitedBy", fields: [inviteeId], references: [id])
+
+  @@unique([inviteeId])
+  @@index([inviterId])
+  @@map("invite_records")
 }

@@ -4,6 +4,14 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
+import type { LucideIcon } from 'lucide-react';
+
+interface MenuItem {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  children?: Array<{ href: string; label: string }>;
+}
 import {
   LayoutDashboard,
   Users,
@@ -14,7 +22,10 @@ import {
   Bell,
   Settings,
   Wallet,
-  X
+  X,
+  Gift,
+  ClipboardList,
+  CheckSquare
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -26,38 +37,57 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
   const pathname = usePathname();
 
-  const menuGroups = [
-    {
-      title: '业务管理',
-      items: [
-        { href: '/dashboard', icon: LayoutDashboard, label: '仪表板' },
-        { href: '/orders', icon: ShoppingBag, label: '订单管理' },
-        { href: '/inventory', icon: Database, label: '进存销管理' },
-      ],
-    },
-    {
-      title: '财务中心',
-      items: [
-        { href: '/finance/recharge', icon: Wallet, label: '财务充值' },
-        { href: '/finance/expense', icon: Database, label: '支出管理' },
-      ],
-    },
-    {
-      title: '运营中心',
-      items: [
-        { href: '/users', icon: Users, label: '用户管理' },
-        { href: '/categories', icon: Tags, label: '分类管理' },
-      ],
-    },
-    {
-      title: '系统设置',
-      items: [
-        { href: '/notifications', icon: Bell, label: '通知管理' },
-        { href: '/settings/logistics', icon: Truck, label: '快递接入' },
-        { href: '/settings', icon: Settings, label: '系统设置' },
-      ],
-    },
-  ];
+  const menuGroups: Array<{
+    title: string;
+    items: MenuItem[];
+  }> = [
+      {
+        title: '业务管理',
+        items: [
+          { href: '/dashboard', icon: LayoutDashboard, label: '仪表板' },
+          { href: '/orders', icon: ShoppingBag, label: '订单管理' },
+          { href: '/inventory', icon: Database, label: '进存销管理' },
+        ],
+      },
+      {
+        title: '积分商城',
+        items: [
+          {
+            href: '/points',
+            icon: Gift,
+            label: '积分商城',
+            children: [
+              { href: '/points/overview', label: '概览' },
+              { href: '/points/products', label: '商品管理' },
+              { href: '/points/orders', label: '订单管理' },
+              { href: '/points/tasks', label: '任务管理' },
+            ]
+          },
+        ],
+      },
+      {
+        title: '财务中心',
+        items: [
+          { href: '/finance/recharge', icon: Wallet, label: '财务充值' },
+          { href: '/finance/expense', icon: Database, label: '支出管理' },
+        ],
+      },
+      {
+        title: '运营中心',
+        items: [
+          { href: '/users', icon: Users, label: '用户管理' },
+          { href: '/categories', icon: Tags, label: '分类管理' },
+        ],
+      },
+      {
+        title: '系统设置',
+        items: [
+          { href: '/notifications', icon: Bell, label: '通知管理' },
+          { href: '/settings/logistics', icon: Truck, label: '快递接入' },
+          { href: '/settings', icon: Settings, label: '系统设置' },
+        ],
+      },
+    ];
 
   return (
     <div className={cn("flex h-screen w-64 flex-col border-r border-border/40 bg-card text-card-foreground", className)}>
@@ -87,30 +117,56 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
             <nav className="space-y-1">
               {group.items.map((item) => {
                 const isActive = pathname.startsWith(item.href);
+                const hasChildren = item.children && item.children.length > 0;
+
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    className={cn(
-                      'group flex items-center rounded-md px-3 py-2 font-mono text-sm transition-all duration-150',
-                      isActive
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                    )}
-                  >
-                    {isActive && (
-                      <span className="mr-2 text-primary animate-cursor">{'>'}</span>
-                    )}
-                    <item.icon
+                  <div key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onClose}
                       className={cn(
-                        'h-4 w-4 flex-shrink-0 transition-colors',
-                        isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
-                        !isActive && 'mr-3'
+                        'group flex items-center rounded-md px-3 py-2 font-mono text-sm transition-all duration-150',
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                       )}
-                    />
-                    <span className={cn(!isActive && 'ml-0')}>{item.label}</span>
-                  </Link>
+                    >
+                      {isActive && (
+                        <span className="mr-2 text-primary animate-cursor">{'>'}</span>
+                      )}
+                      <item.icon
+                        className={cn(
+                          'h-4 w-4 flex-shrink-0 transition-colors',
+                          isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+                          !isActive && 'mr-3'
+                        )}
+                      />
+                      <span className={cn(!isActive && 'ml-0')}>{item.label}</span>
+                    </Link>
+                    {hasChildren && (
+                      <div className="ml-6 mt-1 space-y-1">
+                        {item.children?.map((child) => {
+                          const isChildActive = pathname === child.href;
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={onClose}
+                              className={cn(
+                                'block rounded-md px-3 py-2 font-mono text-xs transition-all duration-150',
+                                isChildActive
+                                  ? 'text-primary'
+                                  : 'text-muted-foreground hover:text-foreground'
+                              )}
+                            >
+                              {isChildActive && <span className="mr-1">{'>'} </span>}
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </nav>

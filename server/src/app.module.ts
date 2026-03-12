@@ -34,6 +34,7 @@ import { PricingModule } from './modules/pricing/pricing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { CustomerServiceModule } from './modules/customer/customer.module';
 import { VoiceOrderModule } from './modules/voice-order/voice-order.module';
+import { PointsModule } from './modules/points/points.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -89,6 +90,7 @@ import { HealthModule } from './modules/health/health.module';
     StorageModule,
     CustomerServiceModule,
     VoiceOrderModule,
+    PointsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
