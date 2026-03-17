@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-pvc
+  namespace: one-recycle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: one-recycle-ssd
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: one-recycle
+  labels:
+    app: ollama
+    tier: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+        tier: ai
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+              name: ollama
+          env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0:11434"
+            - name: OLLAMA_NUM_PARALLEL
+              value: "2"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "1"
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "2000m"
+            limits:
+              memory: "8Gi"
+              cpu: "6000m"
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /models
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: ollama-models
+          persistentVolumeClaim:
+            claimName: ollama-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: one-recycle
+spec:
+  type: ClusterIP
+  ports:
+    - port: 11434
+      targetPort: 11434
+      name: ollama
+  selector:
+    app: ollama

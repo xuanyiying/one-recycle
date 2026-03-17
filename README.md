@@ -344,6 +344,24 @@ CI 失败诊断建议：设置 `LOG_LEVEL=debug` 与 `DB_LOG_QUERIES=true`，请
 
 ## 部署
 
+### 部署目录
+
+项目所有部署相关的配置、脚本和文档都位于 `deploy/` 目录：
+
+```
+deploy/
+├── config/                 # 环境配置文件
+├── docker/                 # Docker Compose 配置
+├── nginx/                  # Nginx 配置
+├── scripts/                # 部署脚本
+├── cicd/                   # CI/CD 配置
+└── docs/                   # 部署文档
+```
+
+详细部署说明请参考 [deploy/README.md](./deploy/README.md) 或 [deploy/docs/DEPLOY.md](./deploy/docs/DEPLOY.md)。
+
+项目同时支持 Kubernetes 部署，详细内容请参考 [deploy/docs/K8S-DEPLOY.md](./deploy/docs/K8S-DEPLOY.md)。
+
 ### 开发/测试环境
 
 使用单体应用模式部署，简化配置和管理。

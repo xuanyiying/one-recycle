@@ -137,6 +137,7 @@ export class StaffService {
       username: staff.username,
       tenantId: staff.tenantId.toString(),
       roleId: staff.roleId,
+      role: staff.role.code,
       roleCode: staff.role.code,
       type: 'staff',
     };

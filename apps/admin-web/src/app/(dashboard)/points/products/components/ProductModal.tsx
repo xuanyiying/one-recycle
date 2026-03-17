@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { PointsProduct, CreateProductDto } from '@/services/pointsService';
 
 interface ProductModalProps {
@@ -120,11 +121,19 @@ export default function ProductModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">封面图 URL</label>
-          <Input
+          <label className="block text-sm font-medium mb-1">封面图</label>
+          <ImageUpload
             value={formData.coverImage}
-            onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-            placeholder="请输入封面图 URL"
+            onChange={(url) => setFormData({ ...formData, coverImage: url })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">商品图集（多张）</label>
+          <ImageUpload
+            multiple
+            value={formData.images}
+            onChange={(urls) => setFormData({ ...formData, images: urls })}
           />
         </div>
 

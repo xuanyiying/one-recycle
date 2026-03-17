@@ -1,0 +1,279 @@
+# Notification Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: one-recycle
+  labels:
+    app: notification-service
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        tier: backend
+    spec:
+      containers:
+        - name: notification-service
+          image: one-recycle/notification-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3004
+          env:
+            - name: SERVICE_NAME
+              value: "notification-service"
+            - name: SERVICE_PORT
+              value: "3004"
+          envFrom:
+            - secretRef:
+                name: one-recycle-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: one-recycle
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3004
+      targetPort: 3004
+  selector:
+    app: notification-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: one-recycle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# Inventory Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: one-recycle
+  labels:
+    app: inventory-service
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+        tier: backend
+    spec:
+      containers:
+        - name: inventory-service
+          image: one-recycle/inventory-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3009
+          env:
+            - name: SERVICE_NAME
+              value: "inventory-service"
+            - name: SERVICE_PORT
+              value: "3009"
+          envFrom:
+            - secretRef:
+                name: one-recycle-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: one-recycle
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3009
+      targetPort: 3009
+  selector:
+    app: inventory-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inventory-service-hpa
+  namespace: one-recycle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inventory-service
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# Category Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: category-service
+  namespace: one-recycle
+  labels:
+    app: category-service
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: category-service
+  template:
+    metadata:
+      labels:
+        app: category-service
+        tier: backend
+    spec:
+      containers:
+        - name: category-service
+          image: one-recycle/category-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3008
+          env:
+            - name: SERVICE_NAME
+              value: "category-service"
+            - name: SERVICE_PORT
+              value: "3008"
+          envFrom:
+            - secretRef:
+                name: one-recycle-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: category-service
+  namespace: one-recycle
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3008
+      targetPort: 3008
+  selector:
+    app: category-service
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: category-service-hpa
+  namespace: one-recycle
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: category-service
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# Message Queue Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-queue
+  namespace: one-recycle
+  labels:
+    app: message-queue
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: message-queue
+  template:
+    metadata:
+      labels:
+        app: message-queue
+        tier: backend
+    spec:
+      containers:
+        - name: message-queue
+          image: one-recycle/message-queue:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3010
+          env:
+            - name: SERVICE_NAME
+              value: "message-queue"
+            - name: SERVICE_PORT
+              value: "3010"
+          envFrom:
+            - secretRef:
+                name: one-recycle-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: message-queue
+  namespace: one-recycle
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3010
+      targetPort: 3010
+  selector:
+    app: message-queue

@@ -81,7 +81,7 @@ export interface CreateProductDto {
   extraData?: Record<string, any>;
 }
 
-export interface UpdateProductDto extends Partial<CreateProductDto> {}
+export interface UpdateProductDto extends Partial<CreateProductDto> { }
 
 export const pointsStatsApi = {
   /**
@@ -104,7 +104,7 @@ export const pointsProductApi = {
     type?: 'VIRTUAL' | 'PHYSICAL';
     categoryId?: number;
   }) {
-    const response = await apiClient.get('/admin/points/products', { params });
+    const response = await apiClient.get('/admin/points/products', params);
     return response.data;
   },
 
@@ -150,7 +150,7 @@ export const pointsOrderApi = {
     limit?: number;
     status?: 'PENDING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
   }) {
-    const response = await apiClient.get('/admin/points/orders', { params });
+    const response = await apiClient.get('/admin/points/orders', params);
     return response.data;
   },
 

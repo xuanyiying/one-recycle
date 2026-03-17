@@ -1,0 +1,136 @@
+# ============================================================================
+# OneRecycle 开发环境 Docker Compose 配置
+# 本地开发使用，包含所有基础服务
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16
+    container_name: one-recycle-postgres-dev
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-one_recycle}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_postgres_2025}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Redis Cache
+  redis:
+    image: redis:latest
+    container_name: one-recycle-redis-dev
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Object Storage (MinIO)
+  minio:
+    image: elestio/minio:latest
+    container_name: one-recycle-minio-dev
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${OSS_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Admin Web (Next.js)
+  admin-web:
+    build:
+      context: ../apps/admin-web
+      dockerfile: Dockerfile
+    container_name: one-recycle-admin-web-dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../apps/admin-web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - app-network
+
+  # Server (NestJS)
+  server:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: one-recycle-server-dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secure_postgres_2025}@postgres:5432/${POSTGRES_DB:-one_recycle}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=${OSS_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${OSS_SECRET_KEY:-secure_minio_admin_2025}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../server:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Nginx (API Gateway for dev)
+  nginx:
+    image: nginx:alpine
+    container_name: one-recycle-nginx-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - server
+      - admin-web
+    networks:
+      - app-network
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  minio_dev_data:
+
+networks:
+  app-network:
+    driver: bridge

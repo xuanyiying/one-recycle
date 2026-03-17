@@ -1,0 +1,75 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: one-recycle
+  labels:
+    name: one-recycle
+    environment: production
+---
+# ConfigMap for common configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: one-recycle-config
+  namespace: one-recycle
+data:
+  NODE_ENV: "production"
+  REDIS_DB: "0"
+  LOG_LEVEL: "info"
+---
+# Secret for database credentials (base64 encoded)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: one-recycle-secrets
+  namespace: one-recycle
+type: Opaque
+stringData:
+  DB_USERNAME: "one_recycle"
+  DB_PASSWORD: "changeme"
+  REDIS_PASSWORD: "changeme"
+  JWT_SECRET: "changeme"
+  WECHAT_APP_ID: ""
+  WECHAT_APP_SECRET: ""
+  ALIPAY_APP_ID: ""
+  ALIPAY_PRIVATE_KEY: ""
+---
+# StorageClass for persistent volumes
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: one-recycle-ssd
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+  replication-type: regional-pd
+volumeBindingMode: WaitForFirstConsumer
+---
+# PersistentVolumeClaim for PostgreSQL
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: one-recycle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: one-recycle-ssd
+  resources:
+    requests:
+      storage: 50Gi
+---
+# PersistentVolumeClaim for Redis
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: one-recycle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: one-recycle-ssd
+  resources:
+    requests:
+      storage: 10Gi

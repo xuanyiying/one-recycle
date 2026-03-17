@@ -31,6 +31,7 @@ const Header: React.FC = () => {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
       localStorage.removeItem('login_mode');
+      localStorage.removeItem('tenant_code');
       toast.success('已退出登录');
       router.push('/login');
     } catch (error) {

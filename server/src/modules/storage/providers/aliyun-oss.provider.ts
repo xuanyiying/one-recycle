@@ -193,7 +193,7 @@ export class AliyunOssService implements OssService {
           'Content-Type': contentType,
         },
         meta: {
-          originalName,
+          originalName: Buffer.from(originalName).toString('base64'),
           uploadTime: new Date().toISOString(),
           uid: 0,
           pid: 0,

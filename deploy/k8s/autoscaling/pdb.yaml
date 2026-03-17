@@ -1,0 +1,45 @@
+# PodDisruptionBudget for high availability
+# Ensures minimum number of replicas available during voluntary disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: one-recycle
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: account-service-pdb
+  namespace: one-recycle
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: account-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-service-pdb
+  namespace: one-recycle
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: order-service
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: admin-web-pdb
+  namespace: one-recycle
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: admin-web

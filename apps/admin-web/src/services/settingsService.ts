@@ -225,25 +225,25 @@ class SettingsService {
   }
 
   private async fetchUserProfile(): Promise<UserProfile> {
-    const response: UserProfile = await apiClient.get('/api/profile');
+    const response: UserProfile = await apiClient.get('/profile');
     return response;
   }
 
   async updateUserProfile(data: UpdateProfileRequest): Promise<UserProfile> {
-    const response: UserProfile = await apiClient.put('/api/profile', data);
+    const response: UserProfile = await apiClient.put('/profile', data);
     // 清除用户资料缓存
     cacheService.delete(CACHE_KEYS.USER_PROFILE);
     return response;
   }
 
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    await apiClient.post('/api/profile/change-password', data);
+    await apiClient.post('/profile/change-password', data);
   }
 
   async uploadAvatar(file: File): Promise<FileUploadResponse> {
     const formData = new FormData();
     formData.append('avatar', file);
-    const response: FileUploadResponse = await apiClient.post('/api/profile/avatar', formData);
+    const response: FileUploadResponse = await apiClient.post('/profile/avatar', formData);
     return response;
   }
 
@@ -283,13 +283,13 @@ class SettingsService {
   }
 
   private async fetchNotificationSettings(): Promise<NotificationSettings> {
-    return await apiClient.get('/api/settings/notifications');
+    return await apiClient.get('/settings/notifications');
   }
 
   async updateNotificationSettings(
     data: UpdateNotificationSettingsRequest,
   ): Promise<NotificationSettings> {
-    const response: NotificationSettings = await apiClient.put('/api/settings/notifications', data);
+    const response: NotificationSettings = await apiClient.put('/settings/notifications', data);
     // 清除通知设置缓存
     cacheService.delete(CACHE_KEYS.NOTIFICATION_SETTINGS);
     return response;
@@ -297,27 +297,27 @@ class SettingsService {
 
   // 安全设置管理
   async getSecuritySettings(): Promise<SecuritySettings> {
-    return await apiClient.get('/api/settings/security');
+    return await apiClient.get('/settings/security');
   }
 
   async updateSecuritySettings(data: UpdateSecuritySettingsRequest): Promise<SecuritySettings> {
-    const response: SecuritySettings = await apiClient.put('/api/settings/security', data);
+    const response: SecuritySettings = await apiClient.put('/settings/security', data);
     return response;
   }
 
   async enableTwoFactor(): Promise<{ qrCode: string; secret: string }> {
     const response: { qrCode: string; secret: string } = await apiClient.post(
-      '/api/settings/security/2fa/enable',
+      '/settings/security/2fa/enable',
     );
     return response;
   }
 
   async verifyTwoFactor(code: string): Promise<void> {
-    await apiClient.post('/api/settings/security/2fa/verify', { code });
+    await apiClient.post('/settings/security/2fa/verify', { code });
   }
 
   async disableTwoFactor(code: string): Promise<void> {
-    await apiClient.post('/api/settings/security/2fa/disable', { code });
+    await apiClient.post('/settings/security/2fa/disable', { code });
   }
 
   // 文件上传
@@ -325,7 +325,7 @@ class SettingsService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
-    const response = await apiClient.post('/api/upload', formData);
+    const response = await apiClient.post('/upload', formData);
     return response.data;
   }
 
@@ -338,18 +338,18 @@ class SettingsService {
     diskUsage: number;
     cpuUsage: number;
   }> {
-    const response = await apiClient.get('/api/system/info');
+    const response = await apiClient.get('/system/info');
     return response.data;
   }
 
   // 清理缓存
   async clearCache(): Promise<void> {
-    await apiClient.post('/api/system/clear-cache');
+    await apiClient.post('/system/clear-cache');
   }
 
   // 重启系统
   async restartSystem(): Promise<void> {
-    await apiClient.post('/api/system/restart');
+    await apiClient.post('/system/restart');
   }
 }
 

@@ -5,11 +5,11 @@ import { Card } from '@/components/ui/card';
 import { Statistic } from '@/components/ui/statistic';
 import { Table } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { pointsStatsApi, pointsOrderApi, PointsOrder } from '@/services/pointsService';
+import { pointsStatsApi, pointsOrderApi, PointsOrder, PointsStats } from '@/services/pointsService';
 
 export default function PointsOverviewPage() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<PointsStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<PointsOrder[]>([]);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function PointsOverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">总商品数</p>
-              <Statistic value={stats?.totalProducts || 0} />
+              <Statistic title="总商品数" value={stats?.totalProducts || 0} />
               <p className="text-xs text-gray-400 mt-2">
                 上架商品：{stats?.activeProducts || 0}
               </p>
@@ -60,7 +60,7 @@ export default function PointsOverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">总订单数</p>
-              <Statistic value={stats?.totalOrders || 0} />
+              <Statistic title="总订单数" value={stats?.totalOrders || 0} />
               <p className="text-xs text-gray-400 mt-2">
                 待发货：{stats?.pendingOrders || 0}
               </p>
@@ -72,7 +72,7 @@ export default function PointsOverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">今日订单</p>
-              <Statistic value={stats?.todayOrders || 0} />
+              <Statistic title="今日订单" value={stats?.todayOrders || 0} />
               <p className="text-xs text-gray-400 mt-2">
                 今日发放积分：{stats?.todayPointsIssued || 0}
               </p>
@@ -84,7 +84,7 @@ export default function PointsOverviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">热门商品</p>
-              <Statistic value={stats?.topProducts?.length || 0} suffix="个" />
+              <Statistic title="热门商品" value={stats?.topProducts?.length || 0} suffix="个" />
               <p className="text-xs text-gray-400 mt-2">
                 按兑换量排名
               </p>
@@ -118,12 +118,11 @@ export default function PointsOverviewPage() {
                   <td>{order.points}</td>
                   <td>{order.quantity}</td>
                   <td>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                    <span className={`px-2 py-1 rounded text-xs ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                       order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
-                      order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                        order.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                      }`}>
                       {order.status === 'PENDING' && '待处理'}
                       {order.status === 'SHIPPED' && '已发货'}
                       {order.status === 'COMPLETED' && '已完成'}

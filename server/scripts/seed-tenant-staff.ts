@@ -21,13 +21,13 @@ function hashPassword(password: string): string {
 async function main() {
     console.log('开始初始化种子数据...');
 
-    // 1. 创建测试租户
+    // 1. 创建默认租户
     const tenant1 = await prisma.tenant.upsert({
-        where: { code: 'test_tenant' },
+        where: { code: 'DEFAULT' },
         update: {},
         create: {
-            name: '测试租户',
-            code: 'test_tenant',
+            name: '默认租户',
+            code: 'DEFAULT',
             contactName: '管理员',
             contactPhone: '13812345678',
             status: 'ACTIVE',
