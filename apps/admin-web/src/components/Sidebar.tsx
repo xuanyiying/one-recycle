@@ -25,7 +25,9 @@ import {
   X,
   Gift,
   ClipboardList,
-  CheckSquare
+  CheckSquare,
+  FileText,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -77,6 +79,15 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
         items: [
           { href: '/users', icon: Users, label: '用户管理' },
           { href: '/categories', icon: Tags, label: '分类管理' },
+          {
+            href: '/content',
+            icon: FileText,
+            label: '内容配置',
+            children: [
+              { href: '/content/faq', label: '常见问答' },
+              { href: '/content/recycle-rules', label: '回收规则' },
+            ]
+          },
         ],
       },
       {

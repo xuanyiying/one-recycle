@@ -21,14 +21,14 @@ describe('SystemController', () => {
   });
 
   describe('getQA', () => {
-    it('should return an array of QA items', () => {
-      const result = controller.getQA();
+    it('should return an array of QA items', async () => {
+      const result = await controller.getQA();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it('should match the QAResponseDto structure', () => {
-      const result = controller.getQA();
+    it('should match the QAResponseDto structure', async () => {
+      const result = await controller.getQA();
       const firstItem = result[0];
 
       expect(firstItem).toHaveProperty('id');
@@ -40,8 +40,8 @@ describe('SystemController', () => {
       expect(typeof firstItem.question).toBe('string');
     });
 
-    it('should return at least 20 items (as requested)', () => {
-      const result = controller.getQA();
+    it('should return at least 20 items (as requested)', async () => {
+      const result = await controller.getQA();
       expect(result.length).toBeGreaterThanOrEqual(20);
     });
   });

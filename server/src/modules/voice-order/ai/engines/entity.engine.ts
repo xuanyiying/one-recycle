@@ -6,7 +6,10 @@ import { QuantityParser } from '../../utils/quantity-parser.util';
 @Injectable()
 export class EntityEngine {
   private readonly logger = new Logger(EntityEngine.name);
-  private itemCategories: Map<number, { id: number; name: string; synonyms: string[] }> = new Map();
+  private itemCategories: Map<
+    number,
+    { id: number; name: string; synonyms: string[] }
+  > = new Map();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -32,7 +35,9 @@ export class EntityEngine {
 
       this.itemCategories.clear();
       for (const category of categories) {
-        const synonyms = category.attributes ? JSON.parse(category.attributes) : [];
+        const synonyms = category.attributes
+          ? JSON.parse(category.attributes)
+          : [];
         this.itemCategories.set(category.id, {
           id: category.id,
           name: category.name,
@@ -71,7 +76,11 @@ export class EntityEngine {
   /**
    * 抽取物品类型
    */
-  async extractItemType(text: string): Promise<{ itemCategoryId?: number; itemName?: string; matchedKeyword?: string }> {
+  async extractItemType(text: string): Promise<{
+    itemCategoryId?: number;
+    itemName?: string;
+    matchedKeyword?: string;
+  }> {
     // 1. 从分类数据中匹配
     for (const [id, category] of this.itemCategories.entries()) {
       const allNames = [category.name, ...category.synonyms];
@@ -98,7 +107,11 @@ export class EntityEngine {
   /**
    * 模糊匹配物品类型
    */
-  private async fuzzyItemTypeMatch(text: string): Promise<{ itemCategoryId?: number; itemName?: string; matchedKeyword?: string } | null> {
+  private async fuzzyItemTypeMatch(text: string): Promise<{
+    itemCategoryId?: number;
+    itemName?: string;
+    matchedKeyword?: string;
+  } | null> {
     const keywords = ['衣服', '书'];
 
     for (const keyword of keywords) {
@@ -122,7 +135,9 @@ export class EntityEngine {
   /**
    * 抽取数量
    */
-  async extractQuantity(text: string): Promise<{ quantity?: number; unit?: string }> {
+  async extractQuantity(
+    text: string,
+  ): Promise<{ quantity?: number; unit?: string }> {
     return this.quantityParser.parse(text);
   }
 
@@ -139,7 +154,12 @@ export class EntityEngine {
     const parsed = await this.addressParser.parse(text);
 
     // 检查地址完整性
-    const hasAllFields = !!(parsed.province && parsed.city && parsed.district && parsed.detail);
+    const hasAllFields = !!(
+      parsed.province &&
+      parsed.city &&
+      parsed.district &&
+      parsed.detail
+    );
 
     return {
       ...parsed,
@@ -255,7 +275,11 @@ export class EntityEngine {
     }
 
     // 检查是否使用默认
-    if (text.includes('使用默认') || text.includes('默认') || text.includes('本机')) {
+    if (
+      text.includes('使用默认') ||
+      text.includes('默认') ||
+      text.includes('本机')
+    ) {
       entities.useDefault = true;
     }
 

@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { ASRProviderType, ASRResult, ASROptions } from '../interfaces/voice-order.interface';
+import {
+  ASRProviderType,
+  ASRResult,
+  ASROptions,
+} from '../interfaces/voice-order.interface';
 
 @Injectable()
 export class ASRProvider {
@@ -28,19 +32,36 @@ export class ASRProvider {
   /**
    * 语音识别（主备双服务）
    */
-  async recognize(audioData: Buffer, options: ASROptions = {}): Promise<ASRResult> {
+  async recognize(
+    audioData: Buffer,
+    options: ASROptions = {},
+  ): Promise<ASRResult> {
     try {
       // 尝试主服务
-      this.logger.log(`Recognizing speech using primary provider: ${this.primaryProvider}`);
-      return await this.recognizeWithProvider(audioData, options, this.primaryProvider);
+      this.logger.log(
+        `Recognizing speech using primary provider: ${this.primaryProvider}`,
+      );
+      return await this.recognizeWithProvider(
+        audioData,
+        options,
+        this.primaryProvider,
+      );
     } catch (error) {
-      this.logger.error(`Primary ASR provider failed: ${(error as Error).message}, trying fallback provider`);
+      this.logger.error(
+        `Primary ASR provider failed: ${(error as Error).message}, trying fallback provider`,
+      );
 
       try {
         // 主服务失败，尝试备用服务
-        return await this.recognizeWithProvider(audioData, options, this.fallbackProvider);
+        return await this.recognizeWithProvider(
+          audioData,
+          options,
+          this.fallbackProvider,
+        );
       } catch (fallbackError) {
-        this.logger.error(`Fallback ASR provider also failed: ${(fallbackError as Error).message}`);
+        this.logger.error(
+          `Fallback ASR provider also failed: ${(fallbackError as Error).message}`,
+        );
         throw new Error('语音识别失败，请稍后重试');
       }
     }
@@ -136,8 +157,12 @@ export class ASRProvider {
     options: ASROptions,
   ): Promise<ASRResult> {
     try {
-      const secretId = this.configService.get<string>('TENCENT_CLOUD_SECRET_ID');
-      const secretKey = this.configService.get<string>('TENCENT_CLOUD_SECRET_KEY');
+      const secretId = this.configService.get<string>(
+        'TENCENT_CLOUD_SECRET_ID',
+      );
+      const secretKey = this.configService.get<string>(
+        'TENCENT_CLOUD_SECRET_KEY',
+      );
 
       if (!secretId || !secretKey) {
         throw new Error('腾讯云 ASR 配置缺失');
@@ -173,7 +198,7 @@ export class ASRProvider {
       );
 
       const headers = {
-        'Authorization': authorization,
+        Authorization: authorization,
         'Content-Type': 'application/json',
         'X-TC-Action': action,
         'X-TC-Version': version,
@@ -185,12 +210,15 @@ export class ASRProvider {
       );
 
       if (response.data.Response.Error) {
-        throw new Error(`腾讯云 ASR 错误：${response.data.Response.Error.Message}`);
+        throw new Error(
+          `腾讯云 ASR 错误：${response.data.Response.Error.Message}`,
+        );
       }
 
       return {
         text: response.data.Response.Result || '',
-        confidence: response.data.Response.Result_Detail?.[0]?.Confidence || 0.8,
+        confidence:
+          response.data.Response.Result_Detail?.[0]?.Confidence || 0.8,
         duration: options.duration,
       };
     } catch (error) {
@@ -244,8 +272,12 @@ export class ASRProvider {
 
     // 测试腾讯云 ASR
     try {
-      const secretId = this.configService.get<string>('TENCENT_CLOUD_SECRET_ID');
-      const secretKey = this.configService.get<string>('TENCENT_CLOUD_SECRET_KEY');
+      const secretId = this.configService.get<string>(
+        'TENCENT_CLOUD_SECRET_ID',
+      );
+      const secretKey = this.configService.get<string>(
+        'TENCENT_CLOUD_SECRET_KEY',
+      );
 
       if (secretId && secretKey) {
         result.tencentCloud = true;

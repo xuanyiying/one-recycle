@@ -20,6 +20,7 @@ import { InventoryServiceClient } from '../clients/inventory-service.client';
 import { DispatchServiceClient } from '../clients/dispatch-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
 import { PricingService } from '@/modules/pricing/pricing.service';
+import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
 
 @Processor(QUEUE_NAMES.ORDER)
 export class OrderProcessor {
@@ -32,6 +33,7 @@ export class OrderProcessor {
     private readonly dispatchServiceClient: DispatchServiceClient,
     private readonly paymentServiceClient: PaymentServiceClient,
     private readonly pricingService: PricingService,
+    private readonly referralRewardService: ReferralRewardService,
   ) {}
 
   /**
@@ -250,7 +252,19 @@ export class OrderProcessor {
           `Balance after: ${transaction.balanceAfter}`,
       );
 
-      // 2. 发送积分入账通知
+      // 2. 处理推广返佣
+      try {
+        this.logger.log(`Processing referral reward for order: ${orderId}`);
+        await this.referralRewardService.processOrderReward(BigInt(orderId));
+        this.logger.log(`Referral reward processed for order: ${orderId}`);
+      } catch (referralError) {
+        this.logger.error(
+          `Failed to process referral reward for order ${orderId}`,
+          referralError,
+        );
+      }
+
+      // 3. 发送积分入账通知
       this.logger.log(`Sending balance update notification to user ${userId}`);
       await this.notificationQueueService.sendOrderStatusNotification(
         userId,

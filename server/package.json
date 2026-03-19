@@ -37,6 +37,8 @@
     "seed": "ts-node scripts/main.ts",
     "seed:all": "ts-node scripts/main.ts",
     "seed:categories": "ts-node scripts/seed-categories.ts",
+    "seed:points-mall": "ts-node scripts/seed-points-mall.ts",
+    "seed:content-config": "ts-node scripts/seed-content-config.ts",
     "prepare": "husky"
   },
   "dependencies": {

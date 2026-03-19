@@ -12,57 +12,164 @@ export class IntentEngine {
   // 意图关键词库
   private readonly intentKeywords: Map<VoiceOrderIntent, string[]> = new Map([
     // 物品类型
-    [VoiceOrderIntent.PROVIDE_ITEM_TYPE, [
-      '回收', '要卖', '有', '是', '想', '打算',
-      '旧衣服', '衣服', '衣物', '服装',
-      '旧书', '书籍', '书本', '图书', '书',
-    ]],
+    [
+      VoiceOrderIntent.PROVIDE_ITEM_TYPE,
+      [
+        '回收',
+        '要卖',
+        '有',
+        '是',
+        '想',
+        '打算',
+        '旧衣服',
+        '衣服',
+        '衣物',
+        '服装',
+        '旧书',
+        '书籍',
+        '书本',
+        '图书',
+        '书',
+      ],
+    ],
 
     // 数量
-    [VoiceOrderIntent.PROVIDE_QUANTITY, [
-      '公斤', 'kg', '斤', '两', '吨',
-      '件', '个', '只', '条', '本', '台', '张',
-      '箱', '袋', '包', '捆',
-      '大概', '大约', '左右', '约',
-      '多少', '几',
-    ]],
+    [
+      VoiceOrderIntent.PROVIDE_QUANTITY,
+      [
+        '公斤',
+        'kg',
+        '斤',
+        '两',
+        '吨',
+        '件',
+        '个',
+        '只',
+        '条',
+        '本',
+        '台',
+        '张',
+        '箱',
+        '袋',
+        '包',
+        '捆',
+        '大概',
+        '大约',
+        '左右',
+        '约',
+        '多少',
+        '几',
+      ],
+    ],
 
     // 地址
-    [VoiceOrderIntent.PROVIDE_ADDRESS, [
-      '地址', '地方', '位置', '地点',
-      '小区', '大厦', '号楼', '单元', '室', '户',
-      '路', '街', '道', '巷', '胡同',
-      '镇', '乡', '村',
-      '附近', '旁边', '对面',
-    ]],
+    [
+      VoiceOrderIntent.PROVIDE_ADDRESS,
+      [
+        '地址',
+        '地方',
+        '位置',
+        '地点',
+        '小区',
+        '大厦',
+        '号楼',
+        '单元',
+        '室',
+        '户',
+        '路',
+        '街',
+        '道',
+        '巷',
+        '胡同',
+        '镇',
+        '乡',
+        '村',
+        '附近',
+        '旁边',
+        '对面',
+      ],
+    ],
 
     // 联系方式
-    [VoiceOrderIntent.PROVIDE_CONTACT, [
-      '电话', '手机号', '号码', '联系方式',
-      '联系', '打给我', '找我',
-      '使用默认', '默认', '本机',
-    ]],
+    [
+      VoiceOrderIntent.PROVIDE_CONTACT,
+      [
+        '电话',
+        '手机号',
+        '号码',
+        '联系方式',
+        '联系',
+        '打给我',
+        '找我',
+        '使用默认',
+        '默认',
+        '本机',
+      ],
+    ],
 
     // 时间
-    [VoiceOrderIntent.PROVIDE_TIME, [
-      '时间', '时候', '何时', '几点',
-      '今天', '明天', '后天', '大后天',
-      '上午', '下午', '晚上', '早上', '中午', '傍晚',
-      '周一', '周二', '周三', '周四', '周五', '周六', '周日',
-      '号', '日', '日',
-      '方便', '合适', '可以', '行',
-    ]],
+    [
+      VoiceOrderIntent.PROVIDE_TIME,
+      [
+        '时间',
+        '时候',
+        '何时',
+        '几点',
+        '今天',
+        '明天',
+        '后天',
+        '大后天',
+        '上午',
+        '下午',
+        '晚上',
+        '早上',
+        '中午',
+        '傍晚',
+        '周一',
+        '周二',
+        '周三',
+        '周四',
+        '周五',
+        '周六',
+        '周日',
+        '号',
+        '日',
+        '日',
+        '方便',
+        '合适',
+        '可以',
+        '行',
+      ],
+    ],
 
     // 控制指令
-    [VoiceOrderIntent.SKIP_STEP, ['跳过', '下一个', '不用', '不需要', '随便', '无所谓']],
-    [VoiceOrderIntent.REPEAT_PROMPT, ['重复', '再说一遍', '没听清', '什么', '啥']],
+    [
+      VoiceOrderIntent.SKIP_STEP,
+      ['跳过', '下一个', '不用', '不需要', '随便', '无所谓'],
+    ],
+    [
+      VoiceOrderIntent.REPEAT_PROMPT,
+      ['重复', '再说一遍', '没听清', '什么', '啥'],
+    ],
     [VoiceOrderIntent.GO_BACK, ['返回', '上一步', '回去', '后退']],
-    [VoiceOrderIntent.SWITCH_TO_MANUAL, ['手动', '填写', '输入', '打字', '不说了']],
+    [
+      VoiceOrderIntent.SWITCH_TO_MANUAL,
+      ['手动', '填写', '输入', '打字', '不说了'],
+    ],
 
     // 确认指令
-    [VoiceOrderIntent.CONFIRM_ORDER, ['确认', '对的', '是的', '没错', '好', '行', '可以', '没问题']],
-    [VoiceOrderIntent.MODIFY_INFO, ['修改', '改', '不对', '错了', '不是', '换']],
-    [VoiceOrderIntent.CANCEL_ORDER, ['取消', '不要了', '算了', '不卖了', '撤销']],
+    [
+      VoiceOrderIntent.CONFIRM_ORDER,
+      ['确认', '对的', '是的', '没错', '好', '行', '可以', '没问题'],
+    ],
+    [
+      VoiceOrderIntent.MODIFY_INFO,
+      ['修改', '改', '不对', '错了', '不是', '换'],
+    ],
+    [
+      VoiceOrderIntent.CANCEL_ORDER,
+      ['取消', '不要了', '算了', '不卖了', '撤销'],
+    ],
   ]);
 
   // 物品类型同义词映射
@@ -78,12 +185,15 @@ export class IntentEngine {
     ['书', '旧书籍'],
   ]);
 
-  constructor() { }
+  constructor() {}
 
   /**
    * 识别用户意图
    */
-  async recognize(text: string, context: DialogContext): Promise<IntentRecognitionResult> {
+  async recognize(
+    text: string,
+    context: DialogContext,
+  ): Promise<IntentRecognitionResult> {
     // 1. 文本预处理
     const normalizedText = this.normalizeText(text);
 
@@ -92,7 +202,10 @@ export class IntentEngine {
 
     // 3. 如果规则识别置信度低，尝试基于关键词的识别
     if (ruleBasedResult.confidence < 0.7) {
-      const keywordResult = this.keywordBasedRecognition(normalizedText, context);
+      const keywordResult = this.keywordBasedRecognition(
+        normalizedText,
+        context,
+      );
       if (keywordResult.confidence > ruleBasedResult.confidence) {
         return keywordResult;
       }
@@ -105,7 +218,9 @@ export class IntentEngine {
       context,
     );
 
-    this.logger.debug(`Intent recognition: "${text}" -> ${ruleBasedResult.intent} (${ruleBasedResult.confidence})`);
+    this.logger.debug(
+      `Intent recognition: "${text}" -> ${ruleBasedResult.intent} (${ruleBasedResult.confidence})`,
+    );
 
     return ruleBasedResult;
   }
@@ -142,13 +257,13 @@ export class IntentEngine {
 
     // 根据当前步骤判断意图
     const stepIntentMap: Record<string, VoiceOrderIntent> = {
-      'GREETING': VoiceOrderIntent.PROVIDE_ITEM_TYPE,
-      'ITEM_TYPE': VoiceOrderIntent.PROVIDE_ITEM_TYPE,
-      'QUANTITY': VoiceOrderIntent.PROVIDE_QUANTITY,
-      'ADDRESS': VoiceOrderIntent.PROVIDE_ADDRESS,
-      'CONTACT': VoiceOrderIntent.PROVIDE_CONTACT,
-      'PICKUP_TIME': VoiceOrderIntent.PROVIDE_TIME,
-      'CONFIRMATION': VoiceOrderIntent.CONFIRM_ORDER,
+      GREETING: VoiceOrderIntent.PROVIDE_ITEM_TYPE,
+      ITEM_TYPE: VoiceOrderIntent.PROVIDE_ITEM_TYPE,
+      QUANTITY: VoiceOrderIntent.PROVIDE_QUANTITY,
+      ADDRESS: VoiceOrderIntent.PROVIDE_ADDRESS,
+      CONTACT: VoiceOrderIntent.PROVIDE_CONTACT,
+      PICKUP_TIME: VoiceOrderIntent.PROVIDE_TIME,
+      CONFIRMATION: VoiceOrderIntent.CONFIRM_ORDER,
     };
 
     const expectedIntent = stepIntentMap[currentStep];
@@ -187,15 +302,17 @@ export class IntentEngine {
   private detectControlIntent(text: string): VoiceOrderIntent | null {
     for (const [intent, keywords] of this.intentKeywords.entries()) {
       // 只检查控制类指令
-      if ([
-        VoiceOrderIntent.SKIP_STEP,
-        VoiceOrderIntent.REPEAT_PROMPT,
-        VoiceOrderIntent.GO_BACK,
-        VoiceOrderIntent.SWITCH_TO_MANUAL,
-        VoiceOrderIntent.CONFIRM_ORDER,
-        VoiceOrderIntent.MODIFY_INFO,
-        VoiceOrderIntent.CANCEL_ORDER,
-      ].includes(intent)) {
+      if (
+        [
+          VoiceOrderIntent.SKIP_STEP,
+          VoiceOrderIntent.REPEAT_PROMPT,
+          VoiceOrderIntent.GO_BACK,
+          VoiceOrderIntent.SWITCH_TO_MANUAL,
+          VoiceOrderIntent.CONFIRM_ORDER,
+          VoiceOrderIntent.MODIFY_INFO,
+          VoiceOrderIntent.CANCEL_ORDER,
+        ].includes(intent)
+      ) {
         for (const keyword of keywords) {
           if (text.includes(keyword)) {
             return intent;
@@ -247,9 +364,12 @@ export class IntentEngine {
   /**
    * 检查文本是否包含指定意图的关键词
    */
-  private containsIntentKeywords(text: string, intent: VoiceOrderIntent): boolean {
+  private containsIntentKeywords(
+    text: string,
+    intent: VoiceOrderIntent,
+  ): boolean {
     const keywords = this.intentKeywords.get(intent) || [];
-    return keywords.some(keyword => text.includes(keyword));
+    return keywords.some((keyword) => text.includes(keyword));
   }
 
   /**
@@ -308,7 +428,8 @@ export class IntentEngine {
     const entities: Record<string, any> = {};
 
     // 匹配数字 + 单位
-    const quantityPattern = /(\d+\.?\d*)\s*(公斤|kg|斤|两|吨|件 | 个 | 只 | 条 | 本 | 台 | 张 | 箱 | 袋 | 包 | 捆)?/g;
+    const quantityPattern =
+      /(\d+\.?\d*)\s*(公斤|kg|斤|两|吨|件 | 个 | 只 | 条 | 本 | 台 | 张 | 箱 | 袋 | 包 | 捆)?/g;
     const match = quantityPattern.exec(text);
 
     if (match) {
@@ -318,8 +439,17 @@ export class IntentEngine {
 
     // 中文数字转换
     const chineseNumbers: Record<string, number> = {
-      '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
-      '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
+      一: 1,
+      二: 2,
+      两: 2,
+      三: 3,
+      四: 4,
+      五: 5,
+      六: 6,
+      七: 7,
+      八: 8,
+      九: 9,
+      十: 10,
     };
 
     for (const [cn, num] of Object.entries(chineseNumbers)) {
@@ -340,9 +470,12 @@ export class IntentEngine {
     const entities: Record<string, any> = {};
 
     // 省市区匹配
-    const provincePattern = /(北京 | 上海 | 广东 | 江苏 | 浙江 | 四川 | 湖北 | 湖南) 省？/;
-    const cityPattern = /(北京 | 上海 | 广州 | 深圳 | 成都 | 武汉 | 南京 | 杭州) 市？/;
-    const districtPattern = /(朝阳 | 海淀 | 浦东 | 天河 | 锦江 | 武昌 | 玄武 | 西湖) 区？/;
+    const provincePattern =
+      /(北京 | 上海 | 广东 | 江苏 | 浙江 | 四川 | 湖北 | 湖南) 省？/;
+    const cityPattern =
+      /(北京 | 上海 | 广州 | 深圳 | 成都 | 武汉 | 南京 | 杭州) 市？/;
+    const districtPattern =
+      /(朝阳 | 海淀 | 浦东 | 天河 | 锦江 | 武昌 | 玄武 | 西湖) 区？/;
 
     const provinceMatch = provincePattern.exec(text);
     if (provinceMatch) {
@@ -418,7 +551,11 @@ export class IntentEngine {
     }
 
     // 检查是否使用默认
-    if (text.includes('使用默认') || text.includes('默认') || text.includes('本机')) {
+    if (
+      text.includes('使用默认') ||
+      text.includes('默认') ||
+      text.includes('本机')
+    ) {
       entities.useDefault = true;
     }
 

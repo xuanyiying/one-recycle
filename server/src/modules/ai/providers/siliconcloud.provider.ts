@@ -115,7 +115,7 @@ export class SiliconCloudProvider implements IAIProvider {
       name: 'Pro/moonshotai/Kimi-K2.5',
       contextWindow: 32000,
       costPerInputToken: 0.004 / 1000,
-      costPerOutputToken: 0.0210 / 1000,
+      costPerOutputToken: 0.021 / 1000,
     });
     // DeepSeek 系列
     this.modelInfoCache.set('deepseek-ai/DeepSeek-V3', {
@@ -194,20 +194,24 @@ export class SiliconCloudProvider implements IAIProvider {
       this.logger.debug(`Sending request to SiliconCloud: ${model}`);
 
       const response = await lastValueFrom(
-        this.httpService.post<SiliconCloudResponse | SiliconCloudError>(url, body, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.config.apiKey}`,
+        this.httpService.post<SiliconCloudResponse | SiliconCloudError>(
+          url,
+          body,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${this.config.apiKey}`,
+            },
+            timeout: request.config?.timeout || this.config.timeout || 60000,
           },
-          timeout: request.config?.timeout || this.config.timeout || 60000,
-        }),
+        ),
       );
 
       const data = response.data;
 
       // 检查错误
       if ('error' in data) {
-        const error = data as SiliconCloudError;
+        const error = data;
         throw this.createError(
           error.error.code || 'UNKNOWN_ERROR',
           error.error.message,
@@ -215,7 +219,7 @@ export class SiliconCloudProvider implements IAIProvider {
         );
       }
 
-      const siliconResponse = data as SiliconCloudResponse;
+      const siliconResponse = data;
       const latency = Date.now() - startTime;
 
       this.logger.log(`SiliconCloud response received in ${latency}ms`);
@@ -259,7 +263,7 @@ export class SiliconCloudProvider implements IAIProvider {
    * 转换消息格式
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const converted: any = {
         role: msg.role,
         content: msg.content,
@@ -289,7 +293,7 @@ export class SiliconCloudProvider implements IAIProvider {
 
     // 解析 tool_calls
     if (message.tool_calls && message.tool_calls.length > 0) {
-      message.tool_calls.forEach(tc => {
+      message.tool_calls.forEach((tc) => {
         toolCalls.push({
           id: tc.id,
           type: 'function',
@@ -328,7 +332,7 @@ export class SiliconCloudProvider implements IAIProvider {
       await lastValueFrom(
         this.httpService.get(url, {
           headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
           },
           timeout: 10000,
         }),
@@ -351,7 +355,7 @@ export class SiliconCloudProvider implements IAIProvider {
               },
               {
                 headers: {
-                  'Authorization': `Bearer ${this.config.apiKey}`,
+                  Authorization: `Bearer ${this.config.apiKey}`,
                 },
                 timeout: 10000,
               },
@@ -360,14 +364,14 @@ export class SiliconCloudProvider implements IAIProvider {
           return true;
         } catch (innerError) {
           this.logger.warn(
-            `SiliconCloud health check failed: ${innerError instanceof Error ? innerError.message : String(innerError)}`
+            `SiliconCloud health check failed: ${innerError instanceof Error ? innerError.message : String(innerError)}`,
           );
           return false;
         }
       }
 
       this.logger.warn(
-        `SiliconCloud health check failed: ${error instanceof Error ? error.message : String(error)}`
+        `SiliconCloud health check failed: ${error instanceof Error ? error.message : String(error)}`,
       );
       return false;
     }

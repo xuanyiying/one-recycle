@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEnum, IsNumber, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsObject,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum DialogStep {

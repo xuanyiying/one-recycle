@@ -254,7 +254,7 @@ export class RedisSnowflakeStateStore implements SnowflakeStateStore {
       get<T = any>(key: string): Promise<T | null>;
       set(key: string, value: any, ttl?: number): Promise<void>;
     },
-  ) { }
+  ) {}
 
   async load(key: string): Promise<SnowflakeState | null> {
     return await this.store.get<SnowflakeState>(key);

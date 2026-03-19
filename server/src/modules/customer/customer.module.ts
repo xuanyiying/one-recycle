@@ -34,4 +34,4 @@ import { AIModule } from '../ai/ai.module';
     AICustomerService,
   ],
 })
-export class CustomerServiceModule { }
+export class CustomerServiceModule {}

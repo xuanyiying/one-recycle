@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { OrderService } from '@/modules/order/services/order.service';
 import { KnowledgeService } from './knowledge.service';
@@ -53,18 +50,51 @@ export class AIReplyService {
   private readonly logger = new Logger(AIReplyService.name);
 
   private readonly intentKeywords: Map<UserIntent, string[]> = new Map([
-    [UserIntent.ORDER_QUERY, ['查询订单', '订单状态', '我的订单', '订单号', '查订单', '订单查询']],
-    [UserIntent.ORDER_CANCEL, ['取消订单', '不想卖了', '不要了', '撤销订单', '取消回收']],
-    [UserIntent.ORDER_MODIFY, ['修改订单', '改地址', '换时间', '修改地址', '修改时间']],
+    [
+      UserIntent.ORDER_QUERY,
+      ['查询订单', '订单状态', '我的订单', '订单号', '查订单', '订单查询'],
+    ],
+    [
+      UserIntent.ORDER_CANCEL,
+      ['取消订单', '不想卖了', '不要了', '撤销订单', '取消回收'],
+    ],
+    [
+      UserIntent.ORDER_MODIFY,
+      ['修改订单', '改地址', '换时间', '修改地址', '修改时间'],
+    ],
     [UserIntent.ORDER_REFUND, ['退款', '退钱', '申请退款', '要退款']],
-    [UserIntent.LOGISTICS_QUERY, ['物流', '快递', '到哪了', '物流查询', '快递到哪']],
-    [UserIntent.LOGISTICS_ISSUE, ['物流异常', '快递问题', '没收到', '快递丢了', '物流投诉']],
-    [UserIntent.RECYCLE_QUERY, ['回收预约', '预约查询', '上门回收', '回收时间']],
-    [UserIntent.RECYCLE_STATUS, ['回收状态', '回收进度', '验货结果', '入库状态']],
-    [UserIntent.RECYCLE_RESCHEDULE, ['改时间', '调整时间', '重新预约', '改约时间']],
-    [UserIntent.PRICE_INQUIRY, ['价格', '多少钱', '回收价格', '怎么算钱', '价格查询']],
-    [UserIntent.PRICE_DISPUTE, ['价格不对', '价格异议', '价格太低', '算错了', '价格投诉']],
-    [UserIntent.TRANSFER_AGENT, ['转人工', '人工客服', '人工', '真人客服', '转接人工']],
+    [
+      UserIntent.LOGISTICS_QUERY,
+      ['物流', '快递', '到哪了', '物流查询', '快递到哪'],
+    ],
+    [
+      UserIntent.LOGISTICS_ISSUE,
+      ['物流异常', '快递问题', '没收到', '快递丢了', '物流投诉'],
+    ],
+    [
+      UserIntent.RECYCLE_QUERY,
+      ['回收预约', '预约查询', '上门回收', '回收时间'],
+    ],
+    [
+      UserIntent.RECYCLE_STATUS,
+      ['回收状态', '回收进度', '验货结果', '入库状态'],
+    ],
+    [
+      UserIntent.RECYCLE_RESCHEDULE,
+      ['改时间', '调整时间', '重新预约', '改约时间'],
+    ],
+    [
+      UserIntent.PRICE_INQUIRY,
+      ['价格', '多少钱', '回收价格', '怎么算钱', '价格查询'],
+    ],
+    [
+      UserIntent.PRICE_DISPUTE,
+      ['价格不对', '价格异议', '价格太低', '算错了', '价格投诉'],
+    ],
+    [
+      UserIntent.TRANSFER_AGENT,
+      ['转人工', '人工客服', '人工', '真人客服', '转接人工'],
+    ],
   ]);
 
   private readonly orderNoPattern = /\d{15,20}/g;
@@ -134,7 +164,10 @@ export class AIReplyService {
           };
         }
       } catch (error) {
-        this.logger.error('LLM processing failed, fallback to traditional method', error);
+        this.logger.error(
+          'LLM processing failed, fallback to traditional method',
+          error,
+        );
       }
     }
 
@@ -294,7 +327,8 @@ export class AIReplyService {
 
       if (orders.length === 0) {
         return {
-          content: '抱歉，没有找到您的订单记录。请问您要查询的订单号是多少？或者您可以提供下单时使用的手机号。',
+          content:
+            '抱歉，没有找到您的订单记录。请问您要查询的订单号是多少？或者您可以提供下单时使用的手机号。',
           intent: UserIntent.ORDER_QUERY,
           confidence: intentResult.confidence,
           needTransfer: false,
@@ -351,7 +385,8 @@ export class AIReplyService {
 
       if (cancellableOrders.length === 0) {
         return {
-          content: '您当前没有可取消的订单。只有待处理或待取件状态的订单可以取消。',
+          content:
+            '您当前没有可取消的订单。只有待处理或待取件状态的订单可以取消。',
           intent: UserIntent.ORDER_CANCEL,
           confidence: intentResult.confidence,
           needTransfer: false,
@@ -386,7 +421,8 @@ export class AIReplyService {
     intentResult: IntentResult,
   ): Promise<AIResponse> {
     return {
-      content: '好的，我可以帮您修改订单信息。请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。',
+      content:
+        '好的，我可以帮您修改订单信息。请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。',
       intent: UserIntent.ORDER_MODIFY,
       confidence: intentResult.confidence,
       needTransfer: false,
@@ -414,7 +450,8 @@ export class AIReplyService {
 
       if (inTransitOrders.length === 0) {
         return {
-          content: '您当前没有运输中的订单。如需查询其他订单状态，请告诉我订单号。',
+          content:
+            '您当前没有运输中的订单。如需查询其他订单状态，请告诉我订单号。',
           intent: UserIntent.LOGISTICS_QUERY,
           confidence: intentResult.confidence,
           needTransfer: false,
@@ -460,13 +497,12 @@ export class AIReplyService {
 
       if (recycleOrders.length === 0) {
         return {
-          content: '您当前没有进行中的回收订单。\n\n如需预约回收，请点击首页的"一键预约"按钮。如需查询历史订单，请告诉我订单号。',
+          content:
+            '您当前没有进行中的回收订单。\n\n如需预约回收，请点击首页的"一键预约"按钮。如需查询历史订单，请告诉我订单号。',
           intent: UserIntent.RECYCLE_QUERY,
           confidence: intentResult.confidence,
           needTransfer: false,
-          suggestedActions: [
-            { type: 'new_order', label: '预约回收' },
-          ],
+          suggestedActions: [{ type: 'new_order', label: '预约回收' }],
         };
       }
 
@@ -498,20 +534,20 @@ export class AIReplyService {
     });
 
     return {
-      content: '以下是常见回收物品的价格参考：\n\n实际价格会根据物品成色、重量等因素确定，具体以验货结果为准。',
+      content:
+        '以下是常见回收物品的价格参考：\n\n实际价格会根据物品成色、重量等因素确定，具体以验货结果为准。',
       intent: UserIntent.PRICE_INQUIRY,
       confidence: intentResult.confidence,
       needTransfer: false,
       extraData: { categories },
-      suggestedActions: [
-        { type: 'price_detail', label: '查看详细价格表' },
-      ],
+      suggestedActions: [{ type: 'price_detail', label: '查看详细价格表' }],
     };
   }
 
   private handleTransferAgent(): AIResponse {
     return {
-      content: '好的，正在为您转接人工客服，请稍候...\n\n当前排队人数：正在查询\n预计等待时间：约2-5分钟',
+      content:
+        '好的，正在为您转接人工客服，请稍候...\n\n当前排队人数：正在查询\n预计等待时间：约2-5分钟',
       intent: UserIntent.TRANSFER_AGENT,
       confidence: 1,
       needTransfer: true,

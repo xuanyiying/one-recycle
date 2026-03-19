@@ -8,10 +8,7 @@ import {
   DialogContext,
   DialogAction,
 } from '../../interfaces/voice-order.interface';
-import {
-  DialogStep,
-  CollectedDataDto,
-} from '../../dto/voice-input.dto';
+import { DialogStep, CollectedDataDto } from '../../dto/voice-input.dto';
 
 @Injectable()
 export class DialogFlowEngine {
@@ -21,7 +18,7 @@ export class DialogFlowEngine {
     private readonly intentEngine: IntentEngine,
     private readonly voiceOrderService: VoiceOrderService,
     private readonly dialogTemplateService: DialogTemplateService,
-  ) { }
+  ) {}
 
   /**
    * 处理用户输入
@@ -37,10 +34,12 @@ export class DialogFlowEngine {
     // 2. 意图识别
     const intentResult = await this.intentEngine.recognize(
       recognizedText,
-      session.context as DialogContext,
+      session.context,
     );
 
-    this.logger.log(`Session ${sessionId}: Detected intent "${intentResult.intent}" with confidence ${intentResult.confidence}`);
+    this.logger.log(
+      `Session ${sessionId}: Detected intent "${intentResult.intent}" with confidence ${intentResult.confidence}`,
+    );
 
     // 3. 记录对话日志
     await this.voiceOrderService.logMessage(
@@ -73,16 +72,12 @@ export class DialogFlowEngine {
     );
 
     // 6. 记录机器人响应
-    await this.voiceOrderService.logMessage(
-      sessionId,
-      userId,
-      {
-        type: 'bot',
-        text: result.botResponse,
-        step: result.nextStep,
-        timestamp: new Date(),
-      },
-    );
+    await this.voiceOrderService.logMessage(sessionId, userId, {
+      type: 'bot',
+      text: result.botResponse,
+      step: result.nextStep,
+      timestamp: new Date(),
+    });
 
     return result;
   }
@@ -170,7 +165,7 @@ export class DialogFlowEngine {
     };
 
     const requiredFields = stepRequiredFields[currentStep] || [];
-    return requiredFields.some(field => entities[field] !== undefined);
+    return requiredFields.some((field) => entities[field] !== undefined);
   }
 
   /**
@@ -180,7 +175,8 @@ export class DialogFlowEngine {
     entities: Record<string, any>,
     currentStep: DialogStep,
   ): Array<{ step: DialogStep; data: Record<string, any> }> {
-    const futureData: Array<{ step: DialogStep; data: Record<string, any> }> = [];
+    const futureData: Array<{ step: DialogStep; data: Record<string, any> }> =
+      [];
     const stepOrder: DialogStep[] = [
       DialogStep.ITEM_TYPE,
       DialogStep.QUANTITY,
@@ -196,7 +192,10 @@ export class DialogFlowEngine {
       const step = stepOrder[i];
       const stepData: Record<string, any> = {};
 
-      if (step === DialogStep.ITEM_TYPE && (entities.itemType || entities.itemCategoryId)) {
+      if (
+        step === DialogStep.ITEM_TYPE &&
+        (entities.itemType || entities.itemCategoryId)
+      ) {
         stepData.itemType = entities.itemType;
         stepData.itemCategoryId = entities.itemCategoryId;
       }
@@ -215,12 +214,18 @@ export class DialogFlowEngine {
         };
       }
 
-      if (step === DialogStep.CONTACT && (entities.phone || entities.useDefault)) {
+      if (
+        step === DialogStep.CONTACT &&
+        (entities.phone || entities.useDefault)
+      ) {
         stepData.contactPhone = entities.phone;
         stepData.useDefault = entities.useDefault;
       }
 
-      if (step === DialogStep.PICKUP_TIME && (entities.dateString || entities.timeType)) {
+      if (
+        step === DialogStep.PICKUP_TIME &&
+        (entities.dateString || entities.timeType)
+      ) {
         stepData.pickupTime = entities.dateString;
       }
 
@@ -476,16 +481,26 @@ export class DialogFlowEngine {
     switch (step) {
       case DialogStep.ITEM_TYPE:
         actions.push(
-          { type: 'quick_select', label: '旧衣服', data: { itemType: '旧衣服' } },
-          { type: 'quick_select', label: '旧书籍', data: { itemType: '旧书籍' } },
-          { type: 'quick_select', label: '旧家电', data: { itemType: '旧家电' } },
+          {
+            type: 'quick_select',
+            label: '旧衣服',
+            data: { itemType: '旧衣服' },
+          },
+          {
+            type: 'quick_select',
+            label: '旧书籍',
+            data: { itemType: '旧书籍' },
+          },
+          {
+            type: 'quick_select',
+            label: '旧家电',
+            data: { itemType: '旧家电' },
+          },
         );
         break;
 
       case DialogStep.CONTACT:
-        actions.push(
-          { type: 'use_default', label: '使用默认手机号' },
-        );
+        actions.push({ type: 'use_default', label: '使用默认手机号' });
         break;
 
       case DialogStep.CONFIRMATION:

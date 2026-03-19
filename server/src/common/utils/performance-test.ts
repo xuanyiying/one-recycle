@@ -280,9 +280,7 @@ async function runPerformanceTests(): Promise<void> {
       await testConcurrentPerformance('NanoID', () => generateShortId()),
     );
     results.push(
-      await testConcurrentPerformance('订单号', () =>
-        generateSecureorderNo(),
-      ),
+      await testConcurrentPerformance('订单号', () => generateSecureorderNo()),
     );
 
     // 压力测试

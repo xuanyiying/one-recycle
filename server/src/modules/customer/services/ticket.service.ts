@@ -22,9 +22,7 @@ import {
 
 @Injectable()
 export class TicketService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateTicketDto, userId: string): Promise<ServiceTicket> {
     const ticketNo = this.generateTicketNo();
@@ -154,10 +152,7 @@ export class TicketService {
     const [items, total] = await Promise.all([
       this.prisma.serviceTicket.findMany({
         where,
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
@@ -263,7 +258,10 @@ export class TicketService {
       throw new NotFoundException('工单不存在');
     }
 
-    if (ticket.status === TicketStatus.RESOLVED || ticket.status === TicketStatus.CLOSED) {
+    if (
+      ticket.status === TicketStatus.RESOLVED ||
+      ticket.status === TicketStatus.CLOSED
+    ) {
       throw new BadRequestException('工单已解决或已关闭');
     }
 
@@ -330,7 +328,10 @@ export class TicketService {
       throw new NotFoundException('工单不存在');
     }
 
-    if (ticket.status !== TicketStatus.CLOSED && ticket.status !== TicketStatus.RESOLVED) {
+    if (
+      ticket.status !== TicketStatus.CLOSED &&
+      ticket.status !== TicketStatus.RESOLVED
+    ) {
       throw new BadRequestException('只有已解决或已关闭的工单可以重开');
     }
 
@@ -394,12 +395,15 @@ export class TicketService {
     return this.prisma.serviceTicket.findMany({
       where: {
         assignedTo: BigInt(agentId),
-        status: { in: [TicketStatus.PENDING, TicketStatus.PROCESSING, TicketStatus.REOPENED] },
+        status: {
+          in: [
+            TicketStatus.PENDING,
+            TicketStatus.PROCESSING,
+            TicketStatus.REOPENED,
+          ],
+        },
       },
-      orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'asc' },
-      ],
+      orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       include: {
         user: {
           select: {
@@ -427,10 +431,18 @@ export class TicketService {
   }> {
     const [total, pending, processing, resolved, closed] = await Promise.all([
       this.prisma.serviceTicket.count(),
-      this.prisma.serviceTicket.count({ where: { status: TicketStatus.PENDING } }),
-      this.prisma.serviceTicket.count({ where: { status: TicketStatus.PROCESSING } }),
-      this.prisma.serviceTicket.count({ where: { status: TicketStatus.RESOLVED } }),
-      this.prisma.serviceTicket.count({ where: { status: TicketStatus.CLOSED } }),
+      this.prisma.serviceTicket.count({
+        where: { status: TicketStatus.PENDING },
+      }),
+      this.prisma.serviceTicket.count({
+        where: { status: TicketStatus.PROCESSING },
+      }),
+      this.prisma.serviceTicket.count({
+        where: { status: TicketStatus.RESOLVED },
+      }),
+      this.prisma.serviceTicket.count({
+        where: { status: TicketStatus.CLOSED },
+      }),
     ]);
 
     return { total, pending, processing, resolved, closed };

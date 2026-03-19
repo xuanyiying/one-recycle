@@ -35,7 +35,7 @@ export interface ILogisticsProvider {
 }
 
 export interface ILogisticsProviderConstructor {
-  new(config: LogisticsProviderConfig): ILogisticsProvider;
+  new (config: LogisticsProviderConfig): ILogisticsProvider;
 }
 
 export interface ProviderWithConfig {
@@ -44,10 +44,19 @@ export interface ProviderWithConfig {
 }
 
 export interface ILogisticsProviderFactory {
-  getProvider(providerCode: string, config?: LogisticsProviderConfig): Promise<ILogisticsProvider>;
-  getProviderWithConfig(providerCode: string, config?: LogisticsProviderConfig): Promise<ProviderWithConfig>;
+  getProvider(
+    providerCode: string,
+    config?: LogisticsProviderConfig,
+  ): Promise<ILogisticsProvider>;
+  getProviderWithConfig(
+    providerCode: string,
+    config?: LogisticsProviderConfig,
+  ): Promise<ProviderWithConfig>;
   getActiveProvider(): Promise<ILogisticsProvider>;
   getActiveProviderWithConfig(): Promise<ProviderWithConfig>;
-  registerProvider(code: string, constructor: ILogisticsProviderConstructor): void;
+  registerProvider(
+    code: string,
+    constructor: ILogisticsProviderConstructor,
+  ): void;
   clearCache(): void;
 }

@@ -1,6 +1,4 @@
-import {
-  Injectable,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/common/redis/redis.service';
 import { KnowledgeCategory, Prisma } from '@prisma/client';
@@ -18,7 +16,7 @@ export class KnowledgeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
-  ) { }
+  ) {}
 
   async create(dto: CreateKnowledgeDto): Promise<any> {
     return this.prisma.knowledgeBase.create({
@@ -134,11 +132,9 @@ export class KnowledgeService {
 
     if (results.length > 0) {
       const result = results[0];
-      await this.redisService.getClient().setex(
-        cacheKey,
-        this.CACHE_TTL,
-        JSON.stringify(result),
-      );
+      await this.redisService
+        .getClient()
+        .setex(cacheKey, this.CACHE_TTL, JSON.stringify(result));
       return result;
     }
 
@@ -165,7 +161,8 @@ export class KnowledgeService {
       },
     });
 
-    let bestMatch: { id: string; intent: string; confidence: number } | null = null;
+    let bestMatch: { id: string; intent: string; confidence: number } | null =
+      null;
     let maxScore = 0;
 
     for (const item of results) {
@@ -202,10 +199,12 @@ export class KnowledgeService {
     });
   }
 
-  async getCategories(): Promise<{
-    category: KnowledgeCategory;
-    count: number;
-  }[]> {
+  async getCategories(): Promise<
+    {
+      category: KnowledgeCategory;
+      count: number;
+    }[]
+  > {
     const results = await this.prisma.knowledgeBase.groupBy({
       by: ['category'],
       _count: { id: true },
@@ -233,11 +232,43 @@ export class KnowledgeService {
 
   private extractKeywords(query: string): string[] {
     const stopWords = new Set([
-      '的', '了', '是', '在', '我', '有', '和', '就',
-      '不', '人', '都', '一', '一个', '上', '也', '很',
-      '到', '说', '要', '去', '你', '会', '着', '没有',
-      '看', '好', '自己', '这', '那', '什么', '怎么',
-      '吗', '呢', '啊', '吧', '嗯', '哦',
+      '的',
+      '了',
+      '是',
+      '在',
+      '我',
+      '有',
+      '和',
+      '就',
+      '不',
+      '人',
+      '都',
+      '一',
+      '一个',
+      '上',
+      '也',
+      '很',
+      '到',
+      '说',
+      '要',
+      '去',
+      '你',
+      '会',
+      '着',
+      '没有',
+      '看',
+      '好',
+      '自己',
+      '这',
+      '那',
+      '什么',
+      '怎么',
+      '吗',
+      '呢',
+      '啊',
+      '吧',
+      '嗯',
+      '哦',
     ]);
 
     const words = query.split(/\s+/).filter((word) => {

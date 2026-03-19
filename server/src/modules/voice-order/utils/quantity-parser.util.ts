@@ -12,23 +12,67 @@ export class QuantityParser {
 
   // 中文数字映射
   private readonly chineseNumbers: Record<string, number> = {
-    '零': 0, '一': 1, '壹': 1, '1': 1,
-    '二': 2, '两': 2, '贰': 2, '2': 2,
-    '三': 3, '叁': 3, '3': 3,
-    '四': 4, '肆': 4, '4': 4,
-    '五': 5, '伍': 5, '5': 5,
-    '六': 6, '陆': 6, '6': 6,
-    '七': 7, '柒': 7, '7': 7,
-    '八': 8, '捌': 8, '8': 8,
-    '九': 9, '玖': 9, '9': 9,
-    '十': 10, '拾': 10, '10': 10,
+    零: 0,
+    一: 1,
+    壹: 1,
+    '1': 1,
+    二: 2,
+    两: 2,
+    贰: 2,
+    '2': 2,
+    三: 3,
+    叁: 3,
+    '3': 3,
+    四: 4,
+    肆: 4,
+    '4': 4,
+    五: 5,
+    伍: 5,
+    '5': 5,
+    六: 6,
+    陆: 6,
+    '6': 6,
+    七: 7,
+    柒: 7,
+    '7': 7,
+    八: 8,
+    捌: 8,
+    '8': 8,
+    九: 9,
+    玖: 9,
+    '9': 9,
+    十: 10,
+    拾: 10,
+    '10': 10,
   };
 
   // 重量单位
-  private readonly weightUnits = ['公斤', 'kg', 'KG', '斤', '两', '吨', 't', 'T'];
+  private readonly weightUnits = [
+    '公斤',
+    'kg',
+    'KG',
+    '斤',
+    '两',
+    '吨',
+    't',
+    'T',
+  ];
 
   // 数量单位
-  private readonly countUnits = ['件', '个', '只', '条', '本', '台', '张', '箱', '袋', '包', '捆', '堆'];
+  private readonly countUnits = [
+    '件',
+    '个',
+    '只',
+    '条',
+    '本',
+    '台',
+    '张',
+    '箱',
+    '袋',
+    '包',
+    '捆',
+    '堆',
+  ];
 
   /**
    * 解析数量文本
@@ -64,7 +108,8 @@ export class QuantityParser {
    */
   private matchNumberWithUnit(text: string): ParsedQuantity | null {
     // 匹配模式：数字 (小数) + 可选单位
-    const pattern = /(\d+\.?\d*)\s*(公斤|kg|KG|斤 | 两 | 吨 |t|T|件 | 个 | 只 | 条 | 本 | 台 | 张 | 箱 | 袋 | 包 | 捆 | 堆)?/g;
+    const pattern =
+      /(\d+\.?\d*)\s*(公斤|kg|KG|斤 | 两 | 吨 |t|T|件 | 个 | 只 | 条 | 本 | 台 | 张 | 箱 | 袋 | 包 | 捆 | 堆)?/g;
     const matches = [...text.matchAll(pattern)];
 
     if (matches.length > 0) {
@@ -92,7 +137,10 @@ export class QuantityParser {
     for (const [cnChar, number] of Object.entries(this.chineseNumbers)) {
       // 检查是否包含中文数字且后面跟有单位
       for (const unit of [...this.weightUnits, ...this.countUnits]) {
-        if (text.includes(cnChar + unit) || text.includes(cnChar + '个' + unit)) {
+        if (
+          text.includes(cnChar + unit) ||
+          text.includes(cnChar + '个' + unit)
+        ) {
           return {
             quantity: number,
             unit,
@@ -167,14 +215,14 @@ export class QuantityParser {
    */
   convertToKilograms(quantity: number, unit: string): number {
     const conversionRates: Record<string, number> = {
-      '公斤': 1,
-      'kg': 1,
-      'KG': 1,
-      '斤': 0.5,
-      '两': 0.05,
-      '吨': 1000,
-      't': 1000,
-      'T': 1000,
+      公斤: 1,
+      kg: 1,
+      KG: 1,
+      斤: 0.5,
+      两: 0.05,
+      吨: 1000,
+      t: 1000,
+      T: 1000,
     };
 
     const rate = conversionRates[unit] || 1;

@@ -15,10 +15,13 @@ import { PointsProductService } from './services/points-product.service';
 import { PointsOrderService } from './services/points-order.service';
 import { PointsTaskService } from './services/points-task.service';
 import { PointsService } from './points.service';
+import { ReferralRewardService } from './services/referral-reward.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
+import { UpdateReferralConfigDto } from './dto/update-referral-config.dto';
+import { PrismaService } from '@/prisma/prisma.service';
 
 @Controller('admin/points')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,7 +32,9 @@ export class PointsAdminController {
     private readonly orderService: PointsOrderService,
     private readonly taskService: PointsTaskService,
     private readonly pointsService: PointsService,
-  ) { }
+    private readonly referralRewardService: ReferralRewardService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // ==================== 统计概览 ====================
 
@@ -126,7 +131,8 @@ export class PointsAdminController {
   @Post('tasks/:id')
   async updateTask(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: Partial<{
+    @Body()
+    body: Partial<{
       name: string;
       description: string;
       points: number;
@@ -137,5 +143,45 @@ export class PointsAdminController {
     }>,
   ) {
     return this.taskService.updateTask(BigInt(id), body);
+  }
+
+  // ==================== 推广规则管理 ====================
+
+  @Get('referral/config')
+  async getReferralConfig() {
+    const config = await this.referralRewardService.getReferralRewardConfig();
+    return { success: true, data: config };
+  }
+
+  @Post('referral/config')
+  async updateReferralConfig(@Body() dto: UpdateReferralConfigDto) {
+    const configKeys = [
+      { key: 'REFERRAL_REWARD_TYPE', value: dto.rewardType },
+      { key: 'REFERRAL_REWARD_VALUE', value: dto.rewardValue?.toString() },
+      { key: 'REFERRAL_REWARD_TIMING', value: dto.rewardTiming },
+      {
+        key: 'REFERRAL_MIN_REWARD_POINTS',
+        value: dto.minRewardPoints?.toString(),
+      },
+    ];
+
+    for (const config of configKeys) {
+      if (config.value !== undefined && config.value !== null) {
+        await this.prisma.systemConfig.upsert({
+          where: { key: config.key },
+          update: { value: config.value },
+          create: {
+            key: config.key,
+            value: config.value,
+            description: `Referral configuration: ${config.key}`,
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    const updatedConfig =
+      await this.referralRewardService.getReferralRewardConfig();
+    return { success: true, data: updatedConfig };
   }
 }

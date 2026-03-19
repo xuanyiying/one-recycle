@@ -102,7 +102,7 @@ export class OpenAIProvider implements IAIProvider {
         this.httpService.post<OpenAIResponse | OpenAIError>(url, body, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
           },
           timeout: request.config?.timeout || this.config.timeout || 60000,
         }),
@@ -112,7 +112,7 @@ export class OpenAIProvider implements IAIProvider {
 
       // 检查错误
       if ('error' in data) {
-        const error = data as OpenAIError;
+        const error = data;
         throw this.createError(
           error.error.code || 'UNKNOWN_ERROR',
           error.error.message,
@@ -120,7 +120,7 @@ export class OpenAIProvider implements IAIProvider {
         );
       }
 
-      const openaiResponse = data as OpenAIResponse;
+      const openaiResponse = data;
       const latency = Date.now() - startTime;
 
       this.logger.log(`OpenAI response received in ${latency}ms`);
@@ -164,7 +164,7 @@ export class OpenAIProvider implements IAIProvider {
    * 转换消息格式
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const converted: any = {
         role: msg.role,
         content: msg.content,
@@ -194,7 +194,7 @@ export class OpenAIProvider implements IAIProvider {
 
     // 解析 tool_calls
     if (message.tool_calls && message.tool_calls.length > 0) {
-      message.tool_calls.forEach(tc => {
+      message.tool_calls.forEach((tc) => {
         toolCalls.push({
           id: tc.id,
           type: 'function',
@@ -232,7 +232,7 @@ export class OpenAIProvider implements IAIProvider {
       await lastValueFrom(
         this.httpService.get(url, {
           headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
           },
           timeout: 10000,
         }),

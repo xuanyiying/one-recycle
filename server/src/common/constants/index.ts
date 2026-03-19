@@ -151,3 +151,6 @@ export const DEFAULT_CONFIG = {
   RATE_LIMIT_MAX: 100, // 每个窗口最大请求数
   SESSION_TIMEOUT: 30 * 60 * 1000, // 30分钟
 } as const;
+
+// 订单状态机
+export * from './order-state-machine';

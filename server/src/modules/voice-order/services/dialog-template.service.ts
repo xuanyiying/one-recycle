@@ -41,19 +41,19 @@ export class DialogTemplateService {
    */
   getPrompt(step: DialogStep, variables?: Record<string, string>): string {
     const templates = this.templateCache.get(step) || [];
-    
+
     if (templates.length === 0) {
       return this.getDefaultPrompt(step);
     }
 
     // 随机选择一个话术
     const template = templates[Math.floor(Math.random() * templates.length)];
-    
+
     // 替换变量
     if (variables) {
       return this.replaceVariables(template, variables);
     }
-    
+
     return template;
   }
 
@@ -78,7 +78,10 @@ export class DialogTemplateService {
   /**
    * 替换话术中的变量
    */
-  private replaceVariables(template: string, variables: Record<string, string>): string {
+  private replaceVariables(
+    template: string,
+    variables: Record<string, string>,
+  ): string {
     let result = template;
     for (const [key, value] of Object.entries(variables)) {
       result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);

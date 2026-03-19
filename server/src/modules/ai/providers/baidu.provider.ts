@@ -69,7 +69,7 @@ export class BaiduProvider implements IAIProvider {
   constructor(
     private readonly config: AIProviderConfig,
     private readonly httpService: HttpService,
-  ) { }
+  ) {}
 
   /**
    * 获取 access token
@@ -94,7 +94,7 @@ export class BaiduProvider implements IAIProvider {
 
       this.accessToken = response.data.access_token;
       // token 有效期通常为 30 天
-      this.tokenExpireTime = Date.now() + (response.data.expires_in * 1000);
+      this.tokenExpireTime = Date.now() + response.data.expires_in * 1000;
 
       this.logger.log('Baidu access token refreshed');
       return this.accessToken!;
@@ -112,9 +112,11 @@ export class BaiduProvider implements IAIProvider {
 
     try {
       const accessToken = await this.getAccessToken();
-      const model = this.getModelName(request.config?.model || this.config.defaultModel);
+      const model = this.getModelName(
+        request.config?.model || this.config.defaultModel,
+      );
 
-      const url = `https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/${model}?access_token=${accessToken!}`;
+      const url = `https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/${model}?access_token=${accessToken}`;
 
       const body = this.buildRequestBody(request);
 
@@ -140,7 +142,7 @@ export class BaiduProvider implements IAIProvider {
         );
       }
 
-      const baiduResponse = data as BaiduResponse;
+      const baiduResponse = data;
       const latency = Date.now() - startTime;
 
       this.logger.log(`Baidu ERNIE response received in ${latency}ms`);
@@ -169,7 +171,7 @@ export class BaiduProvider implements IAIProvider {
 
     // 添加工具（Function Calling）
     if (request.tools && request.tools.length > 0) {
-      body.functions = request.tools.map(tool => ({
+      body.functions = request.tools.map((tool) => ({
         name: tool.function.name,
         description: tool.function.description,
         parameters: tool.function.parameters,
@@ -188,7 +190,7 @@ export class BaiduProvider implements IAIProvider {
    * 百度文心一言支持 system、user、assistant 角色
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       // 转换 tool 角色为 assistant
       if (msg.role === 'tool') {
         return {
@@ -207,7 +209,10 @@ export class BaiduProvider implements IAIProvider {
   /**
    * 解析响应
    */
-  private parseResponse(response: BaiduResponse, request: AIRequest): AIResponse {
+  private parseResponse(
+    response: BaiduResponse,
+    request: AIRequest,
+  ): AIResponse {
     const toolCalls: ToolCall[] = [];
 
     // 解析 function_call
@@ -253,14 +258,16 @@ export class BaiduProvider implements IAIProvider {
    * 获取可用模型列表
    */
   getAvailableModels(): string[] {
-    return this.config.availableModels || [
-      'ernie-bot',
-      'ernie-bot-turbo',
-      'ernie-bot-4',
-      'ernie-bot-8k',
-      'ernie-speed',
-      'ernie-lite',
-    ];
+    return (
+      this.config.availableModels || [
+        'ernie-bot',
+        'ernie-bot-turbo',
+        'ernie-bot-4',
+        'ernie-bot-8k',
+        'ernie-speed',
+        'ernie-lite',
+      ]
+    );
   }
 
   /**

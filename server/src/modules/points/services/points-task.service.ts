@@ -165,15 +165,18 @@ export class PointsTaskService {
   /**
    * 更新任务（管理员）
    */
-  async updateTask(taskId: bigint, data: Partial<{
-    name: string;
-    description: string;
-    points: number;
-    icon: string;
-    config: any;
-    isActive: boolean;
-    sortOrder: number;
-  }>) {
+  async updateTask(
+    taskId: bigint,
+    data: Partial<{
+      name: string;
+      description: string;
+      points: number;
+      icon: string;
+      config: any;
+      isActive: boolean;
+      sortOrder: number;
+    }>,
+  ) {
     return this.prisma.pointsTask.update({
       where: { id: taskId },
       data,

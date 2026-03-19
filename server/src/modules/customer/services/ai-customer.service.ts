@@ -168,7 +168,7 @@ export class AICustomerService {
     private readonly aiService: AIService,
     private readonly orderService: OrderService,
     private readonly knowledgeService: KnowledgeService,
-  ) { }
+  ) {}
 
   /**
    * 处理用户消息
@@ -336,7 +336,10 @@ export class AICustomerService {
     }
 
     // 生成建议操作
-    const suggestedActions = this.generateSuggestedActions(toolCalls, extraData);
+    const suggestedActions = this.generateSuggestedActions(
+      toolCalls,
+      extraData,
+    );
 
     return {
       content: result.response.content,
@@ -660,7 +663,8 @@ export class AICustomerService {
         case 'cancel_order':
           if (extraData?.orders?.length > 0) {
             const cancellableOrders = extraData.orders.filter(
-              (o: any) => o.status === 'PENDING' || o.status === 'PENDING_PICKUP',
+              (o: any) =>
+                o.status === 'PENDING' || o.status === 'PENDING_PICKUP',
             );
             cancellableOrders.forEach((order: any) => {
               actions.push({

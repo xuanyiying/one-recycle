@@ -86,7 +86,7 @@ export class OllamaProvider implements IAIProvider {
   constructor(
     private readonly config: AIProviderConfig,
     private readonly httpService: HttpService,
-  ) { }
+  ) {}
 
   /**
    * 发送聊天请求
@@ -110,7 +110,7 @@ export class OllamaProvider implements IAIProvider {
             'Content-Type': 'application/json',
             // Ollama 不需要 API Key，但如果提供了就使用
             ...(this.config.apiKey && {
-              'Authorization': `Bearer ${this.config.apiKey}`,
+              Authorization: `Bearer ${this.config.apiKey}`,
             }),
           },
           timeout: request.config?.timeout || this.config.timeout || 120000, // 本地模型可能需要更长时间
@@ -121,7 +121,7 @@ export class OllamaProvider implements IAIProvider {
 
       // 检查错误
       if ('error' in data) {
-        const error = data as OllamaError;
+        const error = data;
         throw this.createError(
           error.error.code || 'UNKNOWN_ERROR',
           error.error.message,
@@ -129,7 +129,7 @@ export class OllamaProvider implements IAIProvider {
         );
       }
 
-      const ollamaResponse = data as OllamaResponse;
+      const ollamaResponse = data;
       const latency = Date.now() - startTime;
 
       this.logger.log(`Ollama response received in ${latency}ms`);
@@ -173,7 +173,7 @@ export class OllamaProvider implements IAIProvider {
    * 转换消息格式
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const converted: any = {
         role: msg.role,
         content: msg.content,
@@ -203,7 +203,7 @@ export class OllamaProvider implements IAIProvider {
 
     // 解析 tool_calls
     if (message.tool_calls && message.tool_calls.length > 0) {
-      message.tool_calls.forEach(tc => {
+      message.tool_calls.forEach((tc) => {
         toolCalls.push({
           id: tc.id,
           type: 'function',
@@ -247,7 +247,7 @@ export class OllamaProvider implements IAIProvider {
       return true;
     } catch (error) {
       this.logger.warn(
-        `Ollama health check failed: ${error instanceof Error ? error.message : String(error)}`
+        `Ollama health check failed: ${error instanceof Error ? error.message : String(error)}`,
       );
       return false;
     }
@@ -301,10 +301,10 @@ export class OllamaProvider implements IAIProvider {
         }),
       );
 
-      return response.data.models.map(m => m.name);
+      return response.data.models.map((m) => m.name);
     } catch (error) {
       this.logger.error(
-        `Failed to fetch Ollama models: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to fetch Ollama models: ${error instanceof Error ? error.message : String(error)}`,
       );
       return [];
     }

@@ -19,7 +19,8 @@ export class InviteService {
    * 获取邀请码（用户ID的base62编码）
    */
   getInviteCode(userId: bigint): string {
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const chars =
+      '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     let code = '';
     let num = Number(userId);
 
@@ -35,7 +36,8 @@ export class InviteService {
    * 解析邀请码
    */
   parseInviteCode(code: string): bigint | null {
-    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const chars =
+      '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     let num = 0;
 
     for (const char of code) {
@@ -113,17 +115,28 @@ export class InviteService {
   }
 
   /**
-   * 获取邀请统计
+   * 获取邀请统计（包含旧物数量）
    */
   async getInviteStats(userId: bigint) {
-    const totalInvites = await this.prisma.inviteRecord.count({
+    const inviteRecords = await this.prisma.inviteRecord.findMany({
       where: { inviterId: userId },
+      include: { referralRewards: true },
     });
 
-    const totalRewards = await this.prisma.inviteRecord.aggregate({
-      where: { inviterId: userId },
-      _sum: { rewardPoints: true },
-    });
+    const totalInvites = inviteRecords.length;
+    const totalRewards = inviteRecords.reduce(
+      (sum, record) =>
+        sum + (record.rewardPoints ?? 0) + (record.totalOrderRewards ?? 0),
+      0,
+    );
+    const totalItems = inviteRecords.reduce(
+      (sum, record) => sum + (record.totalItems ?? 0),
+      0,
+    );
+    const totalOrders = inviteRecords.reduce(
+      (sum, record) => sum + (record.totalOrders ?? 0),
+      0,
+    );
 
     const recentInvites = await this.prisma.inviteRecord.findMany({
       where: { inviterId: userId },
@@ -138,19 +151,22 @@ export class InviteService {
             createdAt: true,
           },
         },
+        referralRewards: true,
       },
     });
 
     return {
       inviteCode: this.getInviteCode(userId),
       totalInvites,
-      totalRewards: totalRewards._sum.rewardPoints || 0,
+      totalRewards,
+      totalItems,
+      totalOrders,
       recentInvites,
     };
   }
 
   /**
-   * 获取邀请列表
+   * 获取邀请列表（包含下单情况）
    */
   async getInviteList(userId: bigint, page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
@@ -169,6 +185,10 @@ export class InviteService {
               avatarUrl: true,
             },
           },
+          referralRewards: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
       }),
       this.prisma.inviteRecord.count({
@@ -176,8 +196,14 @@ export class InviteService {
       }),
     ]);
 
+    const enrichedData = data.map((record) => ({
+      ...record,
+      hasOrdered: record.totalOrders > 0,
+      lastOrderAt: record.referralRewards[0]?.createdAt || null,
+    }));
+
     return {
-      data,
+      data: enrichedData,
       total,
       page,
       limit,

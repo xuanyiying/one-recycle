@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
   PointsOrder,
@@ -7,9 +12,9 @@ import {
   PointsType,
   Prisma,
 } from '@prisma/client';
-import { CreateOrderDto } from '../dto/create-order.dto';
 import { QueryOrderDto } from '../dto/query-order.dto';
 import { PointsProductService } from './points-product.service';
+import { CreatePointsOrderDto } from '../dto/create-order.dto';
 
 @Injectable()
 export class PointsOrderService {
@@ -32,7 +37,10 @@ export class PointsOrderService {
   /**
    * 创建兑换订单
    */
-  async create(userId: bigint, dto: CreateOrderDto): Promise<PointsOrder> {
+  async create(
+    userId: bigint,
+    dto: CreatePointsOrderDto,
+  ): Promise<PointsOrder> {
     const product = await this.productService.findOne(dto.productId);
 
     if (!product) {
@@ -123,8 +131,7 @@ export class PointsOrderService {
           addressId: dto.addressId,
           addressSnapshot,
           remark: dto.remark,
-          completedAt:
-            product.type === ProductType.VIRTUAL ? new Date() : null,
+          completedAt: product.type === ProductType.VIRTUAL ? new Date() : null,
         },
       });
 

@@ -29,7 +29,12 @@ import {
   SessionStatus,
   VoiceOrderIntent,
 } from './interfaces/voice-order.interface';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserId } from '@/common/decorators/auth.decorator';
 
@@ -45,7 +50,7 @@ export class VoiceOrderController {
     private readonly dialogTemplateService: DialogTemplateService,
     private readonly dialogFlowEngine: DialogFlowEngine,
     private readonly asrProvider: ASRProvider,
-  ) { }
+  ) {}
 
   @Post('session')
   @ApiOperation({ summary: '创建语音下单会话' })
@@ -160,7 +165,8 @@ export class VoiceOrderController {
       }
 
       // 3. 进行意图识别和实体抽取（通过对话流引擎）
-      const sessionUserId = userId || await this.getUserIdFromSession(dto.sessionId);
+      const sessionUserId =
+        userId || (await this.getUserIdFromSession(dto.sessionId));
       const result = await this.dialogFlowEngine.processInput(
         dto.sessionId,
         sessionUserId,

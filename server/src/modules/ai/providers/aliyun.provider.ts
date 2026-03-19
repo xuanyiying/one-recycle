@@ -97,7 +97,7 @@ export class AliyunProvider implements IAIProvider {
         this.httpService.post<AliyunResponse | AliyunError>(url, body, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
           },
           timeout: request.config?.timeout || this.config.timeout || 30000,
         }),
@@ -107,11 +107,11 @@ export class AliyunProvider implements IAIProvider {
 
       // 检查错误
       if ('code' in data && 'message' in data) {
-        const error = data as AliyunError;
+        const error = data;
         throw this.createError(error.code, error.message, error);
       }
 
-      const aliyunResponse = data as AliyunResponse;
+      const aliyunResponse = data;
       const latency = Date.now() - startTime;
 
       this.logger.log(`Aliyun Qwen response received in ${latency}ms`);
@@ -146,7 +146,7 @@ export class AliyunProvider implements IAIProvider {
 
     // 添加工具（Function Calling）
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map(tool => ({
+      body.tools = request.tools.map((tool) => ({
         type: 'function',
         function: {
           name: tool.function.name,
@@ -168,7 +168,7 @@ export class AliyunProvider implements IAIProvider {
    * 通义千问支持 system、user、assistant、tool 角色
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const converted: any = {
         role: msg.role,
         content: msg.content,
@@ -176,7 +176,7 @@ export class AliyunProvider implements IAIProvider {
 
       // 添加 tool_calls（如果存在）
       if (msg.tool_calls) {
-        converted.tool_calls = msg.tool_calls.map(tc => ({
+        converted.tool_calls = msg.tool_calls.map((tc) => ({
           id: tc.id,
           type: tc.type,
           function: {
@@ -200,7 +200,7 @@ export class AliyunProvider implements IAIProvider {
    */
   private parseResponse(response: AliyunResponse, model: string): AIResponse {
     const choice = response.output.choices?.[0];
-    
+
     if (!choice) {
       // 兼容旧版响应格式
       return {
@@ -222,7 +222,7 @@ export class AliyunProvider implements IAIProvider {
 
     // 解析 tool_calls
     if (message.tool_calls && message.tool_calls.length > 0) {
-      message.tool_calls.forEach(tc => {
+      message.tool_calls.forEach((tc) => {
         toolCalls.push({
           id: tc.id,
           type: 'function',
@@ -267,7 +267,7 @@ export class AliyunProvider implements IAIProvider {
           },
           {
             headers: {
-              'Authorization': `Bearer ${this.config.apiKey}`,
+              Authorization: `Bearer ${this.config.apiKey}`,
             },
           },
         ),

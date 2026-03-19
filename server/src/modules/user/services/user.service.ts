@@ -16,9 +16,7 @@ import { Prisma, User, AccountType } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getStats(): Promise<{
     totalUsers: number;
@@ -91,7 +89,6 @@ export class UserService {
 
     return this.mapToUserResponse(result);
   }
-
 
   async findOne(id: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({

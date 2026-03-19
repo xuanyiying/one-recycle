@@ -43,4 +43,4 @@ import {
   ],
   exports: [VoiceOrderService, AIVoiceOrderService],
 })
-export class VoiceOrderModule { }
+export class VoiceOrderModule {}

@@ -20,7 +20,7 @@ import { RequestWithStaff } from '@/common';
 @ApiTags('财务管理')
 @Controller('finance')
 export class FinanceController {
-  constructor(private readonly financeService: FinanceService) { }
+  constructor(private readonly financeService: FinanceService) {}
 
   @Get('wallet')
   @ApiOperation({ summary: '获取平台钱包信息' })
@@ -38,14 +38,22 @@ export class FinanceController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '创建充值订单' })
-  createRecharge(@Request() req: RequestWithStaff, @Body() dto: CreateRechargeDto) {
-    const tenantId = dto.tenantId || (req.user.type === 'staff' ? req.user.tenantId : undefined);
+  createRecharge(
+    @Request() req: RequestWithStaff,
+    @Body() dto: CreateRechargeDto,
+  ) {
+    const tenantId =
+      dto.tenantId ||
+      (req.user.type === 'staff' ? req.user.tenantId : undefined);
     return this.financeService.createRechargeOrder(dto, tenantId);
   }
 
   @Post('recharge/mock-callback')
   @ApiOperation({ summary: '模拟支付回调（测试用）' })
-  mockCallback(@Body('orderNo') orderNo: string, @Body('tenantId') tenantId?: string) {
+  mockCallback(
+    @Body('orderNo') orderNo: string,
+    @Body('tenantId') tenantId?: string,
+  ) {
     return this.financeService.mockPaySuccess(orderNo, tenantId);
   }
 

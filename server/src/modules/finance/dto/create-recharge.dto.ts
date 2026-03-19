@@ -1,4 +1,11 @@
-import { IsNumber, IsString, IsNotEmpty, Min, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsNotEmpty,
+  Min,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateRechargeDto {
   @IsNumber()

@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/common/redis/redis.service';
 import {
@@ -11,18 +8,14 @@ import {
   ChatMessageStatus,
   Prisma,
 } from '@prisma/client';
-import {
-  SendMessageDto,
-  GetMessagesDto,
-  MarkAsReadDto,
-} from '../dto';
+import { SendMessageDto, GetMessagesDto, MarkAsReadDto } from '../dto';
 
 @Injectable()
 export class MessageService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
-  ) { }
+  ) {}
 
   async send(
     dto: SendMessageDto,
@@ -112,10 +105,7 @@ export class MessageService {
     return message;
   }
 
-  async sendOrderCard(
-    sessionId: string,
-    orderData: any,
-  ): Promise<ChatMessage> {
+  async sendOrderCard(sessionId: string, orderData: any): Promise<ChatMessage> {
     const message = await this.prisma.chatMessage.create({
       data: {
         sessionId: BigInt(sessionId),
@@ -265,10 +255,9 @@ export class MessageService {
 
   private async publishMessageEvent(event: string, data: any): Promise<void> {
     const channel = `customer_service:events`;
-    await this.redisService.getClient().publish(
-      channel,
-      JSON.stringify({ event, data }),
-    );
+    await this.redisService
+      .getClient()
+      .publish(channel, JSON.stringify({ event, data }));
   }
 
   private formatMessage(message: ChatMessage): any {

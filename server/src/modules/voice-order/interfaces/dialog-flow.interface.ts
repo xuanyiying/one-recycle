@@ -83,9 +83,7 @@ export const DEFAULT_DIALOG_FLOW_CONFIG: DialogFlowConfig = {
     },
     {
       step: 'CONFIRMATION',
-      prompts: [
-        '让我跟您确认一下订单信息，确认无误后我将为您创建订单。',
-      ],
+      prompts: ['让我跟您确认一下订单信息，确认无误后我将为您创建订单。'],
       requiredFields: [],
       nextStep: 'COMPLETED',
     },

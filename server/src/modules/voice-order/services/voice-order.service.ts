@@ -6,10 +6,7 @@ import {
   SessionStatus,
   DialogMessage,
 } from '../interfaces/voice-order.interface';
-import {
-  DialogStep,
-  CreateVoiceOrderSessionDto,
-} from '../dto/voice-input.dto';
+import { DialogStep, CreateVoiceOrderSessionDto } from '../dto/voice-input.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -20,12 +17,14 @@ export class VoiceOrderService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
-  ) { }
+  ) {}
 
   /**
    * 创建新的语音下单会话
    */
-  async createSession(dto: CreateVoiceOrderSessionDto): Promise<VoiceOrderSession> {
+  async createSession(
+    dto: CreateVoiceOrderSessionDto,
+  ): Promise<VoiceOrderSession> {
     const sessionId = uuidv4();
     // 使用 0 作为匿名用户的 ID，因为数据库要求 BigInt 类型
     const userId = dto.userId || '0';
@@ -59,7 +58,9 @@ export class VoiceOrderService {
       },
     });
 
-    this.logger.log(`Created new voice order session: ${sessionId} for user ${userId}`);
+    this.logger.log(
+      `Created new voice order session: ${sessionId} for user ${userId}`,
+    );
     return session;
   }
 
@@ -193,17 +194,17 @@ export class VoiceOrderService {
    */
   private async cacheSession(session: VoiceOrderSession): Promise<void> {
     const key = `voice:session:${session.id}`;
-    await this.redisService.getClient().setex(
-      key,
-      this.SESSION_CACHE_TTL,
-      JSON.stringify(session),
-    );
+    await this.redisService
+      .getClient()
+      .setex(key, this.SESSION_CACHE_TTL, JSON.stringify(session));
   }
 
   /**
    * 从缓存获取会话
    */
-  private async getCachedSession(sessionId: string): Promise<VoiceOrderSession | null> {
+  private async getCachedSession(
+    sessionId: string,
+  ): Promise<VoiceOrderSession | null> {
     const key = `voice:session:${sessionId}`;
     const cached = await this.redisService.getClient().get(key);
     if (cached) {

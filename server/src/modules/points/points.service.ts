@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { PointsRecordService } from './services/points-record.service';
 import { SignInService } from './services/sign-in.service';
-import { InviteService } from './services/invite.service';
 
 @Injectable()
 export class PointsService {
@@ -10,8 +9,7 @@ export class PointsService {
     private readonly prisma: PrismaService,
     private readonly recordService: PointsRecordService,
     private readonly signInService: SignInService,
-    private readonly inviteService: InviteService,
-  ) { }
+  ) {}
 
   /**
    * 获取用户积分概览
@@ -24,18 +22,42 @@ export class PointsService {
 
     const signInStatus = await this.signInService.getSignInStatus(userId);
     const stats = await this.recordService.getStats(userId);
-    const inviteStats = await this.inviteService.getInviteStats(userId);
+
+    // 计算今日获得积分
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayRecords = await this.prisma.pointsRecord.findMany({
+      where: {
+        userId,
+        type: { in: ['ORDER_REWARD', 'SIGN_IN', 'INVITE', 'TASK'] },
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      select: { points: true },
+    });
+
+    const todayPoints = todayRecords.reduce((sum, r) => sum + r.points, 0);
+
+    // 获取待处理订单数
+    const pendingOrders = await this.prisma.pointsOrder.count({
+      where: {
+        userId,
+        status: { in: ['PENDING', 'SHIPPED'] },
+      },
+    });
 
     return {
-      currentPoints: user?.points || 0,
+      points: user?.points || 0,
       totalEarned: stats.totalEarned,
       totalSpent: stats.totalSpent,
-      signInStatus,
-      inviteStats: {
-        inviteCode: inviteStats.inviteCode,
-        totalInvites: inviteStats.totalInvites,
-        totalRewards: inviteStats.totalRewards,
-      },
+      continuousDays: signInStatus.continuousDays,
+      pendingOrders,
+      todayPoints,
     };
   }
 

@@ -9,7 +9,10 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { LogisticsService, LogisticsProviderQueryParams } from './logistics.service';
+import {
+  LogisticsService,
+  LogisticsProviderQueryParams,
+} from './logistics.service';
 import { CreateLogisticsProviderDto } from './dto/create-provider.dto';
 import { UpdateLogisticsProviderDto } from './dto/update-provider.dto';
 

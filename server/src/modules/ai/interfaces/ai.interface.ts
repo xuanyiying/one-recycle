@@ -8,10 +8,10 @@
  */
 export enum AIProviderType {
   OPENAI = 'openai',
-  BAIDU = 'baidu',       // 百度文心一言
-  ALIYUN = 'aliyun',     // 阿里通义千问
-  TENCENT = 'tencent',   // 腾讯混元
-  OLLAMA = 'ollama',     // 本地 Ollama
+  BAIDU = 'baidu', // 百度文心一言
+  ALIYUN = 'aliyun', // 阿里通义千问
+  TENCENT = 'tencent', // 腾讯混元
+  OLLAMA = 'ollama', // 本地 Ollama
   SILICONCLOUD = 'siliconcloud', // SiliconCloud
   OPENROUTER = 'openrouter', // OpenRouter
 }
@@ -80,7 +80,10 @@ export interface AIRequestConfig {
 export interface AIRequest {
   messages: ChatMessage[];
   tools?: ToolDefinition[];
-  toolChoice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
+  toolChoice?:
+    | 'auto'
+    | 'none'
+    | { type: 'function'; function: { name: string } };
   config?: AIRequestConfig;
 }
 
@@ -107,7 +110,7 @@ export interface AIResponse {
 export interface AIProviderConfig {
   type: AIProviderType;
   apiKey: string;
-  apiSecret?: string;      // 部分平台需要
+  apiSecret?: string; // 部分平台需要
   baseURL?: string;
   defaultModel: string;
   availableModels: string[];
@@ -119,9 +122,9 @@ export interface AIProviderConfig {
  * 模型选择策略
  */
 export enum ModelSelectionStrategy {
-  PRIORITY = 'priority',       // 按优先级选择
+  PRIORITY = 'priority', // 按优先级选择
   ROUND_ROBIN = 'round_robin', // 轮询
-  RANDOM = 'random',           // 随机
+  RANDOM = 'random', // 随机
   HEALTH_CHECK = 'health_check', // 健康检查
 }
 

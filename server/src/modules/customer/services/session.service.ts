@@ -24,7 +24,7 @@ export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
-  ) { }
+  ) {}
 
   async create(dto: CreateSessionDto): Promise<ChatSession> {
     const userId = BigInt(dto.userId || '');
@@ -127,10 +127,7 @@ export class SessionService {
     });
   }
 
-  async update(
-    id: string,
-    dto: UpdateSessionDto,
-  ): Promise<ChatSession> {
+  async update(id: string, dto: UpdateSessionDto): Promise<ChatSession> {
     const session = await this.findOne(id);
     if (!session) {
       throw new NotFoundException('会话不存在');
@@ -297,11 +294,9 @@ export class SessionService {
 
   private async cacheSession(session: ChatSession): Promise<void> {
     const key = `session:${session.id}`;
-    await this.redisService.getClient().setex(
-      key,
-      this.SESSION_EXPIRE_TIME,
-      JSON.stringify(session),
-    );
+    await this.redisService
+      .getClient()
+      .setex(key, this.SESSION_EXPIRE_TIME, JSON.stringify(session));
   }
 
   private async getCachedSession(id: string): Promise<ChatSession | null> {

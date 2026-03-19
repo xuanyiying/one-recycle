@@ -19,7 +19,7 @@ export class SignInService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) {}
+  ) { }
 
   /**
    * 签到
@@ -28,48 +28,42 @@ export class SignInService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 检查今天是否已签到
-    const existingRecord = await this.prisma.signInRecord.findUnique({
-      where: {
-        userId_signInDate: {
-          userId,
-          signInDate: today,
-        },
-      },
-    });
-
-    if (existingRecord) {
-      throw new BadRequestException('今日已签到');
-    }
-
-    // 获取昨日签到记录
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const yesterdayRecord = await this.prisma.signInRecord.findUnique({
-      where: {
-        userId_signInDate: {
-          userId,
-          signInDate: yesterday,
-        },
-      },
-    });
-
-    // 计算连续签到天数
-    let continuousDays = 1;
-    if (yesterdayRecord) {
-      continuousDays = yesterdayRecord.continuousDays + 1;
-      // 超过7天重新开始
-      if (continuousDays > 7) {
-        continuousDays = 1;
-      }
-    }
-
-    // 获取奖励积分
-    const reward = this.SIGN_IN_REWARDS[continuousDays - 1];
-
     return this.prisma.$transaction(async (tx) => {
-      // 创建签到记录
+      const existingRecord = await tx.signInRecord.findUnique({
+        where: {
+          userId_signInDate: {
+            userId,
+            signInDate: today,
+          },
+        },
+      });
+
+      if (existingRecord) {
+        throw new BadRequestException('今日已签到');
+      }
+
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const yesterdayRecord = await tx.signInRecord.findUnique({
+        where: {
+          userId_signInDate: {
+            userId,
+            signInDate: yesterday,
+          },
+        },
+      });
+
+      let continuousDays = 1;
+      if (yesterdayRecord) {
+        continuousDays = yesterdayRecord.continuousDays + 1;
+        if (continuousDays > 7) {
+          continuousDays = 1;
+        }
+      }
+
+      const reward = this.SIGN_IN_REWARDS[continuousDays - 1];
+
       const record = await tx.signInRecord.create({
         data: {
           userId,
@@ -79,7 +73,6 @@ export class SignInService {
         },
       });
 
-      // 增加积分
       await this.pointsRecordService.addPoints(
         userId,
         reward.points,
@@ -135,7 +128,9 @@ export class SignInService {
     return {
       hasSignedInToday: !!todayRecord,
       continuousDays: todayRecord?.continuousDays || continuousDays,
-      todayReward: this.SIGN_IN_REWARDS[todayRecord?.continuousDays || continuousDays || 0]?.points || this.SIGN_IN_REWARDS[0].points,
+      todayReward:
+        this.SIGN_IN_REWARDS[todayRecord?.continuousDays || continuousDays || 0]
+          ?.points || this.SIGN_IN_REWARDS[0].points,
       rewards: this.SIGN_IN_REWARDS,
     };
   }

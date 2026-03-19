@@ -8,6 +8,7 @@ import { PointsRecordService } from './services/points-record.service';
 import { SignInService } from './services/sign-in.service';
 import { PointsTaskService } from './services/points-task.service';
 import { InviteService } from './services/invite.service';
+import { ReferralRewardService } from './services/referral-reward.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     SignInService,
     PointsTaskService,
     InviteService,
+    ReferralRewardService,
   ],
   exports: [
     PointsService,
@@ -30,6 +32,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     SignInService,
     PointsTaskService,
     InviteService,
+    ReferralRewardService,
   ],
 })
 export class PointsModule {}

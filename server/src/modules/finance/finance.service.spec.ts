@@ -70,10 +70,12 @@ describe('FinanceService - Tenant Recharge', () => {
       findMany: jest.fn(),
       create: jest.fn(),
     },
-    $transaction: jest.fn((fn: any) => fn(mockPrismaService)).mockResolvedValue({
-      wallet: {},
-      tenant: {},
-    }),
+    $transaction: jest
+      .fn((fn: any) => fn(mockPrismaService))
+      .mockResolvedValue({
+        wallet: {},
+        tenant: {},
+      }),
   };
 
   const mockConfigService = {
@@ -125,9 +127,10 @@ describe('FinanceService - Tenant Recharge', () => {
     it('should create a recharge order without tenant ID (platform recharge)', async () => {
       prisma.rechargeOrder.create.mockResolvedValue(mockRechargeOrder);
 
-      const result = await service.createRechargeOrder(
-        { amount: 1000, paymentMethod: 'ALIPAY' },
-      );
+      const result = await service.createRechargeOrder({
+        amount: 1000,
+        paymentMethod: 'ALIPAY',
+      });
 
       expect(result.orderNo).toBeDefined();
       expect(result.tenantId).toBeUndefined();
@@ -136,9 +139,10 @@ describe('FinanceService - Tenant Recharge', () => {
     it('should use configured mock pay URL', async () => {
       prisma.rechargeOrder.create.mockResolvedValue(mockRechargeOrder);
 
-      const result = await service.createRechargeOrder(
-        { amount: 1000, paymentMethod: 'ALIPAY' },
-      );
+      const result = await service.createRechargeOrder({
+        amount: 1000,
+        paymentMethod: 'ALIPAY',
+      });
 
       expect(result.payUrl).toContain(mockPayBaseUrl);
     });
@@ -150,16 +154,30 @@ describe('FinanceService - Tenant Recharge', () => {
       prisma.platformWallet.findFirst.mockResolvedValue(mockWallet);
       prisma.tenant.findUnique.mockResolvedValue(mockTenant);
 
-      const updatedWallet = { ...mockWallet, balance: new Prisma.Decimal(6000), version: 2 };
-      const updatedTenant = { ...mockTenant, balance: new Prisma.Decimal(3000), version: 2 };
+      const updatedWallet = {
+        ...mockWallet,
+        balance: new Prisma.Decimal(6000),
+        version: 2,
+      };
+      const updatedTenant = {
+        ...mockTenant,
+        balance: new Prisma.Decimal(3000),
+        version: 2,
+      };
 
       prisma.platformWallet.update.mockResolvedValue(updatedWallet);
       prisma.tenant.update.mockResolvedValue(updatedTenant);
       prisma.platformTransaction.create.mockResolvedValue({});
       prisma.tenantTransaction.create.mockResolvedValue({});
-      prisma.rechargeOrder.update.mockResolvedValue({ ...mockRechargeOrder, status: 'SUCCESS' });
+      prisma.rechargeOrder.update.mockResolvedValue({
+        ...mockRechargeOrder,
+        status: 'SUCCESS',
+      });
 
-      const result = await service.mockPaySuccess(mockOrderNo, mockTenantId) as any;
+      const result = (await service.mockPaySuccess(
+        mockOrderNo,
+        mockTenantId,
+      )) as any;
 
       expect(result.wallet).toBeDefined();
       expect(result.tenant).toBeDefined();
@@ -186,9 +204,9 @@ describe('FinanceService - Tenant Recharge', () => {
       prisma.platformWallet.findFirst.mockResolvedValue(mockWallet);
       prisma.tenant.findUnique.mockResolvedValue(null);
 
-      await expect(service.mockPaySuccess(mockOrderNo, mockTenantId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.mockPaySuccess(mockOrderNo, mockTenantId),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when order is already paid', async () => {
@@ -197,17 +215,17 @@ describe('FinanceService - Tenant Recharge', () => {
         status: 'SUCCESS',
       });
 
-      await expect(service.mockPaySuccess(mockOrderNo, mockTenantId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.mockPaySuccess(mockOrderNo, mockTenantId),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException when order does not exist', async () => {
       prisma.rechargeOrder.findUnique.mockResolvedValue(null);
 
-      await expect(service.mockPaySuccess(mockOrderNo, mockTenantId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.mockPaySuccess(mockOrderNo, mockTenantId),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -216,10 +234,17 @@ describe('FinanceService - Tenant Recharge', () => {
       prisma.rechargeOrder.findUnique.mockResolvedValue(mockRechargeOrder);
       prisma.platformWallet.findFirst.mockResolvedValue(mockWallet);
 
-      const updatedWallet = { ...mockWallet, balance: new Prisma.Decimal(6000), version: 2 };
+      const updatedWallet = {
+        ...mockWallet,
+        balance: new Prisma.Decimal(6000),
+        version: 2,
+      };
       prisma.platformWallet.update.mockResolvedValue(updatedWallet);
       prisma.platformTransaction.create.mockResolvedValue({});
-      prisma.rechargeOrder.update.mockResolvedValue({ ...mockRechargeOrder, status: 'SUCCESS' });
+      prisma.rechargeOrder.update.mockResolvedValue({
+        ...mockRechargeOrder,
+        status: 'SUCCESS',
+      });
 
       const result = await service.mockPaySuccess(mockOrderNo);
 
@@ -243,7 +268,9 @@ describe('FinanceService - Tenant Recharge', () => {
     it('should throw NotFoundException when tenant does not exist', async () => {
       prisma.tenant.findUnique.mockResolvedValue(null);
 
-      await expect(service.getTenantBalance(mockTenantId)).rejects.toThrow(NotFoundException);
+      await expect(service.getTenantBalance(mockTenantId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -304,12 +331,14 @@ describe('FinanceService - Tenant Recharge', () => {
         ],
       }).compile();
 
-      const serviceWithDefaultConfig = module.get<FinanceService>(FinanceService);
+      const serviceWithDefaultConfig =
+        module.get<FinanceService>(FinanceService);
       prisma.rechargeOrder.create.mockResolvedValue(mockRechargeOrder);
 
-      const result = await serviceWithDefaultConfig.createRechargeOrder(
-        { amount: 1000, paymentMethod: 'ALIPAY' },
-      );
+      const result = await serviceWithDefaultConfig.createRechargeOrder({
+        amount: 1000,
+        paymentMethod: 'ALIPAY',
+      });
 
       expect(result.payUrl).toContain('https://mock-pay.com/pay');
     });

@@ -108,7 +108,7 @@ export class AIVoiceOrderService {
     },
   ];
 
-  constructor(private readonly aiService: AIService) { }
+  constructor(private readonly aiService: AIService) {}
 
   /**
    * 处理语音输入
@@ -301,7 +301,7 @@ export class AIVoiceOrderService {
   private buildSystemPrompt(context: VoiceOrderContext): string {
     const data = context.collectedData;
 
-    let prompt = `你是一个专业的回收平台AI助手，帮助用户通过语音创建回收订单。
+    const prompt = `你是一个专业的回收平台AI助手，帮助用户通过语音创建回收订单。
 
 当前已收集的信息：
 ${data.itemType ? `- 物品类型：${data.itemType}` : '- 物品类型：待收集'}

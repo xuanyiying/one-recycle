@@ -183,12 +183,13 @@ async function main() {
   const startedAt = Date.now();
 
   try {
+    // 使用系统默认租户（与 seed-tenant-staff.ts 保持一致）
     const tenant = await prisma.tenant.upsert({
-      where: { code: 'test_tenant' },
+      where: { code: 'DEFAULT' },
       update: {},
       create: {
-        name: '测试租户',
-        code: 'test_tenant',
+        name: '默认租户',
+        code: 'DEFAULT',
         contactName: '管理员',
         contactPhone: '13812345678',
         status: 'ACTIVE',

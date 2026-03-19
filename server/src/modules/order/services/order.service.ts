@@ -14,6 +14,8 @@ import {
   PersistentSnowflakeIdGenerator,
   RedisSnowflakeStateStore,
   RedisService,
+  validateTransition as validateStateTransition,
+  StateMachineError,
 } from '@/common';
 import { CreateOrderDto, UpdateOrderDto } from '../dto';
 import { OrderFilters, DayTimeSlots } from '../interfaces/order.interface';
@@ -456,11 +458,43 @@ export class OrderService implements OnModuleInit {
    * 更新订单
    * @param id 订单ID
    * @param data 更新数据
+   * @param operator 操作人信息（用于状态变更日志）
    */
-  async update(id: number, data: UpdateOrderDto): Promise<Order> {
+  async update(
+    id: number,
+    data: UpdateOrderDto,
+    operator?: { id: string; role: string; type: string },
+  ): Promise<Order> {
+    if (operator !== undefined) {
+      if (
+        typeof operator.id !== 'string' ||
+        operator.id.length === 0 ||
+        typeof operator.role !== 'string' ||
+        operator.role.length === 0 ||
+        typeof operator.type !== 'string' ||
+        operator.type.length === 0
+      ) {
+        throw new BadRequestException(
+          'Invalid operator: must contain non-empty id, role, and type',
+        );
+      }
+    }
+
+    // 如果包含状态变更，需要先查询订单并验证状态转换
+    if (data.status) {
+      const order = await this.findById(id);
+      if (!order) throw new NotFoundException('Order not found');
+
+      // 使用统一的状态机验证
+      this.validateTransition(order.status, data.status);
+
+      // 使用 updateStatus 方法处理状态变更（包含时间线记录）
+      return this.updateStatus(id, data, operator);
+    }
+
+    // 不包含状态变更的普通更新
     const updateData: Prisma.OrderUpdateInput = {};
 
-    if (data.status) updateData.status = data.status;
     if (data.expectPickupTime)
       updateData.expectPickupTime = new Date(data.expectPickupTime);
     if (data.actualPickupTime)
@@ -490,7 +524,11 @@ export class OrderService implements OnModuleInit {
     return this.mapToOrder(order, storageMap);
   }
 
-  async updateStatus(id: number, data: UpdateOrderDto): Promise<Order> {
+  async updateStatus(
+    id: number,
+    data: UpdateOrderDto,
+    operator?: { id: string; role: string; type: string },
+  ): Promise<Order> {
     const order = await this.findById(id);
     if (!order) throw new NotFoundException('Order not found');
 
@@ -535,10 +573,10 @@ export class OrderService implements OnModuleInit {
             fromStatus: fromStatus,
             toStatus: data.status,
             message: `状态变更为 ${data.status}`,
-            operator: 'SYSTEM',
-            operatorType: 'SYSTEM',
-            operatorId: null,
-            reason: null,
+            operator: operator?.type ?? 'SYSTEM',
+            operatorType: operator?.role ?? 'SYSTEM',
+            operatorId: operator?.id ? BigInt(operator.id) : null,
+            reason: data.remark ?? null,
             rawSnapshot: data as any,
           },
         });
@@ -839,7 +877,10 @@ export class OrderService implements OnModuleInit {
     return this.create(data);
   }
 
-  private mapToOrder(order: any, storageMap?: Map<string, { fileUrl: string; thumbnailUrl?: string | null }>): Order {
+  private mapToOrder(
+    order: any,
+    storageMap?: Map<string, { fileUrl: string; thumbnailUrl?: string | null }>,
+  ): Order {
     const baseOrder: any = {
       ...order,
       id: Number(order.id),
@@ -872,10 +913,12 @@ export class OrderService implements OnModuleInit {
             const storage = storageMap.get(photoId);
             return storage ? storage.fileUrl : photoId;
           });
-          mappedItem.thumbnailUrls = item.photos.map((photoId: string) => {
-            const storage = storageMap.get(photoId);
-            return storage?.thumbnailUrl || storage?.fileUrl || null;
-          }).filter(Boolean);
+          mappedItem.thumbnailUrls = item.photos
+            .map((photoId: string) => {
+              const storage = storageMap.get(photoId);
+              return storage?.thumbnailUrl || storage?.fileUrl || null;
+            })
+            .filter(Boolean);
         }
 
         return mappedItem;
@@ -894,8 +937,13 @@ export class OrderService implements OnModuleInit {
     return baseOrder as Order;
   }
 
-  private async getStorageMap(photoIds: string[]): Promise<Map<string, { fileUrl: string; thumbnailUrl?: string | null }>> {
-    const storageMap = new Map<string, { fileUrl: string; thumbnailUrl?: string | null }>();
+  private async getStorageMap(
+    photoIds: string[],
+  ): Promise<Map<string, { fileUrl: string; thumbnailUrl?: string | null }>> {
+    const storageMap = new Map<
+      string,
+      { fileUrl: string; thumbnailUrl?: string | null }
+    >();
 
     if (!photoIds || photoIds.length === 0) {
       return storageMap;
@@ -1334,45 +1382,13 @@ export class OrderService implements OnModuleInit {
   }
 
   private validateTransition(current: string, target: string): void {
-    const validTransitions: Record<string, string[]> = {
-      [OrderStatus.PENDING]: [
-        OrderStatus.PENDING_PICKUP,
-        OrderStatus.CANCELLED,
-      ],
-      [OrderStatus.PENDING_PICKUP]: [
-        OrderStatus.PICKED_UP,
-        OrderStatus.CANCELLED,
-      ],
-      [OrderStatus.PICKED_UP]: [OrderStatus.IN_TRANSIT],
-      [OrderStatus.IN_TRANSIT]: [
-        OrderStatus.PENDING_RECEIPT,
-        OrderStatus.CANCELLED,
-      ],
-      [OrderStatus.PENDING_RECEIPT]: [OrderStatus.INSPECTING],
-      [OrderStatus.INSPECTING]: [
-        OrderStatus.INSPECTED,
-        OrderStatus.INSPECTION_EXCEPTION,
-      ],
-      [OrderStatus.INSPECTION_EXCEPTION]: [
-        OrderStatus.MANUAL_PROCESSING,
-        OrderStatus.INSPECTING,
-      ],
-      [OrderStatus.MANUAL_PROCESSING]: [
-        OrderStatus.INSPECTED,
-        OrderStatus.CANCELLED,
-      ],
-      [OrderStatus.INSPECTED]: [OrderStatus.PENDING_INBOUND],
-      [OrderStatus.PENDING_INBOUND]: [OrderStatus.INBOUNDED],
-      [OrderStatus.INBOUNDED]: [OrderStatus.PENDING_SETTLEMENT],
-      [OrderStatus.PENDING_SETTLEMENT]: [OrderStatus.COMPLETED],
-      [OrderStatus.COMPLETED]: [OrderStatus.REFUNDED],
-    };
-
-    if (!validTransitions[current]?.includes(target)) {
-      if (current === target) return;
-      throw new BadRequestException(
-        `Invalid state transition from ${current} to ${target}`,
-      );
+    try {
+      validateStateTransition(current as OrderStatus, target as OrderStatus);
+    } catch (error) {
+      if (error instanceof StateMachineError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
     }
   }
 }

@@ -14,7 +14,7 @@ import { generateSecureorderNo } from '@/common';
 
 @Controller()
 export class OrderGrpcController {
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
   @GrpcMethod('OrderService', 'GetOrder')
   async getOrder(data: GetOrderRequest): Promise<GetOrderResponse> {

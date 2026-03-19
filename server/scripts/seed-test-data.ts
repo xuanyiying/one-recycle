@@ -25,7 +25,21 @@ async function main() {
 
     console.log('--- 开始初始化测试数据 ---');
 
-    // 1. 确保测试用户存在
+    // 1. 确保默认租户存在（与 seed-tenant-staff.ts 保持一致）
+    const defaultTenant = await prisma.tenant.upsert({
+      where: { code: 'DEFAULT' },
+      update: {},
+      create: {
+        name: '默认租户',
+        code: 'DEFAULT',
+        contactName: '管理员',
+        contactPhone: '13812345678',
+        status: 'ACTIVE',
+      },
+    });
+    console.log(`✅ 默认租户已就绪: ${defaultTenant.name} (ID: ${defaultTenant.id})`);
+
+    // 2. 确保测试用户存在
     const existingUser = await prisma.user.findUnique({
       where: { id: testUserId },
     });
@@ -44,7 +58,7 @@ async function main() {
       console.log('ℹ️ 测试用户已存在');
     }
 
-    // 2. 初始化地区数据 (Region)
+    // 3. 初始化地区数据 (Region)
     const regions = [
       { code: '440000', name: '广东省', level: 1, parentCode: '000000' },
       { code: '440300', name: '深圳市', level: 2, parentCode: '440000' },
@@ -62,7 +76,7 @@ async function main() {
       }
     }
 
-    // 3. 为测试用户创建地址
+    // 4. 为测试用户创建地址
     const addressData = {
       userId: testUserId,
       name: '张三',

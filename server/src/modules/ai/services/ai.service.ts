@@ -40,7 +40,7 @@ export class AIService implements OnModuleInit {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-  ) { }
+  ) {}
 
   /**
    * 模块初始化时加载所有配置的提供商
@@ -131,9 +131,14 @@ export class AIService implements OnModuleInit {
     }
 
     // SiliconCloud
-    const siliconCloudConfig = this.loadProviderConfig(AIProviderType.SILICONCLOUD);
+    const siliconCloudConfig = this.loadProviderConfig(
+      AIProviderType.SILICONCLOUD,
+    );
     if (siliconCloudConfig) {
-      const provider = new SiliconCloudProvider(siliconCloudConfig, this.httpService);
+      const provider = new SiliconCloudProvider(
+        siliconCloudConfig,
+        this.httpService,
+      );
       if (provider.validateConfig()) {
         this.providers.set(AIProviderType.SILICONCLOUD, {
           provider,
@@ -148,7 +153,10 @@ export class AIService implements OnModuleInit {
     // OpenRouter
     const openRouterConfig = this.loadProviderConfig(AIProviderType.OPENROUTER);
     if (openRouterConfig) {
-      const provider = new OpenRouterProvider(openRouterConfig, this.httpService);
+      const provider = new OpenRouterProvider(
+        openRouterConfig,
+        this.httpService,
+      );
       if (provider.validateConfig()) {
         this.providers.set(AIProviderType.OPENROUTER, {
           provider,
@@ -178,7 +186,9 @@ export class AIService implements OnModuleInit {
       apiKey,
       apiSecret: this.configService.get<string>(`${prefix}_API_SECRET`),
       baseURL: this.configService.get<string>(`${prefix}_BASE_URL`),
-      defaultModel: this.configService.get<string>(`${prefix}_MODEL`) || this.getDefaultModel(type),
+      defaultModel:
+        this.configService.get<string>(`${prefix}_MODEL`) ||
+        this.getDefaultModel(type),
       availableModels: this.getAvailableModels(type),
       timeout: this.configService.get<number>(`${prefix}_TIMEOUT`) || 30000,
       maxRetries: this.configService.get<number>(`${prefix}_MAX_RETRIES`) || 3,
@@ -208,11 +218,36 @@ export class AIService implements OnModuleInit {
    */
   private getAvailableModels(type: AIProviderType): string[] {
     const models: Record<AIProviderType, string[]> = {
-      [AIProviderType.OPENAI]: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-      [AIProviderType.BAIDU]: ['ernie-bot', 'ernie-bot-turbo', 'ernie-bot-4', 'ernie-speed'],
-      [AIProviderType.ALIYUN]: ['qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-coder-plus'],
-      [AIProviderType.TENCENT]: ['hunyuan-lite', 'hunyuan-standard', 'hunyuan-pro'],
-      [AIProviderType.OLLAMA]: ['llama3', 'llama3.1', 'mistral', 'qwen2', 'deepseek-coder'],
+      [AIProviderType.OPENAI]: [
+        'gpt-4o',
+        'gpt-4o-mini',
+        'gpt-4-turbo',
+        'gpt-3.5-turbo',
+      ],
+      [AIProviderType.BAIDU]: [
+        'ernie-bot',
+        'ernie-bot-turbo',
+        'ernie-bot-4',
+        'ernie-speed',
+      ],
+      [AIProviderType.ALIYUN]: [
+        'qwen-turbo',
+        'qwen-plus',
+        'qwen-max',
+        'qwen-coder-plus',
+      ],
+      [AIProviderType.TENCENT]: [
+        'hunyuan-lite',
+        'hunyuan-standard',
+        'hunyuan-pro',
+      ],
+      [AIProviderType.OLLAMA]: [
+        'llama3',
+        'llama3.1',
+        'mistral',
+        'qwen2',
+        'deepseek-coder',
+      ],
       [AIProviderType.SILICONCLOUD]: [
         'deepseek-ai/DeepSeek-V3',
         'deepseek-ai/DeepSeek-V2.5',
@@ -233,14 +268,20 @@ export class AIService implements OnModuleInit {
    * 发送聊天请求
    * 支持自动故障转移和重试
    */
-  async chat(request: AIRequest, preferredProvider?: AIProviderType): Promise<AICallResult> {
+  async chat(
+    request: AIRequest,
+    preferredProvider?: AIProviderType,
+  ): Promise<AICallResult> {
     const startTime = Date.now();
     let lastError: AIError | undefined;
     let retryCount = 0;
 
     // 确定要尝试的提供商列表
     const providersToTry = preferredProvider
-      ? [preferredProvider, ...this.providerOrder.filter(p => p !== preferredProvider)]
+      ? [
+          preferredProvider,
+          ...this.providerOrder.filter((p) => p !== preferredProvider),
+        ]
       : this.selectProvidersByStrategy();
 
     for (const providerType of providersToTry) {
@@ -261,7 +302,9 @@ export class AIService implements OnModuleInit {
 
         const latency = Date.now() - startTime;
 
-        this.logger.log(`Request succeeded with ${providerType} in ${latency}ms`);
+        this.logger.log(
+          `Request succeeded with ${providerType} in ${latency}ms`,
+        );
 
         return {
           success: true,
@@ -335,7 +378,8 @@ export class AIService implements OnModuleInit {
     const selected = providers.splice(this.currentProviderIndex, 1);
     const result = [...selected, ...providers];
 
-    this.currentProviderIndex = (this.currentProviderIndex + 1) % providers.length;
+    this.currentProviderIndex =
+      (this.currentProviderIndex + 1) % providers.length;
 
     return result;
   }
@@ -429,7 +473,7 @@ export class AIService implements OnModuleInit {
    * 检查是否有可用的提供商
    */
   get hasAvailableProvider(): boolean {
-    return Array.from(this.providers.values()).some(h => h.isHealthy);
+    return Array.from(this.providers.values()).some((h) => h.isHealthy);
   }
 
   /**

@@ -33,8 +33,10 @@ import { TenantModule } from './modules/tenant/tenant.module';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { CustomerServiceModule } from './modules/customer/customer.module';
+import { CustomerUserModule } from './modules/customer/customer-user.module';
 import { VoiceOrderModule } from './modules/voice-order/voice-order.module';
 import { PointsModule } from './modules/points/points.module';
+import { ContentConfigModule } from './modules/content-config/content-config.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -89,8 +91,10 @@ import { HealthModule } from './modules/health/health.module';
     PricingModule,
     StorageModule,
     CustomerServiceModule,
+    CustomerUserModule,
     VoiceOrderModule,
     PointsModule,
+    ContentConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService],

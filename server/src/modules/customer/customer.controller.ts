@@ -46,17 +46,21 @@ export class CustomerServiceController {
     private readonly aiReplyService: AIReplyService,
     private readonly ticketService: TicketService,
     private readonly knowledgeService: KnowledgeService,
-  ) { }
+  ) {}
 
   @Post('sessions')
   @ApiOperation({ summary: '创建客服会话' })
-  async createSession(
-    @Body() dto: CreateSessionDto,
-    @Request() req: any,
-  ) {
+  async createSession(@Body() dto: CreateSessionDto, @Request() req: any) {
     const userId = dto.userId || req.user?.sub;
     if (!userId) {
-      console.error('[CreateSession] Missing userId. dto.userId:', dto.userId, 'req.user?.sub:', req.user?.sub, 'req.user:', req.user);
+      console.error(
+        '[CreateSession] Missing userId. dto.userId:',
+        dto.userId,
+        'req.user?.sub:',
+        req.user?.sub,
+        'req.user:',
+        req.user,
+      );
       throw new BadRequestException('无法获取用户ID，请重新登录');
     }
     return this.sessionService.create({ ...dto, userId });
@@ -77,10 +81,7 @@ export class CustomerServiceController {
 
   @Put('sessions/:id')
   @ApiOperation({ summary: '更新会话' })
-  async updateSession(
-    @Param('id') id: string,
-    @Body() dto: UpdateSessionDto,
-  ) {
+  async updateSession(@Param('id') id: string, @Body() dto: UpdateSessionDto) {
     return this.sessionService.update(id, dto);
   }
 
@@ -110,10 +111,7 @@ export class CustomerServiceController {
 
   @Post('messages')
   @ApiOperation({ summary: '发送消息' })
-  async sendMessage(
-    @Body() dto: SendMessageDto,
-    @Request() req: any,
-  ) {
+  async sendMessage(@Body() dto: SendMessageDto, @Request() req: any) {
     const userId = req.user?.sub;
     const isAgent = req.user?.role === 'agent' || req.user?.role === 'staff';
     return this.messageService.send(dto, userId, isAgent);
@@ -145,10 +143,7 @@ export class CustomerServiceController {
 
   @Post('tickets')
   @ApiOperation({ summary: '创建工单' })
-  async createTicket(
-    @Body() dto: CreateTicketDto,
-    @Request() req: any,
-  ) {
+  async createTicket(@Body() dto: CreateTicketDto, @Request() req: any) {
     const userId = req.user?.sub;
     return this.ticketService.create(dto, userId);
   }
@@ -167,10 +162,7 @@ export class CustomerServiceController {
 
   @Put('tickets/:id')
   @ApiOperation({ summary: '更新工单' })
-  async updateTicket(
-    @Param('id') id: string,
-    @Body() dto: UpdateTicketDto,
-  ) {
+  async updateTicket(@Param('id') id: string, @Body() dto: UpdateTicketDto) {
     return this.ticketService.update(id, dto);
   }
 

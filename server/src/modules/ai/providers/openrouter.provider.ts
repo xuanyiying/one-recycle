@@ -65,8 +65,8 @@ interface OpenRouterError {
  * OpenRouter Provider 配置
  */
 interface OpenRouterProviderConfig {
-  siteUrl?: string;    // HTTP-Referer 头
-  siteName?: string;   // X-Title 头
+  siteUrl?: string; // HTTP-Referer 头
+  siteName?: string; // X-Title 头
 }
 
 @Injectable()
@@ -133,7 +133,7 @@ export class OpenRouterProvider implements IAIProvider {
 
       // 检查错误
       if ('error' in data) {
-        const error = data as OpenRouterError;
+        const error = data;
         throw this.createError(
           error.error.code || 'UNKNOWN_ERROR',
           error.error.message,
@@ -141,7 +141,7 @@ export class OpenRouterProvider implements IAIProvider {
         );
       }
 
-      const openRouterResponse = data as OpenRouterResponse;
+      const openRouterResponse = data;
       const latency = Date.now() - startTime;
 
       this.logger.log(`OpenRouter response received in ${latency}ms`);
@@ -151,7 +151,7 @@ export class OpenRouterProvider implements IAIProvider {
       if (error.code && error.provider) {
         throw error;
       }
-      
+
       // 特殊错误处理：402 Payment Required
       if (error.response?.status === 402) {
         throw this.createError(
@@ -186,14 +186,14 @@ export class OpenRouterProvider implements IAIProvider {
   private buildHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.config.apiKey}`,
+      Authorization: `Bearer ${this.config.apiKey}`,
     };
 
     // 添加 OpenRouter 特殊请求头（免费模型必需）
     if (this.openRouterConfig.siteUrl) {
       headers['HTTP-Referer'] = this.openRouterConfig.siteUrl;
     }
-    
+
     if (this.openRouterConfig.siteName) {
       headers['X-Title'] = this.openRouterConfig.siteName;
     }
@@ -231,7 +231,7 @@ export class OpenRouterProvider implements IAIProvider {
    * 转换消息格式
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const converted: any = {
         role: msg.role,
         content: msg.content,
@@ -261,7 +261,7 @@ export class OpenRouterProvider implements IAIProvider {
 
     // 解析 tool_calls
     if (message.tool_calls && message.tool_calls.length > 0) {
-      message.tool_calls.forEach(tc => {
+      message.tool_calls.forEach((tc) => {
         toolCalls.push({
           id: tc.id,
           type: 'function',
@@ -314,7 +314,9 @@ export class OpenRouterProvider implements IAIProvider {
             this.httpService.post(
               url,
               {
-                model: this.config.defaultModel || 'meta-llama/llama-3.3-70b-instruct:free',
+                model:
+                  this.config.defaultModel ||
+                  'meta-llama/llama-3.3-70b-instruct:free',
                 messages: [{ role: 'user', content: 'hi' }],
                 max_tokens: 1,
               },
@@ -327,14 +329,14 @@ export class OpenRouterProvider implements IAIProvider {
           return true;
         } catch (innerError) {
           this.logger.warn(
-            `OpenRouter health check failed: ${innerError instanceof Error ? innerError.message : String(innerError)}`
+            `OpenRouter health check failed: ${innerError instanceof Error ? innerError.message : String(innerError)}`,
           );
           return false;
         }
       }
 
       this.logger.warn(
-        `OpenRouter health check failed: ${error instanceof Error ? error.message : String(error)}`
+        `OpenRouter health check failed: ${error instanceof Error ? error.message : String(error)}`,
       );
       return false;
     }
@@ -379,7 +381,7 @@ export class OpenRouterProvider implements IAIProvider {
    * 返回所有带有 :free 后缀的模型
    */
   getFreeModels(): string[] {
-    return this.availableModels.filter(model => model.includes(':free'));
+    return this.availableModels.filter((model) => model.includes(':free'));
   }
 
   /**

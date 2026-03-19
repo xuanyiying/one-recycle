@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateRechargeDto } from './dto/create-recharge.dto';
@@ -17,7 +22,9 @@ export class FinanceService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.mockPayBaseUrl = this.configService.get<PaymentConfig>('payment')?.mockPayBaseUrl || 'https://mock-pay.com/pay';
+    this.mockPayBaseUrl =
+      this.configService.get<PaymentConfig>('payment')?.mockPayBaseUrl ||
+      'https://mock-pay.com/pay';
   }
 
   async getPlatformWallet() {
@@ -67,7 +74,9 @@ export class FinanceService {
       },
     });
 
-    this.logger.log(`Created recharge order ${orderNo} for amount ${dto.amount}, tenantId: ${tenantId || 'platform'}`);
+    this.logger.log(
+      `Created recharge order ${orderNo} for amount ${dto.amount}, tenantId: ${tenantId || 'platform'}`,
+    );
 
     const payUrl = `${this.mockPayBaseUrl}?orderNo=${orderNo}&amount=${dto.amount}`;
 
@@ -91,7 +100,12 @@ export class FinanceService {
     const rechargeAmount = toDecimal(order.amount);
 
     if (tenantId) {
-      return this.processTenantRecharge(order, wallet, rechargeAmount, tenantId);
+      return this.processTenantRecharge(
+        order,
+        wallet,
+        rechargeAmount,
+        tenantId,
+      );
     } else {
       return this.processPlatformRecharge(order, wallet, rechargeAmount);
     }
@@ -268,7 +282,11 @@ export class FinanceService {
     return tenant;
   }
 
-  async getTenantTransactions(tenantId: string, page: number = 1, limit: number = 20) {
+  async getTenantTransactions(
+    tenantId: string,
+    page: number = 1,
+    limit: number = 20,
+  ) {
     const skip = (page - 1) * limit;
     const tid = BigInt(tenantId);
 
@@ -319,7 +337,10 @@ export class FinanceService {
 
     // Determine sort order
     const orderBy: Prisma.OrderOrderByWithRelationInput = {};
-    if (filters?.sortBy && ['createdAt', 'amount', 'updatedAt'].includes(filters.sortBy)) {
+    if (
+      filters?.sortBy &&
+      ['createdAt', 'amount', 'updatedAt'].includes(filters.sortBy)
+    ) {
       (orderBy as any)[filters.sortBy] = filters.sortOrder || 'desc';
     } else {
       orderBy.createdAt = 'desc';
@@ -371,13 +392,19 @@ export class FinanceService {
     // Map orders to expense records
     const items = orders.map((order) => {
       const categoryName = order.items[0]?.category?.name || '未知分类';
-      const quantity = order.items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0);
+      const quantity = order.items.reduce(
+        (sum: number, item: { quantity: number }) => sum + item.quantity,
+        0,
+      );
       const unitPrice = order.items[0]?.unitPrice?.toNumber() || 0;
 
       return {
         id: String(order.id),
         type: 'recycle_payment' as const,
-        amount: order.settlementAmount?.toNumber() || order.payAmount?.toNumber() || 0,
+        amount:
+          order.settlementAmount?.toNumber() ||
+          order.payAmount?.toNumber() ||
+          0,
         orderId: String(order.id),
         orderNo: order.orderNo,
         userId: String(order.userId),
@@ -441,21 +468,25 @@ export class FinanceService {
     // Calculate totals
     let totalExpense = 0;
     let recyclePaymentTotal = 0;
-    let expressFeeTotal = 0;
+    const expressFeeTotal = 0;
     let todayExpense = 0;
     let monthExpense = 0;
-    let pendingCount = 0;
-    let completedCount = orders.length;
+    const pendingCount = 0;
+    const completedCount = orders.length;
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const trendMap = new Map<string, { recyclePayment: number; expressFee: number }>();
+    const trendMap = new Map<
+      string,
+      { recyclePayment: number; expressFee: number }
+    >();
     const categoryMap = new Map<string, { amount: number; count: number }>();
 
     orders.forEach((order) => {
-      const amount = order.settlementAmount?.toNumber() || order.payAmount?.toNumber() || 0;
+      const amount =
+        order.settlementAmount?.toNumber() || order.payAmount?.toNumber() || 0;
       const orderDate = order.completedAt || order.createdAt;
 
       totalExpense += amount;
@@ -473,7 +504,10 @@ export class FinanceService {
 
       // Trend data
       const dateKey = orderDate.toISOString().split('T')[0];
-      const existing = trendMap.get(dateKey) || { recyclePayment: 0, expressFee: 0 };
+      const existing = trendMap.get(dateKey) || {
+        recyclePayment: 0,
+        expressFee: 0,
+      };
       existing.recyclePayment += amount;
       trendMap.set(dateKey, existing);
 
@@ -499,11 +533,13 @@ export class FinanceService {
       }));
 
     // Convert category map to array
-    const categoryBreakdown = Array.from(categoryMap.entries()).map(([categoryName, data]) => ({
-      categoryName,
-      amount: data.amount,
-      count: data.count,
-    }));
+    const categoryBreakdown = Array.from(categoryMap.entries()).map(
+      ([categoryName, data]) => ({
+        categoryName,
+        amount: data.amount,
+        count: data.count,
+      }),
+    );
 
     return {
       totalExpense,

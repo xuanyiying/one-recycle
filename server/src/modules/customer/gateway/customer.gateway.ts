@@ -21,7 +21,7 @@ type AuthenticatedSocket = Socket & {
   userId: string;
   sessionId?: string;
   isAgent: boolean;
-}
+};
 
 @WebSocketGateway({
   namespace: '/customer',
@@ -30,7 +30,9 @@ type AuthenticatedSocket = Socket & {
     credentials: true,
   },
 })
-export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class CustomerServiceGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -44,7 +46,7 @@ export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDis
     private readonly sessionService: SessionService,
     private readonly messageService: MessageService,
     private readonly aiReplyService: AIReplyService,
-  ) { }
+  ) {}
 
   async handleConnection(client: AuthenticatedSocket): Promise<void> {
     try {
@@ -69,7 +71,9 @@ export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDis
         this.addUserSocket(client.userId, client.id);
       }
 
-      this.logger.log(`Client connected: ${client.id}, userId: ${client.userId}, isAgent: ${client.isAgent}`);
+      this.logger.log(
+        `Client connected: ${client.id}, userId: ${client.userId}, isAgent: ${client.isAgent}`,
+      );
 
       client.emit('connected', {
         userId: client.userId,
@@ -168,7 +172,11 @@ export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDis
       if (!client.isAgent && message.senderType === 'USER') {
         const session = await this.sessionService.findOne(data.sessionId);
         if (session && session.type === 'AUTO') {
-          this.processAIReply(data.sessionId, client.userId, data.content || '');
+          this.processAIReply(
+            data.sessionId,
+            client.userId,
+            data.content || '',
+          );
         }
       }
     } catch (error) {
@@ -211,12 +219,13 @@ export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDis
     @MessageBody() data: { sessionId: string; reason?: string },
   ): Promise<void> {
     try {
-      await this.sessionService.transferToAgent(
-        data.sessionId,
-        { reason: data.reason },
-      );
+      await this.sessionService.transferToAgent(data.sessionId, {
+        reason: data.reason,
+      });
 
-      const queuePosition = await this.sessionService.getQueuePosition(data.sessionId);
+      const queuePosition = await this.sessionService.getQueuePosition(
+        data.sessionId,
+      );
 
       client.emit('transfer_initiated', {
         sessionId: data.sessionId,
@@ -248,10 +257,7 @@ export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDis
     }
 
     try {
-      await this.sessionService.assignAgent(
-        data.sessionId,
-        client.userId,
-      );
+      await this.sessionService.assignAgent(data.sessionId, client.userId);
 
       await this.messageService.sendSystemMessage(
         data.sessionId,
@@ -317,7 +323,10 @@ export class CustomerServiceGateway implements OnGatewayConnection, OnGatewayDis
     this.server.emit('new_waiting_session', { sessionId });
   }
 
-  private async broadcastAgentStatus(agentId: string, status: string): Promise<void> {
+  private async broadcastAgentStatus(
+    agentId: string,
+    status: string,
+  ): Promise<void> {
     this.server.emit('agent_status', { agentId, status });
   }
 

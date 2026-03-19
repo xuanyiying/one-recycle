@@ -43,7 +43,7 @@ export class SystemController {
   @Get('qa')
   @ApiOperation({ summary: '获取问答列表' })
   @ApiResponse({ status: 200, type: [QAResponseDto] })
-  getQA() {
+  async getQA() {
     return this.systemService.getQA();
   }
 

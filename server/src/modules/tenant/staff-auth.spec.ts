@@ -40,7 +40,9 @@ describe('Staff Auth Role Propagation', () => {
     prismaService = {
       staff: {
         findFirst: jest.fn().mockResolvedValue(mockStaff),
-        update: jest.fn().mockResolvedValue({ ...mockStaff, lastLoginAt: new Date() }),
+        update: jest
+          .fn()
+          .mockResolvedValue({ ...mockStaff, lastLoginAt: new Date() }),
       },
       tenant: {
         findUnique: jest.fn().mockResolvedValue(mockTenant),

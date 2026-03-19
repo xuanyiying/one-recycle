@@ -99,7 +99,9 @@ describe('OpenRouterProvider', () => {
         statusText: 'OK',
       };
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse as AxiosResponse));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
 
       const result = await provider.chat(mockRequest);
 
@@ -139,7 +141,9 @@ describe('OpenRouterProvider', () => {
         status: 200,
       };
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse as AxiosResponse));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
 
       const result = await provider.chat(mockRequest);
 
@@ -161,7 +165,9 @@ describe('OpenRouterProvider', () => {
         status: 200,
       };
 
-      const postSpy = jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse as AxiosResponse));
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
 
       await provider.chat(customModelRequest);
 
@@ -180,7 +186,9 @@ describe('OpenRouterProvider', () => {
         status: 200,
       };
 
-      const postSpy = jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse as AxiosResponse));
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
 
       await provider.chat(mockRequest);
 
@@ -200,7 +208,9 @@ describe('OpenRouterProvider', () => {
         data: {},
       } as any;
 
-      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error402));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => error402));
 
       await expect(provider.chat(mockRequest)).rejects.toMatchObject({
         code: 'PAYMENT_REQUIRED',
@@ -215,7 +225,9 @@ describe('OpenRouterProvider', () => {
         data: {},
       } as any;
 
-      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => error429));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => error429));
 
       await expect(provider.chat(mockRequest)).rejects.toMatchObject({
         code: 'RATE_LIMIT',
@@ -227,7 +239,9 @@ describe('OpenRouterProvider', () => {
       const timeoutError = new Error('Timeout');
       (timeoutError as any).code = 'ECONNABORTED';
 
-      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => timeoutError));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => timeoutError));
 
       await expect(provider.chat(mockRequest)).rejects.toMatchObject({
         code: 'TIMEOUT',
@@ -239,7 +253,9 @@ describe('OpenRouterProvider', () => {
       const networkError = new Error('Network error');
       (networkError as any).code = 'ENOTFOUND';
 
-      jest.spyOn(httpService, 'post').mockReturnValue(throwError(() => networkError));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => networkError));
 
       await expect(provider.chat(mockRequest)).rejects.toMatchObject({
         code: 'NETWORK_ERROR',
@@ -261,7 +277,9 @@ describe('OpenRouterProvider', () => {
         status: 200,
       };
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(mockResponse as AxiosResponse));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
 
       await expect(provider.chat(mockRequest)).rejects.toMatchObject({
         code: 'invalid_api_key',
@@ -278,7 +296,9 @@ describe('OpenRouterProvider', () => {
         status: 200,
       };
 
-      jest.spyOn(httpService, 'get').mockReturnValue(of(mockResponse as AxiosResponse));
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
 
       const result = await provider.healthCheck();
 
@@ -286,7 +306,9 @@ describe('OpenRouterProvider', () => {
     });
 
     it('should return false when health check fails', async () => {
-      jest.spyOn(httpService, 'get').mockReturnValue(throwError(() => new Error('Failed')));
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(throwError(() => new Error('Failed')));
 
       const result = await provider.healthCheck();
 
@@ -302,8 +324,12 @@ describe('OpenRouterProvider', () => {
         status: 200,
       };
 
-      jest.spyOn(httpService, 'get').mockReturnValue(throwError(() => error404));
-      jest.spyOn(httpService, 'post').mockReturnValue(of(mockChatResponse as AxiosResponse));
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(throwError(() => error404));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockChatResponse as AxiosResponse));
 
       const result = await provider.healthCheck();
 
@@ -343,7 +369,10 @@ describe('OpenRouterProvider', () => {
         apiKey: '',
       };
 
-      const invalidProvider = new OpenRouterProvider(invalidConfig, httpService);
+      const invalidProvider = new OpenRouterProvider(
+        invalidConfig,
+        httpService,
+      );
       expect(invalidProvider.validateConfig()).toBe(false);
     });
 
@@ -353,7 +382,10 @@ describe('OpenRouterProvider', () => {
         defaultModel: '',
       };
 
-      const invalidProvider = new OpenRouterProvider(invalidConfig, httpService);
+      const invalidProvider = new OpenRouterProvider(
+        invalidConfig,
+        httpService,
+      );
       expect(invalidProvider.validateConfig()).toBe(false);
     });
   });
@@ -369,7 +401,10 @@ describe('OpenRouterProvider', () => {
         apiKey: '',
       };
 
-      const invalidProvider = new OpenRouterProvider(invalidConfig, httpService);
+      const invalidProvider = new OpenRouterProvider(
+        invalidConfig,
+        httpService,
+      );
       expect(invalidProvider.isAvailable).toBe(false);
     });
   });
@@ -379,7 +414,7 @@ describe('OpenRouterProvider', () => {
       const freeModels = provider.getFreeModels();
 
       expect(freeModels.length).toBeGreaterThan(0);
-      freeModels.forEach(model => {
+      freeModels.forEach((model) => {
         expect(model).toContain(':free');
       });
     });
@@ -387,8 +422,12 @@ describe('OpenRouterProvider', () => {
 
   describe('isFreeModel', () => {
     it('should return true for free models', () => {
-      expect(provider.isFreeModel('meta-llama/llama-3.3-70b-instruct:free')).toBe(true);
-      expect(provider.isFreeModel('deepseek/deepseek-r1-distill-llama-70b:free')).toBe(true);
+      expect(
+        provider.isFreeModel('meta-llama/llama-3.3-70b-instruct:free'),
+      ).toBe(true);
+      expect(
+        provider.isFreeModel('deepseek/deepseek-r1-distill-llama-70b:free'),
+      ).toBe(true);
     });
 
     it('should return false for non-free models', () => {

@@ -86,13 +86,13 @@ export class TencentProvider implements IAIProvider {
 
     try {
       const model = request.config?.model || this.config.defaultModel;
-      
+
       // 构建请求体
       const body = this.buildRequestBody(request, model);
-      
+
       // 生成签名
       const headers = this.generateSignature(body);
-      
+
       this.logger.debug(`Sending request to Tencent Hunyuan: ${model}`);
 
       const response = await lastValueFrom(
@@ -144,7 +144,7 @@ export class TencentProvider implements IAIProvider {
 
     // 添加工具（Function Calling）
     if (request.tools && request.tools.length > 0) {
-      body.Functions = request.tools.map(tool => ({
+      body.Functions = request.tools.map((tool) => ({
         Name: tool.function.name,
         Description: tool.function.description,
         Parameters: tool.function.parameters,
@@ -163,7 +163,7 @@ export class TencentProvider implements IAIProvider {
    * 混元支持 system、user、assistant、tool 角色
    */
   private convertMessages(messages: ChatMessage[]): any[] {
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const converted: any = {
         Role: msg.role,
         Content: msg.content,
@@ -171,7 +171,7 @@ export class TencentProvider implements IAIProvider {
 
       // 添加 ToolCalls（如果存在）
       if (msg.tool_calls) {
-        converted.ToolCalls = msg.tool_calls.map(tc => ({
+        converted.ToolCalls = msg.tool_calls.map((tc) => ({
           Id: tc.id,
           Type: tc.type,
           Function: {
@@ -200,7 +200,7 @@ export class TencentProvider implements IAIProvider {
 
     // 解析 ToolCalls
     if (message.ToolCalls && message.ToolCalls.length > 0) {
-      message.ToolCalls.forEach(tc => {
+      message.ToolCalls.forEach((tc) => {
         toolCalls.push({
           id: tc.Id,
           type: 'function',
@@ -233,7 +233,7 @@ export class TencentProvider implements IAIProvider {
   private generateSignature(payload: any): Record<string, string> {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const date = new Date().toISOString().split('T')[0];
-    
+
     // 构建规范请求
     const httpRequestMethod = 'POST';
     const canonicalUri = '/';
@@ -244,7 +244,7 @@ export class TencentProvider implements IAIProvider {
       .createHash('sha256')
       .update(JSON.stringify(payload))
       .digest('hex');
-    
+
     const canonicalRequest = [
       httpRequestMethod,
       canonicalUri,
@@ -260,7 +260,7 @@ export class TencentProvider implements IAIProvider {
       .createHash('sha256')
       .update(canonicalRequest)
       .digest('hex');
-    
+
     const stringToSign = [
       'TC3-HMAC-SHA256',
       timestamp,
@@ -295,7 +295,7 @@ export class TencentProvider implements IAIProvider {
     ].join(', ');
 
     return {
-      'Authorization': authorization,
+      Authorization: authorization,
       'X-TC-Action': this.action,
       'X-TC-Version': this.version,
       'X-TC-Timestamp': timestamp,
@@ -312,9 +312,9 @@ export class TencentProvider implements IAIProvider {
         Model: 'hunyuan-lite',
         Messages: [{ Role: 'user', Content: 'hi' }],
       };
-      
+
       const headers = this.generateSignature(body);
-      
+
       await lastValueFrom(
         this.httpService.post(this.baseURL, body, {
           headers: {
