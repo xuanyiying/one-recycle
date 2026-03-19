@@ -1383,7 +1383,10 @@ export class OrderService implements OnModuleInit {
 
   private validateTransition(current: string, target: string): void {
     try {
-      validateStateTransition(current as OrderStatus, target as OrderStatus);
+      validateStateTransition(
+        current as unknown as OrderStatus,
+        target as unknown as OrderStatus,
+      );
     } catch (error) {
       if (error instanceof StateMachineError) {
         throw new BadRequestException(error.message);
