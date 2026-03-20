@@ -16,6 +16,7 @@ import {
   RedisService,
   validateTransition as validateStateTransition,
   StateMachineError,
+  isValidOrderStatus,
 } from '@/common';
 import { CreateOrderDto, UpdateOrderDto } from '../dto';
 import { OrderFilters, DayTimeSlots } from '../interfaces/order.interface';
@@ -508,6 +509,16 @@ export class OrderService implements OnModuleInit {
     if (data.payAmount !== undefined) updateData.payAmount = data.payAmount;
     if (data.remark) updateData.remark = data.remark;
     if (data.priority) updateData.priority = data.priority as unknown as number;
+
+    // 更新订单项数量
+    if (data.items && data.items.length > 0) {
+      for (const item of data.items) {
+        await this.prisma.orderItem.update({
+          where: { id: BigInt(item.id) },
+          data: { quantity: item.quantity },
+        });
+      }
+    }
 
     const order = await this.prisma.order.update({
       where: { id: BigInt(id) },
@@ -1382,11 +1393,14 @@ export class OrderService implements OnModuleInit {
   }
 
   private validateTransition(current: string, target: string): void {
-    try {
-      validateStateTransition(
-        current as unknown as OrderStatus,
-        target as unknown as OrderStatus,
+    if (!isValidOrderStatus(current) || !isValidOrderStatus(target)) {
+      throw new BadRequestException(
+        `Invalid order status: current="${current}", target="${target}"`,
       );
+    }
+
+    try {
+      validateStateTransition(current, target);
     } catch (error) {
       if (error instanceof StateMachineError) {
         throw new BadRequestException(error.message);

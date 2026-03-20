@@ -96,6 +96,7 @@ export default function OrdersPage() {
   const [visibleColumns, setVisibleColumns] = useState({
     orderNo: true,
     customerInfo: true,
+    itemCount: true,
     amount: true,
     status: true,
     pickupTime: true,
@@ -567,6 +568,12 @@ export default function OrdersPage() {
                       客户信息
                     </DropdownMenuCheckboxItem>
                     <DropdownMenuCheckboxItem
+                      checked={visibleColumns.itemCount}
+                      onCheckedChange={() => toggleColumn('itemCount')}
+                    >
+                      商品数量
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
                       checked={visibleColumns.amount}
                       onCheckedChange={() => toggleColumn('amount')}
                     >
@@ -629,6 +636,7 @@ export default function OrdersPage() {
                   <TableRow>
                     {visibleColumns.orderNo && <TableHead>订单号</TableHead>}
                     {visibleColumns.customerInfo && <TableHead>客户信息</TableHead>}
+                    {visibleColumns.itemCount && <TableHead>商品数量</TableHead>}
                     {visibleColumns.amount && <TableHead>金额</TableHead>}
                     {visibleColumns.status && <TableHead>状态</TableHead>}
                     {visibleColumns.pickupTime && <TableHead>预约上门</TableHead>}
@@ -648,6 +656,11 @@ export default function OrdersPage() {
                         {visibleColumns.customerInfo && (
                           <TableCell>
                             <Skeleton className="h-10 w-[150px]" />
+                          </TableCell>
+                        )}
+                        {visibleColumns.itemCount && (
+                          <TableCell>
+                            <Skeleton className="h-4 w-[60px]" />
                           </TableCell>
                         )}
                         {visibleColumns.amount && (
@@ -703,6 +716,11 @@ export default function OrdersPage() {
                                 {getFullAddress(order.address) || '-'}
                               </span>
                             </div>
+                          </TableCell>
+                        )}
+                        {visibleColumns.itemCount && (
+                          <TableCell>
+                            {order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0} 件
                           </TableCell>
                         )}
                         {visibleColumns.amount && (

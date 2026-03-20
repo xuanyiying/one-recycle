@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType, OmitType } from '@nestjs/mapped-types';
 import { CreateOrderDto } from './create-order.dto';
 import {
   IsOptional,
@@ -6,11 +6,27 @@ import {
   IsEnum,
   IsDateString,
   IsNumber,
+  IsArray,
+  ValidateNested,
+  IsInt,
+  Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderStatus, OrderPriority } from '@/common';
 
-export class UpdateOrderDto extends PartialType(CreateOrderDto) {
+export class UpdateOrderItemDto {
+  @ApiPropertyOptional({ description: '商品ID' })
+  @IsInt()
+  id!: number;
+
+  @ApiPropertyOptional({ description: '数量' })
+  @IsInt()
+  @Min(0)
+  quantity!: number;
+}
+
+export class UpdateOrderDto extends OmitType(PartialType(CreateOrderDto), ['items'] as const) {
   @ApiPropertyOptional({ description: '订单状态', enum: OrderStatus })
   @IsOptional()
   @IsEnum(OrderStatus)
@@ -55,20 +71,11 @@ export class UpdateOrderDto extends PartialType(CreateOrderDto) {
   @IsOptional()
   @IsNumber()
   payAmount?: number;
-}
-export class UpdateOrderItemDto {
-  @ApiPropertyOptional({ description: '商品ID' })
-  @IsOptional()
-  @IsString()
-  id?: string;
 
-  @ApiPropertyOptional({ description: '商品分类ID' })
+  @ApiPropertyOptional({ description: '订单项更新列表', type: [UpdateOrderItemDto] })
   @IsOptional()
-  @IsString()
-  categoryId?: string;
-
-  @ApiPropertyOptional({ description: '商品分类名称' })
-  @IsOptional()
-  @IsString()
-  categoryName?: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UpdateOrderItemDto)
+  items?: UpdateOrderItemDto[];
 }

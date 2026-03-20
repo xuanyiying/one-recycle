@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Order, OrderStatus, UpdateOrderRequest } from '@/services/orderService';
 import { orderStatusLabels } from '@/lib/orderStateMachine';
 import { useForm } from 'react-hook-form';
+
+interface EditableItem {
+  id: number;
+  quantity: number;
+}
 
 interface OrderModalProps {
   visible: boolean;
@@ -22,6 +27,8 @@ const OrderModal: React.FC<OrderModalProps> = ({
   order,
   loading,
 }) => {
+  const [editableItems, setEditableItems] = useState<EditableItem[]>([]);
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UpdateOrderRequest>({
     defaultValues: {
       status: OrderStatus.PENDING,
@@ -47,13 +54,26 @@ const OrderModal: React.FC<OrderModalProps> = ({
         settlementAmount: order.settlementAmount,
         payAmount: order.payAmount,
       });
+      setEditableItems(order.items?.map(item => ({ id: item.id, quantity: item.quantity })) || []);
     }
   }, [visible, order, reset]);
 
   const onSubmit = (values: UpdateOrderRequest) => {
     if (order) {
-      onOk(order.id, values);
+      const updatedValues = {
+        ...values,
+        items: editableItems,
+      };
+      onOk(order.id, updatedValues);
     }
+  };
+
+  const handleItemQuantityChange = (itemId: number, newQuantity: number) => {
+    setEditableItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, quantity: Math.max(0, newQuantity) } : item
+      )
+    );
   };
 
   const formatPrice = (price: number) => {
@@ -207,19 +227,37 @@ const OrderModal: React.FC<OrderModalProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {order.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="px-4 py-2">{item.categoryName || `分类#${item.categoryId}`}</td>
-                      <td className="px-4 py-2 text-right">{item.quantity}</td>
-                      <td className="px-4 py-2 text-right">{item.estimatedWeight ?? '-'}</td>
-                      <td className="px-4 py-2 text-right">{item.actualWeight ?? '-'}</td>
-                      <td className="px-4 py-2 text-right">{formatPrice(item.unitPrice || 0)}</td>
-                      <td className="px-4 py-2 text-right">{formatPrice(item.amount || 0)}</td>
-                    </tr>
-                  ))}
+                  {order.items.map((item) => {
+                    const editableItem = editableItems.find(ei => ei.id === item.id);
+                    const currentQuantity = editableItem?.quantity ?? item.quantity;
+                    return (
+                      <tr key={item.id}>
+                        <td className="px-4 py-2">{item.categoryName || `分类#${item.categoryId}`}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={currentQuantity}
+                            onChange={(e) => handleItemQuantityChange(item.id, parseInt(e.target.value) || 0)}
+                            className="w-20 text-right ml-auto"
+                          />
+                        </td>
+                        <td className="px-4 py-2 text-right">{item.estimatedWeight ?? '-'}</td>
+                        <td className="px-4 py-2 text-right">{item.actualWeight ?? '-'}</td>
+                        <td className="px-4 py-2 text-right">{formatPrice(item.unitPrice || 0)}</td>
+                        <td className="px-4 py-2 text-right">{formatPrice((item.unitPrice || 0) * currentQuantity)}</td>
+                      </tr>
+                    );
+                  })}
                   <tr className="bg-gray-50 font-medium">
                     <td colSpan={5} className="px-4 py-2 text-right">合计</td>
-                    <td className="px-4 py-2 text-right">{formatPrice(order.estimatedAmount || 0)}</td>
+                    <td className="px-4 py-2 text-right">
+                      {formatPrice(order.items.reduce((sum, item) => {
+                        const editableItem = editableItems.find(ei => ei.id === item.id);
+                        const currentQuantity = editableItem?.quantity ?? item.quantity;
+                        return sum + (item.unitPrice || 0) * currentQuantity;
+                      }, 0))}
+                    </td>
                   </tr>
                 </tbody>
               </table>

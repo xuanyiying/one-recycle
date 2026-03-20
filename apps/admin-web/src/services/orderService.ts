@@ -212,6 +212,10 @@ export interface UpdateOrderRequest {
   actualDeliveryTime?: string;
   settlementAmount?: number;
   payAmount?: number;
+  items?: Array<{
+    id: number;
+    quantity: number;
+  }>;
 }
 
 class OrderService {

@@ -171,7 +171,6 @@ export class StateMachineError extends Error {
 }
 
 /**
- * 验证状态转换
  * @param from 当前状态
  * @param to 目标状态
  * @throws StateMachineError 如果转换不合法
@@ -184,6 +183,13 @@ export function validateTransition(from: OrderStatus, to: OrderStatus): void {
       `Invalid state transition from "${getStatusLabel(from)}" to "${getStatusLabel(to)}"`,
     );
   }
+}
+
+/**
+ * 类型守卫：检查字符串是否为有效的 OrderStatus
+ */
+export function isValidOrderStatus(status: string): status is OrderStatus {
+  return (Object.values(OrderStatus) as string[]).includes(status);
 }
 
 /**
