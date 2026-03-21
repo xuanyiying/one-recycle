@@ -28,7 +28,7 @@ export class ReferralRewardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) { }
+  ) {}
 
   async getReferralRewardConfig(): Promise<ReferralRewardConfig> {
     const configs = await this.prisma.systemConfig.findMany({

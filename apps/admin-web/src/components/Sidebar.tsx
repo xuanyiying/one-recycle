@@ -27,7 +27,8 @@ import {
   ClipboardList,
   CheckSquare,
   FileText,
-  HelpCircle
+  HelpCircle,
+  Warehouse
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -95,6 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
         items: [
           { href: '/notifications', icon: Bell, label: '通知管理' },
           { href: '/settings/logistics', icon: Truck, label: '快递接入' },
+          { href: '/settings/category-warehouse', icon: Warehouse, label: '分类仓库' },
           { href: '/settings', icon: Settings, label: '系统设置' },
         ],
       },

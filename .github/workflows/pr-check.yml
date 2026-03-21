@@ -1,0 +1,322 @@
+# ============================================================================
+# OneRecycle PR 检查工作流
+# 在 Pull Request 时运行代码质量检查和测试
+# ============================================================================
+
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ==========================================================================
+  # Job 1: 代码变更检测
+  # ==========================================================================
+  changes:
+    name: 检测代码变更
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      admin-web: ${{ steps.filter.outputs.admin-web }}
+      mini-client: ${{ steps.filter.outputs.mini-client }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+            admin-web:
+              - 'apps/admin-web/**'
+            mini-client:
+              - 'apps/mini-client/**'
+
+  # ==========================================================================
+  # Job 2: Server 代码检查
+  # ==========================================================================
+  server-check:
+    name: Server 代码检查
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.server == 'true' }}
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: one_recycle_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Generate Prisma Client
+        working-directory: ./server
+        run: npx prisma generate
+      
+      - name: Run ESLint
+        working-directory: ./server
+        run: npm run lint
+      
+      - name: Run TypeScript type check
+        working-directory: ./server
+        run: npm run typecheck
+      
+      - name: Run database migrations
+        working-directory: ./server
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/one_recycle_test?schema=public
+        run: npx prisma migrate deploy
+      
+      - name: Run unit tests
+        working-directory: ./server
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/one_recycle_test?schema=public
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test-secret-key-for-pr-check-only
+        run: npm run test:cov:unit
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: server-coverage-report
+          path: server/coverage/
+          retention-days: 7
+      
+      - name: Comment PR with coverage
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'server/coverage/lcov-report/index.html';
+            
+            let coverageMessage = '## 📊 代码覆盖率报告\n\n';
+            
+            if (fs.existsSync('server/coverage/coverage-summary.json')) {
+              const summary = JSON.parse(fs.readFileSync('server/coverage/coverage-summary.json', 'utf8'));
+              const total = summary.total;
+              
+              coverageMessage += '| 指标 | 覆盖率 |\n';
+              coverageMessage += '|------|--------|\n';
+              coverageMessage += `| 语句 | ${total.statements.pct}% |\n`;
+              coverageMessage += `| 分支 | ${total.branches.pct}% |\n`;
+              coverageMessage += `| 函数 | ${total.functions.pct}% |\n`;
+              coverageMessage += `| 行数 | ${total.lines.pct}% |\n`;
+            } else {
+              coverageMessage += '覆盖率报告生成失败\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: coverageMessage
+            });
+
+  # ==========================================================================
+  # Job 3: Admin Web 代码检查
+  # ==========================================================================
+  admin-web-check:
+    name: Admin Web 代码检查
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.admin-web == 'true' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: apps/admin-web/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./apps/admin-web
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: ./apps/admin-web
+        run: npm run lint
+      
+      - name: Run TypeScript type check
+        working-directory: ./apps/admin-web
+        run: npm run typecheck
+      
+      - name: Build
+        working-directory: ./apps/admin-web
+        run: npm run build
+
+  # ==========================================================================
+  # Job 4: 依赖安全扫描
+  # ==========================================================================
+  security-scan:
+    name: 安全扫描
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies (Server)
+        working-directory: ./server
+        run: npm ci
+      
+      - name: Run npm audit
+        working-directory: ./server
+        run: npm audit --audit-level=moderate || true
+      
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=server/package.json
+
+  # ==========================================================================
+  # Job 5: 代码质量分析
+  # ==========================================================================
+  code-quality:
+    name: 代码质量分析
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm ci
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: true
+
+  # ==========================================================================
+  # Job 6: PR 总结
+  # ==========================================================================
+  pr-summary:
+    name: PR 检查总结
+    runs-on: ubuntu-latest
+    needs: [server-check, admin-web-check, security-scan]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('## 🔍 PR 检查总结');
+            });
+            
+            const serverStatus = '${{ needs.server-check.result }}';
+            const adminWebStatus = '${{ needs.admin-web-check.result }}';
+            const securityStatus = '${{ needs.security-scan.result }}';
+            
+            const getStatusEmoji = (status) => {
+              if (status === 'success') return '✅';
+              if (status === 'failure') return '❌';
+              if (status === 'skipped') return '⏭️';
+              return '⏳';
+            };
+            
+            const body = `## 🔍 PR 检查总结
+            
+            | 检查项 | 状态 |
+            |--------|------|
+            | Server 代码检查 | ${getStatusEmoji(serverStatus)} |
+            | Admin Web 代码检查 | ${getStatusEmoji(adminWebStatus)} |
+            | 安全扫描 | ${getStatusEmoji(securityStatus)} |
+            
+            ${serverStatus === 'failure' || adminWebStatus === 'failure' ? '❌ **请修复上述问题后再合并**' : '✅ **所有检查通过，可以合并**'}
+            `;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

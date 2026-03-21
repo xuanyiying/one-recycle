@@ -36,6 +36,46 @@ One Recycle 是一个基于微服务架构的回收平台，包含账户、订�
 └── docs/                  # 文档
 ```
 
+## 快速开始
+
+### 部署方式
+
+本项目提供三种部署方式：
+
+| 部署方式 | 适用场景 | 文档 |
+|----------|----------|------|
+| **GitHub Actions 自动部署** | 生产环境、团队协作 | [查看文档](docs/GITHUB_ACTIONS_DEPLOY_GUIDE.md) |
+| **一键部署脚本** | 快速部署、开发测试 | [查看文档](deploy/README.md) |
+| **手动部署** | 学习调试、问题排查 | [查看文档](deploy/docs/DEPLOY.md) |
+
+### GitHub Actions 自动部署（推荐）
+
+最简单的部署方式，推送代码后自动部署到服务器：
+
+```bash
+# 1. 配置 GitHub Secrets（见文档）
+# 2. 推送代码触发部署
+git push origin main
+
+# 3. 在 GitHub Actions 查看部署进度
+```
+
+详细配置步骤请查看：[GitHub Actions 部署指南](docs/GITHUB_ACTIONS_DEPLOY_GUIDE.md)
+
+### 快速验证配置
+
+```bash
+# 运行配置验证脚本
+bash scripts/verify-deploy-setup.sh
+
+# 检查配置清单
+cat docs/GITHUB_ACTIONS_CHECKLIST.md
+```
+
+### 部署后快速参考
+
+部署成功后，请保存：[快速参考卡片](docs/DEPLOYMENT_QUICK_REFERENCE.md)
+
 ## 技术栈
 
 ### 后端技术栈

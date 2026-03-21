@@ -26,7 +26,9 @@ export class UpdateOrderItemDto {
   quantity!: number;
 }
 
-export class UpdateOrderDto extends OmitType(PartialType(CreateOrderDto), ['items'] as const) {
+export class UpdateOrderDto extends OmitType(PartialType(CreateOrderDto), [
+  'items',
+] as const) {
   @ApiPropertyOptional({ description: '订单状态', enum: OrderStatus })
   @IsOptional()
   @IsEnum(OrderStatus)
@@ -72,7 +74,10 @@ export class UpdateOrderDto extends OmitType(PartialType(CreateOrderDto), ['item
   @IsNumber()
   payAmount?: number;
 
-  @ApiPropertyOptional({ description: '订单项更新列表', type: [UpdateOrderItemDto] })
+  @ApiPropertyOptional({
+    description: '订单项更新列表',
+    type: [UpdateOrderItemDto],
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

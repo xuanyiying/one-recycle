@@ -9,6 +9,7 @@ import { QueueModule } from '../queue/queue.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { AccountModule } from '../account/account.module';
 import { PaymentModule } from '../payment/payment.module';
+import { CategoryWarehouseModule } from '../category-warehouse/category-warehouse.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PaymentModule } from '../payment/payment.module';
     InventoryModule,
     AccountModule,
     PaymentModule,
+    CategoryWarehouseModule,
   ],
   controllers: [OrderController, TimeSlotController, OrderGrpcController],
   providers: [OrderService],

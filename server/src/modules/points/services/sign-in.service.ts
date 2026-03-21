@@ -19,7 +19,7 @@ export class SignInService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) { }
+  ) {}
 
   /**
    * 签到

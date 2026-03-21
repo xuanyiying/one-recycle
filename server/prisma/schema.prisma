@@ -72,11 +72,12 @@ model Category {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // 自引用关系
-  parent              Category?            @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children            Category[]           @relation("CategoryHierarchy")
+  parent              Category?                @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children            Category[]               @relation("CategoryHierarchy")
   inventoryItems      InventoryItem[]
   orderItems          OrderItem[]
   recyclePricingRules RecyclePricingRule[]
+  warehouseConfig     CategoryWarehouseConfig?
 
   @@index([type])
   @@index([parentId])
@@ -249,12 +250,15 @@ model Order {
   inboundReceipt     InboundReceipt?
   serviceTickets     ServiceTicket[]
   referralReward     ReferralReward?
+  targetWarehouseId  BigInt?                @map("target_warehouse_id")
+  targetWarehouse    Warehouse?             @relation("OrderTargetWarehouse", fields: [targetWarehouseId], references: [id])
 
   @@index([userId])
   @@index([status])
   @@index([orderType])
   @@index([channel])
   @@index([createdAt])
+  @@index([targetWarehouseId])
   @@map("orders")
 }
 
@@ -722,21 +726,23 @@ model QualityCheck {
 
 /// 仓库表
 model Warehouse {
-  id              BigInt           @id @default(autoincrement()) @map("id")
-  name            String           @map("name")
-  code            String           @unique @map("code")
-  type            WarehouseType    @map("type")
-  address         String           @map("address")
-  contactPhone    String           @map("contact_phone")
-  capacity        Float?           @map("capacity")
-  status          WarehouseStatus  @map("status")
-  description     String?          @map("description")
-  tenantId        BigInt?          @map("tenant_id")
-  tenant          Tenant?          @relation(fields: [tenantId], references: [id])
-  createdAt       DateTime         @default(now()) @map("created_at")
-  updatedAt       DateTime         @updatedAt @map("updated_at")
+  id              BigInt                    @id @default(autoincrement()) @map("id")
+  name            String                    @map("name")
+  code            String                    @unique @map("code")
+  type            WarehouseType             @map("type")
+  address         String                    @map("address")
+  contactPhone    String                    @map("contact_phone")
+  capacity        Float?                    @map("capacity")
+  status          WarehouseStatus           @map("status")
+  description     String?                   @map("description")
+  tenantId        BigInt?                   @map("tenant_id")
+  tenant          Tenant?                   @relation(fields: [tenantId], references: [id])
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @updatedAt @map("updated_at")
   inventoryItems  InventoryItem[]
   inboundReceipts InboundReceipt[]
+  categoryConfigs CategoryWarehouseConfig[]
+  targetOrders    Order[]                   @relation("OrderTargetWarehouse")
 
   @@map("warehouses")
 }
@@ -2142,4 +2148,21 @@ model RecycleRule {
   @@index([category])
   @@index([isActive, sortOrder])
   @@map("recycle_rules")
+}
+
+/// 分类仓库配置表 - 根据商品分类自动分配目标仓库
+model CategoryWarehouseConfig {
+  id          BigInt   @id @default(autoincrement()) @map("id")
+  categoryId  Int      @unique @map("category_id")
+  warehouseId BigInt   @map("warehouse_id")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@index([warehouseId])
+  @@index([isActive])
+  @@map("category_warehouse_configs")
 }

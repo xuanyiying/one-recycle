@@ -6,6 +6,7 @@ import { Statistic } from '@/components/ui/statistic';
 import { Table } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { pointsStatsApi, pointsOrderApi, PointsOrder, PointsStats } from '@/services/pointsService';
+import { PointsMallToggle } from '@/components/points/PointsMallToggle';
 
 export default function PointsOverviewPage() {
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,9 @@ export default function PointsOverviewPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* 积分商城开关控制 */}
+      <PointsMallToggle />
+
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-6">

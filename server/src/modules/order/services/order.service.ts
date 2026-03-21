@@ -36,6 +36,7 @@ import { InventoryService } from '@/modules/inventory/services/inventory.service
 import { AccountService } from '@/modules/account/account.service';
 import { PaymentService } from '@/modules/payment/payment.service';
 import { PaymentProvider } from '@prisma/client';
+import { CategoryWarehouseService } from '@/modules/category-warehouse/category-warehouse.service';
 
 @Injectable()
 export class OrderService implements OnModuleInit {
@@ -56,6 +57,7 @@ export class OrderService implements OnModuleInit {
     private readonly redisService: RedisService,
     private readonly inventoryService: InventoryService,
     private readonly accountService: AccountService,
+    private readonly categoryWarehouseService: CategoryWarehouseService,
     @Inject(forwardRef(() => PaymentService))
     private readonly paymentService: PaymentService,
     @Inject(forwardRef(() => OrderQueueService))
@@ -163,6 +165,19 @@ export class OrderService implements OnModuleInit {
       throw new NotFoundException('Address not found');
     }
 
+    // 根据主分类获取目标仓库
+    let targetWarehouseId: bigint | undefined;
+    if (items.length > 0) {
+      const mainCategoryId = items[0].categoryId;
+      const config =
+        await this.categoryWarehouseService.findActiveByCategoryId(
+          mainCategoryId,
+        );
+      if (config) {
+        targetWarehouseId = BigInt(config.warehouseId);
+      }
+    }
+
     const order = await this.prisma.$transaction(async (prisma) => {
       // 生成订单号
       const orderNo = await this.idGenerator.nextId();
@@ -173,6 +188,7 @@ export class OrderService implements OnModuleInit {
           orderNo: orderNo.toString(),
           userId: userId,
           addressId: addressId,
+          targetWarehouseId: targetWarehouseId,
           status: createOrderData.status || OrderStatus.PENDING,
           channel: createOrderData.channel || 'APP',
           remark: remark,
@@ -393,6 +409,7 @@ export class OrderService implements OnModuleInit {
           items: true,
           assignments: true,
           address: true,
+          targetWarehouse: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -423,6 +440,7 @@ export class OrderService implements OnModuleInit {
         items: true,
         assignments: true,
         address: true,
+        targetWarehouse: true,
       },
     });
 
@@ -1019,9 +1037,9 @@ export class OrderService implements OnModuleInit {
         coordinates:
           order.latitude && order.longitude
             ? {
-              lat: order.latitude,
-              lng: order.longitude,
-            }
+                lat: order.latitude,
+                lng: order.longitude,
+              }
             : undefined,
       },
       scheduledTime:

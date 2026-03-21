@@ -37,6 +37,7 @@ import { CustomerUserModule } from './modules/customer/customer-user.module';
 import { VoiceOrderModule } from './modules/voice-order/voice-order.module';
 import { PointsModule } from './modules/points/points.module';
 import { ContentConfigModule } from './modules/content-config/content-config.module';
+import { CategoryWarehouseModule } from './modules/category-warehouse/category-warehouse.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -95,6 +96,7 @@ import { HealthModule } from './modules/health/health.module';
     VoiceOrderModule,
     PointsModule,
     ContentConfigModule,
+    CategoryWarehouseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

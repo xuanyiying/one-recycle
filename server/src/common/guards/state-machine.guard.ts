@@ -143,7 +143,11 @@ export const StateTransition = (options: {
   to: OrderStatus;
   roles?: string[];
 }) => {
-  return (target: object, propertyKey: string, descriptor: PropertyDescriptor) => {
+  return (
+    target: object,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) => {
     AllowedTransitions(...options.from)(target, propertyKey, descriptor);
     if (options.roles && options.roles.length > 0) {
       RequiredRole(...options.roles)(target, propertyKey, descriptor);
