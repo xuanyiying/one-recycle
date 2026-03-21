@@ -7,12 +7,12 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [prod]
     paths-ignore:
       - '**.md'
       - 'docs/**'
   pull_request:
-    branches: [main, master]
+    branches: [prod]
   workflow_dispatch:
     inputs:
       environment:
