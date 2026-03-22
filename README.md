@@ -1,518 +1,220 @@
-# One Recycle - 微服务架构平台
+# One Recycle - 旧物回收平台
 
-One Recycle 是一个基于微服务架构的回收平台，包含账户、订单、支付、调度等多个服务。项目采用混合架构模式，在开发/测试环境使用单体应用提高开发效率，在生产环境使用微服务架构确保系统的可扩展性和稳定性。
-这是一个旧物回收平台，用户发起回收订单预约，系统调用第三方快递接口进行下单通知第三方快递员上门上门取件、 发货 ，仓库人员收货，验货，入库，入库成功，需要后需要自动支付回收物品的钱，以积分的形式转给用户，用户发起提现操作时，完成真正的支付操作，从平台租户账户扣款，转给用户，分析数据模型定义的完整性与合理性，进行优化， 同时修改相关代码
+One Recycle 是一个基于微服务架构的旧物回收平台。用户发起回收订单，系统调度快递员上门取件，仓库验货入库后自动以积分形式结算给用户，用户可发起提现。支持多租户、智能客服、语音下单、AI 识别验货等能力。
+
+## 技术栈
+
+**后端**: NestJS / Prisma ORM / PostgreSQL / Redis / Bull 队列 / Swagger
+**前端**: Next.js + Ant Design (管理后台) / Taro + React (小程序客户端)
+**部署**: Docker Compose / Kubernetes / GitHub Actions CI/CD / Nginx
 
 ## 项目结构
 
 ```
-.
-├── apps/                  # 前端应用
-│   ├── admin-web/         # 管理后台
-│   └── client-mini/       # 小程序客户端
-├── server/                # 开发/测试环境单体应用
-│   ├── src/               # 源代码
-│   │   ├── access-control/ # 权限控制模块
-│   │   ├── common/        # 公共模块
-│   │   ├── conditional/   # 条件加载模块
-│   │   ├── database/      # 数据库模块
-│   │   ├── modules/       # 业务模块
-│   │   ├── user/          # 用户模块
-│   │   └── utils/         # 工具模块
-│   └── prisma/            # Prisma数据库客户端
-├── services/              # 生产环境微服务
-│   ├── account-service/   # 账户服务
-│   ├── auth-service/      # 认证服务
-│   ├── category-service/  # 分类服务
-│   ├── courier-service/   # 快递员服务
-│   ├── dispatch-service/  # 调度服务
-│   ├── inventory-service/ # 库存服务
-│   ├── message-queue/     # 消息队列
-│   ├── notification-service/ # 通知服务
-│   ├── order-service/     # 订单服务
-│   ├── payment-service/   # 支付服务
-│   ├── shared/            # 共享模块
-│   └── monolith/          # 开发阶段单体应用
-└── docs/                  # 文档
+one-recycle/
+├── server/                    # 后端服务 (NestJS)
+│   ├── src/
+│   │   ├── modules/           # 26 个业务模块
+│   │   │   ├── order/         # 订单管理
+│   │   │   ├── payment/       # 支付处理
+│   │   │   ├── logistics/     # 物流追踪
+│   │   │   ├── dispatch/      # 智能派单
+│   │   │   ├── inventory/     # 库存管理
+│   │   │   ├── account/       # 账户/提现
+│   │   │   ├── points/        # 积分商城
+│   │   │   ├── ai/            # AI 识别/对话
+│   │   │   ├── customer/      # 智能客服
+│   │   │   ├── voice-order/   # 语音下单
+│   │   │   ├── auth/          # 认证鉴权
+│   │   │   ├── user/          # 用户管理
+│   │   │   └── ...            # 更多模块
+│   │   ├── common/            # 公共模块 (guards/filters/interceptors/utils)
+│   │   ├── config/            # 配置模块
+│   │   └── prisma/            # Prisma 数据库配置
+│   └── prisma/schema.prisma   # 55 个数据模型
+├── apps/
+│   ├── admin-web/             # 管理后台 (Next.js)
+│   └── mini-client/           # 小程序客户端 (Taro)
+├── deploy/
+│   ├── config/                # 环境变量配置
+│   ├── docker/                # Docker Compose 编排
+│   ├── nginx/                 # Nginx 反向代理
+│   ├── k8s/                   # Kubernetes 部署
+│   └── scripts/               # 部署脚本
+├── docs/                      # 项目文档
+└── scripts/                   # 本地工具脚本
 ```
 
 ## 快速开始
 
-### 部署方式
+### 环境要求
 
-本项目提供三种部署方式：
+- Node.js >= 20
+- PostgreSQL >= 15
+- Redis >= 7
+- pnpm (推荐)
 
-| 部署方式 | 适用场景 | 文档 |
-|----------|----------|------|
-| **GitHub Actions 自动部署** | 生产环境、团队协作 | [查看文档](docs/GITHUB_ACTIONS_DEPLOY_GUIDE.md) |
-| **一键部署脚本** | 快速部署、开发测试 | [查看文档](deploy/README.md) |
-| **手动部署** | 学习调试、问题排查 | [查看文档](deploy/docs/DEPLOY.md) |
-
-### GitHub Actions 自动部署（推荐）
-
-最简单的部署方式，推送代码后自动部署到服务器：
-
-```bash
-# 1. 配置 GitHub Secrets（见文档）
-# 2. 推送代码触发部署
-git push origin main
-
-# 3. 在 GitHub Actions 查看部署进度
-```
-
-详细配置步骤请查看：[GitHub Actions 部署指南](docs/GITHUB_ACTIONS_DEPLOY_GUIDE.md)
-
-### 快速验证配置
-
-```bash
-# 运行配置验证脚本
-bash scripts/verify-deploy-setup.sh
-
-# 检查配置清单
-cat docs/GITHUB_ACTIONS_CHECKLIST.md
-```
-
-### 部署后快速参考
-
-部署成功后，请保存：[快速参考卡片](docs/DEPLOYMENT_QUICK_REFERENCE.md)
-
-## 技术栈
-
-### 后端技术栈
-- **核心框架**: NestJS
-- **数据库**: PostgreSQL (Prisma ORM), MongoDB (Mongoose), MySQL (TypeORM)
-- **缓存**: Redis
-- **消息队列**: Kafka, Bull (Redis-based)
-- **认证授权**: JWT, Passport.js
-- **权限控制**: CASL (Conditional Access System Language)
-- **任务调度**: @nestjs/schedule (cron)
-- **日志管理**: Winston
-- **配置管理**: @nestjs/config (dotenv)
-- **API文档**: Swagger
-- **测试框架**: Jest
-- **构建工具**: Rollup, SWC
-
-### 前端技术栈
-- **管理后台**: Next.js, Ant Design, TypeScript
-- **小程序客户端**: Taro, React, TypeScript
-
-## 架构设计
-
-### 混合架构模式
-本项目采用混合架构模式：
-1. **开发/测试环境**: 使用单体应用架构，提高开发效率，简化调试流程
-2. **生产环境**: 使用微服务架构，确保系统的可扩展性和稳定性
-
-详细架构设计请参考：
-- [单体应用与微服务架构设计文档](MONO-ARCH-DESIGN.md)
-- [迁移指南](MIGRATION-GUIDE.md)
-
-## 核心模块说明
-
-### 1. 权限控制模块 (access-control)
-负责系统的认证、授权和权限管理功能。
-
-- **auth**: 用户认证，包括登录、注册、JWT令牌生成
-- **role**: 角色管理，定义用户角色及其权限
-- **permission**: 权限管理，定义系统权限点
-- **policy**: 基于CASL的策略管理，实现细粒度权限控制
-- **menu**: 菜单管理，根据用户权限动态生成菜单
-
-```typescript
-// 示例：使用策略守卫进行权限控制
-@UseGuards(PolicyGuard)
-@CheckPolicies((ability: AppAbility) => ability.can(Action.Update, User))
-@Put(':id')
-update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-  return this.userService.update(+id, updateUserDto);
-}
-```
-
-### 2. 数据库模块 (database)
-支持多种数据库的统一访问接口。
-
-- **prisma**: PostgreSQL数据库访问
-- **typeorm**: MySQL数据库访问
-- **mongoose**: MongoDB数据库访问
-
-```typescript
-// 示例：在服务中使用Prisma客户端
-@Injectable()
-export class UserService {
-  constructor(@Inject(PRISMA_DATABASE) private prismaClient: PrismaClient) {}
-
-  async create(createUserDto: CreateUserDto) {
-    return this.prismaClient.user.create({
-      data: createUserDto,
-    });
-  }
-}
-```
-
-### 3. 条件加载模块 (conditional)
-根据环境变量动态加载可选功能模块。
-
-- **mail**: 邮件发送功能
-- **queue**: 消息队列处理
-- **storage**: 文件存储服务
-- **cron**: 定时任务调度
-
-```typescript
-// 示例：条件加载邮件模块
-static register(): DynamicModule {
-  const parsedConfig = getEnvs();
-  if (toBoolean(parsedConfig['MAIL_ON'])) {
-    imports.push(MailModule);
-  }
-  // ...
-}
-```
-
-### 4. 业务模块 (modules)
-包含系统的核心业务功能。
-
-- **comment**: 评论管理，支持嵌套评论
-- **course**: 课程管理
-- **content**: 内容管理
-- **attachment**: 附件管理
-- **dict**: 字典管理
-- **transaction**: 事务处理
-- **study**: 学习记录管理
-
-```typescript
-// 示例：评论服务中的嵌套评论查询
-async fetchAllNestedComments(commentId: number): Promise<any> {
-  const comment = await this.prismaClient.comment.findUnique({
-    where: { id: commentId },
-    include: { children: true },
-  });
-
-  if (comment && comment.children) {
-    // 递归查询所有子评论的嵌套子评论
-    const childrenWithNested = await Promise.all(
-      comment.children.map((child) => this.fetchAllNestedComments(child.id)),
-    );
-    comment.children = childrenWithNested;
-  }
-  return comment;
-}
-```
-
-### 5. 公共模块 (common)
-提供系统级的公共功能。
-
-- **cache**: 缓存管理 (Redis)
-- **config**: 配置管理
-- **cron**: 定时任务
-- **filters**: 异常过滤器
-- **guards**: 守卫
-- **interceptors**: 拦截器
-- **kafka**: Kafka消息处理
-- **logger**: 日志管理
-- **pipes**: 管道
-
-### 6. 用户模块 (user)
-用户管理核心模块。
-
-- 用户注册、登录、信息管理
-- 多数据库支持 (Prisma, TypeORM, Mongoose)
-- 用户权限关联
-
-## 消息队列与异步处理
-
-### Kafka 消息处理
-系统使用 Kafka 作为主要的消息队列系统，用于服务间异步通信和事件驱动架构。
-
-```typescript
-// 示例：Kafka 生产者
-export class KafkaProducer implements IProducer {
-  async produce(message: Message) {
-    await this.producer.send({ topic: this.topic, messages: [message] });
-    this.logger.log(`Message Published Successfully ${message.value}`);
-  }
-}
-```
-
-### Bull 队列处理
-使用 Bull 队列处理后台任务，如邮件发送、定时任务等。
-
-```typescript
-// 示例：注册 Bull 队列
-BullModule.registerQueue(
-  { name: 'scheduled-tasks' },
-  // 其他队列...
-),
-```
-
-## 微服务架构说明
-
-### 服务间通信
-生产环境中的微服务通过以下方式进行通信：
-- **gRPC**: 用于高性能的内部服务间通信
-- **REST API**: 用于外部系统集成
-- **消息队列**: 用于异步处理和解耦服务
-
-### 服务发现与负载均衡
-- 使用API网关进行服务路由和负载均衡
-- 通过环境变量配置服务地址
-
-### 数据管理
-- 每个服务拥有独立的数据库
-- 通过事件驱动架构实现数据一致性
-- 使用分布式事务处理跨服务操作
-
-## 环境要求
-
-- Node.js >= 18.0.0
-- npm >= 8.0.0
-- Docker (可选，用于生产部署)
-
-## 快速开始
-
-### 安装依赖
-
-```bash
-# 安装所有依赖
-npm run install:all
-
-# 或者单独安装各服务依赖
-npm run install:services
-```
-
-### 开发模式
-
-#### 微服务模式（生产环境架构）
-
-```bash
-# 启动所有服务
-npm run start:dev
-
-# 单独启动某个服务
-npm run start:auth  # 启动认证服务
-npm run start:order # 启动订单服务
-```
-
-#### 单体应用模式（开发/测试环境架构）
-
-```bash
-# 安装单体应用依赖
-npm run monolith:install
-
-# 启动单体应用
-npm run monolith:start
-```
-
-### 构建
-
-```bash
-# 构建所有服务
-npm run build:all
-
-# 构建单体应用
-npm run monolith:build
-```
-
-## 服务说明
-
-### 核心服务
-
-- **account-service**: 用户账户管理
-- **auth-service**: 身份认证和授权
-- **category-service**: 商品分类管理
-- **courier-service**: 快递员管理
-- **dispatch-service**: 订单调度
-- **inventory-service**: 库存管理
-- **message-queue**: 消息队列
-- **notification-service**: 通知服务
-- **order-service**: 订单管理
-- **payment-service**: 支付处理
-
-### 共享模块
-
-- **shared**: 跨服务共享的工具类、类型定义等
-
-### 前端应用
-
-- **admin-web**: 管理后台，基于 Next.js
-- **client-mini**: 小程序客户端，基于 Taro
-
-## 配置管理
-
-各服务通过环境变量进行配置，开发环境可以使用 `.env` 文件。
-
-## 测试
-
-```bash
-# 运行所有服务的测试
-npm run test:all
-
-# 运行特定服务的测试
-npm run test:auth
-```
-
-### 测试指南
+### 安装与启动
 
 ```bash
 # 安装后端依赖
-cd server
-npm install
+cd server && npm install
 
-# 单元测试与覆盖率（>=90%）
-npm run test:cov:unit
+# 配置环境变量
+cp .env.example .env
 
-# 集成测试与覆盖率（>=80%）
-npm run test:cov:e2e
+# 执行数据库迁移
+npx prisma migrate dev
 
-# 仅运行单元测试
-npm run test
-
-# 仅运行集成测试
-npm run test:e2e
-
-# 生成 Allure / Extent 报告
-npm run test:report
-npm run test:e2e:report
+# 启动开发服务
+npm run start:dev
 ```
 
-测试数据 SQL：`server/test/fixtures/order-state-test-data.sql`
+服务启动后访问：
+- API: `http://localhost:3000`
+- Swagger 文档: `http://localhost:3000/api/docs`
+- 健康检查: `http://localhost:3000/health`
 
-Mock 脚本位置：`server/test/mocks/payment-gateway.mock.ts`、`server/test/mocks/inventory-service.mock.ts`、`server/test/mocks/queue.mock.ts`
+### 种子数据
 
-Allure 结果默认输出到 `server/allure-results`，Extent 报告默认输出到 `server/extent-report.html`（可在 CI 中归档）
+```bash
+cd server
 
-CI 失败诊断建议：设置 `LOG_LEVEL=debug` 与 `DB_LOG_QUERIES=true`，请求与 SQL 日志会自动输出，便于排查失败用例
+# 全量种子数据
+npm run seed
+
+# 按模块导入
+npm run seed:categories      # 分类数据
+npm run seed:points-mall     # 积分商城
+npm run seed:content-config   # 内容配置 (FAQ/回收规则)
+```
+
+## 开发
+
+### 常用命令
+
+```bash
+cd server
+
+npm run dev          # 开发模式 (热重载)
+npm run build        # 构建
+npm run lint         # ESLint 检查
+npm run typecheck    # TypeScript 类型检查
+npm run test         # 单元测试
+npm run test:e2e     # E2E 测试
+npm run test:cov     # 测试覆盖率
+```
+
+### 代码质量
+
+```bash
+# 单元测试 (覆盖率 >= 90%)
+npm run test:cov:unit
+
+# E2E 测试 (覆盖率 >= 80%)
+npm run test:cov:e2e
+
+# 生成 Allure 测试报告
+npm run test:report
+```
+
+CI 失败诊断：设置 `LOG_LEVEL=debug` 与 `DB_LOG_QUERIES=true`
 
 ## 部署
 
-### 部署目录
+### GitHub Actions 自动部署（推荐）
 
-项目所有部署相关的配置、脚本和文档都位于 `deploy/` 目录：
+推送代码到 `prod` 分支自动触发部署到服务器：
 
-```
-deploy/
-├── config/                 # 环境配置文件
-├── docker/                 # Docker Compose 配置
-├── nginx/                  # Nginx 配置
-├── scripts/                # 部署脚本
-├── cicd/                   # CI/CD 配置
-└── docs/                   # 部署文档
+```bash
+git checkout prod
+git push origin prod
 ```
 
-详细部署说明请参考 [deploy/README.md](./deploy/README.md) 或 [deploy/docs/DEPLOY.md](./deploy/docs/DEPLOY.md)。
+首次使用需要配置 GitHub Secrets，详见 [部署指南](docs/GITHUB_ACTIONS_DEPLOY_GUIDE.md)。
 
-项目同时支持 Kubernetes 部署，详细内容请参考 [deploy/docs/K8S-DEPLOY.md](./deploy/docs/K8S-DEPLOY.md)。
+### 其他部署方式
 
-### 开发/测试环境
+| 方式 | 文档 |
+|------|------|
+| 一键部署脚本 | [deploy/README.md](deploy/README.md) |
+| 手动部署 | [deploy/docs/DEPLOY.md](deploy/docs/DEPLOY.md) |
+| Kubernetes | [deploy/docs/K8S-DEPLOY.md](deploy/docs/K8S-DEPLOY.md) |
 
-使用单体应用模式部署，简化配置和管理。
+### Docker Compose 部署
 
-### 生产环境
+```bash
+cd deploy/docker
+docker compose -f docker-compose.production.yml up -d
+```
 
-使用 Docker Compose 或 Kubernetes 部署微服务架构。
+包含服务：PostgreSQL、Redis、API Gateway、7 个微服务、Nginx、Ollama AI
 
-## 贡献
+## 业务流程
 
-欢迎提交 Issue 和 Pull Request。
+### 订单生命周期
+
+```mermaid
+stateDiagram-v2
+    [*] --> 待接单
+    待接单 --> 待取件: 系统智能派单
+    待取件 --> 已取件: 回收员扫码确认
+    已取件 --> 运输中: 回收员出发
+    运输中 --> 待收货: 到达回收站
+    待收货 --> 验货中: 扫码收货
+    验货中 --> 已验货: AI识别+人工复核
+    已验货 --> 待入库: 生成入库清单
+    待入库 --> 已入库: 仓库扫码入库
+    已入库 --> 待结算: 自动计算收益
+    待结算 --> 已完成: 积分入账
+    已完成 --> [*]
+```
+
+### 核心服务
+
+| 服务 | 职责 |
+|------|------|
+| API Gateway | 统一入口，路由分发 |
+| account-service | 账户管理、余额、提现 |
+| order-service | 订单全生命周期管理 |
+| dispatch-service | 智能派单调度 |
+| logistics-service | 物流追踪、快递对接 |
+| inventory-service | 库存管理、入库验货 |
+| notification-service | 消息通知（微信模板/短信） |
+| category-service | 物品分类管理 |
+| message-queue | 异步任务处理 |
+| payment-service | 支付、结算、退款 |
+
+## 数据模型
+
+项目包含 55 个数据模型，覆盖完整的回收业务：
+
+- 用户体系: User, Address, UserIdentity, UserFeedback
+- 订单体系: Order, OrderItem, OrderAssignment, OrderTimeline
+- 物流体系: LogisticsOrder, LogisticsProvider, Courier
+- 财务体系: Account, Payment, Withdrawal, Transaction, SettlementRecord
+- 积分体系: PointsProduct, PointsOrder, PointsRecord, SignInRecord
+- AI 体系: AIConversationLog, VoiceOrderSession, KnowledgeBase
+- 多租户: Tenant, Staff, TenantAddress, PlatformWallet
+- 配置体系: Category, RecyclePricingRule, FAQ, RecycleRule
+
+详细数据库设计见 [docs/database.md](docs/database.md)
+
+## 文档索引
+
+| 文档 | 说明 |
+|------|------|
+| [API 接口文档](API_DOCUMENTATION.md) | 完整 API 接口列表 |
+| [架构设计](docs/architecture.md) | 系统架构与混合模式设计 |
+| [微服务设计](docs/microservices.md) | 微服务拆分与通信 |
+| [数据库设计](docs/database.md) | 数据模型与关系 |
+| [开发指南](docs/development-guide.md) | 开发规范与环境搭建 |
+| [订单状态机](docs/order-state-machine-design.md) | 订单状态流转设计 |
+| [API 概要](docs/api.md) | API 模块索引 |
+| [部署指南](DEPLOY_GUIDE.md) | 完整部署文档 |
+| [GitHub Actions 配置](docs/GITHUB_ACTIONS_DEPLOY_GUIDE.md) | CI/CD 详细配置 |
+| [UI/UX 设计](docs/ui-ux.md) | 界面设计规范 |
 
 ## 许可证
 
 MIT
-
-sequenceDiagram
-participant User
-participant OrderService
-participant DispatchProcessor
-participant TenantService
-participant JD_Logistics
-participant SettlementService
-
-    User->>OrderService: Create Order
-    OrderService->>DispatchProcessor: Queue Job (dispatch-order)
-    
-    rect rgb(240, 248, 255)
-        note right of DispatchProcessor: New Logic
-        DispatchProcessor->>OrderService: Get Order Details
-        DispatchProcessor->>TenantService: Assign Tenant (if null)
-        TenantService-->>DispatchProcessor: Return Tenant ID
-        
-        DispatchProcessor->>TenantService: Get Receipt Address
-        TenantService-->>DispatchProcessor: Return Address (Beijing Warehouse...)
-    end
-    
-    DispatchProcessor->>JD_Logistics: Create Order (Sender=User, Receiver=Tenant)
-    JD_Logistics-->>DispatchProcessor: Waybill Code & Est. Fee
-    
-    rect rgb(255, 240, 245)
-        note right of DispatchProcessor: Financial Integration
-        DispatchProcessor->>SettlementService: Init Settlement Record
-        SettlementService->>SettlementService: Calculate Estimated Fees
-        SettlementService-->>DispatchProcessor: Ack
-    end
-    
-    DispatchProcessor->>OrderService: Update Order Status (CREATED)
-
-
-stateDiagram-v2
-    [*] --> 待接单
-    待接单 --> 待取件 : 系统智能派单<br/>（基于位置/负载/好评率）
-    待取件 --> 已取件 : 回收员APP扫码确认取件<br/>+ 上传物品实拍图
-    已取件 --> 运输中 : 回收员出发（自动导航）
-    运输中 --> 待收货 : 到达回收站
-    待收货 --> 验货中 : 回收站扫码收货
-    验货中 --> 已验货 : AI图像识别+人工复核<br/>（材质/成色/重量校准）
-    验货中 --> 验货异常 : 识别不符/质量不达标
-    验货异常 --> 人工处理 : 触发客服介入
-    人工处理 --> 已验货 : 协商确认（调整重量/价格）
-    人工处理 --> 已取消 : 用户确认终止
-    已验货 --> 待入库 : 生成入库清单
-    待入库 --> 已入库 : 仓库扫码入库<br/>+ 区块链存证
-    已入库 --> 待结算 : 系统自动计算收益
-    待结算 --> 已完成 : 微信支付商户号转账至用户零钱
-    已完成 --> [*]
-    
-    待接单 --> 已取消 : 用户主动取消
-    待取件 --> 已取消 : 回收员拒单/超时未接
-    运输中 --> 已取消 : 异常情况（如物品不符）
-    
-    已取消 --> [*]
-    
-    note right of 验货中
-        技术增强：
-        • YOLOv8图像识别（准确率≥92%）
-        • 重量自动校准算法
-        • 验货视频存证（可选）
-    end note
-    
-    note right of 待结算
-        支付安全：
-        • prepay_id有效期监控
-        • 异常订单自动关单
-        • 退款通道预置
-    end note
-
-### 调试与种子数据
-
-在 server 目录执行：
-
-```bash
-npm run seed
-```
-
-订单状态全链路种子脚本：server/scripts/seed-order-status.ts
-
-可配置参数（环境变量）：
-
-- SEED_ORDER_COUNT：生成订单数量，默认 50
-- SEED_CLEAR_OLD：是否清空旧数据，默认 true
-- SEED_WITH_RELATIONS：是否生成关联数据，默认 true
-
-示例：
-
-```bash
-SEED_ORDER_COUNT=20 SEED_CLEAR_OLD=false SEED_WITH_RELATIONS=true npm run seed
-```
-
-说明：
-
-- 优惠券使用记录通过订单 couponId 字段模拟
-- 发票记录暂以订单 remark 字段描述，后续如有发票表可替换
