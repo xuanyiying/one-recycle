@@ -65,7 +65,7 @@ jobs:
   deploy:
     name: 部署到腾讯云
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     environment: production
 
     steps:
