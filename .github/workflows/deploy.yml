@@ -135,14 +135,24 @@ jobs:
             APP_DIR="/opt/one-recycle"
             COMPOSE_FILE="$APP_DIR/deploy/docker/docker-compose.production.yml"
 
-            # 检查 Docker（兼容 TencentOS 4/CentOS 8+，使用 dnf）
-            if ! command -v docker &> /dev/null; then
-              echo ">>> 安装 Docker..."
-              dnf install -y dnf-plugins-core
-              dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-              dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-              systemctl start docker
-              systemctl enable docker
+            # 检查并确保 Docker 可用
+            if ! which docker &>/dev/null || ! docker info &>/dev/null; then
+              echo ">>> Docker 未安装或未运行，尝试启动..."
+              if systemctl is-active docker &>/dev/null; then
+                echo ">>> Docker 服务已运行"
+              elif which docker &>/dev/null; then
+                echo ">>> 启动 Docker 服务..."
+                systemctl start docker && systemctl enable docker
+              else
+                echo ">>> 安装 Docker（dnf）..."
+                dnf install -y dnf-plugins-core
+                dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                dnf makecache
+                dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                systemctl start docker && systemctl enable docker
+              fi
+            else
+              echo ">>> Docker 已就绪"
             fi
 
             echo ">>> 构建 Docker 镜像（首次可能需要 5-15 分钟）..."
