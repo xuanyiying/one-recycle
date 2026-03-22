@@ -292,7 +292,7 @@ sequenceDiagram
 
 ## 2. 实际表结构定义
 
-项目采用微服务架构，每个服务有独立的数据库schema。以下是各服务的实际Prisma schema定义：
+项目采用共享数据库架构（开发环境和生产环境均使用同一个 PostgreSQL 数据库）。所有数据模型定义在 `server/prisma/schema.prisma` 中。以下按业务域展示核心的 Prisma schema 定义：
 
 ### 2.1 账户服务 (account-service)
 

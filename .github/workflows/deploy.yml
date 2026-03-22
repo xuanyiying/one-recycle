@@ -7,12 +7,19 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+    branches: [prod]
+    paths:
+      - 'server/**'
+      - 'apps/**'
+      - 'deploy/**'
+      - 'nginx/**'
+      - 'scripts/**'
+      - 'docker-compose.yml'
+      - '.github/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   pull_request:
-    branches: [main, master]
+    branches: [prod]
   workflow_dispatch:
     inputs:
       environment:
@@ -65,7 +72,7 @@ jobs:
   deploy:
     name: 部署到腾讯云
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     environment: production
 
     steps:
@@ -128,21 +135,24 @@ jobs:
             APP_DIR="/opt/one-recycle"
             COMPOSE_FILE="$APP_DIR/deploy/docker/docker-compose.production.yml"
 
-            # 检查 Docker
-            if ! command -v docker &> /dev/null; then
-              echo ">>> 安装 Docker..."
-              curl -fsSL https://get.docker.com | sh
-              systemctl start docker
-              systemctl enable docker
-            fi
-
-            # 检查 Docker Compose
-            if ! docker compose version &> /dev/null; then
-              echo ">>> 安装 Docker Compose 插件..."
-              mkdir -p /usr/local/lib/docker/cli-plugins
-              curl -SL "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-$(uname -m)" \
-                -o /usr/local/lib/docker/cli-plugins/docker-compose
-              chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+            # 检查并确保 Docker 可用
+            if ! which docker &>/dev/null || ! docker info &>/dev/null; then
+              echo ">>> Docker 未安装或未运行，尝试启动..."
+              if systemctl is-active docker &>/dev/null; then
+                echo ">>> Docker 服务已运行"
+              elif which docker &>/dev/null; then
+                echo ">>> 启动 Docker 服务..."
+                systemctl start docker && systemctl enable docker
+              else
+                echo ">>> 安装 Docker（dnf）..."
+                dnf install -y dnf-plugins-core
+                dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+                dnf makecache
+                dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                systemctl start docker && systemctl enable docker
+              fi
+            else
+              echo ">>> Docker 已就绪"
             fi
 
             echo ">>> 构建 Docker 镜像（首次可能需要 5-15 分钟）..."

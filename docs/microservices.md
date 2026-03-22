@@ -1,105 +1,107 @@
-# 微服务架构设计方案
+# 微服务架构设计
 
-## 1. 业务边界与服务拆分
+## 1. 架构模式
 
-根据“旧物回收”业务的核心领域，服务端拆分为以下几个独立的微服务：
+OneRecycle 采用**混合架构模式**：
+- **开发/测试环境**: NestJS 单体应用，所有模块共享进程
+- **生产环境**: 通过 Docker Compose/K8s 拆分为独立微服务
 
-- **`account-service` (用户服务)**
-  - **职责**: 负责用户注册、登录、个人信息管理、多平台账号（微信、支付宝等）的绑定与统一。
-  - **数据**: 用户主表、多平台身份映射表、用户地址簿。
-- **`order-service` (订单服务)**
-  - **职责**: 负责回收订单的创建、状态流转（待接单、待取件、已完成、已取消）、价格预估、物品明细管理。
-  - **数据**: 订单主表、订单物品明细表、订单状态变更日志。
-- **`payment-service` (支付服务)**
-  - **职责**: 对接微信支付和支付宝支付，处理支付单的创建、支付回调、退款申请与状态查询。
-  - **数据**: 支付记录表、退款记录表。
-- **`courier-service` (骑手/物流服务)**
-  - **职责**: 负责快递员的管理、认证、派单逻辑（自动或手动）、取件任务的分配与追踪。
-  - **数据**: 快递员信息表、派单记录表、服务区域表。
-- **`notification-service` (通知服务)**
-  - **职责**: 统一处理系统内的所有通知发送，如短信（登录验证码）、App Push、微信模板消息等。它是一个无状态的通用服务。
-  - **数据**: 通知发送日志表。
-- **`api-gateway` (API网关)**
-  - **职责**: 作为所有客户端（小程序、管理后台）的统一入口，负责请求路由、身份认证、速率限制、日志记录和协议转换。
+这种模式兼顾了开发效率和部署灵活性。
 
-## 2. 服务间通信协议
+## 2. 服务拆分
 
-- **内部通信 (Inter-Service)**: **gRPC**
-  - **优势**: 高性能（基于HTTP/2）、通过 Protocol Buffers (`.proto` 文件) 定义强类型接口、高效的二进制序列化、原生支持流式通信。非常适合内部服务间的高频调用。
-- **外部通信 (Client -> API Gateway)**: **RESTful API**
-  - **优势**: 技术成熟，生态完善，对前端和移动端友好，易于理解和调试。
+### 2.1 核心服务列表
 
-## 3. 数据库拆分方案
+| 服务 | 职责 | 数据域 |
+|------|------|--------|
+| api-gateway | 统一入口、路由分发、认证 | 无独立数据库 |
+| account-service | 用户账户、余额、提现 | User, Account, Transaction, Withdrawal |
+| order-service | 订单创建、状态流转 | Order, OrderItem, OrderAssignment |
+| payment-service | 支付、退款、结算 | Payment, Refund, SettlementRecord |
+| notification-service | 短信、邮件、推送 | Notification, NotificationTemplate |
+| inventory-service | 库存、质检、入库 | InventoryItem, QualityCheck, Warehouse |
+| category-service | 分类管理、定价 | Category, RecyclePricingRule |
+| message-queue | 异步任务处理 | 无 (消费 Bull Queue) |
 
-采用 **每个服务一个数据库 (Database per Service)** 的模式，确保服务之间数据隔离，实现真正的松耦合。
+### 2.2 内部服务 (单体中为模块)
 
-- `account-service` -> `account_db` (PostgreSQL)
-- `order-service` -> `order_db` (PostgreSQL)
-- `payment-service` -> `payment_db` (PostgreSQL)
-- `courier-service` -> `courier_db` (PostgreSQL)
+以下功能在单体中作为 NestJS 模块存在，生产环境可独立部署：
+
+| 模块 | 职责 |
+|------|------|
+| auth | JWT 认证、第三方登录 |
+| user | 用户信息管理 |
+| logistics | 京东物流 API 对接 |
+| dispatch | 智能派单调度 |
+| points | 积分商城、签到、任务 |
+| ai | 多 AI 供应商集成 |
+| customer | 智能客服、工单 |
+| voice-order | 语音下单 (ASR + 对话引擎) |
+| content | FAQ、回收规则、文章 |
+| settlement | 自动结算与对账 |
+| tenant | 多租户管理 |
+
+## 3. 通信方式
+
+### 3.1 同步通信 (gRPC)
+
+微服务间使用 gRPC 进行同步调用，通过 `.proto` 文件定义接口：
+
+```protobuf
+// 示例: 订单服务 -> 账户服务
+service AccountService {
+  rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc FreezeBalance (FreezeRequest) returns (FreezeResponse);
+}
+```
+
+### 3.2 异步通信 (Bull Queue)
+
+通过 Redis-backed Bull Queue 实现异步任务处理：
+
+| 队列 | 生产者 | 消费者 | 用途 |
+|------|--------|--------|------|
+| order | order-service | order.processor | 订单状态流转 |
+| payment | payment-service | payment.processor | 支付/退款处理 |
+| notification | 各服务 | notification.processor | 消息发送 |
+| dispatch | dispatch-service | dispatch.processor | 派单调度 |
 
 ## 4. 数据一致性
 
-跨服务的事务采用**最终一致性**方案，通过**事件编排 (Saga 模式)** 实现。
+### 4.1 共享数据库 (开发模式)
 
-- **实现方式**: 当一个服务完成其本地事务后，会发布一个事件到消息队列（如 RabbitMQ 或 Kafka）。其他相关服务订阅这些事件，并执行各自的本地事务。如果某个步骤失败，则发布一个补偿事件，触发相关服务执行回滚操作。
+开发环境下所有模块共享同一个 PostgreSQL 数据库，通过 Prisma 统一管理。
 
-## 5. 服务发现、负载均衡与容错
+### 4.2 最终一致性 (生产模式)
 
-- **服务发现**: **Consul** 或 **Kubernetes (K8s)** 的原生服务发现机制。
-- **负载均衡**: K8s 内置的 `Service` 资源或 Ingress Controller。
-- **容错机制**: **断路器模式 (Circuit Breaker)**。
+跨服务操作通过事件驱动保证最终一致性：
 
-## 6. 微服务部署架构图 (基于 Kubernetes)
+1. 服务 A 完成本地事务
+2. 发布事件到 Bull Queue
+3. 服务 B 消费事件，执行本地事务
+4. 失败时触发补偿逻辑
 
-```mermaid
-graph TD
-    subgraph "客户端"
-        Client_Mini[小程序]
-        Client_Admin[管理后台]
-    end
+## 5. 部署配置
 
-    subgraph "网络入口"
-        LB["云负载均衡器"] --> Ingress["K8s Ingress<br/>(Nginx/Traefik)"]
-    end
+### 5.1 Docker Compose (生产)
 
-    subgraph "Kubernetes 集群"
-        Ingress --> Gateway[API Gateway]
-
-        subgraph "服务层"
-            Gateway -- gRPC --> AccountSvc[account-service]
-            Gateway -- gRPC --> OrderSvc[order-service]
-            Gateway -- gRPC --> CourierSvc[courier-service]
-
-            OrderSvc -- gRPC --> AccountSvc
-            OrderSvc -- gRPC --> PaymentSvc[payment-service]
-            CourierSvc -- gRPC --> OrderSvc
-        end
-
-        subgraph "数据与消息"
-            AccountSvc --> DB_A[(account_db)]
-            OrderSvc --> DB_O[(order_db)]
-            PaymentSvc --> DB_P[(payment_db)]
-            CourierSvc --> DB_C[(courier_db)]
-
-            AccountSvc -- Pub --> MQ["消息队列<br/>(RabbitMQ/Kafka)"]
-            OrderSvc -- Pub --> MQ
-            PaymentSvc -- Pub --> MQ
-
-            MQ -- Sub --> OrderSvc
-            MQ -- Sub --> NotificationSvc[notification-service]
-        end
-    end
-
-    Client_Mini & Client_Admin --> LB
+```bash
+cd deploy/docker
+docker compose -f docker-compose.production.yml up -d
 ```
 
-## 7. 技术选型建议
+### 5.2 Kubernetes
 
-- **服务框架**: **Node.js + NestJS**
-- **服务间通信**: **gRPC**
-- **数据库**: **PostgreSQL**
-- **消息队列**: **RabbitMQ**
-- **部署**: **Docker + Kubernetes (K8s)**
-- **API 网关**: **Traefik** 或 **Kong**
-- **服务治理**: **OpenTelemetry** (分布式追踪) + **Prometheus** (监控) + **Jaeger** (追踪可视化)
+```bash
+cd deploy/k8s
+./k8s-deploy.sh
+```
+
+详见 [deploy/docs/K8S-DEPLOY.md](../deploy/docs/K8S-DEPLOY.md)
+
+## 6. 扩展策略
+
+- **水平扩展**: 无状态服务 (order, notification, queue) 可通过 K8s HPA 自动扩缩
+- **数据库**: 读写分离，从库分担查询压力
+- **缓存**: Redis Cluster 支持数据分片
+- **队列**: 多 Worker 消费提升处理吞吐
