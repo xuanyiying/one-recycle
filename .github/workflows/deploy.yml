@@ -8,9 +8,16 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [prod]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+    paths:
+      - 'server/**'
+      - 'apps/**'
+      - 'deploy/**'
+      - 'nginx/**'
+      - 'scripts/**'
+      - 'docker-compose.yml'
+      - '.github/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   pull_request:
     branches: [prod]
   workflow_dispatch:
