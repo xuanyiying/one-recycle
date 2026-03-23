@@ -67,24 +67,37 @@ export class OssConfigService {
   private buildOssConfig(type: OssType): OssConfig {
     const isMinio = type === OssType.MINIO;
     const isAliyun = type === OssType.ALIYUN_OSS;
+    const isTencentCos = type === OssType.TENCENT_COS;
     const secure = process.env.OSS_SECURE === 'true';
     const minioEndpoint = process.env.MINIO_ENDPOINT;
     const minioPort = process.env.MINIO_PORT;
-    const rawEndpoint =
-      process.env.OSS_ENDPOINT ||
-      (isMinio
-        ? minioEndpoint
-          ? minioPort && !minioEndpoint.includes(':')
-            ? `${minioEndpoint}:${minioPort}`
-            : minioEndpoint
-          : undefined
-        : isAliyun
-          ? `${process.env.OSS_REGION || 'oss-cn-hangzhou'}.aliyuncs.com`
-          : undefined) ||
-      'http://localhost:9000';
+
+    // Default endpoint based on OSS type
+    let rawEndpoint: string;
+    if (process.env.OSS_ENDPOINT) {
+      rawEndpoint = process.env.OSS_ENDPOINT;
+    } else if (isMinio) {
+      if (minioEndpoint) {
+        rawEndpoint = minioPort && !minioEndpoint.includes(':')
+          ? `${minioEndpoint}:${minioPort}`
+          : minioEndpoint;
+      } else {
+        rawEndpoint = 'http://localhost:9000';
+      }
+    } else if (isAliyun) {
+      rawEndpoint = `${process.env.OSS_REGION || 'oss-cn-hangzhou'}.aliyuncs.com`;
+    } else if (isTencentCos) {
+      // COS uses virtual-hosted style URL: {bucket}.cos.{region}.myqcloud.com
+      const cosRegion = process.env.OSS_REGION || 'ap-guangzhou';
+      rawEndpoint = `https://cos.${cosRegion}.myqcloud.com`;
+    } else {
+      rawEndpoint = 'http://localhost:9000';
+    }
+
     let endpoint = this.normalizeEndpoint(rawEndpoint, secure);
     let bucket =
       process.env.OSS_BUCKET || process.env.OSS_BUCKET_NAME || 'one-recycle';
+
     if (isAliyun) {
       bucket = bucket.trim().toLowerCase();
       endpoint = endpoint.replace(/^https?:\/\//i, '');
@@ -97,11 +110,19 @@ export class OssConfigService {
         throw new Error(`Invalid Aliyun OSS bucket name: ${bucket}`);
       }
     }
-    const region = process.env.OSS_REGION
-      ? process.env.OSS_REGION
-      : isAliyun
-        ? this.inferAliyunRegion(endpoint) || 'oss-cn-hangzhou'
-        : 'us-east-1';
+
+    // Determine region based on OSS type
+    let region: string;
+    if (process.env.OSS_REGION) {
+      region = process.env.OSS_REGION;
+    } else if (isAliyun) {
+      region = this.inferAliyunRegion(endpoint) || 'oss-cn-hangzhou';
+    } else if (isTencentCos) {
+      region = 'ap-guangzhou';
+    } else {
+      region = 'us-east-1';
+    }
+
     return {
       endpoint,
       region,
@@ -114,7 +135,7 @@ export class OssConfigService {
         (isMinio ? process.env.MINIO_SECRET_KEY : undefined) ||
         'minioadmin',
       bucket,
-      appId: process.env.OSS_APP_ID || 'defualt',
+      appId: process.env.OSS_APP_ID || 'default',
       secure,
     };
   }

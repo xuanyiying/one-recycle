@@ -31,8 +31,9 @@ export class PointsController {
     private readonly productService: PointsProductService,
     private readonly orderService: PointsOrderService,
     private readonly recordService: PointsRecordService,
-    private readonly signInService: SignInService,
-    private readonly taskService: PointsTaskService,
+    // AI功能已禁用：签到和任务服务暂时不使用
+    // private readonly signInService: SignInService,
+    // private readonly taskService: PointsTaskService,
     private readonly inviteService: InviteService,
   ) { }
 

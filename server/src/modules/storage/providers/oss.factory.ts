@@ -4,6 +4,7 @@ import { MinIOService } from './minio.provider';
 import { AwsS3Service } from './aws-s3.provider';
 import { OssTypeEnum, OssConfigOptions } from '../config/oss.config';
 import { AliyunOssService } from './aliyun-oss.provider';
+import { TencentCosService } from './tencent-cos.provider';
 
 @Injectable()
 export class OssFactory {
@@ -29,6 +30,10 @@ export class OssFactory {
             `Aliyun OSS provider not available. Please install ${(error as Error).message}.`,
           );
         }
+
+      case OssTypeEnum.TENCENT_COS:
+        return new TencentCosService(config.config);
+
       default:
         throw new Error(`Unsupported OSS type: ${config.type}`);
     }

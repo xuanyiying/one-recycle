@@ -22,6 +22,7 @@ export enum OssType {
   MINIO = 'MINIO',
   AWS_S3 = 'AWS_S3',
   ALIYUN_OSS = 'ALIYUN_OSS',
+  TENCENT_COS = 'TENCENT_COS',
   LOCAL = 'LOCAL',
 }
 
