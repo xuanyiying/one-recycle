@@ -79,15 +79,50 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Setup SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
-      - name: Add server to known hosts
+      - name: Configure SSH
         run: |
+          echo ">>> 配置 SSH..."
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.SERVER_PORT || 22 }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 700 ~/.ssh
+          
+          # 创建 SSH 配置文件
+          cat > ~/.ssh/config << 'EOF'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile ~/.ssh/known_hosts
+            ConnectTimeout 60
+            ServerAliveInterval 30
+            ServerAliveCountMax 5
+          EOF
+          chmod 600 ~/.ssh/config
+          
+          echo ">>> 添加服务器到 known_hosts..."
+          ssh-keyscan -p ${{ secrets.SERVER_PORT || 22 }} -t rsa,ecdsa,ed25519 ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          
+          chmod 600 ~/.ssh/known_hosts
+          echo ">>> known_hosts 内容："
+          cat ~/.ssh/known_hosts
+
+      - name: Test SSH Connection
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER || 'root' }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT || 22 }}
+        run: |
+          echo ">>> 测试 SSH 连接..."
+          ssh -p $SERVER_PORT -o ConnectTimeout=30 $SERVER_USER@$SERVER_HOST "echo '✅ SSH 连接成功'"
+          
+          if [ $? -eq 0 ]; then
+            echo ">>> SSH 连接测试通过"
+          else
+            echo ">>> ❌ SSH 连接测试失败"
+            exit 1
+          fi
 
       - name: Deploy to server
         env:
@@ -95,7 +130,11 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER || 'root' }}
           SERVER_PORT: ${{ secrets.SERVER_PORT || 22 }}
         run: |
+          set -e  # 遇到错误立即退出
+          set -o pipefail  # 管道中任何命令失败都退出
+          
           echo ">>> 开始部署 OneRecycle 到 ${SERVER_HOST}..."
+          echo ">>> 服务器: $SERVER_USER@$SERVER_HOST:$SERVER_PORT"
 
           # 检查服务器上是否已有项目目录
           ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST << 'REMOTE_EOF'
@@ -113,18 +152,21 @@ jobs:
 
           # 部署文件到服务器
           echo ">>> 上传部署文件..."
+          echo ">>> 上传 server/ 目录..."
           rsync -avz --delete \
-            -e "ssh -p $SERVER_PORT" \
+            -e "ssh -p $SERVER_PORT -o ConnectTimeout=30" \
             --exclude='node_modules' \
             --exclude='.git' \
             --exclude='coverage' \
             --exclude='*.log' \
             --exclude='.next' \
             --exclude='dist' \
+            --exclude='*.tmp' \
             ./server/ $SERVER_USER@$SERVER_HOST:$APP_DIR/server/
 
+          echo ">>> 上传 deploy/ 目录..."
           rsync -avz --delete \
-            -e "ssh -p $SERVER_PORT" \
+            -e "ssh -p $SERVER_PORT -o ConnectTimeout=30" \
             ./deploy/ $SERVER_USER@$SERVER_HOST:$APP_DIR/deploy/
 
           # 在服务器上执行部署
@@ -192,3 +234,18 @@ jobs:
 
           echo ">>> 健康检查超时，但不阻塞部署"
           exit 0
+
+      - name: Debug on failure
+        if: failure()
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER || 'root' }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT || 22 }}
+        run: |
+          echo ">>> 收集调试信息..."
+          
+          echo ">>> SSH 调试信息："
+          ssh -p $SERVER_PORT -vvv $SERVER_USER@$SERVER_HOST "exit" 2>&1 | tail -50 || true
+          
+          echo ">>> 容器日志："
+          ssh -p $SERVER_PORT $SERVER_USER@$SERVER_HOST "docker logs --tail 50" 2>/dev/null || echo ">>> 无法获取容器日志"

@@ -1,199 +1,278 @@
-# Deploy 目录说明
+# OneRecycle 一键部署指南
 
-本目录包含 OneRecycle 项目所有与部署相关的配置、脚本和文档。
+## 域名: backbuy.cn
 
-## 目录结构
-
-```
-deploy/
-├── config/                 # 环境配置文件
-│   └── .env.production.example   # 生产环境配置示例
-├── docker/                 # Docker 相关配置
-│   ├── docker-compose.production.yml   # 生产环境 Compose 配置
-│   └── docker-compose.development.yml  # 开发环境 Compose 配置
-├── nginx/                  # Nginx 配置
-│   └── nginx.conf         # 生产环境 Nginx 配置
-├── scripts/                # 部署脚本
-│   ├── deploy.sh          # 主部署脚本
-│   └── service.sh         # 服务管理脚本
-├── cicd/                  # CI/CD 配置
-│   └── github-actions.yml # GitHub Actions 工作流
-└── docs/                  # 部署文档
-    └── DEPLOY.md          # 部署指南
-```
+本文档介绍如何快速部署 OneRecycle 应用到 backbuy.cn 域名。
 
 ## 快速开始
 
 ### 1. 环境准备
 
+确保服务器满足以下要求：
+
+- **操作系统**: Ubuntu 20.04+ / CentOS 8+ / Debian 11+
+- **内存**: 至少 2GB RAM（推荐 4GB）
+- **磁盘**: 至少 20GB 可用空间
+- **域名**: 已解析到服务器 IP 的 backbuy.cn 域名
+
+安装必要软件：
+
 ```bash
-# 复制环境配置
-cd deploy/config
-cp .env.production.example .env.production
-nano .env.production
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y docker.io docker-compose nginx nodejs npm git curl
+
+# CentOS/RHEL
+sudo yum install -y docker docker-compose nginx nodejs npm git curl
 ```
 
-### 2. 配置 SSL 证书
+### 2. 配置环境变量
 
 ```bash
-# 创建 SSL 证书目录
-mkdir -p deploy/nginx/ssl
+# 复制环境配置模板
+cp deploy/config/.env.production.example deploy/config/.env.production
 
-# 上传证书文件
-# 将 your-domain.crt 和 your-domain.key 上传到 deploy/nginx/ssl/
+# 编辑配置文件
+vim deploy/config/.env.production
 ```
 
-### 3. 部署
+必须修改的配置项：
 
-```bash
-# 使用部署脚本
-cd deploy
-./scripts/deploy.sh production
+```env
+# 数据库密码（必须修改）
+DB_PASSWORD=your_secure_password_here
 
-# 或手动部署
-docker-compose -f docker/docker-compose.production.yml up -d
+# Redis 密码（必须修改）
+REDIS_PASSWORD=your_redis_password_here
+
+# JWT 密钥（必须修改，至少32位）
+JWT_SECRET=your_super_secret_jwt_key_here_min_32_chars
+
+# 微信/支付宝配置（如果使用支付功能）
+WECHAT_APP_ID=your_wechat_app_id
+WECHAT_APP_SECRET=your_wechat_app_secret
+ALIPAY_APP_ID=your_alipay_app_id
 ```
 
-### 4. 服务管理
+### 3. 执行部署
+
+#### 方式一：传统部署（推荐）
+
+使用传统方式部署到服务器：
 
 ```bash
-# 查看状态
-./scripts/service.sh status
+# 给脚本添加执行权限
+chmod +x deploy/scripts/deploy.sh
+
+# 执行部署
+./deploy/scripts/deploy.sh
+```
+
+#### 方式二：Docker 部署
+
+使用 Docker Compose 部署：
+
+```bash
+# 给脚本添加执行权限
+chmod +x deploy/scripts/deploy-docker.sh
+
+# 执行部署
+./deploy/scripts/deploy-docker.sh
+```
+
+## 部署选项
+
+### 仅部署后端
+
+```bash
+./deploy/scripts/deploy.sh --backend
+```
+
+### 仅部署前端
+
+```bash
+./deploy/scripts/deploy.sh --frontend
+```
+
+### 配置 SSL 证书
+
+```bash
+# 安装 Certbot
+sudo apt install -y certbot python3-certbot-nginx
+
+# 配置 SSL
+./deploy/scripts/deploy.sh --ssl
+```
+
+## Docker 部署管理
+
+### 常用命令
+
+```bash
+# 查看服务状态
+cd /opt/one-recycle && docker-compose ps
 
 # 查看日志
-./scripts/service.sh logs api-gateway
+cd /opt/one-recycle && docker-compose logs -f
 
 # 重启服务
-./scripts/service.sh restart api-gateway
+cd /opt/one-recycle && docker-compose restart
 
-# 健康检查
-./scripts/service.sh health
+# 停止服务
+cd /opt/one-recycle && docker-compose down
+
+# 更新部署
+cd /opt/one-recycle && docker-compose up -d --build
 ```
 
-## 环境说明
+## 访问地址
 
-### 开发环境
-- 使用 `docker-compose.development.yml`
-- 包含完整的基础服务（PostgreSQL、Redis、MinIO）
-- 适合本地开发和调试
+部署完成后，可以通过以下地址访问：
 
-### 生产环境
-- 使用 `docker-compose.production.yml`
-- 自建数据库和 Redis（在服务器上以容器方式运行）
-- 需要配置外部对象存储（COS/OSS）
+- **管理后台**: http://admin.backbuy.cn
+- **API 接口**: http://api.backbuy.cn
+- **MinIO 控制台** (Docker): http://backbuy.cn:9001
 
-## 依赖服务
-
-### 生产环境服务拓扑
+## 目录结构
 
 ```
-                    ┌─────────────┐
-                    │    Nginx    │
-                    │  反向代理   │
-                    └──────┬──────┘
-                           │
-         ┌─────────────────┼─────────────────┐
-         │                 │                 │
-    ┌────▼────┐      ┌────▼────┐      ┌────▼────┐
-    │  API    │      │ Account │      │  Order  │
-    │Gateway  │      │ Service │      │ Service │
-    └────┬────┘      └────┬────┘      └────┬────┘
-         │                 │                 │
-         └─────────────────┼─────────────────┘
-                           │
-              ┌────────────┴────────────┐
-              │                        │
-         ┌────▼─────┐            ┌────▼─────┐
-         │PostgreSQL│            │   Redis   │
-         │  数据库  │            │   缓存    │
-         └──────────┘            └───────────┘
+/opt/one-recycle/
+├── backend/          # 后端服务代码
+├── frontend/         # 前端应用
+│   └── admin/        # 管理后台
+├── nginx/            # Nginx 配置
+│   └── conf.d/       # 站点配置
+├── ssl/              # SSL 证书
+├── logs/             # 日志文件
+├── data/             # 数据目录 (Docker)
+│   ├── postgres/     # PostgreSQL 数据
+│   ├── redis/        # Redis 数据
+│   └── minio/        # MinIO 数据
+└── docker-compose.yml
 ```
 
-## 配置文件说明
+## 备份与恢复
 
-### .env.production.example
+### 自动备份
 
-| 变量 | 说明 | 示例 |
-|------|------|------|
-| DB_PASSWORD | 数据库密码 | your_secure_password |
-| REDIS_PASSWORD | Redis密码 | your_redis_password |
-| JWT_SECRET | JWT密钥 | random_string |
-| WECHAT_APP_ID_PROD | 微信小程序AppID | wx1234567890 |
-| WECHAT_APP_SECRET_PROD | 微信小程序Secret | abcdef123456 |
-| TENCENT_SECRET_ID | 腾讯云SecretId | AKIDxxx |
-| TENCENT_SECRET_KEY | 腾讯云SecretKey | xxx |
+部署脚本会自动创建备份，保存在 `/opt/backups/one-recycle/` 目录，保留最近 10 个备份。
 
-## 常用命令
+### 手动备份
 
-### 部署
 ```bash
-./scripts/deploy.sh production
+# 数据库备份
+docker-compose exec postgres pg_dump -U one_recycle one_recycle > backup.sql
+
+# 完整备份
+sudo tar -czvf backup.tar.gz /opt/one-recycle
 ```
 
-### 查看日志
-```bash
-# 所有服务
-docker-compose -f docker/docker-compose.production.yml logs -f
+### 恢复备份
 
-# 特定服务
-docker-compose -f docker/docker-compose.production.yml logs -f api-gateway
-docker-compose -f docker/docker-compose.production.yml logs -f postgres
-docker-compose -f docker/docker-compose.production.yml logs -f redis
+```bash
+# 停止服务
+cd /opt/one-recycle && docker-compose down
+
+# 恢复文件
+sudo tar -xzvf backup.tar.gz -C /
+
+# 恢复数据库
+docker-compose exec -T postgres psql -U one_recycle < backup.sql
+
+# 启动服务
+cd /opt/one-recycle && docker-compose up -d
 ```
 
-### 备份
+## 故障排查
+
+### 服务无法启动
+
 ```bash
-./scripts/service.sh backup
+# 查看服务日志
+sudo journalctl -u one-recycle -f
+
+# 或 Docker 日志
+cd /opt/one-recycle && docker-compose logs -f backend
 ```
 
-### 更新
+### 数据库连接失败
+
+1. 检查数据库服务状态：
 ```bash
+docker-compose ps postgres
+```
+
+2. 检查数据库连接配置：
+```bash
+cat /opt/one-recycle/.env.production | grep DATABASE_URL
+```
+
+### Nginx 配置错误
+
+```bash
+# 测试配置
+sudo nginx -t
+
+# 重载配置
+sudo systemctl reload nginx
+```
+
+## 更新部署
+
+### 更新代码后重新部署
+
+```bash
+# 拉取最新代码
 git pull origin main
-./scripts/deploy.sh production
+
+# 重新部署
+./deploy/scripts/deploy.sh
 ```
 
-## Kubernetes 部署
-
-项目支持 Kubernetes 部署，位于 `deploy/k8s/` 目录：
-
-```
-deploy/k8s/
-├── base/              # 基础配置 (Namespace, 数据库, Redis, Ollama)
-│   ├── namespace.yaml
-│   ├── database.yaml
-│   └── ollama.yaml
-├── microservices/     # 微服务配置
-│   ├── api-gateway.yaml
-│   ├── account-service.yaml
-│   ├── order-service.yaml
-│   └── other-services.yaml
-├── ingress/           # Ingress 配置
-│   └── ingress.yaml
-├── autoscaling/      # 自动扩缩容配置
-│   └── pdb.yaml
-├── k8s-deploy.sh     # K8s 部署脚本
-└── docs/K8S-DEPLOY.md  # K8s 部署文档
-```
-
-### K8s 快速开始
+### 仅更新后端
 
 ```bash
-# 部署到 K8s
-cd deploy/k8s
-chmod +x k8s-deploy.sh
-./k8s-deploy.sh apply
-
-# 查看状态
-./k8s-deploy.sh status
-
-# 查看 HPA
-./k8s-deploy.sh hpa
+./deploy/scripts/deploy.sh --backend
 ```
 
-详细文档请参考 [K8S-DEPLOY.md](./docs/K8S-DEPLOY.md)。
+## 安全建议
 
-## 文档
+1. **修改默认密码**: 务必修改所有默认密码
+2. **配置防火墙**: 只开放必要的端口（80, 443, 9000）
+3. **启用 SSL**: 使用 HTTPS 保护数据传输
+4. **定期备份**: 设置定时任务自动备份数据
+5. **更新系统**: 定期更新系统和依赖包
 
-- [部署指南](./docs/DEPLOY.md) - Docker 部署步骤和配置说明
-- [K8s部署指南](./docs/K8S-DEPLOY.md) - Kubernetes 部署及自动扩缩容配置
-- [购买方案](./docs/DEPLOY.md#最终购买方案推荐) - 云服务器购买建议
+## 性能优化
+
+### 启用 Gzip 压缩
+
+Nginx 配置已默认启用 Gzip 压缩。
+
+### 静态资源缓存
+
+前端静态资源已配置 1 年缓存。
+
+### 数据库优化
+
+建议定期执行：
+
+```bash
+# 分析表
+docker-compose exec postgres psql -U one_recycle -c "ANALYZE;"
+
+# 清理日志
+sudo find /var/log/one-recycle -name "*.log" -mtime +30 -delete
+```
+
+## 技术支持
+
+如有问题，请检查：
+
+1. 日志文件: `/var/log/one-recycle-deploy.log`
+2. 服务状态: `sudo systemctl status one-recycle`
+3. Docker 状态: `docker-compose ps`
+
+## 许可证
+
+MIT License
