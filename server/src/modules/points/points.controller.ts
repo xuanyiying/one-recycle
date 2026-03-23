@@ -34,7 +34,7 @@ export class PointsController {
     private readonly signInService: SignInService,
     private readonly taskService: PointsTaskService,
     private readonly inviteService: InviteService,
-  ) {}
+  ) { }
 
   // ==================== 积分概览 ====================
 
@@ -115,8 +115,8 @@ export class PointsController {
     return this.recordService.getStats(BigInt(req.user.id));
   }
 
-  // ==================== 签到 ====================
-
+  // ==================== 签到 (AI功能已禁用) ====================
+  /*
   @Post('sign-in')
   async signIn(@Request() req: any) {
     return this.signInService.signIn(BigInt(req.user.id));
@@ -140,9 +140,10 @@ export class PointsController {
       month ? parseInt(month) : now.getMonth() + 1,
     );
   }
+  */
 
-  // ==================== 任务 ====================
-
+  // ==================== 任务 (AI功能已禁用) ====================
+  /*
   @Get('tasks')
   async getTasks(@Request() req: any) {
     return this.taskService.getTaskList(BigInt(req.user.id));
@@ -155,6 +156,7 @@ export class PointsController {
   ) {
     return this.taskService.completeTask(BigInt(req.user.id), BigInt(id));
   }
+  */
 
   // ==================== 邀请 ====================
 

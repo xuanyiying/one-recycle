@@ -44,12 +44,17 @@ export class SessionService {
       return activeSession;
     }
 
+    // AI功能已禁用：直接创建人工客服会话，不再使用AI自动回复
     const session = await this.prisma.chatSession.create({
       data: {
         userId,
-        type: dto.type || ChatSessionType.AUTO,
+        type: ChatSessionType.MANUAL, // 直接设置为人工客服模式
         topic: dto.topic,
-        context: dto.context || {},
+        context: {
+          ...dto.context,
+          disabledAI: true, // 标记AI已禁用
+          createdAt: new Date().toISOString(),
+        },
       },
       include: {
         user: {
@@ -64,6 +69,9 @@ export class SessionService {
     });
 
     await this.cacheSession(session);
+
+    // 直接添加到人工客服队列
+    await this.addToAgentQueue(session.id.toString());
 
     return session;
   }
