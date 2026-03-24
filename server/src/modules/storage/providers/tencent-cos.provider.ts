@@ -107,17 +107,13 @@ export class TencentCosService implements OssService {
         fileBuffer = file;
       }
 
-      const result = await this.cosClient.putObject({
+      const result = (await this.cosClient.putObject({
         Bucket: this.bucket,
         Region: this.region,
         Key: key,
         Body: fileBuffer,
         ContentType: contentType,
-        Metadata: {
-          'original-name': encodeURIComponent(originalName),
-          'upload-time': new Date().toISOString(),
-        },
-      });
+      })) as any;
 
       if (result.statusCode !== 200) {
         throw new Error(`Upload failed with status ${result.statusCode}`);
@@ -142,11 +138,11 @@ export class TencentCosService implements OssService {
    */
   async downloadFile(key: string): Promise<Buffer> {
     try {
-      const result = await this.cosClient.getObject({
+      const result = (await this.cosClient.getObject({
         Bucket: this.bucket,
         Region: this.region,
         Key: key,
-      });
+      })) as any;
 
       if (result.statusCode !== 200) {
         throw new Error(`Download failed with status ${result.statusCode}`);
@@ -178,11 +174,11 @@ export class TencentCosService implements OssService {
    */
   async deleteFile(key: string): Promise<void> {
     try {
-      const result = await this.cosClient.deleteObject({
+      const result = (await this.cosClient.deleteObject({
         Bucket: this.bucket,
         Region: this.region,
         Key: key,
-      });
+      })) as any;
 
       if (result.statusCode !== 200 && result.statusCode !== 204) {
         throw new Error(`Delete failed with status ${result.statusCode}`);
@@ -198,26 +194,27 @@ export class TencentCosService implements OssService {
    */
   async getFileInfo(key: string): Promise<FileInfo> {
     try {
-      const result = await this.cosClient.headObject({
+      const result = (await this.cosClient.headObject({
         Bucket: this.bucket,
         Region: this.region,
         Key: key,
-      });
+      })) as any;
 
       if (result.statusCode !== 200) {
         throw new Error(`Get file info failed with status ${result.statusCode}`);
       }
 
+      const headers = result.headers;
       return {
         key,
-        size: result.headers['content-length']
-          ? parseInt(result.headers['content-length'] as string, 10)
+        size: headers?.['content-length']
+          ? parseInt(headers['content-length'] as string, 10)
           : 0,
-        lastModified: result.headers['last-modified']
-          ? new Date(result.headers['last-modified'] as string)
+        lastModified: headers?.['last-modified']
+          ? new Date(headers['last-modified'] as string)
           : new Date(),
         contentType:
-          (result.headers['content-type'] as string) ||
+          (headers?.['content-type'] as string) ||
           'application/octet-stream',
         url: this.getFileUrl(key),
       };
@@ -232,12 +229,12 @@ export class TencentCosService implements OssService {
    */
   async listFiles(prefix?: string, maxKeys: number = 100): Promise<FileInfo[]> {
     try {
-      const result = await this.cosClient.getBucket({
+      const result = (await this.cosClient.getBucket({
         Bucket: this.bucket,
         Region: this.region,
         Prefix: prefix,
         MaxKeys: maxKeys,
-      });
+      })) as any;
 
       if (result.statusCode !== 200) {
         throw new Error(`List files failed with status ${result.statusCode}`);
@@ -299,11 +296,11 @@ export class TencentCosService implements OssService {
 
       const objects = keys.map((key) => ({ Key: key }));
 
-      const result = await this.cosClient.deleteMultipleObject({
+      const result = (await this.cosClient.deleteMultipleObject({
         Bucket: this.bucket,
         Region: this.region,
         Objects: objects,
-      });
+      })) as any;
 
       if (result.statusCode !== 200) {
         throw new Error(`Batch delete failed with status ${result.statusCode}`);
@@ -319,12 +316,12 @@ export class TencentCosService implements OssService {
    */
   async copyFile(sourceKey: string, targetKey: string): Promise<void> {
     try {
-      const result = await this.cosClient.putObjectCopy({
+      const result = (await this.cosClient.putObjectCopy({
         Bucket: this.bucket,
         Region: this.region,
         Key: targetKey,
         CopySource: `/${this.bucket}/${sourceKey}`,
-      });
+      })) as any;
 
       if (result.statusCode !== 200) {
         throw new Error(`Copy failed with status ${result.statusCode}`);
@@ -344,16 +341,16 @@ export class TencentCosService implements OssService {
     contentType?: string,
   ): Promise<string> {
     try {
-      const result = await this.cosClient.getPresignedUrl({
+      const url = this.cosClient.getObjectUrl({
         Bucket: this.bucket,
         Region: this.region,
         Key: key,
         Method: 'PUT',
+        Sign: true,
         Expires: expires,
-        Headers: contentType ? { 'Content-Type': contentType } : undefined,
       });
 
-      return result;
+      return url;
     } catch (error) {
       this.logger.error('Error generating presigned upload URL:', error);
       throw new Error('Failed to generate presigned upload URL');
@@ -368,15 +365,16 @@ export class TencentCosService implements OssService {
     expires: number = 3600,
   ): Promise<string> {
     try {
-      const result = await this.cosClient.getPresignedUrl({
+      const url = this.cosClient.getObjectUrl({
         Bucket: this.bucket,
         Region: this.region,
         Key: key,
         Method: 'GET',
+        Sign: true,
         Expires: expires,
       });
 
-      return result;
+      return url;
     } catch (error) {
       this.logger.error('Error generating presigned download URL:', error);
       throw new Error('Failed to generate presigned download URL');

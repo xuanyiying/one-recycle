@@ -14,8 +14,9 @@ import { PointsService } from './points.service';
 import { PointsProductService } from './services/points-product.service';
 import { PointsOrderService } from './services/points-order.service';
 import { PointsRecordService } from './services/points-record.service';
-import { SignInService } from './services/sign-in.service';
-import { PointsTaskService } from './services/points-task.service';
+// AI功能已禁用：签到和任务服务暂时不导入
+// import { SignInService } from './services/sign-in.service';
+// import { PointsTaskService } from './services/points-task.service';
 import { InviteService } from './services/invite.service';
 import { CreatePointsOrderDto } from './dto/create-order.dto';
 import { QueryProductDto } from './dto/query-product.dto';
