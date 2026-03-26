@@ -3,11 +3,10 @@ import { execSync } from 'child_process';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as crypto from 'crypto';
-import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// 加载环境变量
-dotenv.config({ path: path.join(__dirname, '../.env') });
+import { config } from 'dotenv';
+config({ path: path.join(__dirname, '../.env') });
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });

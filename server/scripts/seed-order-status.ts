@@ -1,7 +1,10 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import * as dotenv from 'dotenv';
 import * as path from 'path';
+
+import { config } from 'dotenv';
+config({ path: path.join(__dirname, '../.env') });
+
 import {
   PrismaClient,
   OrderStatus,
@@ -19,8 +22,6 @@ import {
   ReservationStatus,
   SettlementStatus,
 } from '@prisma/client';
-
-dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const ORDER_PREFIX = 'SEED-OS-';
 const DEFAULT_ORDER_COUNT = 50;
@@ -570,7 +571,7 @@ async function main() {
             provider: PaymentProvider.WECHAT,
             paidAt:
               paymentStatus === PaymentStatus.SUCCESS ||
-              paymentStatus === PaymentStatus.REFUNDED
+                paymentStatus === PaymentStatus.REFUNDED
                 ? new Date(baseTime.getTime() + 12 * 3600 * 1000)
                 : null,
             closedAt: null,

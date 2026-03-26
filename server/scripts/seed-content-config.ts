@@ -1,10 +1,10 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { PrismaClient, FAQCategory, RecycleRuleCategory } from '@prisma/client';
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+import { config } from 'dotenv';
+config({ path: path.join(__dirname, '../.env') });
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;

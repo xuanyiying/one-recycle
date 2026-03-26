@@ -4,10 +4,9 @@ import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import * as dotenv from 'dotenv';
 
-// 加载环境变量
-dotenv.config({ path: path.join(__dirname, '../.env') });
+import { config } from 'dotenv';
+config({ path: path.join(__dirname, '../.env') });
 
 const sourceFile = path.join(__dirname, 'regions_20251224_142640.json');
 const targetStaticFile = path.join(__dirname, 'region.json');

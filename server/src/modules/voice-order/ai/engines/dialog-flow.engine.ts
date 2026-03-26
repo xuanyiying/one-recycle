@@ -5,7 +5,6 @@ import { IntentEngine } from './intent.engine';
 import {
   DialogFlowResult,
   VoiceOrderIntent,
-  DialogContext,
   DialogAction,
 } from '../../interfaces/voice-order.interface';
 import { DialogStep, CollectedDataDto } from '../../dto/voice-input.dto';
@@ -18,7 +17,7 @@ export class DialogFlowEngine {
     private readonly intentEngine: IntentEngine,
     private readonly voiceOrderService: VoiceOrderService,
     private readonly dialogTemplateService: DialogTemplateService,
-  ) {}
+  ) { }
 
   /**
    * 处理用户输入
