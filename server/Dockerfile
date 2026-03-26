@@ -1,13 +1,11 @@
-# ============================================================================
-# OneRecycle Server - Optimized Multi-stage Dockerfile
-# ============================================================================
-
-# Stage 1: Dependencies (cached layer)
-FROM node:22-alpine AS deps
+# OneRecycle Server - Optimized Dockerfile (Debian-based)
+FROM node:22-slim AS deps
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache libc6-compat python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
@@ -15,35 +13,30 @@ COPY prisma ./prisma/
 
 # Install dependencies
 RUN npm install -g pnpm && \
-    pnpm install --frozen-lockfile --prefer-offline
+    pnpm install --frozen-lockfile
 
-# Stage 2: Builder
-FROM node:22-alpine AS builder
+# Builder stage
+FROM node:22-slim AS builder
 WORKDIR /app
 
-# Install pnpm
 RUN npm install -g pnpm
 
-# Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/prisma ./prisma
-
-# Copy source
 COPY . .
 
-# Generate Prisma and build
 RUN npx prisma generate && \
     pnpm run build
 
-# Stage 3: Production
-FROM node:22-alpine AS runner
+# Production stage
+FROM node:22-slim AS runner
 WORKDIR /app
 
-RUN apk add --no-cache curl && \
-    addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup appuser
 
-# Copy only necessary files
 COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/prisma ./prisma
