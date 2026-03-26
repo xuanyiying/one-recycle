@@ -63,9 +63,7 @@ services:
       retries: 5
 
   backend:
-    build:
-      context: ../server
-      dockerfile: Dockerfile
+    image: ${REGISTRY:-ghcr.io/xuanyiying}/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-backend
     restart: always
     environment:
@@ -94,9 +92,7 @@ services:
           memory: 2G
 
   admin-web:
-    build:
-      context: ../apps/admin-web
-      dockerfile: Dockerfile
+    image: ${REGISTRY:-ghcr.io/xuanyiying}/one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
     environment:
