@@ -104,19 +104,19 @@ jobs:
       - name: Deploy to server
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << EOF
-            cd /opt/one-recycle
+            cd ~/one-recycle
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
-            
+
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+
             # Pull new images
             docker compose -f deploy/docker-compose.yml pull
-            
+
             # Restart services
             docker compose -f deploy/docker-compose.yml up -d --remove-orphans
-            
+
             # Cleanup
             docker system prune -f
           EOF
