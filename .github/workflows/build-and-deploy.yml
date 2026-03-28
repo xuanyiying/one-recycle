@@ -113,16 +113,28 @@ jobs:
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
 
-            # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Load deploy.conf if exists
+            if [ -f deploy/deploy.conf ]; then
+              set -a
+              source deploy/deploy.conf
+              set +a
+              echo "Loaded deploy.conf"
+            fi
 
-            # Export environment variables
+            # Override with GitHub Secrets if available
             export REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
             export IMAGE_TAG=${{ github.ref_name }}
             export DOMAIN=${{ secrets.DOMAIN }}
             export EMAIL=${{ secrets.EMAIL }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            [ -n "${{ secrets.DB_PASSWORD }}" ] && export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            [ -n "${{ secrets.REDIS_PASSWORD }}" ] && export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+
+            # Verify required variables
+            : "${DB_PASSWORD:?DB_PASSWORD is not set}"
+            : "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}"
+
+            # Login to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull new images for all microservices
             docker compose -f ${{ env.COMPOSE_FILE }} pull
