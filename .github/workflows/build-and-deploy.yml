@@ -105,10 +105,20 @@ jobs:
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config << SSHCONFIG
+          Host deploy-server
+            HostName ${{ secrets.DEPLOY_HOST }}
+            User ${{ secrets.DEPLOY_USER }}
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+            TCPKeepAlive yes
+          SSHCONFIG
 
       - name: Deploy microservices to server
         run: |
-          ssh -T ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          ssh deploy-server << 'EOF'
             cd ~/one-recycle
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
