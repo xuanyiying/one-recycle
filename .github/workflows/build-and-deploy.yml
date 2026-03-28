@@ -108,7 +108,7 @@ jobs:
 
       - name: Deploy microservices to server
         run: |
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << EOF
+          ssh -T ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
             cd ~/one-recycle
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
