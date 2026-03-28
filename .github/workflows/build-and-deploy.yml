@@ -108,27 +108,21 @@ jobs:
 
       - name: Deploy microservices to server
         run: |
-          # Export secrets as env vars for SSH
-          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          export REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
-          export DOMAIN="${{ secrets.DOMAIN }}"
-          export EMAIL="${{ secrets.EMAIL }}"
-          
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << EOF
             cd ~/one-recycle
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
 
-            # Export environment variables
-            export REGISTRY="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-            export IMAGE_TAG="${{ github.ref_name }}"
-            export DOMAIN="$DOMAIN"
-            export EMAIL="$EMAIL"
-            export DB_PASSWORD="$DB_PASSWORD"
-            export REDIS_PASSWORD="$REDIS_PASSWORD"
-
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Export environment variables
+            export REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            export IMAGE_TAG=${{ github.ref_name }}
+            export DOMAIN=${{ secrets.DOMAIN }}
+            export EMAIL=${{ secrets.EMAIL }}
+            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
 
             # Pull new images for all microservices
             docker compose -f ${{ env.COMPOSE_FILE }} pull
