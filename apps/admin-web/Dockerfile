@@ -9,6 +9,7 @@ RUN npm install -g pnpm && pnpm install
 FROM node:22-slim AS builder
 WORKDIR /app
 
+RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
