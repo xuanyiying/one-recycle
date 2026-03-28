@@ -354,7 +354,7 @@ const DashboardPage: React.FC = () => {
                       borderRadius: '8px'
                     }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value: number | undefined) => value !== undefined ? [`¥${value.toLocaleString()}`, '收入'] : ['', '']}
+                    formatter={(value) => typeof value === 'number' ? [`¥${value.toLocaleString()}`, '收入'] : ['', '']}
                   />
                   <Bar 
                     dataKey="revenue" 
