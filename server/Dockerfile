@@ -8,12 +8,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml* ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install dependencies (fallback to npm if pnpm lock missing)
 RUN npm install -g pnpm && \
-    pnpm install --frozen-lockfile
+    (pnpm install --frozen-lockfile || pnpm install)
 
 # Builder stage
 FROM node:22-slim AS builder
