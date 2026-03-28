@@ -11,7 +11,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME:-one_recycle}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-one_recycle}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -35,7 +35,16 @@ services:
     image: redis:7-alpine
     container_name: one-recycle-redis
     restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command: >
+      sh -c '
+        redis-server 
+        --requirepass "$${REDIS_PASSWORD}" 
+        --appendonly yes 
+        --maxmemory 256mb 
+        --maxmemory-policy allkeys-lru
+      '
     volumes:
       - redis_data:/data
     ports:
@@ -43,7 +52,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "sh", "-c", 'redis-cli -a "$${REDIS_PASSWORD}" ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -332,25 +341,25 @@ services:
     volumes:
       - ../ssl:/etc/letsencrypt
       - ../certbot-webroot:/var/www/certbot
-    entrypoint: >
-      sh -c '
-      trap "exit 0" TERM INT
-      while true; do
-        if [ -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
-          certbot renew --webroot -w /var/www/certbot --quiet 2>/dev/null || true
-        else
-          certbot certonly --webroot -w /var/www/certbot \
-            -d "${DOMAIN}" -d "www.${DOMAIN}" -d "api.${DOMAIN}" -d "admin.${DOMAIN}" \
-            --email "${EMAIL}" --agree-tos --no-eff-email --non-interactive 2>/dev/null || true
-        fi
-        sleep 12h
-      done
-      '
     environment:
       - DOMAIN=${DOMAIN}
       - EMAIL=${EMAIL}
     networks:
       - one-recycle-network
+    command: >
+      sh -c "
+        trap 'exit 0' TERM INT
+        while true; do
+          if [ -d /etc/letsencrypt/live/$${DOMAIN} ]; then
+            certbot renew --webroot -w /var/www/certbot --quiet 2>/dev/null || true
+          else
+            certbot certonly --webroot -w /var/www/certbot
+            -d $${DOMAIN} -d www.$${DOMAIN} -d api.$${DOMAIN} -d admin.$${DOMAIN}
+            --email $${EMAIL} --agree-tos --no-eff-email --non-interactive 2>/dev/null || true
+          fi
+          sleep 12h
+        done
+      "
 
 volumes:
   postgres_data:
