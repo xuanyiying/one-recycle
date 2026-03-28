@@ -2,20 +2,22 @@
 FROM node:22-slim AS deps
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --only=production
+COPY package.json pnpm-lock.yaml* ./
+RUN npm install -g pnpm && \
+    (pnpm install --frozen-lockfile || pnpm install)
 
 # Builder stage
 FROM node:22-slim AS builder
 WORKDIR /app
 
+RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build
+RUN pnpm run build
 
 # Runner stage
 FROM node:22-slim AS runner
