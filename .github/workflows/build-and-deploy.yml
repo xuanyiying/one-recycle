@@ -125,4 +125,4 @@ jobs:
       - name: Health Check
         run: |
           sleep 15
-          curl -sf http://${{ secrets.DEPLOY_HOST }}/health || exit 1
+          curl -sfk https://${{ secrets.DEPLOY_HOST }}/health || exit 1
