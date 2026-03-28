@@ -1,6 +1,6 @@
 # ============================================================================
 # OneRecycle 生产环境 Docker Compose 配置 (微服务架构)
-# 使用 GHCR 镜像，支持 GitHub Actions 自动部署
+# 适配 4核 8G 服务器
 # ============================================================================
 
 services:
@@ -27,15 +27,15 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: 2G
+          cpus: '1'
+          memory: 1G
 
   # Redis 缓存
   redis:
     image: redis:7-alpine
     container_name: one-recycle-redis
     restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     ports:
@@ -47,6 +47,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
 
   # API Gateway - 统一入口
   api-gateway:
@@ -81,8 +86,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1G
+          cpus: '0.5'
+          memory: 512M
 
   # 账户服务
   account-service:
@@ -117,8 +122,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1G
+          cpus: '0.3'
+          memory: 384M
 
   # 订单服务
   order-service:
@@ -153,8 +158,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1G
+          cpus: '0.3'
+          memory: 384M
 
   # 通知服务
   notification-service:
@@ -189,8 +194,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '0.2'
+          memory: 256M
 
   # 库存服务
   inventory-service:
@@ -225,8 +230,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '0.2'
+          memory: 256M
 
   # 分类服务
   category-service:
@@ -261,8 +266,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '0.2'
+          memory: 256M
 
   # Admin Web
   admin-web:
@@ -288,8 +293,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '0.3'
+          memory: 384M
 
   # Nginx 反向代理
   nginx:
@@ -313,6 +318,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
 
   # Certbot SSL 证书管理
   certbot:
