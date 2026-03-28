@@ -123,5 +123,14 @@ jobs:
 
       - name: Health Check
         run: |
-          sleep 15
-          curl -sfk https://${{ secrets.DEPLOY_HOST }}/health || exit 1
+          # Wait for services to be ready (use HTTP to avoid SSL cert issues with IP)
+          for i in {1..30}; do
+            if curl -sf http://${{ secrets.DEPLOY_HOST }}/health; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i/30 failed, waiting..."
+            sleep 10
+          done
+          echo "Health check failed after 30 attempts"
+          exit 1
