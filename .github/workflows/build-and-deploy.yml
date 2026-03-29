@@ -150,8 +150,13 @@ jobs:
           COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
           ENV_FILE: deploy/config/.env.production
         run: |
-          # Sync code to server (exclude .env.production and .git)
-          rsync -avz --delete --exclude='.git' --exclude='deploy/config/.env.production' \
+          # Sync code to server (exclude .git, deploy config, and node_modules)
+          # Server's deploy directory contains environment-specific configs that should be preserved
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='deploy/config' \
+            --exclude='deploy/docker-compose.yml' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
           
