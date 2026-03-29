@@ -93,17 +93,6 @@ jobs:
             TCPKeepAlive yes
           SSHCONFIG
 
-      - uses: actions/checkout@v4
-
-      - name: Sync deploy files to server
-        run: |
-          rsync -avz --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='config/.env.production' \
-            -e "ssh" \
-            deploy/ deploy-server:~/one-recycle/deploy/
-
       - name: Deploy microservices to server
         run: |
           ssh deploy-server 'bash -s' << 'REMOTE_SCRIPT'
@@ -138,12 +127,15 @@ jobs:
           echo "=== Docker Compose .env ==="
           cat deploy/docker/.env | grep -v PASSWORD | grep -v SECRET
 
-          # Stop and remove old containers
-          docker compose -f deploy/docker/docker-compose.production.yml down --remove-orphans || true
+          # Force remove all one-recycle containers (ignore errors if not exist)
+          docker rm -f one-recycle-postgres one-recycle-redis one-recycle-api-gateway \
+            one-recycle-account-service one-recycle-order-service one-recycle-notification-service \
+            one-recycle-inventory-service one-recycle-category-service one-recycle-admin-web \
+            one-recycle-nginx one-recycle-certbot 2>/dev/null || true
 
           # Pull and restart
           docker compose -f deploy/docker/docker-compose.production.yml pull
-          docker compose -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
+          docker compose -f deploy/docker/docker-compose.production.yml up -d
 
           # Wait and check
           sleep 20
