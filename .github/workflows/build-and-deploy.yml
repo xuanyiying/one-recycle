@@ -111,16 +111,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/withoutai'
     steps:
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -140,77 +130,42 @@ jobs:
 
       - name: Deploy microservices to server
         env:
-          DOMAIN: ${{ secrets.DOMAIN }}
-          EMAIL: ${{ secrets.EMAIL }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF_NAME: ${{ github.ref_name }}
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
-          ENV_FILE: deploy/config/.env.production
+          IMAGE_TAG: ${{ github.ref_name }}
         run: |
-          # Sync code to server (exclude .git, deploy config, and node_modules)
-          # Server's deploy directory contains environment-specific configs that should be preserved
-          rsync -avz --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='deploy/config' \
-            --exclude='deploy/docker-compose.yml' \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
-          
-          # Execute deployment on server
           ssh deploy-server bash -se "
             set -e
             cd ~/one-recycle
 
-            # Check if .env.production exists
-            ENV_FILE=${ENV_FILE}
-            if [ ! -f \"\${ENV_FILE}\" ]; then
+            # Check if environment file exists
+            if [ ! -f deploy/config/.env.production ]; then
               echo '=========================================='
-              echo 'ERROR: Environment file not found!'
-              echo '=========================================='
-              echo \"File not found: \${ENV_FILE}\"
-              echo ''
-              echo 'Please create the environment file on the server:'
-              echo '  1. SSH into the server'
-              echo '  2. Create deploy/config/.env.production'
-              echo '  3. Add required environment variables:'
-              echo '     - DB_PASSWORD'
-              echo '     - REDIS_PASSWORD'
-              echo '     - JWT_SECRET'
-              echo '     - DATABASE_URL'
-              echo '     - etc.'
-              echo ''
-              echo 'Example:'
-              echo '  mkdir -p deploy/config'
-              echo '  vim deploy/config/.env.production'
+              echo 'ERROR: deploy/config/.env.production not found!'
+              echo 'Please create it on the server first.'
               echo '=========================================='
               exit 1
             fi
 
-            echo 'Environment file found: \${ENV_FILE}'
             echo 'Deploying from branch: ${REF_NAME}'
-            echo 'Using compose file: ${COMPOSE_FILE}'
 
             # Login to GHCR
             echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
-            # Stop and remove old containers first
-            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} down --remove-orphans || true
+            # Pull new images
+            docker compose -f deploy/docker/docker-compose.production.yml pull
 
-            # Pull new images for all microservices
-            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} pull
+            # Restart services
+            docker compose -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
 
-            # Restart services with zero downtime
-            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} up -d --remove-orphans
+            # Wait for services to start
+            sleep 15
 
             # Show container status
-            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} ps -a
-
-            # Show logs for debugging (last 20 lines per service)
-            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} logs --tail=20
+            docker compose -f deploy/docker/docker-compose.production.yml ps -a
 
             # Cleanup old images
             docker system prune -af --volumes=false || true
@@ -218,7 +173,6 @@ jobs:
 
       - name: Health Check
         run: |
-          # Wait for services to be ready
           for i in {1..30}; do
             if curl -sf http://${{ secrets.DEPLOY_HOST }}/health; then
               echo "Health check passed!"
