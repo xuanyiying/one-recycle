@@ -146,15 +146,15 @@ jobs:
           EMAIL: ${{ secrets.EMAIL }}
           COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         run: |
+          # Sync code to server
+          rsync -avz --delete --exclude='.git' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
+          
+          # Execute deployment on server
           ssh deploy-server "
             set -e
             cd ~/one-recycle
-            
-            # Checkout the correct branch
-            git fetch origin
-            git checkout -f ${{ github.ref_name }}
-            git reset --hard origin/${{ github.ref_name }}
-            git clean -fd
 
             # Login to GHCR
             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
