@@ -140,18 +140,16 @@ jobs:
 
       - name: Deploy microservices to server
         env:
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           DOMAIN: ${{ secrets.DOMAIN }}
           EMAIL: ${{ secrets.EMAIL }}
-          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF_NAME: ${{ github.ref_name }}
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         run: |
-          # Sync code to server
+          # Sync code and config to server
           rsync -avz --delete --exclude='.git' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
@@ -161,22 +159,26 @@ jobs:
             set -e
             cd ~/one-recycle
 
-            # Login to GHCR
-            echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+            # Load environment variables from .env.production
+            set -a
+            source deploy/config/.env.production
+            set +a
 
-            # Export environment variables
-            export REGISTRY=${REGISTRY}/${IMAGE_NAME}
-            export IMAGE_TAG=${REF_NAME}
+            # Override with deployment-specific variables
             export DOMAIN=${DOMAIN}
             export EMAIL=${EMAIL}
-            export DB_PASSWORD=${DB_PASSWORD}
-            export REDIS_PASSWORD=${REDIS_PASSWORD}
+            export REGISTRY=${REGISTRY}/${IMAGE_NAME}
+            export IMAGE_TAG=${REF_NAME}
             export COMPOSE_FILE=${COMPOSE_FILE}
 
             echo 'Deploying from branch: ${REF_NAME}'
             echo 'Using compose file: ${COMPOSE_FILE}'
             echo 'Domain: ${DOMAIN}'
-            echo 'DB_PASSWORD set: [${#DB_PASSWORD} chars]'
+            echo 'DB_PASSWORD loaded: [${#DB_PASSWORD} chars]'
+            echo 'REDIS_PASSWORD loaded: [${#REDIS_PASSWORD} chars]'
+
+            # Login to GHCR
+            echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
             # Pull new images for all microservices
             docker compose -f ${COMPOSE_FILE} pull
