@@ -150,8 +150,8 @@ jobs:
           COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
           ENV_FILE: deploy/config/.env.production
         run: |
-          # Sync code and config to server
-          rsync -avz --delete --exclude='.git' \
+          # Sync code to server (exclude .env.production which should already exist on server)
+          rsync -avz --delete --exclude='.git' --exclude='deploy/config/.env.production' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
           
