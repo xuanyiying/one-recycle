@@ -13,7 +13,6 @@ out/
 # Environment variables
 .env*
 !.env.example
-!deploy/config/.env.production
 
 # Logs
 npm-debug.log*
