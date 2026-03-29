@@ -160,50 +160,34 @@ jobs:
             set -e
             cd ~/one-recycle
 
-            # Check if .env.production exists, create from template if not
+            # Check if .env.production exists
             ENV_FILE=${ENV_FILE}
             if [ ! -f \"\${ENV_FILE}\" ]; then
-              echo \"Creating \${ENV_FILE} from template...\"
-              mkdir -p deploy/config
-              cat > \${ENV_FILE} << 'ENVEOF'
-# Database
-DB_HOST=postgres
-DB_PORT=5432
-DB_USERNAME=one_recycle
-DB_PASSWORD=OneRecycle2025Secure
-DB_NAME=one_recycle
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=OneRecycleRedis2025
-
-# JWT (simple secret without special chars for template)
-JWT_SECRET=OneRecycleJWT2025SecureRandomSecretKeyChangeMe
-
-# App
-NODE_ENV=production
-LOG_LEVEL=info
-ENVEOF
+              echo '=========================================='
+              echo 'ERROR: Environment file not found!'
+              echo '=========================================='
+              echo \"File not found: \${ENV_FILE}\"
+              echo ''
+              echo 'Please create the environment file on the server:'
+              echo '  1. SSH into the server'
+              echo '  2. Create deploy/config/.env.production'
+              echo '  3. Add required environment variables:'
+              echo '     - DB_PASSWORD'
+              echo '     - REDIS_PASSWORD'
+              echo '     - JWT_SECRET'
+              echo '     - DATABASE_URL'
+              echo '     - etc.'
+              echo ''
+              echo 'Example:'
+              echo '  mkdir -p deploy/config'
+              echo '  vim deploy/config/.env.production'
+              echo '=========================================='
+              exit 1
             fi
 
-            # Load environment variables from .env.production
-            set -a
-            source \${ENV_FILE}
-            set +a
-
-            # Override with deployment-specific variables
-            export DOMAIN=${DOMAIN}
-            export EMAIL=${EMAIL}
-            export REGISTRY=${REGISTRY}/${IMAGE_NAME}
-            export IMAGE_TAG=${REF_NAME}
-            export COMPOSE_FILE=${COMPOSE_FILE}
-
+            echo 'Environment file found: \${ENV_FILE}'
             echo 'Deploying from branch: ${REF_NAME}'
             echo 'Using compose file: ${COMPOSE_FILE}'
-            echo 'Domain: ${DOMAIN}'
-            echo 'DB_PASSWORD loaded: [${#DB_PASSWORD} chars]'
-            echo 'REDIS_PASSWORD loaded: [${#REDIS_PASSWORD} chars]'
 
             # Login to GHCR
             echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
@@ -220,7 +204,7 @@ ENVEOF
             # Show container status
             docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} ps -a
 
-            # Show logs for debugging
+            # Show logs for debugging (last 20 lines per service)
             docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} logs --tail=20
 
             # Cleanup old images
