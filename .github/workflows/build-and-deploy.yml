@@ -155,17 +155,17 @@ jobs:
             # Login to GHCR
             echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
-            # Pull new images
-            docker compose -f deploy/docker/docker-compose.production.yml pull
+            # Pull new images (with explicit env-file)
+            docker compose --env-file deploy/config/.env.production -f deploy/docker/docker-compose.production.yml pull
 
-            # Restart services
-            docker compose -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
+            # Restart services (with explicit env-file)
+            docker compose --env-file deploy/config/.env.production -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
 
             # Wait for services to start
             sleep 15
 
-            # Show container status
-            docker compose -f deploy/docker/docker-compose.production.yml ps -a
+            # Show container status (with explicit env-file)
+            docker compose --env-file deploy/config/.env.production -f deploy/docker/docker-compose.production.yml ps -a
 
             # Cleanup old images
             docker system prune -af --volumes=false || true
