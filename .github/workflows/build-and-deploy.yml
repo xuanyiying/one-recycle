@@ -11,7 +11,52 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.changes.outputs.server }}
+      admin: ${{ steps.changes.outputs.admin }}
+      nginx: ${{ steps.changes.outputs.nginx }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed files
+        id: changes
+        run: |
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check server changes
+          if echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)'; then
+            echo "server=true" >> $GITHUB_OUTPUT
+            echo "Server changes detected"
+          else
+            echo "server=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check admin-web changes
+          if echo "$CHANGED_FILES" | grep -qE '^apps/admin-web/'; then
+            echo "admin=true" >> $GITHUB_OUTPUT
+            echo "Admin-web changes detected"
+          else
+            echo "admin=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check nginx changes
+          if echo "$CHANGED_FILES" | grep -qE '^deploy/nginx/'; then
+            echo "nginx=true" >> $GITHUB_OUTPUT
+            echo "Nginx changes detected"
+          else
+            echo "nginx=false" >> $GITHUB_OUTPUT
+          fi
+
   build-server:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,6 +87,8 @@ jobs:
           platforms: linux/amd64
 
   build-admin:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.admin == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -72,9 +119,9 @@ jobs:
           platforms: linux/amd64
 
   deploy:
-    needs: [build-server, build-admin]
+    needs: [detect-changes, build-server, build-admin]
+    if: always() && (needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true')
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/withoutai'
     steps:
       - name: Setup SSH
         run: |
@@ -95,7 +142,11 @@ jobs:
 
       - name: Deploy microservices to server
         run: |
-          ssh deploy-server 'bash -s' << 'REMOTE_SCRIPT'
+          SERVER_CHANGED="${{ needs.detect-changes.outputs.server }}"
+          ADMIN_CHANGED="${{ needs.detect-changes.outputs.admin }}"
+          NGINX_CHANGED="${{ needs.detect-changes.outputs.nginx }}"
+
+          ssh deploy-server 'bash -s' << REMOTE_SCRIPT
           set -e
           cd ~/one-recycle
 
@@ -107,35 +158,43 @@ jobs:
 
           echo "=== Deployment Info ==="
           echo "Branch: ${{ github.ref_name }}"
-          echo "Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          echo "Image Tag: ${{ github.ref_name }}"
+          echo "Server changed: $SERVER_CHANGED"
+          echo "Admin changed: $ADMIN_CHANGED"
+          echo "Nginx changed: $NGINX_CHANGED"
 
           # Login to GHCR
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          # Create .env file for docker compose (combine all variables)
+          # Create .env file for docker compose
           cat > deploy/docker/.env << EOF
           REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           IMAGE_TAG=${{ github.ref_name }}
           DOMAIN=${{ secrets.DOMAIN }}
           EMAIL=${{ secrets.EMAIL }}
           EOF
-
-          # Append .env.production contents
           cat deploy/config/.env.production >> deploy/docker/.env
 
-          echo "=== Docker Compose .env ==="
-          cat deploy/docker/.env | grep -v PASSWORD | grep -v SECRET
-
-          # Pull new images first
+          # Pull new images
           docker compose -f deploy/docker/docker-compose.production.yml pull
 
-          # Check if database services exist
+          # Determine services to update
+          SERVICES=""
+          if [ "$SERVER_CHANGED" = "true" ]; then
+            SERVICES="$SERVICES api-gateway account-service order-service notification-service inventory-service category-service"
+          fi
+          if [ "$ADMIN_CHANGED" = "true" ]; then
+            SERVICES="$SERVICES admin-web"
+          fi
+          if [ "$NGINX_CHANGED" = "true" ]; then
+            SERVICES="$SERVICES nginx"
+          fi
+
+          # Check if database exists
           if docker ps -a --format '{{.Names}}' | grep -q 'one-recycle-postgres'; then
-            echo "Database services exist, updating application services only..."
-            docker compose -f deploy/docker/docker-compose.production.yml up -d --no-deps --force-recreate \
-              api-gateway account-service order-service notification-service \
-              inventory-service category-service admin-web
+            echo "Database exists, updating changed services: $SERVICES"
+            if [ -n "$SERVICES" ]; then
+              docker compose -f deploy/docker/docker-compose.production.yml up -d --no-deps --force-recreate $SERVICES
+            fi
           else
             echo "First deployment, starting all services..."
             docker compose -f deploy/docker/docker-compose.production.yml up -d
