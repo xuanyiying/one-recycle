@@ -127,6 +127,9 @@ jobs:
           echo "=== Docker Compose .env ==="
           cat deploy/docker/.env | grep -v PASSWORD | grep -v SECRET
 
+          # Stop and remove old containers
+          docker compose -f deploy/docker/docker-compose.production.yml down --remove-orphans || true
+
           # Pull and restart
           docker compose -f deploy/docker/docker-compose.production.yml pull
           docker compose -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
