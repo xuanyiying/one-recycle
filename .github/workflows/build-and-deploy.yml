@@ -141,6 +141,10 @@ jobs:
             set -e
             cd ~/one-recycle
 
+            # Export environment variables for docker compose
+            export REGISTRY=${REGISTRY}/${IMAGE_NAME}
+            export IMAGE_TAG=${IMAGE_TAG}
+
             # Check if environment file exists
             if [ ! -f deploy/config/.env.production ]; then
               echo '=========================================='
@@ -151,6 +155,8 @@ jobs:
             fi
 
             echo 'Deploying from branch: ${REF_NAME}'
+            echo 'Registry: ${REGISTRY}'
+            echo 'Image tag: ${IMAGE_TAG}'
 
             # Login to GHCR
             echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
