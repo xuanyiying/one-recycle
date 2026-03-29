@@ -145,6 +145,11 @@ jobs:
           DOMAIN: ${{ secrets.DOMAIN }}
           EMAIL: ${{ secrets.EMAIL }}
           COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           # Sync code to server
           rsync -avz --delete --exclude='.git' \
@@ -152,37 +157,38 @@ jobs:
             ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
           
           # Execute deployment on server
-          ssh deploy-server "
+          ssh deploy-server bash -se "
             set -e
             cd ~/one-recycle
 
             # Login to GHCR
-            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
-            # Export environment variables in the remote shell
-            export REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-            export IMAGE_TAG=${{ github.ref_name }}
-            export DOMAIN='$DOMAIN'
-            export EMAIL='$EMAIL'
-            export DB_PASSWORD='$DB_PASSWORD'
-            export REDIS_PASSWORD='$REDIS_PASSWORD'
-            export COMPOSE_FILE='$COMPOSE_FILE'
+            # Export environment variables
+            export REGISTRY=${REGISTRY}/${IMAGE_NAME}
+            export IMAGE_TAG=${REF_NAME}
+            export DOMAIN=${DOMAIN}
+            export EMAIL=${EMAIL}
+            export DB_PASSWORD=${DB_PASSWORD}
+            export REDIS_PASSWORD=${REDIS_PASSWORD}
+            export COMPOSE_FILE=${COMPOSE_FILE}
 
-            echo 'Deploying from branch: ${{ github.ref_name }}'
-            echo 'Using compose file: '$COMPOSE_FILE''
-            echo 'Domain: '$DOMAIN''
+            echo 'Deploying from branch: ${REF_NAME}'
+            echo 'Using compose file: ${COMPOSE_FILE}'
+            echo 'Domain: ${DOMAIN}'
+            echo 'DB_PASSWORD set: [${#DB_PASSWORD} chars]'
 
             # Pull new images for all microservices
-            docker compose -f '$COMPOSE_FILE' pull
+            docker compose -f ${COMPOSE_FILE} pull
 
             # Restart services with zero downtime
-            docker compose -f '$COMPOSE_FILE' up -d --remove-orphans
+            docker compose -f ${COMPOSE_FILE} up -d --remove-orphans
 
             # Show container status
-            docker compose -f '$COMPOSE_FILE' ps -a
+            docker compose -f ${COMPOSE_FILE} ps -a
 
             # Show logs for debugging
-            docker compose -f '$COMPOSE_FILE' logs --tail=20
+            docker compose -f ${COMPOSE_FILE} logs --tail=20
 
             # Cleanup old images
             docker system prune -af --volumes=false || true
