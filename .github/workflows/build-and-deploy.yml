@@ -118,13 +118,13 @@ jobs:
 
       - name: Deploy microservices to server
         run: |
-          ssh deploy-server << 'EOF'
+          ssh deploy-server "
             cd ~/one-recycle
             git fetch origin
             git reset --hard origin/${{ github.ref_name }}
 
             # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Export environment variables
             export REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -135,18 +135,20 @@ jobs:
             export REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
 
             # Pull new images for all microservices
-            docker compose -f ${{ env.COMPOSE_FILE }} pull
+            docker compose -f ${COMPOSE_FILE} pull
 
             # Restart services with zero downtime
-            docker compose -f ${{ env.COMPOSE_FILE }} up -d --remove-orphans
+            docker compose -f ${COMPOSE_FILE} up -d --remove-orphans
 
-            # Wait for services to be healthy
-            echo "Waiting for services to be healthy..."
-            sleep 30
+            # Show container status
+            docker compose -f ${COMPOSE_FILE} ps
+
+            # Show logs for debugging
+            docker compose -f ${COMPOSE_FILE} logs --tail=20
 
             # Cleanup old images
-            docker system prune -af --volumes=false
-          EOF
+            docker system prune -af --volumes=false || true
+          "
 
       - name: Health Check
         run: |
