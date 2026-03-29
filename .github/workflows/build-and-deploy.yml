@@ -150,7 +150,7 @@ jobs:
           COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
           ENV_FILE: deploy/config/.env.production
         run: |
-          # Sync code to server (exclude .env.production which should already exist on server)
+          # Sync code to server (exclude .env.production and .git)
           rsync -avz --delete --exclude='.git' --exclude='deploy/config/.env.production' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/
@@ -160,9 +160,36 @@ jobs:
             set -e
             cd ~/one-recycle
 
+            # Check if .env.production exists, create from template if not
+            ENV_FILE=${ENV_FILE}
+            if [ ! -f \"\${ENV_FILE}\" ]; then
+              echo \"Creating \${ENV_FILE} from template...\"
+              mkdir -p deploy/config
+              cat > \${ENV_FILE} << 'ENVEOF'
+# Database
+DB_HOST=postgres
+DB_PORT=5432
+DB_USERNAME=one_recycle
+DB_PASSWORD=OneRecycle2025Secure
+DB_NAME=one_recycle
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=OneRecycleRedis2025
+
+# JWT
+JWT_SECRET=OneRecycleJWT2025SecureRandomSecretKey
+
+# App
+NODE_ENV=production
+LOG_LEVEL=info
+ENVEOF
+            fi
+
             # Load environment variables from .env.production
             set -a
-            source ${ENV_FILE}
+            source \${ENV_FILE}
             set +a
 
             # Override with deployment-specific variables
@@ -182,16 +209,16 @@ jobs:
             echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
 
             # Pull new images for all microservices
-            docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} pull
+            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} pull
 
             # Restart services with zero downtime
-            docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} up -d --remove-orphans
+            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} up -d --remove-orphans
 
             # Show container status
-            docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} ps -a
+            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} ps -a
 
             # Show logs for debugging
-            docker compose --env-file ${ENV_FILE} -f ${COMPOSE_FILE} logs --tail=20
+            docker compose --env-file \${ENV_FILE} -f ${COMPOSE_FILE} logs --tail=20
 
             # Cleanup old images
             docker system prune -af --volumes=false || true
