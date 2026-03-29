@@ -93,6 +93,17 @@ jobs:
             TCPKeepAlive yes
           SSHCONFIG
 
+      - uses: actions/checkout@v4
+
+      - name: Sync deploy files to server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='config/.env.production' \
+            -e "ssh" \
+            deploy/ deploy-server:~/one-recycle/deploy/
+
       - name: Deploy microservices to server
         run: |
           ssh deploy-server 'bash -s' << 'REMOTE_SCRIPT'
