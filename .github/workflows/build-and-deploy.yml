@@ -8,7 +8,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  COMPOSE_FILE: deploy/docker/docker-compose.production.yml
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -18,15 +17,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -38,23 +29,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/server
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push server
         uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/server:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -65,15 +47,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Configure Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -85,23 +59,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push admin-web
         uses: docker/build-push-action@v5
         with:
           context: ./apps/admin-web
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -129,53 +94,50 @@ jobs:
           SSHCONFIG
 
       - name: Deploy microservices to server
-        env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REF_NAME: ${{ github.ref_name }}
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_TAG: ${{ github.ref_name }}
         run: |
-          ssh deploy-server bash -se "
-            set -e
-            cd ~/one-recycle
+          ssh deploy-server 'bash -s' << 'REMOTE_SCRIPT'
+          set -e
+          cd ~/one-recycle
 
-            # Export environment variables for docker compose
-            export REGISTRY=${REGISTRY}/${IMAGE_NAME}
-            export IMAGE_TAG=${IMAGE_TAG}
+          # Check environment file
+          if [ ! -f deploy/config/.env.production ]; then
+            echo "ERROR: deploy/config/.env.production not found!"
+            exit 1
+          fi
 
-            # Check if environment file exists
-            if [ ! -f deploy/config/.env.production ]; then
-              echo '=========================================='
-              echo 'ERROR: deploy/config/.env.production not found!'
-              echo 'Please create it on the server first.'
-              echo '=========================================='
-              exit 1
-            fi
+          echo "=== Deployment Info ==="
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "Image Tag: ${{ github.ref_name }}"
 
-            echo 'Deploying from branch: ${REF_NAME}'
-            echo 'Registry: ${REGISTRY}'
-            echo 'Image tag: ${IMAGE_TAG}'
+          # Login to GHCR
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Login to GHCR
-            echo '${GITHUB_TOKEN}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin
+          # Create .env file for docker compose (combine all variables)
+          cat > deploy/docker/.env << EOF
+          REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          IMAGE_TAG=${{ github.ref_name }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          EMAIL=${{ secrets.EMAIL }}
+          EOF
 
-            # Pull new images (with explicit env-file)
-            docker compose --env-file deploy/config/.env.production -f deploy/docker/docker-compose.production.yml pull
+          # Append .env.production contents
+          cat deploy/config/.env.production >> deploy/docker/.env
 
-            # Restart services (with explicit env-file)
-            docker compose --env-file deploy/config/.env.production -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
+          echo "=== Docker Compose .env ==="
+          cat deploy/docker/.env | grep -v PASSWORD | grep -v SECRET
 
-            # Wait for services to start
-            sleep 15
+          # Pull and restart
+          docker compose -f deploy/docker/docker-compose.production.yml pull
+          docker compose -f deploy/docker/docker-compose.production.yml up -d --remove-orphans
 
-            # Show container status (with explicit env-file)
-            docker compose --env-file deploy/config/.env.production -f deploy/docker/docker-compose.production.yml ps -a
+          # Wait and check
+          sleep 20
+          docker compose -f deploy/docker/docker-compose.production.yml ps -a
 
-            # Cleanup old images
-            docker system prune -af --volumes=false || true
-          "
+          # Cleanup
+          docker system prune -af --volumes=false || true
+          REMOTE_SCRIPT
 
       - name: Health Check
         run: |

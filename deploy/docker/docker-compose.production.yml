@@ -20,7 +20,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-one_recycle}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME:-one_recycle}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,7 +52,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "sh", "-c", 'redis-cli -a "$${REDIS_PASSWORD}" ping']
+      test: [ "CMD", "sh", "-c", 'redis-cli -a "$${REDIS_PASSWORD}" ping' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,7 +78,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
-      - ../config/.env.production
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3002/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -114,7 +114,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
-      - ../config/.env.production
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,7 +123,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3001/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -150,7 +150,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
-      - ../config/.env.production
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -159,7 +159,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3003/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3003/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -186,7 +186,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
-      - ../config/.env.production
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -195,7 +195,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3004/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3004/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -222,7 +222,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
-      - ../config/.env.production
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -231,7 +231,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3009/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3009/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -258,7 +258,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     env_file:
-      - ../config/.env.production
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -267,7 +267,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3008/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3008/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -294,7 +294,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -323,7 +323,7 @@ services:
       - api-gateway
       - admin-web
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -364,6 +364,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
 
 networks:
   one-recycle-network:
