@@ -150,6 +150,12 @@ jobs:
           set -e
           cd ~/one-recycle
 
+          echo "=== System Info ==="
+          echo "Hostname: $(hostname)"
+          echo "Docker version: $(docker --version)"
+          echo "Current containers:"
+          docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" || true
+
           # Check environment file
           if [ ! -f deploy/config/.env.production ]; then
             echo "ERROR: deploy/config/.env.production not found!"
@@ -202,6 +208,7 @@ jobs:
 
           # Wait and check
           sleep 20
+          echo "=== Final Container Status ==="
           docker compose -f deploy/docker/docker-compose.production.yml ps -a
 
           # Cleanup
