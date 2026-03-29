@@ -144,6 +144,7 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           DOMAIN: ${{ secrets.DOMAIN }}
           EMAIL: ${{ secrets.EMAIL }}
+          COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         run: |
           ssh deploy-server "
             set -e
@@ -161,27 +162,27 @@ jobs:
             # Export environment variables in the remote shell
             export REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
             export IMAGE_TAG=${{ github.ref_name }}
-            export DOMAIN=\${DOMAIN}
-            export EMAIL=\${EMAIL}
-            export DB_PASSWORD=\${DB_PASSWORD}
-            export REDIS_PASSWORD=\${REDIS_PASSWORD}
-            export COMPOSE_FILE=${{ env.COMPOSE_FILE }}
+            export DOMAIN='$DOMAIN'
+            export EMAIL='$EMAIL'
+            export DB_PASSWORD='$DB_PASSWORD'
+            export REDIS_PASSWORD='$REDIS_PASSWORD'
+            export COMPOSE_FILE='$COMPOSE_FILE'
 
             echo 'Deploying from branch: ${{ github.ref_name }}'
-            echo 'Using compose file: \${COMPOSE_FILE}'
-            echo 'Domain: \${DOMAIN}'
+            echo 'Using compose file: '$COMPOSE_FILE''
+            echo 'Domain: '$DOMAIN''
 
             # Pull new images for all microservices
-            docker compose -f \${COMPOSE_FILE} pull
+            docker compose -f '$COMPOSE_FILE' pull
 
             # Restart services with zero downtime
-            docker compose -f \${COMPOSE_FILE} up -d --remove-orphans
+            docker compose -f '$COMPOSE_FILE' up -d --remove-orphans
 
             # Show container status
-            docker compose -f \${COMPOSE_FILE} ps -a
+            docker compose -f '$COMPOSE_FILE' ps -a
 
             # Show logs for debugging
-            docker compose -f \${COMPOSE_FILE} logs --tail=20
+            docker compose -f '$COMPOSE_FILE' logs --tail=20
 
             # Cleanup old images
             docker system prune -af --volumes=false || true
