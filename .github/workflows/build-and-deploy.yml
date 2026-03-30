@@ -4,6 +4,11 @@ on:
   push:
     branches: [prod, withoutai]
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild all services'
+        required: false
+        default: 'false'
 
 env:
   REGISTRY: ghcr.io
@@ -17,6 +22,7 @@ jobs:
       server: ${{ steps.changes.outputs.server }}
       admin: ${{ steps.changes.outputs.admin }}
       nginx: ${{ steps.changes.outputs.nginx }}
+      force_rebuild: ${{ github.event.inputs.force_rebuild || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,10 +31,15 @@ jobs:
       - name: Detect changed files
         id: changes
         run: |
-          # Get changed files
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
+          FORCE_REBUILD="${{ github.event.inputs.force_rebuild }}"
+          
+          if [ "$FORCE_REBUILD" = "true" ]; then
+            echo "Force rebuild enabled, building all services"
+            echo "server=true" >> $GITHUB_OUTPUT
+            echo "admin=true" >> $GITHUB_OUTPUT
+            echo "nginx=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           # Check server changes
           if echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)'; then
@@ -56,7 +67,7 @@ jobs:
 
   build-server:
     needs: detect-changes
-    if: needs.detect-changes.outputs.server == 'true'
+    if: needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.force_rebuild == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,7 +86,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push server
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./server
           push: true
@@ -85,10 +96,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          provenance: false
 
   build-admin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.admin == 'true'
+    if: needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.force_rebuild == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -107,7 +119,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push admin-web
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./apps/admin-web
           push: true
@@ -117,6 +129,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          provenance: false
 
   deploy:
     needs: [detect-changes, build-server, build-admin]
@@ -145,6 +158,7 @@ jobs:
           SERVER_CHANGED="${{ needs.detect-changes.outputs.server }}"
           ADMIN_CHANGED="${{ needs.detect-changes.outputs.admin }}"
           NGINX_CHANGED="${{ needs.detect-changes.outputs.nginx }}"
+          FORCE_REBUILD="${{ needs.detect-changes.outputs.force_rebuild }}"
 
           ssh deploy-server 'bash -s' << REMOTE_SCRIPT
           set -e
@@ -153,23 +167,27 @@ jobs:
           echo "=== System Info ==="
           echo "Hostname: $(hostname)"
           echo "Docker version: $(docker --version)"
-          echo "Current containers:"
-          docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" || true
+          echo "Force rebuild: $FORCE_REBUILD"
+
+          # Login to GHCR
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          # Clean old images if force rebuild
+          if [ "$FORCE_REBUILD" = "true" ]; then
+            echo "=== Force rebuild: Cleaning old images ==="
+            docker images | grep '${{ env.IMAGE_NAME }}' | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
+            docker images | grep 'ghcr.io/${{ env.IMAGE_NAME }}' | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
+          fi
+
+          # Stop and remove old containers
+          echo "=== Stopping old containers ==="
+          docker compose -f deploy/docker/docker-compose.production.yml down 2>/dev/null || true
 
           # Check environment file
           if [ ! -f deploy/config/.env.production ]; then
             echo "ERROR: deploy/config/.env.production not found!"
             exit 1
           fi
-
-          echo "=== Deployment Info ==="
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Server changed: $SERVER_CHANGED"
-          echo "Admin changed: $ADMIN_CHANGED"
-          echo "Nginx changed: $NGINX_CHANGED"
-
-          # Login to GHCR
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
           # Create .env file for docker compose
           cat > deploy/docker/.env << EOF
@@ -180,38 +198,30 @@ jobs:
           EOF
           cat deploy/config/.env.production >> deploy/docker/.env
 
-          # Pull new images
+          # Pull fresh images
+          echo "=== Pulling images ==="
           docker compose -f deploy/docker/docker-compose.production.yml pull
 
-          # Determine services to update
-          SERVICES=""
-          if [ "$SERVER_CHANGED" = "true" ]; then
-            SERVICES="$SERVICES api-gateway account-service order-service notification-service inventory-service category-service"
-          fi
-          if [ "$ADMIN_CHANGED" = "true" ]; then
-            SERVICES="$SERVICES admin-web"
-          fi
-          if [ "$NGINX_CHANGED" = "true" ]; then
-            SERVICES="$SERVICES nginx"
-          fi
-
-          # Check if database exists
-          if docker ps -a --format '{{.Names}}' | grep -q 'one-recycle-postgres'; then
-            echo "Database exists, updating changed services: $SERVICES"
-            if [ -n "$SERVICES" ]; then
-              docker compose -f deploy/docker/docker-compose.production.yml up -d --no-deps --force-recreate $SERVICES
-            fi
-          else
-            echo "First deployment, starting all services..."
-            docker compose -f deploy/docker/docker-compose.production.yml up -d
-          fi
+          # Start all services fresh
+          echo "=== Starting all services ==="
+          docker compose -f deploy/docker/docker-compose.production.yml up -d
 
           # Wait and check
-          sleep 20
-          echo "=== Final Container Status ==="
+          sleep 30
+          echo "=== Container Status ==="
           docker compose -f deploy/docker/docker-compose.production.yml ps -a
 
-          # Cleanup
+          # Show logs for failed containers
+          FAILED=$(docker compose -f deploy/docker/docker-compose.production.yml ps -a --format '{{.Name}} {{.Status}}' | grep -v Up | awk '{print $1}')
+          if [ -n "$FAILED" ]; then
+            echo "=== Failed containers logs ==="
+            for container in $FAILED; do
+              echo "--- Logs for $container ---"
+              docker logs --tail 50 $container 2>&1 || true
+            done
+          fi
+
+          # Cleanup unused images
           docker system prune -af --volumes=false || true
           REMOTE_SCRIPT
 
