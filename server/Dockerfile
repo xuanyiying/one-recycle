@@ -31,13 +31,12 @@ COPY --from=deps /app/prisma ./prisma
 # Copy source code
 COPY . .
 
-# Generate Prisma client and build
-RUN npx prisma generate
-RUN pnpm run build 2>&1 || (echo "Build failed, checking..." && ls -la)
-
-# Debug: show build output
-RUN echo "=== Build output ===" && ls -la dist/ || echo "dist not found"
-RUN find . -name "main.js" 2>/dev/null || true
+# Generate Prisma client and build (combined to reduce layers)
+RUN npx prisma generate && \
+    pnpm run build && \
+    echo "=== Build output ===" && \
+    ls -la dist/ && \
+    test -f dist/main.js || (echo "ERROR: dist/main.js not found" && exit 1)
 
 # Production stage
 FROM node:22-slim AS runner
