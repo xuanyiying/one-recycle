@@ -1,31 +1,32 @@
-import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { OrderQueueService } from './services/order-queue.service';
-import { NotificationQueueService } from './services/notification-queue.service';
-import { PaymentQueueService } from './services/payment-queue.service';
-import { DispatchQueueService } from './services/dispatch-queue.service';
-import { OrderProcessor } from './processors/order.processor';
-import { NotificationProcessor } from './processors/notification.processor';
-import { PaymentProcessor } from './processors/payment.processor';
 import { DispatchProcessor } from './processors/dispatch.processor';
+import { NotificationProcessor } from './processors/notification.processor';
+import { OrderProcessor } from './processors/order.processor';
+import { PaymentProcessor } from './processors/payment.processor';
 import { QueueController } from './queue.controller';
 import { QueueGrpcController } from './queue.grpc.controller';
+import { DispatchQueueService } from './services/dispatch-queue.service';
+import { NotificationQueueService } from './services/notification-queue.service';
+import { OrderQueueService } from './services/order-queue.service';
+import { PaymentQueueService } from './services/payment-queue.service';
 
 // Client services for processors
-import { OrderServiceClient } from './clients/order-service.client';
-import { InventoryServiceClient } from './clients/inventory-service.client';
 import { DispatchServiceClient } from './clients/dispatch-service.client';
+import { InventoryServiceClient } from './clients/inventory-service.client';
+import { OrderServiceClient } from './clients/order-service.client';
 import { PaymentServiceClient } from './clients/payment-service.client';
 
 // Module imports for processors
+import { QUEUE_NAMES, RedisModule } from '@/common';
+import { LogisticsModule } from '../logistics/logistics.module';
+import { NotificationModule } from '../notification/notification.module';
 import { OrderModule } from '../order/order.module';
 import { PaymentModule } from '../payment/payment.module';
-import { NotificationModule } from '../notification/notification.module';
-import { LogisticsModule } from '../logistics/logistics.module';
-import { TenantModule } from '../tenant/tenant.module';
+import { PointsModule } from '../points/points.module';
 import { PricingModule } from '../pricing/pricing.module';
-import { QUEUE_NAMES, RedisModule } from '@/common';
+import { TenantModule } from '../tenant/tenant.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { QUEUE_NAMES, RedisModule } from '@/common';
     LogisticsModule,
     TenantModule,
     PricingModule,
+    PointsModule,
     BullModule.registerQueueAsync(
       { name: QUEUE_NAMES.ORDER },
       {
@@ -82,4 +84,4 @@ import { QUEUE_NAMES, RedisModule } from '@/common';
     DispatchQueueService,
   ],
 })
-export class QueueModule {}
+export class QueueModule { }

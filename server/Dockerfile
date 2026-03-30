@@ -34,16 +34,14 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the application
-RUN pnpm run build
+# Build the application (tsc + tsc-alias)
+RUN ./node_modules/.bin/tsc -p tsconfig.build.json --incremental false && \
+    ./node_modules/.bin/tsc-alias
 
 # Verify build output
 RUN echo "=== Build output ===" && \
     ls -la dist/ && \
-    echo "=== Checking main.js ===" && \
-    (test -f dist/main.js && echo "main.js found") || \
-    (test -f dist/src/main.js && echo "main.js in src/" && mv dist/src/main.js dist/main.js) || \
-    (echo "ERROR: main.js not found" && find . -name "main.js" && exit 1)
+    test -f dist/main.js || (echo "ERROR: main.js not found" && exit 1)
 
 # Production stage
 FROM node:22-slim AS runner
