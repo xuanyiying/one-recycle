@@ -346,20 +346,21 @@ services:
       - EMAIL=${EMAIL}
     networks:
       - one-recycle-network
-    command: >
-      sh -c "
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
         trap 'exit 0' TERM INT
         while true; do
-          if [ -d /etc/letsencrypt/live/$${DOMAIN} ]; then
-            certbot renew --webroot -w /var/www/certbot --quiet 2>/dev/null || true
+          if [ -d "/etc/letsencrypt/live/$${DOMAIN}" ]; then
+            certbot renew --webroot -w /var/www/certbot --quiet || true
           else
-            certbot certonly --webroot -w /var/www/certbot
-            -d $${DOMAIN} -d www.$${DOMAIN} -d api.$${DOMAIN} -d admin.$${DOMAIN}
-            --email $${EMAIL} --agree-tos --no-eff-email --non-interactive 2>/dev/null || true
+            certbot certonly --webroot -w /var/www/certbot \
+              -d "$${DOMAIN}" -d "www.$${DOMAIN}" -d "api.$${DOMAIN}" -d "admin.$${DOMAIN}" \
+              --email "$${EMAIL}" --agree-tos --no-eff-email --non-interactive || true
           fi
           sleep 12h
         done
-      "
 
 volumes:
   postgres_data:
