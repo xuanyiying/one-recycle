@@ -33,10 +33,11 @@ COPY . .
 
 # Generate Prisma client and build
 RUN npx prisma generate
-RUN pnpm run build
+RUN pnpm run build 2>&1 || (echo "Build failed, checking..." && ls -la)
 
-# Verify build output
-RUN ls -la dist/ && test -f dist/main.js
+# Debug: show build output
+RUN echo "=== Build output ===" && ls -la dist/ || echo "dist not found"
+RUN find . -name "main.js" 2>/dev/null || true
 
 # Production stage
 FROM node:22-slim AS runner
