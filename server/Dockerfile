@@ -1,4 +1,4 @@
-# OneRecycle Server - Optimized Dockerfile
+# OneRecycle Server - Production Dockerfile
 FROM node:22-slim AS deps
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma/
 
 # Install dependencies
-RUN pnpm install
+RUN pnpm install --frozen-lockfile || pnpm install
 
 # Builder stage
 FROM node:22-slim AS builder
@@ -24,7 +24,7 @@ WORKDIR /app
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy dependencies
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/prisma ./prisma
 
@@ -34,14 +34,16 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build and show output
-RUN pnpm run build 2>&1; \
-    echo "=== Checking dist directory ===" && \
-    ls -la dist/ 2>/dev/null || echo "dist/ not found" && \
-    echo "=== Checking root directory ===" && \
-    ls -la && \
-    echo "=== Looking for main.js ===" && \
-    find . -name "main.js" -type f 2>/dev/null || echo "main.js not found anywhere"
+# Build the application
+RUN pnpm run build
+
+# Verify build output
+RUN echo "=== Build output ===" && \
+    ls -la dist/ && \
+    echo "=== Checking main.js ===" && \
+    (test -f dist/main.js && echo "main.js found") || \
+    (test -f dist/src/main.js && echo "main.js in src/" && mv dist/src/main.js dist/main.js) || \
+    (echo "ERROR: main.js not found" && find . -name "main.js" && exit 1)
 
 # Production stage
 FROM node:22-slim AS runner
@@ -72,7 +74,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Start application
 CMD ["node", "dist/main.js"]

@@ -10,7 +10,7 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "src",
+    "rootDir": "./src",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
@@ -30,5 +30,5 @@
     "types": ["jest", "node", "express", "multer"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "../apps", "../services", "test", "scripts", "prisma", "prisma.config.ts"]
+  "exclude": ["node_modules", "dist", "test", "scripts", "prisma"]
 }
