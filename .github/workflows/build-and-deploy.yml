@@ -4,11 +4,6 @@ on:
   push:
     branches: [prod, withoutai]
   workflow_dispatch:
-    inputs:
-      force_rebuild:
-        description: 'Force rebuild all services'
-        required: false
-        default: 'false'
 
 env:
   REGISTRY: ghcr.io
@@ -22,7 +17,6 @@ jobs:
       server: ${{ steps.changes.outputs.server }}
       admin: ${{ steps.changes.outputs.admin }}
       nginx: ${{ steps.changes.outputs.nginx }}
-      force_rebuild: ${{ github.event.inputs.force_rebuild || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,43 +25,16 @@ jobs:
       - name: Detect changed files
         id: changes
         run: |
-          FORCE_REBUILD="${{ github.event.inputs.force_rebuild }}"
-          
-          if [ "$FORCE_REBUILD" = "true" ]; then
-            echo "Force rebuild enabled, building all services"
-            echo "server=true" >> $GITHUB_OUTPUT
-            echo "admin=true" >> $GITHUB_OUTPUT
-            echo "nginx=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          echo "Changed files: $CHANGED_FILES"
 
-          # Check server changes
-          if echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)'; then
-            echo "server=true" >> $GITHUB_OUTPUT
-            echo "Server changes detected"
-          else
-            echo "server=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Check admin-web changes
-          if echo "$CHANGED_FILES" | grep -qE '^apps/admin-web/'; then
-            echo "admin=true" >> $GITHUB_OUTPUT
-            echo "Admin-web changes detected"
-          else
-            echo "admin=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Check nginx changes
-          if echo "$CHANGED_FILES" | grep -qE '^deploy/nginx/'; then
-            echo "nginx=true" >> $GITHUB_OUTPUT
-            echo "Nginx changes detected"
-          else
-            echo "nginx=false" >> $GITHUB_OUTPUT
-          fi
+          echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)' && echo "server=true" >> $GITHUB_OUTPUT || echo "server=false" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" | grep -qE '^apps/admin-web/' && echo "admin=true" >> $GITHUB_OUTPUT || echo "admin=false" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" | grep -qE '^deploy/nginx/' && echo "nginx=true" >> $GITHUB_OUTPUT || echo "nginx=false" >> $GITHUB_OUTPUT
 
   build-server:
     needs: detect-changes
-    if: needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.force_rebuild == 'true'
+    if: needs.detect-changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -86,7 +53,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push server
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
@@ -96,11 +63,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-          provenance: false
 
   build-admin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.force_rebuild == 'true'
+    if: needs.detect-changes.outputs.admin == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -119,7 +85,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push admin-web
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: ./apps/admin-web
           push: true
@@ -129,7 +95,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-          provenance: false
 
   deploy:
     needs: [detect-changes, build-server, build-admin]
@@ -141,99 +106,85 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
-          cat >> ~/.ssh/config << SSHCONFIG
-          Host deploy-server
-            HostName ${{ secrets.DEPLOY_HOST }}
-            User ${{ secrets.DEPLOY_USER }}
-            IdentityFile ~/.ssh/id_rsa
-            StrictHostKeyChecking no
-            ServerAliveInterval 30
-            ServerAliveCountMax 3
-            TCPKeepAlive yes
-          SSHCONFIG
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Deploy microservices to server
+      - name: Deploy to server
         run: |
-          SERVER_CHANGED="${{ needs.detect-changes.outputs.server }}"
-          ADMIN_CHANGED="${{ needs.detect-changes.outputs.admin }}"
-          NGINX_CHANGED="${{ needs.detect-changes.outputs.nginx }}"
-          FORCE_REBUILD="${{ needs.detect-changes.outputs.force_rebuild }}"
-
-          ssh deploy-server 'bash -s' << REMOTE_SCRIPT
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'ENDSSH'
           set -e
-          cd ~/one-recycle
+          PROJECT_DIR="$HOME/one-recycle"
 
-          echo "=== System Info ==="
-          echo "Hostname: $(hostname)"
-          echo "Docker version: $(docker --version)"
-          echo "Force rebuild: $FORCE_REBUILD"
+          echo "=== Server Info ==="
+          echo "Docker: $(docker --version 2>/dev/null || echo 'not installed')"
+          echo "Project: $PROJECT_DIR"
 
-          # Login to GHCR
+          cd "$PROJECT_DIR"
+
+          # Pull latest code
+          git fetch origin ${{ github.ref_name }}
+          git checkout ${{ github.ref_name }}
+          git pull origin ${{ github.ref_name }}
+
+          # Create .env from template if not exists
+          if [ ! -f deploy/config/.env.production ]; then
+            echo "WARNING: deploy/config/.env.production not found, creating from template..."
+            if [ -f deploy/config/.env.production.example ]; then
+              cp deploy/config/.env.production.example deploy/config/.env.production
+              echo "Created .env.production from template. Please update with real values!"
+            else
+              echo "ERROR: deploy/config/.env.production.example not found"
+              exit 1
+            fi
+          fi
+
+          # Create .env file for docker compose with all required variables
+          {
+            echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+            echo "IMAGE_TAG=${{ github.ref_name }}"
+            echo "DOMAIN=${{ secrets.DOMAIN }}"
+            echo "EMAIL=${{ secrets.EMAIL }}"
+            # Add all variables from .env.production
+            cat deploy/config/.env.production
+          } > deploy/docker/.env
+
+          echo "=== Logging in to GHCR ==="
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-          # Clean old images if force rebuild
-          if [ "$FORCE_REBUILD" = "true" ]; then
-            echo "=== Force rebuild: Cleaning old images ==="
-            docker images | grep '${{ env.IMAGE_NAME }}' | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
-            docker images | grep 'ghcr.io/${{ env.IMAGE_NAME }}' | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
-          fi
-
-          # Stop and remove old containers
-          echo "=== Stopping old containers ==="
-          docker compose -f deploy/docker/docker-compose.production.yml down 2>/dev/null || true
-
-          # Check environment file
-          if [ ! -f deploy/config/.env.production ]; then
-            echo "ERROR: deploy/config/.env.production not found!"
-            exit 1
-          fi
-
-          # Create .env file for docker compose
-          cat > deploy/docker/.env << EOF
-          REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          IMAGE_TAG=${{ github.ref_name }}
-          DOMAIN=${{ secrets.DOMAIN }}
-          EMAIL=${{ secrets.EMAIL }}
-          EOF
-          cat deploy/config/.env.production >> deploy/docker/.env
-
-          # Pull fresh images
           echo "=== Pulling images ==="
           docker compose -f deploy/docker/docker-compose.production.yml pull
 
-          # Start all services fresh
-          echo "=== Starting all services ==="
+          echo "=== Stopping old containers ==="
+          docker compose -f deploy/docker/docker-compose.production.yml down || true
+
+          echo "=== Starting services ==="
           docker compose -f deploy/docker/docker-compose.production.yml up -d
 
-          # Wait and check
-          sleep 30
           echo "=== Container Status ==="
-          docker compose -f deploy/docker/docker-compose.production.yml ps -a
+          docker compose -f deploy/docker/docker-compose.production.yml ps
 
-          # Show logs for failed containers
-          FAILED=$(docker compose -f deploy/docker/docker-compose.production.yml ps -a --format '{{.Name}} {{.Status}}' | grep -v Up | awk '{print $1}')
-          if [ -n "$FAILED" ]; then
-            echo "=== Failed containers logs ==="
-            for container in $FAILED; do
-              echo "--- Logs for $container ---"
-              docker logs --tail 50 $container 2>&1 || true
-            done
-          fi
+          echo "=== Checking for errors ==="
+          docker compose -f deploy/docker/docker-compose.production.yml logs --tail=50 | grep -i error || echo "No errors found"
 
-          # Cleanup unused images
-          docker system prune -af --volumes=false || true
-          REMOTE_SCRIPT
+          echo "=== Deployment completed ==="
+          ENDSSH
 
       - name: Health Check
         run: |
-          for i in {1..30}; do
-            if curl -sf http://${{ secrets.DEPLOY_HOST }}/health; then
+          echo "Waiting for services to start..."
+          sleep 30
+
+          DOMAIN="${{ secrets.DOMAIN }}"
+          for i in {1..10}; do
+            echo "Health check attempt $i/10..."
+            if curl -sf --max-time 10 https://${DOMAIN}/health 2>/dev/null; then
               echo "Health check passed!"
               exit 0
             fi
-            echo "Attempt $i/30 failed, waiting..."
             sleep 10
           done
-          echo "Health check failed after 30 attempts"
+
+          echo "Health check failed, showing container status:"
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'docker compose -f $HOME/one-recycle/deploy/docker/docker-compose.production.yml ps -a'
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'docker compose -f $HOME/one-recycle/deploy/docker/docker-compose.production.yml logs --tail=30'
+
           exit 1
