@@ -17,6 +17,7 @@ jobs:
       server: ${{ steps.changes.outputs.server }}
       admin: ${{ steps.changes.outputs.admin }}
       nginx: ${{ steps.changes.outputs.nginx }}
+      force: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +35,7 @@ jobs:
 
   build-server:
     needs: detect-changes
-    if: needs.detect-changes.outputs.server == 'true'
+    if: needs.detect-changes.outputs.force == 'true' || needs.detect-changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -66,7 +67,7 @@ jobs:
 
   build-admin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.admin == 'true'
+    if: needs.detect-changes.outputs.force == 'true' || needs.detect-changes.outputs.admin == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -98,7 +99,7 @@ jobs:
 
   deploy:
     needs: [detect-changes, build-server, build-admin]
-    if: always() && (needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true')
+    if: always() && (needs.detect-changes.outputs.force == 'true' || needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true')
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH
