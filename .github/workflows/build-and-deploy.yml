@@ -121,11 +121,6 @@ jobs:
 
           cd "$PROJECT_DIR"
 
-          # Pull latest code
-          git fetch origin ${{ github.ref_name }}
-          git checkout ${{ github.ref_name }}
-          git pull origin ${{ github.ref_name }}
-
           # Create .env from template if not exists
           if [ ! -f deploy/config/.env.production ]; then
             echo "WARNING: deploy/config/.env.production not found, creating from template..."
