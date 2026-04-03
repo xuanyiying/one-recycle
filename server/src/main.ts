@@ -7,20 +7,37 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
-// 解决 BigInt 序列化问题
+/**
+ * OneRecycle 主应用入口
+ * 
+ * 一站式旧物回收平台后端服务，提供：
+ * - 用户认证与授权
+ * - 订单管理与状态流转
+ * - 支付与结算处理
+ * - 库存与仓储管理
+ * - 通知与消息推送
+ * - AI 智能分类
+ */
+
+// 解决 BigInt 序列化问题 - BigInt转为字符串以便JSON传输
 BigInt.prototype.toJSON = function () {
   return this.toString();
 };
 
+/**
+ * 应用启动引导函数
+ * 初始化NestJS应用并配置中间件、管道、过滤器等
+ */
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
   const configService = app.get(ConfigService);
 
-  // 全局前缀
+  // 全局路由前缀 - 所有API添加/api前缀
   app.setGlobalPrefix('api');
 
+  // CORS配置 - 允许跨域请求
   const corsOrigins = configService.get<string[]>('app.corsOrigins') || [];
   const normalizedOrigins = corsOrigins
     .map((origin) => origin.trim())
@@ -61,28 +78,28 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  // 全局验证管道
+  // 全局验证管道 - 自动验证请求数据
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+      whitelist: true,                    // 移除不在DTO中的属性
+      forbidNonWhitelisted: true,         // 拒绝包含未定义属性的请求
+      transform: true,                    // 自动类型转换
       transformOptions: {
         enableImplicitConversion: true,
       },
     }),
   );
 
-  // 全局异常过滤器
+  // 全局异常过滤器 - 统一异常处理
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // 全局拦截器
+  // 全局拦截器 - 日志记录和响应包装
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
     new ResponseInterceptor(),
   );
 
-  // Swagger 配置
+  // Swagger API文档配置
   const config = new DocumentBuilder()
     .setTitle('OneRecycle API')
     .setDescription('OneRecycle 多平台旧物回收 API 文档')
@@ -112,10 +129,12 @@ async function bootstrap() {
     },
   });
 
+  // 启动应用
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
   logger.log(`📚 Swagger docs available at: http://localhost:${port}/api/docs`);
 }
+
 bootstrap();
