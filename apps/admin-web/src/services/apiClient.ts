@@ -1,10 +1,10 @@
-import axios, {
-  AxiosInstance,
-  AxiosResponse,
-  AxiosError,
-  AxiosRequestConfig,
-} from 'axios';
 import { toast } from '@/components/ui/toast';
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from 'axios';
 
 /**
  * API客户端配置
@@ -230,14 +230,14 @@ export class ApiClient {
       typeof responseData === 'object' &&
       'success' in (responseData as Record<string, unknown>)
     ) {
-      const resp = responseData as { 
-        success: boolean; 
-        data?: T; 
+      const resp = responseData as {
+        success: boolean;
+        data?: T;
         message?: string;
         code?: string;
         error?: { code: string; message: string; details?: any };
       };
-      
+
       // 处理业务逻辑错误
       if (resp.success === false) {
         const errorMessage = resp.error?.message || resp.message || '请求失败';
@@ -247,7 +247,7 @@ export class ApiClient {
         error.details = resp.error?.details;
         throw error;
       }
-      
+
       // 返回data字段
       if ('data' in resp) {
         return resp.data as T;
@@ -344,6 +344,31 @@ export class ApiClient {
     try {
       const requestConfig = { ...config, data };
       const response = await this.instance.delete<ApiResponse<T>>(url, requestConfig);
+      if (config?.showSuccess && config?.successMessage) {
+        toast.success(config.successMessage);
+      }
+      return this.unwrapResponseData<T>(response.data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * 文件上传请求
+   * 使用multipart/form-data格式上传文件
+   * @param url - 请求路径
+   * @param formData - FormData对象
+   * @param config - 请求配置
+   * @returns Promise<T>
+   */
+  async upload<T = any>(url: string, formData: FormData, config?: RequestConfig): Promise<T> {
+    try {
+      const response = await this.instance.post<ApiResponse<T>>(url, formData, {
+        ...config,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
       }
