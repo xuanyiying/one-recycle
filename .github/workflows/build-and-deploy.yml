@@ -26,7 +26,7 @@ jobs:
       - name: Detect changed files
         id: changes
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD || echo "")
           echo "Changed files: $CHANGED_FILES"
 
           echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)' && echo "server=true" >> $GITHUB_OUTPUT || echo "server=false" >> $GITHUB_OUTPUT
@@ -35,7 +35,7 @@ jobs:
 
   build-server:
     needs: detect-changes
-    if: needs.detect-changes.outputs.force == 'true' || needs.detect-changes.outputs.server == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,7 +67,7 @@ jobs:
 
   build-admin:
     needs: detect-changes
-    if: needs.detect-changes.outputs.force == 'true' || needs.detect-changes.outputs.admin == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -99,7 +99,7 @@ jobs:
 
   deploy:
     needs: [detect-changes, build-server, build-admin]
-    if: always() && (needs.detect-changes.outputs.force == 'true' || needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true')
+    if: github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.server == 'true' || needs.detect-changes.outputs.admin == 'true' || needs.detect-changes.outputs.nginx == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH
