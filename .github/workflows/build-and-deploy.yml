@@ -26,12 +26,30 @@ jobs:
       - name: Detect changed files
         id: changes
         run: |
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD || echo "")
+          # Check if we have a previous commit to compare
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            CHANGED_FILES=$(git diff --name-only HEAD^ HEAD)
+          else
+            # First commit, compare with empty tree
+            CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD)
+          fi
           echo "Changed files: $CHANGED_FILES"
 
-          echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)' && echo "server=true" >> $GITHUB_OUTPUT || echo "server=false" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" | grep -qE '^apps/admin-web/' && echo "admin=true" >> $GITHUB_OUTPUT || echo "admin=false" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" | grep -qE '^deploy/nginx/' && echo "nginx=true" >> $GITHUB_OUTPUT || echo "nginx=false" >> $GITHUB_OUTPUT
+          # Always set outputs to prevent downstream failures
+          echo "server=false" >> $GITHUB_OUTPUT
+          echo "admin=false" >> $GITHUB_OUTPUT
+          echo "nginx=false" >> $GITHUB_OUTPUT
+
+          # Check for changes
+          if echo "$CHANGED_FILES" | grep -qE '^(server/|deploy/docker/)'; then
+            echo "server=true" >> $GITHUB_OUTPUT
+          fi
+          if echo "$CHANGED_FILES" | grep -qE '^apps/admin-web/'; then
+            echo "admin=true" >> $GITHUB_OUTPUT
+          fi
+          if echo "$CHANGED_FILES" | grep -qE '^deploy/nginx/'; then
+            echo "nginx=true" >> $GITHUB_OUTPUT
+          fi
 
   build-server:
     needs: detect-changes
