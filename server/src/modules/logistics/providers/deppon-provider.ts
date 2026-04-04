@@ -14,8 +14,11 @@ import {
   PrecheckDto,
   PrecheckResult,
   QueryFeeDto,
+  QueryFeeResult,
   QueryStatusDto,
+  QueryStatusResult,
   QueryTraceDto,
+  QueryTraceResult,
   SubscribeTraceDto,
 } from '../dto/jdl.dto';
 import {
@@ -182,9 +185,9 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
    */
   async queryTrace(
     params: QueryTraceDto,
-  ): Promise<any> {
+  ): Promise<QueryTraceResult> {
     const validParams = await this.validateParams(QueryTraceDto, params);
-    return this.post<any>(
+    return this.post<QueryTraceResult>(
       '/openapi/v1/trace/query',
       validParams,
     );
@@ -213,9 +216,9 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
    */
   async queryStatus(
     params: QueryStatusDto,
-  ): Promise<any> {
+  ): Promise<QueryStatusResult> {
     const validParams = await this.validateParams(QueryStatusDto, params);
-    return this.post<any>(
+    return this.post<QueryStatusResult>(
       '/openapi/v1/order/status',
       validParams,
     );
@@ -224,9 +227,9 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   /**
    * 8. Query Fee - 查询运费
    */
-  async queryFee(params: QueryFeeDto): Promise<any> {
+  async queryFee(params: QueryFeeDto): Promise<QueryFeeResult> {
     const validParams = await this.validateParams(QueryFeeDto, params);
-    return this.post<any>(
+    return this.post<QueryFeeResult>(
       '/openapi/v1/order/fee',
       validParams,
     );

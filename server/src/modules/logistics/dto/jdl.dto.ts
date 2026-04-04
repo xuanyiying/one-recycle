@@ -156,6 +156,32 @@ export class QueryTraceDto {
   waybillCode: string;
 }
 
+export class TraceItem {
+  @IsString()
+  time: string;
+
+  @IsString()
+  context: string;
+
+  @IsOptional()
+  @IsString()
+  operator?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+}
+
+export class QueryTraceResult {
+  @IsString()
+  waybillCode: string;
+
+  @IsString()
+  status: string;
+
+  traces: TraceItem[];
+}
+
 /**
  * 5. Modify Order API (/ecap/v1/orders/modify)
  */
@@ -211,6 +237,26 @@ export class QueryStatusDto {
   waybillCode: string;
 }
 
+export class QueryStatusResult {
+  @IsString()
+  waybillCode: string;
+
+  @IsString()
+  status: string;
+
+  @IsOptional()
+  @IsString()
+  statusDesc?: string;
+
+  @IsOptional()
+  @IsString()
+  pickupTime?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryTime?: string;
+}
+
 /**
  * 8. Query Fee API (/ecap/v1/orders/actualfee/query)
  */
@@ -222,4 +268,32 @@ export class QueryFeeDto {
   @IsNotEmpty()
   @IsString()
   waybillCode: string;
+}
+
+export class QueryFeeResult {
+  @IsString()
+  waybillCode: string;
+
+  @IsNumber()
+  totalFee: number;
+
+  @IsOptional()
+  @IsNumber()
+  freight?: number;
+
+  @IsOptional()
+  @IsNumber()
+  insuranceFee?: number;
+
+  @IsOptional()
+  @IsNumber()
+  pickupFee?: number;
+
+  @IsOptional()
+  @IsNumber()
+  deliveryFee?: number;
+
+  @IsOptional()
+  @IsNumber()
+  otherFee?: number;
 }
