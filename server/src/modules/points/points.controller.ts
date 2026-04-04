@@ -36,7 +36,7 @@ export class PointsController {
     // private readonly signInService: SignInService,
     // private readonly taskService: PointsTaskService,
     private readonly inviteService: InviteService,
-  ) { }
+  ) {}
 
   // ==================== 积分概览 ====================
 

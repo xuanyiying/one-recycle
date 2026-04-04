@@ -9,7 +9,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 /**
  * OneRecycle 主应用入口
- * 
+ *
  * 一站式旧物回收平台后端服务，提供：
  * - 用户认证与授权
  * - 订单管理与状态流转
@@ -81,9 +81,9 @@ async function bootstrap() {
   // 全局验证管道 - 自动验证请求数据
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,                    // 移除不在DTO中的属性
-      forbidNonWhitelisted: true,         // 拒绝包含未定义属性的请求
-      transform: true,                    // 自动类型转换
+      whitelist: true, // 移除不在DTO中的属性
+      forbidNonWhitelisted: true, // 拒绝包含未定义属性的请求
+      transform: true, // 自动类型转换
       transformOptions: {
         enableImplicitConversion: true,
       },

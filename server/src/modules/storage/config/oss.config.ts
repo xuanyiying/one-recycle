@@ -35,7 +35,7 @@ export class OssConfigService {
    * Get OSS type from environment
    */
   private getOssTypeFromEnv(): OssType {
-    const type = (process.env.OSS_TYPE || 'MINIO').toUpperCase();
+    const type = (process.env.OSS_TYPE || 'TENCENT_COS').toUpperCase();
     if (!Object.values(OssType).includes(type as OssType)) {
       throw new Error(`Unsupported OSS type: ${type}`);
     }
@@ -78,9 +78,10 @@ export class OssConfigService {
       rawEndpoint = process.env.OSS_ENDPOINT;
     } else if (isMinio) {
       if (minioEndpoint) {
-        rawEndpoint = minioPort && !minioEndpoint.includes(':')
-          ? `${minioEndpoint}:${minioPort}`
-          : minioEndpoint;
+        rawEndpoint =
+          minioPort && !minioEndpoint.includes(':')
+            ? `${minioEndpoint}:${minioPort}`
+            : minioEndpoint;
       } else {
         rawEndpoint = 'http://localhost:9000';
       }

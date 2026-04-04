@@ -6,12 +6,12 @@ import { CustomerUserService } from './customer-user.service';
 
 /**
  * 客服用户模块
- * 
+ *
  * 管理客服人员的后台操作，包括：
  * - 客服用户管理
  * - 积分记录查询
  * - 客服操作日志
- * 
+ *
  * @module CustomerUserModule
  */
 @Module({
@@ -20,4 +20,4 @@ import { CustomerUserService } from './customer-user.service';
   providers: [CustomerUserService, PointsRecordService],
   exports: [CustomerUserService],
 })
-export class CustomerUserModule { }
+export class CustomerUserModule {}

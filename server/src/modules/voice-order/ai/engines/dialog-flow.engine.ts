@@ -17,7 +17,7 @@ export class DialogFlowEngine {
     private readonly intentEngine: IntentEngine,
     private readonly voiceOrderService: VoiceOrderService,
     private readonly dialogTemplateService: DialogTemplateService,
-  ) { }
+  ) {}
 
   /**
    * 处理用户输入

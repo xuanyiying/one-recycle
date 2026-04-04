@@ -5,12 +5,12 @@ import { CategoryWarehouseService } from './category-warehouse.service';
 
 /**
  * 分类仓库关联模块
- * 
+ *
  * 管理分类与仓库的关联关系，包括：
  * - 分类的仓库分配
  * - 仓库分类配置
  * - 分类库存管理
- * 
+ *
  * @module CategoryWarehouseModule
  */
 @Module({
@@ -19,4 +19,4 @@ import { CategoryWarehouseService } from './category-warehouse.service';
   providers: [CategoryWarehouseService],
   exports: [CategoryWarehouseService],
 })
-export class CategoryWarehouseModule { }
+export class CategoryWarehouseModule {}

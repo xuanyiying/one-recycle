@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { LogisticsService } from '../logistics.service';
 import { JdlLogisticsProvider } from './jd-provider';
+import { DepponLogisticsProvider } from './deppon-provider';
 import {
   ILogisticsProvider,
   ILogisticsProviderFactory,
@@ -34,7 +35,8 @@ export class LogisticsProviderFactory implements ILogisticsProviderFactory {
   private registerBuiltInProviders(): void {
     this.providerConstructors.set('JD', JdlLogisticsProvider);
     this.providerConstructors.set('JDL', JdlLogisticsProvider);
-    this.logger.log('Registered built-in logistics providers: JD, JDL');
+    this.providerConstructors.set('DEPPON', DepponLogisticsProvider);
+    this.logger.log('Registered built-in logistics providers: JD, JDL, DEPPON');
   }
 
   /**

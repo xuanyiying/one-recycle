@@ -77,6 +77,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
+      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
+      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_SECURE=${OSS_SECURE:-true}
     env_file:
       - .env
     depends_on:
@@ -113,6 +120,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
+      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
+      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_SECURE=${OSS_SECURE:-true}
     env_file:
       - .env
     depends_on:
@@ -149,6 +163,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
+      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
+      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_SECURE=${OSS_SECURE:-true}
     env_file:
       - .env
     depends_on:
@@ -185,6 +206,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
+      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
+      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_SECURE=${OSS_SECURE:-true}
     env_file:
       - .env
     depends_on:
@@ -221,6 +249,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
+      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
+      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_SECURE=${OSS_SECURE:-true}
     env_file:
       - .env
     depends_on:
@@ -257,6 +292,13 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
+      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
+      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
+      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
+      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
+      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
+      - OSS_SECURE=${OSS_SECURE:-true}
     env_file:
       - .env
     depends_on:
@@ -315,13 +357,18 @@ services:
       - "443:443"
     volumes:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/https.conf.template:/tmp/https.conf.template:ro
+      - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ../ssl:/etc/nginx/ssl:ro
       - ../certbot-webroot:/var/www/certbot:ro
+    environment:
+      - DOMAIN=${DOMAIN:-backbuy.cn}
     networks:
       - one-recycle-network
     depends_on:
       - api-gateway
       - admin-web
+    entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:
       test: [ "CMD", "wget", "-q", "--spider", "http://localhost/health" ]
       interval: 30s
@@ -342,7 +389,7 @@ services:
       - ../ssl:/etc/letsencrypt
       - ../certbot-webroot:/var/www/certbot
     environment:
-      - DOMAIN=${DOMAIN}
+      - DOMAIN=${DOMAIN:-backbuy.cn}
       - EMAIL=${EMAIL}
     networks:
       - one-recycle-network
@@ -351,13 +398,19 @@ services:
       - -c
       - |
         trap 'exit 0' TERM INT
+
         while true; do
-          if [ -d "/etc/letsencrypt/live/$${DOMAIN}" ]; then
-            certbot renew --webroot -w /var/www/certbot --quiet || true
+          DOMAIN_NAME="$${DOMAIN:-backbuy.cn}"
+          CERT_PATH="/etc/letsencrypt/live/$${DOMAIN_NAME}"
+
+          if [ -d "$$CERT_PATH" ] && [ -f "$$CERT_PATH/fullchain.pem" ] && [ -f "$$CERT_PATH/privkey.pem" ]; then
+            echo "Renewing certificate if needed..."
+            certbot renew --webroot -w /var/www/certbot --quiet 2>/dev/null || true
           else
+            echo "Requesting initial certificate for $${DOMAIN_NAME}..."
             certbot certonly --webroot -w /var/www/certbot \
-              -d "$${DOMAIN}" -d "www.$${DOMAIN}" -d "api.$${DOMAIN}" -d "admin.$${DOMAIN}" \
-              --email "$${EMAIL}" --agree-tos --no-eff-email --non-interactive || true
+              -d "$$DOMAIN_NAME" -d "www.$$DOMAIN_NAME" -d "api.$$DOMAIN_NAME" -d "admin.$$DOMAIN_NAME" \
+              --email "$$EMAIL" --agree-tos --no-eff-email --non-interactive --quiet 2>/dev/null || true
           fi
           sleep 12h
         done

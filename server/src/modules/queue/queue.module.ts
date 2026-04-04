@@ -30,15 +30,15 @@ import { TenantModule } from '../tenant/tenant.module';
 
 /**
  * 队列处理模块
- * 
+ *
  * 基于Bull队列的任务处理系统，支持：
  * - 订单队列处理（状态流转、超时处理）
  * - 通知队列处理（短信、邮件、推送）
  * - 支付队列处理（支付回调、退款）
  * - 调度队列处理（快递员分配、路线优化）
- * 
+ *
  * 使用Redis作为消息队列后端，支持分布式部署
- * 
+ *
  * @module QueueModule
  */
 @Module({
@@ -97,4 +97,4 @@ import { TenantModule } from '../tenant/tenant.module';
     DispatchQueueService,
   ],
 })
-export class QueueModule { }
+export class QueueModule {}

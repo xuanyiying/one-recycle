@@ -201,7 +201,9 @@ export class TencentCosService implements OssService {
       })) as any;
 
       if (result.statusCode !== 200) {
-        throw new Error(`Get file info failed with status ${result.statusCode}`);
+        throw new Error(
+          `Get file info failed with status ${result.statusCode}`,
+        );
       }
 
       const headers = result.headers;
@@ -214,8 +216,7 @@ export class TencentCosService implements OssService {
           ? new Date(headers['last-modified'] as string)
           : new Date(),
         contentType:
-          (headers?.['content-type'] as string) ||
-          'application/octet-stream',
+          (headers?.['content-type'] as string) || 'application/octet-stream',
         url: this.getFileUrl(key),
       };
     } catch (error) {
@@ -245,7 +246,9 @@ export class TencentCosService implements OssService {
       return contents.map((obj: any) => ({
         key: obj.Key || '',
         size: obj.Size || 0,
-        lastModified: obj.LastModified ? new Date(obj.LastModified) : new Date(),
+        lastModified: obj.LastModified
+          ? new Date(obj.LastModified)
+          : new Date(),
         contentType: 'application/octet-stream',
         url: this.getFileUrl(obj.Key || ''),
       }));

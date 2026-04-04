@@ -116,11 +116,16 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/https.conf.template:/tmp/https.conf.template:ro
+      - ./nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ./ssl:/etc/nginx/ssl:ro
       - ./certbot-webroot:/var/www/certbot:ro
+    environment:
+      - DOMAIN=${DOMAIN:-backbuy.cn}
     depends_on:
       - backend
       - admin-web
+    entrypoint: ["/bin/sh", "/nginx-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
       interval: 30s

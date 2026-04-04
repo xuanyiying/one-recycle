@@ -56,6 +56,7 @@ export interface ExpressCompany {
 export const EXPRESS_COMPANIES: ExpressCompany[] = [
   { code: 'SF', name: '顺丰速运', supportedTypes: ['标准快递', '特快', '冷链'] },
   { code: 'JD', name: '京东物流', supportedTypes: ['标准快递', '特快', '大件'] },
+  { code: 'DEPPON', name: '德邦快递', supportedTypes: ['标准快递', '大件', '重货'] },
   { code: 'YTO', name: '圆通速递', supportedTypes: ['标准快递', '经济件'] },
   { code: 'ZTO', name: '中通快递', supportedTypes: ['标准快递', '经济件'] },
   { code: 'STO', name: '申通快递', supportedTypes: ['标准快递', '经济件'] },
