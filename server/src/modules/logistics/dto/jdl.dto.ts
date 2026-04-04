@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsNumber, IsNotEmpty } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 /**
  * Base Response for ECAP APIs
@@ -179,6 +180,9 @@ export class QueryTraceResult {
   @IsString()
   status: string;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TraceItem)
   traces: TraceItem[];
 }
 
