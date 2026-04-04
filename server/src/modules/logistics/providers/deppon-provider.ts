@@ -99,7 +99,11 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   /**
    * Generic Request Wrapper
    */
-  private async post<T>(url: string, businessData: any): Promise<T> {
+  private async post<T>(
+    url: string,
+    businessData: any,
+    responseDtoClass?: new () => any,
+  ): Promise<T> {
     try {
       const params = this.buildSignedParams(businessData);
       const response = await this.axiosInstance.post<DepponResponse<T>>(
@@ -110,6 +114,9 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
 
       // 德邦 API 返回码: 1000 表示成功
       if (resData.resultCode === '1000' || resData.resultCode === '0') {
+        if (responseDtoClass && resData.data) {
+          return this.validateResponse(responseDtoClass, resData.data) as unknown as T;
+        }
         return resData.data as T;
       }
       throw new Error(
@@ -145,6 +152,31 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   }
 
   /**
+   * Validate response
+   */
+  private async validateResponse<T extends object>(
+    dtoClass: new () => T,
+    data: any,
+  ): Promise<T> {
+    const dto = plainToInstance(dtoClass, data);
+    try {
+      await validateOrReject(dto, {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      });
+      return dto;
+    } catch (errors) {
+      const messages = Array.isArray(errors)
+        ? errors
+          .map((e) => Object.values(e.constraints || {}).join(', '))
+          .join('; ')
+        : String(errors);
+      this.logger.error(`Response Validation Failed: ${messages}`);
+      throw new Error(`Response Validation Failed: ${messages}`);
+    }
+  }
+
+  /**
    * 1. Pre-check - 预检查/运力查询
    */
   async precheck(params: PrecheckDto): Promise<PrecheckResult> {
@@ -152,6 +184,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     return this.post<PrecheckResult>(
       '/openapi/v1/order/precheck',
       validParams,
+      PrecheckResult,
     );
   }
 
@@ -165,6 +198,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     return this.post<CreateOrderResult>(
       '/openapi/v1/order/create',
       validParams,
+      CreateOrderResult,
     );
   }
 
@@ -190,6 +224,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     return this.post<QueryTraceResult>(
       '/openapi/v1/trace/query',
       validParams,
+      QueryTraceResult,
     );
   }
 
@@ -221,6 +256,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     return this.post<QueryStatusResult>(
       '/openapi/v1/order/status',
       validParams,
+      QueryStatusResult,
     );
   }
 
@@ -232,6 +268,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     return this.post<QueryFeeResult>(
       '/openapi/v1/order/fee',
       validParams,
+      QueryFeeResult,
     );
   }
 }
