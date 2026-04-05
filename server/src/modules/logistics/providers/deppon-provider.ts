@@ -102,7 +102,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   private async post<T>(
     url: string,
     businessData: any,
-    responseDtoClass?: new () => any,
+    responseDtoClass?: new () => T,
   ): Promise<T> {
     try {
       const params = this.buildSignedParams(businessData);
@@ -115,7 +115,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
       // 德邦 API 返回码: 1000 表示成功
       if (resData.resultCode === '1000' || resData.resultCode === '0') {
         if (responseDtoClass && resData.data) {
-          return this.validateResponse(responseDtoClass, resData.data) as unknown as T;
+          return this.validateResponse(responseDtoClass as new () => object, resData.data) as T;
         }
         return resData.data as T;
       }
