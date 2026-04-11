@@ -182,12 +182,6 @@ export interface UpdateTaskDto {
   isActive?: boolean;
 }
 
-export interface PointsMallConfig {
-  enabled: boolean;
-  updatedAt: string;
-  updatedBy?: string;
-}
-
 export const pointsTaskApi = {
   /**
    * 获取任务列表
@@ -222,20 +216,3 @@ export const pointsTaskApi = {
   },
 };
 
-export const pointsMallConfigApi = {
-  /**
-   * 获取积分商城配置
-   */
-  async getConfig(): Promise<PointsMallConfig> {
-    const response = await apiClient.get('/admin/points/config');
-    return response.data;
-  },
-
-  /**
-   * 切换积分商城状态
-   */
-  async toggleStatus(enabled: boolean): Promise<PointsMallConfig> {
-    const response = await apiClient.post('/admin/points/config/toggle', { enabled });
-    return response.data;
-  },
-};

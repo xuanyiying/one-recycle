@@ -7,7 +7,6 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
-  Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
@@ -17,7 +16,6 @@ import { PointsOrderService } from './services/points-order.service';
 import { PointsTaskService } from './services/points-task.service';
 import { PointsService } from './points.service';
 import { ReferralRewardService } from './services/referral-reward.service';
-import { PointsMallConfigService } from './services/points-mall-config.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
@@ -35,7 +33,6 @@ export class PointsAdminController {
     private readonly taskService: PointsTaskService,
     private readonly pointsService: PointsService,
     private readonly referralRewardService: ReferralRewardService,
-    private readonly pointsMallConfigService: PointsMallConfigService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -188,32 +185,4 @@ export class PointsAdminController {
     return { success: true, data: updatedConfig };
   }
 
-  // ==================== 积分商城开关控制 ====================
-
-  @Get('config')
-  async getPointsMallConfig() {
-    const config = await this.pointsMallConfigService.getConfig();
-    return { success: true, data: config };
-  }
-
-  @Post('config/toggle')
-  async togglePointsMallStatus(
-    @Body() body: { enabled: boolean },
-    @Req() req: any,
-  ) {
-    const operatorId = req.user?.id?.toString();
-    const operatorName = req.user?.username || req.user?.nickname;
-
-    const config = await this.pointsMallConfigService.toggleStatus(
-      body.enabled,
-      operatorId,
-      operatorName,
-    );
-
-    return {
-      success: true,
-      data: config,
-      message: `积分商城已${config.enabled ? '开启' : '关闭'}`,
-    };
-  }
 }

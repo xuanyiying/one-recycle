@@ -43,8 +43,8 @@ interface QuickReply {
   category?: string;
 }
 
-export default function ChatPage({ params }: { params: { sessionId: string } }) {
-  const { sessionId } = params;
+export default function ChatPage({ params }: { params: Promise<{ sessionId: string }> }) {
+  const { sessionId } = React.use(params);
   const [session, setSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');

@@ -34,7 +34,7 @@ import { PricingModule } from './modules/pricing/pricing.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { CustomerServiceModule } from './modules/customer/customer.module';
 import { CustomerUserModule } from './modules/customer/customer-user.module';
-import { VoiceOrderModule } from './modules/voice-order/voice-order.module';
+
 import { PointsModule } from './modules/points/points.module';
 import { ContentConfigModule } from './modules/content-config/content-config.module';
 import { CategoryWarehouseModule } from './modules/category-warehouse/category-warehouse.module';
@@ -93,7 +93,6 @@ import { HealthModule } from './modules/health/health.module';
     StorageModule,
     CustomerServiceModule,
     CustomerUserModule,
-    VoiceOrderModule,
     PointsModule,
     ContentConfigModule,
     CategoryWarehouseModule,

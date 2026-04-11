@@ -1676,27 +1676,7 @@ model CustomerServiceStats {
   @@map("customer_service_stats")
 }
 
-/// AI对话记录表（用于分析和优化）
-model AIConversationLog {
-  id          BigInt   @id @default(autoincrement()) @map("id")
-  sessionId   BigInt   @map("session_id")
-  userId      BigInt   @map("user_id")
-  userMessage String   @map("user_message") @db.Text
-  intent      String?  @map("intent") @db.VarChar(100)
-  entities    Json?    @map("entities") // 提取的实体
-  aiResponse  String?  @map("ai_response") @db.Text
-  confidence  Decimal? @map("confidence") @db.Decimal(5, 4)
-  isHelpful   Boolean? @map("is_helpful") // 用户反馈是否有帮助
-  createdAt   DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([sessionId])
-  @@index([userId])
-  @@index([intent])
-  @@index([createdAt])
-  @@map("ai_conversation_logs")
-}
 
 // ============================================
 // Customer Service Enums
@@ -1783,72 +1763,7 @@ enum TicketAction {
   REOPEN // 重开
 }
 
-// 语音下单会话表
-model VoiceOrderSession {
-  id            String    @id @default(uuid())
-  userId        BigInt    @map("user_id")
-  currentStep   String    @map("current_step") // DialogStep 枚举
-  collectedData Json      @map("collected_data")
-  context       Json?
-  status        String    @default("ACTIVE") // ACTIVE, COMPLETED, ABANDONED
-  orderNo       String?   @map("order_no")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  completedAt   DateTime? @map("completed_at")
 
-  user User                  @relation(fields: [userId], references: [id])
-  logs VoiceRecognitionLog[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("voice_order_sessions")
-}
-
-// 语音识别日志表
-model VoiceRecognitionLog {
-  id             String   @id @default(uuid())
-  sessionId      String   @map("session_id")
-  userId         BigInt   @map("user_id")
-  step           String // 对话步骤
-  audioUrl       String?  @map("audio_url")
-  recognizedText String   @map("recognized_text")
-  intent         String? // 识别的意图
-  entities       Json?
-  confidence     Float?
-  duration       Int? // 音频时长 (秒)
-  status         String // SUCCESS, FAILED, TIMEOUT
-  errorMessage   String?  @map("error_message")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  session VoiceOrderSession @relation(fields: [sessionId], references: [id])
-
-  @@index([sessionId])
-  @@index([userId])
-  @@index([createdAt])
-  @@map("voice_recognition_logs")
-}
-
-// 话术模板表
-model DialogTemplate {
-  id           Int      @id @default(autoincrement())
-  step         String // DialogStep
-  templateCode String   @map("template_code")
-  templateText String   @map("template_text")
-  variables    String[] @default([])
-  priority     Int      @default(0)
-  isActive     Boolean  @default(true) @map("is_active")
-  testGroup    String?  @map("test_group") // A/B 测试分组
-  hitCount     Int      @default(0) @map("hit_count")
-  successRate  Float?   @map("success_rate")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  @@unique([step, templateCode])
-  @@index([step])
-  @@index([isActive])
-  @@map("dialog_templates")
-}
 
 // ============================================
 // Points Mall Module - 积分商城模块
