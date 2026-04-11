@@ -11,6 +11,7 @@ import {
   Put,
   BadRequestException,
   Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +25,7 @@ import { CreateOrderDto, UpdateOrderDto } from './dto';
 import { OrderFilters } from './interfaces/order.interface';
 import { Order } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Public } from '@/common/decorators/auth.decorator';
 import type { Request } from 'express';
 
 @ApiTags('orders')
@@ -201,6 +203,7 @@ export class OrderController {
    * 物流状态回调
    * @param id 订单ID
    */
+  @Public()
   @Post(':id/logistics/notify')
   @ApiOperation({ summary: '物流状态回调' })
   @ApiParam({ name: 'id', type: Number })
@@ -282,14 +285,18 @@ export class OrderController {
   }
 
   /**
-   * 删除订单
+   * 删除订单（仅管理员）
    * @param id 订单ID
    */
   @Delete(':id')
   @ApiOperation({ summary: '删除订单' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: '订单删除成功' })
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: any): Promise<void> {
+    // 仅管理员可删除订单
+    if (req.user?.role !== 'ADMIN') {
+      throw new ForbiddenException('仅管理员可删除订单');
+    }
     return this.orderService.remove(id);
   }
 }

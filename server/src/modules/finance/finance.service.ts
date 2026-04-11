@@ -12,6 +12,11 @@ import { Prisma } from '@prisma/client';
 import { toDecimal } from '@/common/utils/decimal.util';
 import { generateorderNo } from '@/common/utils/common.util';
 import { PaymentConfig } from '@/config/payment.config';
+import { RedisService } from '@/common';
+
+const PASSWORD_SALT_LENGTH = 16;
+const PASSWORD_KEY_LENGTH = 64;
+const PASSWORD_ITERATIONS = 100000;
 
 @Injectable()
 export class FinanceService {
@@ -21,6 +26,7 @@ export class FinanceService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
+    private redisService: RedisService,
   ) {
     this.mockPayBaseUrl =
       this.configService.get<PaymentConfig>('payment')?.mockPayBaseUrl ||
@@ -88,27 +94,34 @@ export class FinanceService {
   }
 
   async mockPaySuccess(orderNo: string, tenantId?: string) {
-    const order = await this.prisma.rechargeOrder.findUnique({
-      where: { orderNo },
-    });
+    // 防重入：使用 Redis 分布式锁
+    return this.redisService.withLock(
+      `finance:recharge:${orderNo}`,
+      async () => {
+        const order = await this.prisma.rechargeOrder.findUnique({
+          where: { orderNo },
+        });
 
-    if (!order || order.status !== 'PENDING') {
-      throw new BadRequestException('Order invalid or already paid');
-    }
+        if (!order || order.status !== 'PENDING') {
+          throw new BadRequestException('Order invalid or already paid');
+        }
 
-    const wallet = await this.getPlatformWallet();
-    const rechargeAmount = toDecimal(order.amount);
+        const wallet = await this.getPlatformWallet();
+        const rechargeAmount = toDecimal(order.amount);
 
-    if (tenantId) {
-      return this.processTenantRecharge(
-        order,
-        wallet,
-        rechargeAmount,
-        tenantId,
-      );
-    } else {
-      return this.processPlatformRecharge(order, wallet, rechargeAmount);
-    }
+        if (tenantId) {
+          return this.processTenantRecharge(
+            order,
+            wallet,
+            rechargeAmount,
+            tenantId,
+          );
+        } else {
+          return this.processPlatformRecharge(order, wallet, rechargeAmount);
+        }
+      },
+      30, // 30秒锁超时
+    );
   }
 
   private async processTenantRecharge(
@@ -252,15 +265,70 @@ export class FinanceService {
 
   async setPaymentPassword(password: string) {
     const wallet = await this.getPlatformWallet();
-    const hashedPassword = crypto
-      .createHash('sha256')
-      .update(password)
-      .digest('hex');
+    const hashedPassword = this.hashPassword(password);
 
     return this.prisma.platformWallet.update({
       where: { id: wallet.id },
       data: { paymentPassword: hashedPassword },
     });
+  }
+
+  /**
+   * 验证支付密码
+   */
+  async verifyPaymentPassword(password: string): Promise<boolean> {
+    const wallet = await this.getPlatformWallet();
+    if (!wallet.paymentPassword) {
+      return false;
+    }
+    return this.verifyPassword(password, wallet.paymentPassword);
+  }
+
+  /**
+   * 使用 scrypt 加盐哈希密码
+   * 格式: iterations$salt(hex)$hash(hex)
+   */
+  private hashPassword(password: string): string {
+    const salt = crypto.randomBytes(PASSWORD_SALT_LENGTH);
+    const derivedKey = crypto.scryptSync(
+      password,
+      salt,
+      PASSWORD_KEY_LENGTH,
+      { N: PASSWORD_ITERATIONS },
+    );
+    return `${PASSWORD_ITERATIONS}$${salt.toString('hex')}$${derivedKey.toString('hex')}`;
+  }
+
+  /**
+   * 验证密码
+   */
+  private verifyPassword(password: string, storedHash: string): boolean {
+    // 兼容旧的 SHA256 格式（无 $ 分隔符）
+    if (!storedHash.includes('$')) {
+      const legacyHash = crypto
+        .createHash('sha256')
+        .update(password)
+        .digest('hex');
+      return legacyHash === storedHash;
+    }
+
+    const parts = storedHash.split('$');
+    if (parts.length !== 3) {
+      return false;
+    }
+
+    const iterations = parseInt(parts[0], 10);
+    const salt = Buffer.from(parts[1], 'hex');
+    const storedKey = parts[2];
+
+    const derivedKey = crypto.scryptSync(password, salt, PASSWORD_KEY_LENGTH, {
+      N: iterations,
+    });
+
+    return crypto.timingSafeEqual(
+      Buffer.from(storedKey, 'hex'),
+      derivedKey,
+    );
   }
 
   async getTenantBalance(tenantId: string) {

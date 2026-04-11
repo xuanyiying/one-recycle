@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { RankingService } from './ranking.service';
 import { RankingQueryDto, RankingResponseDto } from './dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { Public } from '@/common/decorators/auth.decorator';
 import { UserId } from '@/common/decorators/auth.decorator';
 
 @ApiTags('ranking')
@@ -15,6 +15,7 @@ import { UserId } from '@/common/decorators/auth.decorator';
 export class RankingController {
   constructor(private readonly rankingService: RankingService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: '获取环保榜单' })
   @ApiResponse({ status: 200, type: [RankingResponseDto] })
@@ -23,7 +24,6 @@ export class RankingController {
   }
 
   @Get('my')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取我的排名' })
   @ApiResponse({ status: 200, type: RankingResponseDto })

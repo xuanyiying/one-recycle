@@ -107,6 +107,15 @@ export class OrderService implements OnModuleInit {
         // 预占时间槽
         const key = `timeslot:usage:${dateStr}:${index}`;
         const count = await this.redisService.getClient().incr(key);
+        // 设置 TTL：时间槽对应日期结束后的2小时过期，防止 Redis 键泄漏
+        // 最短保留 48 小时（覆盖到次日结束），最长 7 天
+        const slotDate = new Date(`${dateStr}T23:59:59`);
+        const ttlSeconds = Math.max(
+          48 * 3600,
+          Math.floor((slotDate.getTime() - Date.now()) / 1000) + 2 * 3600,
+        );
+        const cappedTtl = Math.min(ttlSeconds, 7 * 24 * 3600);
+        await this.redisService.getClient().expire(key, cappedTtl);
 
         // 检查配额 (假设默认配额为5)
         const quota = this.defaultTimeSlots[index]?.quota || 5;
@@ -454,7 +463,7 @@ export class OrderService implements OnModuleInit {
     return this.mapToOrder(order, storageMap);
   }
 
-  async findById(id: number): Promise<Order | null> {
+  async findById(id: number | bigint): Promise<Order | null> {
     const order = await this.prisma.order.findUnique({
       where: { id: BigInt(id) },
       include: {
@@ -480,7 +489,7 @@ export class OrderService implements OnModuleInit {
    * @param operator 操作人信息（用于状态变更日志）
    */
   async update(
-    id: number,
+    id: number | bigint,
     data: UpdateOrderDto,
     operator?: { id: string; role: string; type: string },
   ): Promise<Order> {
@@ -554,7 +563,7 @@ export class OrderService implements OnModuleInit {
   }
 
   async updateStatus(
-    id: number,
+    id: number | bigint,
     data: UpdateOrderDto,
     operator?: { id: string; role: string; type: string },
   ): Promise<Order> {

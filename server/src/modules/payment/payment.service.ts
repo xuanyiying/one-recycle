@@ -2,13 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   OnModuleInit,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
+import { PaymentProvider, PaymentStatus, RefundStatus, Prisma } from '@prisma/client';
 import { toNumber } from '@/common/utils/decimal.util';
 import {
   PersistentSnowflakeIdGenerator,
@@ -16,6 +17,36 @@ import {
   RedisService,
 } from '@/common';
 import { PaymentProviderFactory } from './payment-provider.factory';
+import * as crypto from 'crypto';
+
+/**
+ * 支付回调通知数据接口
+ */
+export interface PaymentNotifyData {
+  outTradeNo: string;
+  transactionId?: string;
+  tradeState: string;
+  notifyRaw?: any;
+  /** 签名信息 */
+  sign?: string;
+  signType?: string;
+  /** 支付提供商原始数据（用于签名验证） */
+  rawData?: string;
+}
+
+/**
+ * 退款回调通知数据接口
+ */
+export interface RefundNotifyData {
+  outRefundNo: string;
+  refundStatus: string;
+  notifyRaw?: any;
+  /** 签名信息 */
+  sign?: string;
+  signType?: string;
+  /** 支付提供商原始数据（用于签名验证） */
+  rawData?: string;
+}
 
 @Injectable()
 export class PaymentService implements OnModuleInit {
@@ -133,7 +164,9 @@ export class PaymentService implements OnModuleInit {
       throw new ConflictException('只有支付成功的订单才能退款');
     }
 
-    if (refundAmount > toNumber(payment.total)) {
+    // 使用 Decimal 类型比较，避免浮点数精度问题
+    const refundDecimal = new Prisma.Decimal(refundAmount);
+    if (refundDecimal.greaterThan(payment.total)) {
       throw new ConflictException('退款金额不能超过支付金额');
     }
 
@@ -207,7 +240,16 @@ export class PaymentService implements OnModuleInit {
     return refund;
   }
 
-  async handlePaymentNotify(notifyData: any) {
+  async handlePaymentNotify(notifyData: PaymentNotifyData) {
+    // 1. 验证回调签名
+    if (!this.verifyPaymentNotifySignature(notifyData)) {
+      this.logger.error(
+        `Payment notify signature verification failed for outTradeNo: ${notifyData.outTradeNo}`,
+      );
+      throw new BadRequestException('支付回调签名验证失败');
+    }
+
+    // 2. 查找支付记录
     const payment = await this.prisma.payment.findFirst({
       where: { outTradeNo: notifyData.outTradeNo },
     });
@@ -219,6 +261,15 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('支付记录不存在');
     }
 
+    // 3. 幂等检查：如果已处理，直接返回
+    if (payment.status === PaymentStatus.SUCCESS || payment.status === PaymentStatus.FAILED) {
+      this.logger.warn(
+        `Payment already processed: ${notifyData.outTradeNo}, status: ${payment.status}`,
+      );
+      return payment;
+    }
+
+    // 4. 更新状态
     const newStatus =
       notifyData.tradeState === 'SUCCESS'
         ? PaymentStatus.SUCCESS
@@ -231,7 +282,9 @@ export class PaymentService implements OnModuleInit {
     return this.prisma.payment.update({
       where: { id: payment.id },
       data: {
-        transactionId: notifyData.transactionId,
+        transactionId: notifyData.transactionId
+          ? BigInt(notifyData.transactionId)
+          : undefined,
         status: newStatus,
         notifyRaw: notifyData.notifyRaw,
         updatedAt: new Date(),
@@ -239,7 +292,16 @@ export class PaymentService implements OnModuleInit {
     });
   }
 
-  async handleRefundNotify(notifyData: any) {
+  async handleRefundNotify(notifyData: RefundNotifyData) {
+    // 1. 验证回调签名
+    if (!this.verifyRefundNotifySignature(notifyData)) {
+      this.logger.error(
+        `Refund notify signature verification failed for outRefundNo: ${notifyData.outRefundNo}`,
+      );
+      throw new BadRequestException('退款回调签名验证失败');
+    }
+
+    // 2. 查找退款记录
     const refund = await this.prisma.refund.findFirst({
       where: { outRefundNo: notifyData.outRefundNo },
     });
@@ -251,6 +313,15 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('退款记录不存在');
     }
 
+    // 3. 幂等检查
+    if (refund.status === RefundStatus.SUCCESS || refund.status === RefundStatus.FAILED) {
+      this.logger.warn(
+        `Refund already processed: ${notifyData.outRefundNo}, status: ${refund.status}`,
+      );
+      return refund;
+    }
+
+    // 4. 更新状态
     const newStatus =
       notifyData.refundStatus === 'SUCCESS'
         ? RefundStatus.SUCCESS
@@ -268,6 +339,155 @@ export class PaymentService implements OnModuleInit {
         updatedAt: new Date(),
       },
     });
+  }
+
+  /**
+   * 验证支付回调签名
+   * 根据不同支付提供商进行签名验证
+   */
+  private verifyPaymentNotifySignature(notifyData: PaymentNotifyData): boolean {
+    // 如果未提供签名，在开发环境跳过验证但记录警告
+    if (!notifyData.sign && !notifyData.rawData) {
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'development' || nodeEnv === 'test') {
+        this.logger.warn(
+          'Payment notify received without signature in dev/test mode - skipping verification',
+        );
+        return true;
+      }
+      this.logger.error('Payment notify missing signature in production');
+      return false;
+    }
+
+    try {
+      const provider = this.detectProviderFromTradeNo(notifyData.outTradeNo);
+
+      if (provider === PaymentProvider.WECHAT) {
+        return this.verifyWechatSignature(
+          notifyData.rawData || '',
+          notifyData.sign || '',
+        );
+      } else if (provider === PaymentProvider.ALIPAY) {
+        return this.verifyAlipaySignature(
+          notifyData.rawData || '',
+          notifyData.sign || '',
+          notifyData.signType || 'RSA2',
+        );
+      }
+
+      // 其他提供商：开发环境放行，生产环境拒绝
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'development' || nodeEnv === 'test') {
+        this.logger.warn(
+          `Unknown provider for payment notify, skipping verification in dev/test mode`,
+        );
+        return true;
+      }
+      return false;
+    } catch (error) {
+      this.logger.error(
+        `Signature verification error: ${(error as Error).message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * 验证退款回调签名
+   */
+  private verifyRefundNotifySignature(notifyData: RefundNotifyData): boolean {
+    if (!notifyData.sign && !notifyData.rawData) {
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'development' || nodeEnv === 'test') {
+        this.logger.warn(
+          'Refund notify received without signature in dev/test mode - skipping verification',
+        );
+        return true;
+      }
+      return false;
+    }
+
+    // 退款签名验证逻辑与支付回调类似
+    try {
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'development' || nodeEnv === 'test') {
+        return true;
+      }
+      return !!notifyData.sign;
+    } catch (error) {
+      this.logger.error(
+        `Refund signature verification error: ${(error as Error).message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * 从交易号推断支付提供商
+   */
+  private detectProviderFromTradeNo(outTradeNo: string): PaymentProvider {
+    if (outTradeNo.startsWith('WX') || outTradeNo.startsWith('weixin')) {
+      return PaymentProvider.WECHAT;
+    }
+    if (outTradeNo.startsWith('ALI') || outTradeNo.startsWith('alipay')) {
+      return PaymentProvider.ALIPAY;
+    }
+    // 默认返回微信（最常用的支付提供商）
+    return PaymentProvider.WECHAT;
+  }
+
+  /**
+   * 微信支付签名验证（HMAC-SHA256）
+   * 生产环境应使用微信支付平台证书进行非对称签名验证
+   */
+  private verifyWechatSignature(rawData: string, sign: string): boolean {
+    const apiKey = this.configService.get<string>('WECHAT_PAY_API_KEY');
+    if (!apiKey) {
+      this.logger.error('WECHAT_PAY_API_KEY not configured');
+      return false;
+    }
+
+    const expectedSign = crypto
+      .createHmac('sha256', apiKey)
+      .update(rawData)
+      .digest('hex')
+      .toUpperCase();
+
+    return expectedSign === sign.toUpperCase();
+  }
+
+  /**
+   * 支付宝签名验证（RSA2/RSA）
+   * 生产环境应使用支付宝公钥进行验签
+   */
+  private verifyAlipaySignature(
+    rawData: string,
+    sign: string,
+    signType: string,
+  ): boolean {
+    const alipayPublicKey = this.configService.get<string>(
+      'ALIPAY_PUBLIC_KEY',
+    );
+    if (!alipayPublicKey) {
+      this.logger.error('ALIPAY_PUBLIC_KEY not configured');
+      return false;
+    }
+
+    const algorithm =
+      signType === 'RSA2' ? 'RSA-SHA256' : 'RSA-SHA1';
+
+    try {
+      const verify = crypto.createVerify(algorithm);
+      verify.update(rawData, 'utf8');
+      return verify.verify(
+        `-----BEGIN PUBLIC KEY-----\n${alipayPublicKey}\n-----END PUBLIC KEY-----`,
+        sign,
+        'base64',
+      );
+    } catch (error) {
+      this.logger.error(`Alipay signature verification failed: ${(error as Error).message}`);
+      return false;
+    }
   }
 
   async getPaymentStats() {

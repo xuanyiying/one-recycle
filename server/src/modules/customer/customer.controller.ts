@@ -6,7 +6,6 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   Request,
   BadRequestException,
 } from '@nestjs/common';
@@ -16,7 +15,6 @@ import { MessageService } from './services/message.service';
 import { AIReplyService } from './services/ai-reply.service';
 import { TicketService } from './services/ticket.service';
 import { KnowledgeService } from './services/knowledge.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   CreateSessionDto,
   UpdateSessionDto,
@@ -37,7 +35,6 @@ import {
 
 @ApiTags('customer')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('customer')
 export class CustomerServiceController {
   constructor(

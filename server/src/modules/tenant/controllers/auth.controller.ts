@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   Get,
-  UseGuards,
   Request,
   HttpCode,
   HttpStatus,
@@ -16,7 +15,6 @@ import {
 } from '@nestjs/swagger';
 import { StaffService } from '../services/staff.service';
 import { StaffLoginDto } from '../dto/staff-login.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { Public } from '@/common/decorators/auth.decorator';
 
 @ApiTags('租户员工认证')
@@ -35,12 +33,10 @@ export class AuthController {
   }
 
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取员工个人资料' })
   @ApiResponse({ status: 200, description: '获取成功' })
   async getProfile(@Request() req: any) {
-    // req.user 由 JwtStrategy 填充
     return this.staffService.getProfile(req.user.id);
   }
 }

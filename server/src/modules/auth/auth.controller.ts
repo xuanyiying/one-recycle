@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   Param,
-  UseGuards,
   Request,
   HttpCode,
   HttpStatus,
@@ -14,9 +13,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import AuthRedisService from './auth-redis.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from '@/common/decorators/auth.decorator';
 import { LoginDto } from './dto/login.dto';
 import { SendCodeDto } from './dto/send-code.dto';
@@ -26,7 +23,6 @@ import { ThirdPartyLoginDto } from './dto/third-party-login.dto';
 
 @ApiTags('认证')
 @Controller('auth')
-@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthRedisService) {}
 
@@ -62,7 +58,6 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '用户登出' })

@@ -5,11 +5,9 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   Request,
   ParseIntPipe,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { PointsService } from './points.service';
 import { PointsProductService } from './services/points-product.service';
 import { PointsOrderService } from './services/points-order.service';
@@ -23,9 +21,9 @@ import { QueryProductDto } from './dto/query-product.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
 import { BindInviteDto } from './dto/bind-invite.dto';
 import { PointsType } from '@prisma/client';
+import { Public } from '@/common/decorators/auth.decorator';
 
 @Controller('points')
-@UseGuards(JwtAuthGuard)
 export class PointsController {
   constructor(
     private readonly pointsService: PointsService,
@@ -47,16 +45,19 @@ export class PointsController {
 
   // ==================== 商品相关 ====================
 
+  @Public()
   @Get('products')
   async getProducts(@Query() query: QueryProductDto) {
     return this.productService.findList(query);
   }
 
+  @Public()
   @Get('products/categories')
   async getProductCategories() {
     return this.productService.getCategories();
   }
 
+  @Public()
   @Get('products/:id')
   async getProduct(@Param('id', ParseIntPipe) id: number) {
     return this.productService.findOne(BigInt(id));

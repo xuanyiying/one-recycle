@@ -7,17 +7,14 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { StaffService } from '../services/staff.service';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RequestWithStaff } from '@/common';
 
 @ApiTags('租户员工管理')
 @Controller('tenant/staffs')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}

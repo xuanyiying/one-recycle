@@ -17,6 +17,7 @@ import {
   RedisSnowflakeStateStore,
   RedisService,
 } from '@/common';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class CourierService implements OnModuleInit {
@@ -126,7 +127,7 @@ export class CourierService implements OnModuleInit {
     await this.findOne(data.courierId);
     return this.prisma.pickupNotification.create({
       data: {
-        id: `notification-${Date.now()}`,
+        id: `notification-${randomUUID()}`,
         taskId: data.taskId,
         orderId: BigInt(data.orderId),
         orderNo: data.orderNo,

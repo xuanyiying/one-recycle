@@ -451,10 +451,15 @@ class AuthRedisService implements OnModuleInit {
   }
 
   private async verifyCode(phone: string, code: string): Promise<boolean> {
-    // 开发环境支持万能验证码
-    const nodeEnv = this.configService.get<string>('NODE_ENV');
-    const isDevOrTest = nodeEnv === 'development' || nodeEnv === 'test';
-    if (isDevOrTest && code === '123456') {
+    // 万能验证码：通过独立环境变量 UNIVERSAL_VERIFICATION_CODE 控制
+    // 仅在显式配置时生效，不再依赖 NODE_ENV 判断
+    const universalCode = this.configService.get<string>(
+      'UNIVERSAL_VERIFICATION_CODE',
+    );
+    if (universalCode && code === universalCode) {
+      this.logger.warn(
+        `Universal verification code used for phone: ${phone}`,
+      );
       return true;
     }
 

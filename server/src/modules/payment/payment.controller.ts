@@ -3,6 +3,7 @@ import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 // 修复导入语句
 import { PaymentStatus, RefundStatus } from '@prisma/client';
+import { Public } from '@/common/decorators/auth.decorator';
 
 @Controller('payments')
 export class PaymentController {
@@ -47,11 +48,13 @@ export class PaymentController {
     );
   }
 
+  @Public()
   @Post('notify')
   handlePaymentNotify(@Body() notifyData: any) {
     return this.paymentService.handlePaymentNotify(notifyData);
   }
 
+  @Public()
   @Post('notify/refund')
   handleRefundNotify(@Body() notifyData: any) {
     return this.paymentService.handleRefundNotify(notifyData);

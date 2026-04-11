@@ -44,7 +44,7 @@ export class DispatchService implements OnModuleInit {
   }
 
   async assignOrder(orderId: string, courierId: string) {
-    const order = await this.orderService.findById(Number(orderId));
+    const order = await this.orderService.findById(BigInt(orderId));
     if (!order) {
       throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
     }
@@ -65,7 +65,7 @@ export class DispatchService implements OnModuleInit {
       },
     });
 
-    await this.orderService.update(Number(orderId), {
+    await this.orderService.update(BigInt(orderId), {
       status: OrderStatus.PENDING_PICKUP,
     } as any);
     return {

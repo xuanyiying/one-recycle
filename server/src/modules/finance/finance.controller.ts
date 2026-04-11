@@ -7,15 +7,14 @@ import {
   Param,
   ParseIntPipe,
   DefaultValuePipe,
-  UseGuards,
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FinanceService } from './finance.service';
 import { CreateRechargeDto } from './dto/create-recharge.dto';
 import { SetPaymentPasswordDto } from './dto/payment-password.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { RequestWithStaff } from '@/common';
+import { Public } from '@/common/decorators/auth.decorator';
 
 @ApiTags('财务管理')
 @Controller('finance')
@@ -35,7 +34,6 @@ export class FinanceController {
   }
 
   @Post('recharge')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '创建充值订单' })
   createRecharge(
@@ -48,6 +46,7 @@ export class FinanceController {
     return this.financeService.createRechargeOrder(dto, tenantId);
   }
 
+  @Public()
   @Post('recharge/mock-callback')
   @ApiOperation({ summary: '模拟支付回调（测试用）' })
   mockCallback(
@@ -74,7 +73,6 @@ export class FinanceController {
   }
 
   @Get('tenant/:tenantId/balance')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取租户余额' })
   getTenantBalance(@Param('tenantId') tenantId: string) {
@@ -82,7 +80,6 @@ export class FinanceController {
   }
 
   @Get('tenant/:tenantId/transactions')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取租户交易记录' })
   getTenantTransactions(

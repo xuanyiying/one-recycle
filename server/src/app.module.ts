@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { CacheModule } from '@nestjs/cache-manager';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 // 配置
 import { appConfig, databaseConfig, authConfig } from './config';
@@ -98,6 +100,13 @@ import { HealthModule } from './modules/health/health.module';
     CategoryWarehouseModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // 全局启用 JwtAuthGuard，所有接口默认需要认证
+    // 使用 @Public() 装饰器标记不需要认证的公开接口
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // 全局启用 ThrottlerGuard，所有限流默认生效
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}
