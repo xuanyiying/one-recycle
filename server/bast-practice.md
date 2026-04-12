@@ -450,7 +450,7 @@ The platform includes comprehensive monitoring capabilities:
 Once the backend is running, detailed API documentation is available through Swagger UI:
 
 - <http://localhost:3000/api/docs> (development)
-- <https://your-domain.com/api/docs> (production)
+- <https://api.backbuy.cn/api/docs> (production)
 
 The API follows RESTful principles and includes:
 

@@ -328,7 +328,7 @@ OneRecycle 旧物回收平台，提供便捷的上门回收服务：
    - 所需资质: 营业执照（经营范围包含回收业务）
 
 3. **隐私政策**
-   - 链接: https://backbuy.cn/privacy
+   - 链接: https://backbuy.cn/privacy.html
    - 内容要求:
      - 信息收集范围（手机号、地址、位置等）
      - 信息使用目的（订单处理、物流配送）
@@ -337,7 +337,7 @@ OneRecycle 旧物回收平台，提供便捷的上门回收服务：
      - 联系方式
 
 4. **用户协议**
-   - 链接: https://backbuy.cn/terms
+   - 链接: https://backbuy.cn/terms.html
    - 内容要求:
      - 服务条款
      - 用户责任

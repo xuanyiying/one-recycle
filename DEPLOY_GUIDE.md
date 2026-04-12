@@ -1,6 +1,7 @@
 # OneRecycle 部署指南
 
 ## 域名: backbuy.cn
+### 域名分配: backbuy.cn(官网/小程序端) | admin.backbuy.cn(管理端) | api.backbuy.cn(API)
 
 ## 目录
 

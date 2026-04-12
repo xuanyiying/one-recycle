@@ -116,7 +116,7 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
 
   const connectWebSocket = () => {
     try {
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://api.onerecycle.com/customer';
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://api.backbuy.cn/customer';
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
       if (!token) return;

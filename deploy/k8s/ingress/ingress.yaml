@@ -16,10 +16,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - api.your-domain.com
+        - api.backbuy.cn
       secretName: api-tls-secret
   rules:
-    - host: api.your-domain.com
+    - host: api.backbuy.cn
       http:
         paths:
           - path: /
@@ -46,10 +46,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - admin.your-domain.com
+        - admin.backbuy.cn
       secretName: admin-tls-secret
   rules:
-    - host: admin.your-domain.com
+    - host: admin.backbuy.cn
       http:
         paths:
           - path: /

@@ -78,10 +78,9 @@ WECHAT_APP_SECRET=xxx
 ## 域名配置
 
 确保 DNS 解析：
-- `backbuy.cn` → 服务器 IP
-- `www.backbuy.cn` → 服务器 IP
-- `api.backbuy.cn` → 服务器 IP
-- `admin.backbuy.cn` → 服务器 IP
+- `backbuy.cn` → 服务器 IP（官网/小程序端）
+- `api.backbuy.cn` → 服务器 IP（API 服务）
+- `admin.backbuy.cn` → 服务器 IP（管理后台）
 
 ## SSL 证书
 

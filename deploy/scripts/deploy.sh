@@ -20,6 +20,10 @@ load_config() {
         cat > "$CONFIG" << 'EOF'
 DOMAIN=backbuy.cn
 EMAIL=admin@backbuy.cn
+# 域名分配:
+#   - backbuy.cn: 官网/小程序端（隐私政策/用户协议/引导页）
+#   - admin.backbuy.cn: 管理端
+#   - api.backbuy.cn: API 服务
 
 DB_PASSWORD=change_me
 REDIS_PASSWORD=change_me

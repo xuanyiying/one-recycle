@@ -308,8 +308,8 @@ du -sh dist/
 4. **准备审核材料**
    - 小程序截图（5张以上）
    - 服务类目: 生活服务 > 回收/废品回收
-   - 隐私政策链接: https://backbuy.cn/privacy
-   - 用户协议链接: https://backbuy.cn/terms
+   - 隐私政策链接: https://backbuy.cn/privacy.html
+   - 用户协议链接: https://backbuy.cn/terms.html
 
 ---
 
