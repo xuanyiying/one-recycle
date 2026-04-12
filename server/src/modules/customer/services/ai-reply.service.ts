@@ -610,17 +610,14 @@ export class AIReplyService {
     message: string,
     intentResult: IntentResult,
   ): Promise<void> {
+    // AIConversationLog model has been removed from Prisma schema
+    // TODO: Re-enable when AI conversation logging is needed
+    void sessionId;
+    void userId;
+    void message;
+    void intentResult;
     try {
-      await this.prisma.aIConversationLog.create({
-        data: {
-          sessionId: BigInt(sessionId),
-          userId: BigInt(userId),
-          userMessage: message,
-          intent: intentResult.intent,
-          entities: intentResult.entities as any,
-          confidence: intentResult.confidence,
-        },
-      });
+      this.logger.debug('Conversation logging is currently disabled');
     } catch (error) {
       this.logger.error('Failed to log conversation', error);
     }
