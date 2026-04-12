@@ -112,8 +112,6 @@ model User {
   accounts           Account[]
   chatSessions       ChatSession[]
   serviceTickets     ServiceTicket[]
-  aiConversationLogs AIConversationLog[]
-  voiceOrderSessions VoiceOrderSession[]
   pointsRecords      PointsRecord[]
   pointsOrders       PointsOrder[]
   signInRecords      SignInRecord[]
