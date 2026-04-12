@@ -132,14 +132,14 @@ export function IsDateAfter(
       constraints: [property],
       options: validationOptions || {},
       validator: {
-        validate(value: any, args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
-          const relatedValue = (args.object as any)[relatedPropertyName];
+        validate(value: unknown, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints as [string];
+          const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
 
           if (!value || !relatedValue) return true; // 如果任一值为空，跳过验证
 
-          const currentDate = new Date(value);
-          const relatedDate = new Date(relatedValue);
+          const currentDate = new Date(value as string | number | Date);
+          const relatedDate = new Date(relatedValue as string | number | Date);
 
           return currentDate > relatedDate;
         },

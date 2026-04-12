@@ -9,6 +9,14 @@ import {
 } from '@nestjs/common';
 import { UserRole, Permission } from '../types/auth.types';
 
+interface AuthenticatedRequest {
+  user?: {
+    id?: string;
+    roles?: UserRole[];
+    permissions?: Permission[];
+  };
+}
+
 // 元数据键常量
 export const ROLES_KEY = 'roles';
 export const PERMISSIONS_KEY = 'permissions';
@@ -28,7 +36,7 @@ export const Public = () => SetMetadata(PUBLIC_KEY, true);
 // 获取当前用户装饰器
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     return request.user;
   },
 );
@@ -36,7 +44,7 @@ export const CurrentUser = createParamDecorator(
 // 获取用户ID装饰器
 export const UserId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     return request.user?.id;
   },
 );
@@ -44,7 +52,7 @@ export const UserId = createParamDecorator(
 // 获取用户角色装饰器
 export const UserRoles = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     return request.user?.roles || [];
   },
 );
@@ -52,7 +60,7 @@ export const UserRoles = createParamDecorator(
 // 获取用户权限装饰器
 export const UserPermissions = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     return request.user?.permissions || [];
   },
 );
