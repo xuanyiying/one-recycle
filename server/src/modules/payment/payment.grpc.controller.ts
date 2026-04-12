@@ -68,11 +68,11 @@ export class PaymentGrpcController {
   ): Promise<UpdatePaymentStatusResponse> {
     try {
       await this.paymentService.updatePaymentStatus(
-        data.transactionId, // 转换为bigint
+        BigInt(data.transactionId),
         data.status as any,
       );
       const payment = await this.paymentService.findByTransactionId(
-        data.transactionId, // 转换为bigint
+        BigInt(data.transactionId),
       );
       return { success: true, payment: this.mapToPayment(payment) };
     } catch (error) {
@@ -84,13 +84,13 @@ export class PaymentGrpcController {
   async createRefund(data: CreateRefundRequest): Promise<CreateRefundResponse> {
     try {
       const refund = await this.paymentService.createRefund(
-        data.paymentId,
+        BigInt(data.paymentId),
         Number(data.refundAmount),
         data.reason,
       );
       return {
         success: true,
-        refundId: refund.id,
+        refundId: refund.id.toString(),
         outRefundNo: refund.outRefundNo,
         message: 'Refund created successfully',
       };
@@ -114,9 +114,9 @@ export class PaymentGrpcController {
 
   private mapToPayment(payment: Payment) {
     return {
-      id: payment.id,
-      orderId: payment.orderId,
-      transactionId: payment.transactionId || 0n,
+      id: payment.id.toString(),
+      orderId: typeof payment.orderId === 'bigint' ? payment.orderId.toString() : String(payment.orderId),
+      transactionId: (payment.transactionId || 0n).toString(),
       outTradeNo: payment.outTradeNo || '',
       total: toNumber(payment.total),
       status: payment.status,
@@ -129,8 +129,8 @@ export class PaymentGrpcController {
 
   private mapToRefund(refund: Refund) {
     return {
-      id: refund.id,
-      paymentId: refund.paymentId,
+      id: refund.id.toString(),
+      paymentId: refund.paymentId.toString(),
       outRefundNo: refund.outRefundNo || '',
       refundAmount: toNumber(refund.refundAmount),
       status: refund.status,
@@ -147,8 +147,8 @@ export class PaymentGrpcController {
   ): Promise<PaymentLogResponse> {
     try {
       const paymentLog = await this.paymentService.createPaymentLog({
-        id: 0n,
-        orderId: data.orderId,
+        id: BigInt(0),
+        orderId: BigInt(data.orderId),
         transactionId: data.transactionId,
         status: data.status as PaymentStatus,
         amount: parseFloat(data.amount),
@@ -169,7 +169,7 @@ export class PaymentGrpcController {
   ): Promise<PaymentLogsResponse> {
     try {
       const logs = await this.paymentService.getPaymentLogsByOrderId(
-        data.orderId,
+        BigInt(data.orderId),
       );
       return {
         logs: logs.map((log) => this.mapToPaymentLogResponse(log)),
@@ -185,7 +185,7 @@ export class PaymentGrpcController {
   ): Promise<PaymentLogResponse> {
     try {
       const log = await this.paymentService.getPaymentLogByTransactionId(
-        data.transactionId,
+        BigInt(data.transactionId),
       );
       if (!log) {
         throw new Error('Payment log not found');
@@ -202,7 +202,7 @@ export class PaymentGrpcController {
   ): Promise<IsTransactionProcessedResponse> {
     try {
       const processed = await this.paymentService.isTransactionProcessed(
-        data.transactionId,
+        BigInt(data.transactionId),
       );
       return { processed: !!processed };
     } catch (error) {
@@ -244,9 +244,9 @@ export class PaymentGrpcController {
 
   private mapToPaymentLogResponse(paymentLog: PaymentLog): PaymentLogResponse {
     return {
-      id: paymentLog.id,
-      orderId: paymentLog.orderId,
-      transactionId: paymentLog.transactionId || 0n,
+      id: paymentLog.id.toString(),
+      orderId: typeof paymentLog.orderId === 'bigint' ? paymentLog.orderId.toString() : String(paymentLog.orderId),
+      transactionId: (paymentLog.transactionId || 0n).toString(),
       status: paymentLog.status,
       amount: paymentLog.amount?.toString() || '0',
       provider: paymentLog.provider,

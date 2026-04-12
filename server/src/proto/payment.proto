@@ -8,6 +8,11 @@ service PaymentService {
   rpc UpdatePaymentStatus (UpdatePaymentStatusRequest) returns (UpdatePaymentStatusResponse);
   rpc CreateRefund (CreateRefundRequest) returns (CreateRefundResponse);
   rpc GetRefund (GetRefundRequest) returns (GetRefundResponse);
+  rpc CreatePaymentLog (CreatePaymentLogRequest) returns (PaymentLogResponse);
+  rpc GetPaymentLogsByOrderId (GetPaymentLogsByOrderIdRequest) returns (PaymentLogsResponse);
+  rpc GetPaymentLogByTransactionId (GetPaymentLogByTransactionIdRequest) returns (PaymentLogResponse);
+  rpc IsTransactionProcessed (IsTransactionProcessedRequest) returns (IsTransactionProcessedResponse);
+  rpc GetPaymentStats (GetPaymentStatsRequest) returns (PaymentStatsResponse);
 }
 
 message CreatePaymentRequest {
@@ -19,7 +24,7 @@ message CreatePaymentRequest {
 message CreatePaymentResponse {
   bool success = 1;
   int64 paymentId = 2;
-  int64 transactionId = 3;
+  string transactionId = 3;
   string message = 4;
 }
 
@@ -34,16 +39,18 @@ message GetPaymentResponse {
 message Payment {
   int64 id = 1;
   int64 orderId = 2;
-  int64 transactionId = 3;
-  double total = 4;
-  string status = 5;
-  string provider = 6;
-  string createdAt = 7;
-  string updatedAt = 8;
+  string transactionId = 3;
+  string outTradeNo = 4;
+  double total = 5;
+  string status = 6;
+  string provider = 7;
+  optional string notifyRaw = 8;
+  string createdAt = 9;
+  string updatedAt = 10;
 }
 
 message UpdatePaymentStatusRequest {
-  int64 transactionId = 1;
+  string transactionId = 1;
   string status = 2;
 }
 
@@ -80,6 +87,61 @@ message Refund {
   double refundAmount = 4;
   string status = 5;
   string reason = 6;
-  string createdAt = 7;
-  string updatedAt = 8;
+  optional string notifyRaw = 7;
+  string createdAt = 8;
+  string updatedAt = 9;
+}
+
+message CreatePaymentLogRequest {
+  int64 orderId = 1;
+  string transactionId = 2;
+  string status = 3;
+  string amount = 4;
+  string provider = 5;
+  optional string reason = 6;
+}
+
+message PaymentLogResponse {
+  int64 id = 1;
+  int64 orderId = 2;
+  string transactionId = 3;
+  string status = 4;
+  string amount = 5;
+  string provider = 6;
+  string reason = 7;
+  string createdAt = 8;
+  string updatedAt = 9;
+}
+
+message PaymentLogsResponse {
+  repeated PaymentLogResponse logs = 1;
+}
+
+message GetPaymentLogsByOrderIdRequest {
+  int64 orderId = 1;
+}
+
+message GetPaymentLogByTransactionIdRequest {
+  string transactionId = 1;
+}
+
+message IsTransactionProcessedRequest {
+  string transactionId = 1;
+}
+
+message IsTransactionProcessedResponse {
+  bool processed = 1;
+}
+
+message GetPaymentStatsRequest {
+  string startDate = 1;
+  string endDate = 2;
+}
+
+message PaymentStatsResponse {
+  int32 total = 1;
+  int32 success = 2;
+  int32 failed = 3;
+  int32 closed = 4;
+  string totalAmount = 5;
 }

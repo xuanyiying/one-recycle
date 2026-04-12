@@ -37,7 +37,7 @@ export class AddressGrpcController {
   @GrpcMethod('AccountService', 'GetAddresses')
   async getAddresses(data: GetAddressesRequest): Promise<AddressListResponse> {
     const addresses = await this.addressService.findAllByUserId(
-      String(data.userId),
+      data.userId,
     );
     return {
       addresses: addresses.map((address: Address) =>
@@ -48,7 +48,7 @@ export class AddressGrpcController {
 
   @GrpcMethod('AccountService', 'UpdateAddress')
   async updateAddress(data: UpdateAddressRequest): Promise<AddressResponse> {
-    const address = await this.addressService.update(Number(data.id), {
+    const address = await this.addressService.update(data.id, {
       name: data.name,
       mobile: data.mobile,
       province: data.province,
@@ -62,14 +62,14 @@ export class AddressGrpcController {
 
   @GrpcMethod('AccountService', 'DeleteAddress')
   async deleteAddress(data: DeleteAddressRequest): Promise<Empty> {
-    await this.addressService.remove(Number(data.id));
+    await this.addressService.remove(data.id);
     return {};
   }
 
   private mapToAddressResponse(address: Address): AddressResponse {
     return {
-      id: Number(address.id),
-      userId: Number(address.userId),
+      id: address.id.toString(),
+      userId: address.userId.toString(),
       name: address.name,
       mobile: address.mobile,
       province: address.province,

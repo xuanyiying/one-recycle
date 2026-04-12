@@ -9,7 +9,7 @@ import {
   NackResponse,
   ConsumeRequest,
   TaskMessage,
-} from '../../proto/queue.pb';
+} from '@/proto/queue.pb';
 
 @Controller()
 export class QueueGrpcController {

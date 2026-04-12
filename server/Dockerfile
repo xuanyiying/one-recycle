@@ -1,4 +1,6 @@
 # OneRecycle Server - Production Dockerfile
+# Supports both monolith and microservice modes via SERVICE_NAME env var
+
 FROM node:22-slim AS deps
 WORKDIR /app
 
@@ -38,10 +40,14 @@ RUN npx prisma generate
 RUN ./node_modules/.bin/tsc -p tsconfig.build.json --incremental false && \
     ./node_modules/.bin/tsc-alias
 
+# Copy proto files (tsc doesn't copy .proto files)
+RUN cp -r src/proto dist/proto
+
 # Verify build output
 RUN echo "=== Build output ===" && \
     ls -la dist/ && \
-    test -f dist/main.js || (echo "ERROR: main.js not found" && exit 1)
+    test -f dist/main.js || (echo "ERROR: main.js not found" && exit 1) && \
+    test -f dist/microservices.js || (echo "ERROR: microservices.js not found" && exit 1)
 
 # Production stage
 FROM node:22-slim AS runner
@@ -67,12 +73,15 @@ ENV NODE_ENV=production
 # Switch to non-root user
 USER appuser
 
-# Expose port
-EXPOSE 3000
+# Expose port (HTTP for gateway/monolith, gRPC for microservices)
+EXPOSE 3000 3001 3002 3003 3004 3008 3009 50051
 
-# Health check
+# Health check (default for HTTP services)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+    CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
-# Start application
-CMD ["node", "dist/main.js"]
+# Start application:
+# - If SERVICE_NAME is set -> microservice mode (dist/microservices.js)
+# - If SERVICE_NAME is not set -> monolith mode (dist/main.js)
+# Also runs prisma db push on startup to ensure schema is in sync
+CMD ["sh", "-c", "npx prisma db push --skip-generate 2>/dev/null; if [ -n \"$SERVICE_NAME\" ]; then node dist/microservices.js; else node dist/main.js; fi"]

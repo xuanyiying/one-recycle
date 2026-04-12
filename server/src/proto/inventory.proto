@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package inventory;
+
+service InventoryService {
+  rpc GetInventoryItem (GetInventoryItemRequest) returns (InventoryItemResponse);
+  rpc ListInventoryItems (ListInventoryItemsRequest) returns (ListInventoryItemsResponse);
+  rpc CreateInventoryItem (CreateInventoryItemRequest) returns (InventoryItemResponse);
+  rpc UpdateInventoryItem (UpdateInventoryItemRequest) returns (InventoryItemResponse);
+  rpc DeleteInventoryItem (DeleteInventoryItemRequest) returns (Empty);
+  rpc CreateReservation (CreateReservationRequest) returns (ReservationResponse);
+  rpc ConfirmReservation (ConfirmReservationRequest) returns (ReservationResponse);
+  rpc CancelReservation (CancelReservationRequest) returns (ReservationResponse);
+  rpc GetInventoryStats (Empty) returns (InventoryStatsResponse);
+  rpc CheckAvailability (CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+}
+
+message GetInventoryItemRequest {
+  int64 id = 1;
+}
+
+message ListInventoryItemsRequest {
+  optional string status = 1;
+  optional string itemType = 2;
+  optional int64 categoryId = 3;
+  optional int64 warehouseId = 4;
+  int32 page = 5;
+  int32 limit = 6;
+}
+
+message CreateInventoryItemRequest {
+  int64 warehouseId = 1;
+  int64 categoryId = 2;
+  string name = 3;
+  optional string description = 4;
+  string unit = 5;
+  int32 quantity = 6;
+  double unitPrice = 7;
+  optional string location = 8;
+  optional string itemType = 9;
+  optional string condition = 10;
+  optional int64 sourceOrderId = 11;
+  optional string processingStatus = 12;
+}
+
+message UpdateInventoryItemRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional int32 quantity = 4;
+  optional double unitPrice = 5;
+  optional string location = 6;
+  optional string status = 7;
+  optional string condition = 8;
+  optional string processingStatus = 9;
+}
+
+message DeleteInventoryItemRequest {
+  int64 id = 1;
+}
+
+message CreateReservationRequest {
+  int64 itemId = 1;
+  int32 quantity = 2;
+  int64 orderId = 3;
+  string expiresAt = 4;
+  optional string notes = 5;
+}
+
+message ConfirmReservationRequest {
+  int64 reservationId = 1;
+}
+
+message CancelReservationRequest {
+  int64 reservationId = 1;
+}
+
+message CheckAvailabilityRequest {
+  repeated CheckAvailabilityItem items = 1;
+}
+
+message CheckAvailabilityItem {
+  int64 categoryId = 1;
+  int32 quantity = 2;
+}
+
+message CheckAvailabilityResponse {
+  bool available = 1;
+  repeated CheckAvailabilityItemResult items = 2;
+}
+
+message CheckAvailabilityItemResult {
+  int64 categoryId = 1;
+  bool available = 2;
+  int32 availableQuantity = 3;
+  int32 requestedQuantity = 4;
+}
+
+message InventoryItemResponse {
+  int64 id = 1;
+  int64 warehouseId = 2;
+  int64 categoryId = 3;
+  string name = 4;
+  optional string description = 5;
+  string unit = 6;
+  int32 quantity = 7;
+  int32 reservedQty = 8;
+  int32 availableQty = 9;
+  double unitPrice = 10;
+  double totalPrice = 11;
+  optional string location = 12;
+  string status = 13;
+  string itemType = 14;
+  string condition = 15;
+  optional int64 sourceOrderId = 16;
+  string processingStatus = 17;
+  optional string expiryDate = 18;
+  optional string createdAt = 19;
+  optional string updatedAt = 20;
+}
+
+message ListInventoryItemsResponse {
+  repeated InventoryItemResponse items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 limit = 4;
+  int32 totalPages = 5;
+}
+
+message ReservationResponse {
+  int64 id = 1;
+  int64 itemId = 2;
+  int64 orderId = 3;
+  int32 quantity = 4;
+  string status = 5;
+  string expiresAt = 6;
+  optional string confirmedAt = 7;
+  optional string cancelledAt = 8;
+  optional string createdAt = 9;
+}
+
+message InventoryStatsResponse {
+  int32 totalItems = 1;
+  double totalValue = 2;
+  int32 lowStockItems = 3;
+  int32 outOfStockItems = 4;
+  int32 inStockItems = 5;
+  int32 expiringSoonItems = 6;
+  double averageValue = 7;
+}
+
+message Empty {}

@@ -30,13 +30,16 @@ message UpdateUserRequest {
 
 message CreateAddressRequest {
   int64 user_id = 1;
-  string consignee = 2;
+  string name = 2;
   string mobile = 3;
   string province = 4;
   string city = 5;
   string district = 6;
-  string detail = 7;
-  bool is_default = 8;
+  string town = 7;
+  string street = 8;
+  string zipCode = 9;
+  string detail = 10;
+  bool is_default = 11;
 }
 
 message GetAddressesRequest {
@@ -45,7 +48,7 @@ message GetAddressesRequest {
 
 message UpdateAddressRequest {
   int64 id = 1;
-  string consignee = 2;
+  string name = 2;
   string mobile = 3;
   string province = 4;
   string city = 5;
@@ -71,7 +74,7 @@ message UserResponse {
 message AddressResponse {
   int64 id = 1;
   int64 user_id = 2;
-  string consignee = 3;
+  string name = 3;
   string mobile = 4;
   string province = 5;
   string city = 6;

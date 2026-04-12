@@ -72,7 +72,8 @@ logs() {
 
 migrate() {
     cd "$DEPLOY_DIR"
-    docker compose exec backend npx prisma migrate deploy
+    docker compose exec api-gateway npx prisma db push || \
+    docker compose -f docker/docker-compose.production.yml exec api-gateway npx prisma db push
 }
 
 status() {

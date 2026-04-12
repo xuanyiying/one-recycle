@@ -9,7 +9,7 @@ import {
   GetOrderResponse,
   ListOrdersRequest,
   ListOrdersResponse,
-} from '../../proto/order.pb';
+} from '@/proto/order.pb';
 import { generateSecureorderNo } from '@/common';
 
 @Controller()

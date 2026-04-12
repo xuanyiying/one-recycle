@@ -14,7 +14,7 @@ import {
   ListTemplatesResponse,
   CallbackStatusRequest,
   CallbackStatusResponse,
-} from '../../proto/notification.pb';
+} from '@/proto/notification.pb';
 
 @Controller()
 export class NotificationGrpcController {
@@ -27,7 +27,7 @@ export class NotificationGrpcController {
     const created = await this.notificationService.sendNotification({
       type: data.type as any,
       recipient: data.recipient as any,
-      content: data.content.body,
+      content: data.content?.body || '',
     } as any);
     return { id: created.id, success: true };
   }

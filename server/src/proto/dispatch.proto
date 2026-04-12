@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package dispatch;
+
+service DispatchService {
+  rpc AssignOrder (AssignOrderRequest) returns (AssignOrderResponse);
+  rpc GetAssignment (GetAssignmentRequest) returns (AssignmentResponse);
+  rpc UpdateAssignmentStatus (UpdateAssignmentStatusRequest) returns (AssignmentResponse);
+  rpc AcceptAssignment (AcceptAssignmentRequest) returns (AssignmentResponse);
+  rpc RejectAssignment (RejectAssignmentRequest) returns (AssignmentResponse);
+  rpc ListAssignments (ListAssignmentsRequest) returns (ListAssignmentsResponse);
+}
+
+message AssignOrderRequest {
+  int64 orderId = 1;
+  int64 courierId = 2;
+}
+
+message GetAssignmentRequest {
+  int64 id = 1;
+}
+
+message UpdateAssignmentStatusRequest {
+  int64 id = 1;
+  string status = 2;
+}
+
+message AcceptAssignmentRequest {
+  int64 id = 1;
+}
+
+message RejectAssignmentRequest {
+  int64 id = 1;
+}
+
+message ListAssignmentsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message AssignOrderResponse {
+  bool success = 1;
+  int64 orderId = 2;
+  int64 courierId = 3;
+  int64 assignmentId = 4;
+}
+
+message AssignmentResponse {
+  int64 id = 1;
+  int64 orderId = 2;
+  string orderNo = 3;
+  int64 courierId = 4;
+  string taskId = 5;
+  string status = 6;
+  optional string acceptedAt = 7;
+  optional string arrivedAt = 8;
+  optional string finishedAt = 9;
+  string createdAt = 10;
+}
+
+message ListAssignmentsResponse {
+  repeated AssignmentResponse items = 1;
+  int32 total = 2;
+}

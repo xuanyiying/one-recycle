@@ -1,6 +1,7 @@
 # ============================================================================
 # OneRecycle 生产环境 Docker Compose 配置 (微服务架构)
-# 适配 4核 8G 服务器
+# 每个微服务通过 SERVICE_NAME 环境变量启动不同模式
+# 镜像统一, 入口通过 SERVICE_NAME 区分
 # ============================================================================
 
 services:
@@ -11,7 +12,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME:-one_recycle}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-one_recycle}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -35,16 +36,12 @@ services:
     image: redis:7-alpine
     container_name: one-recycle-redis
     restart: always
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     command: >
-      sh -c '
-        redis-server 
-        --requirepass "$${REDIS_PASSWORD}" 
-        --appendonly yes 
-        --maxmemory 256mb 
-        --maxmemory-policy allkeys-lru
-      '
+      redis-server
+      --requirepass "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     ports:
@@ -52,7 +49,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "sh", "-c", 'redis-cli -a "$${REDIS_PASSWORD}" ping' ]
+      test: [ "CMD", "sh", "-c", 'redis-cli -a "$REDIS_PASSWORD" ping' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,13 +59,11 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # API Gateway - 统一入口
+  # API Gateway - 统一 HTTP 入口
   api-gateway:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-api-gateway
     restart: always
-    ports:
-      - "3002:3002"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=api-gateway
@@ -84,6 +79,7 @@ services:
       - OSS_REGION=${OSS_REGION:-ap-guangzhou}
       - OSS_ENDPOINT=${OSS_ENDPOINT:-}
       - OSS_SECURE=${OSS_SECURE:-true}
+      - JWT_SECRET=${JWT_SECRET:-OneRecycle2025Secure}
     env_file:
       - .env
     depends_on:
@@ -94,24 +90,22 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3002/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:3002/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
 
-  # 账户服务
+  # 账户服务 (gRPC)
   account-service:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-account-service
     restart: always
-    ports:
-      - "127.0.0.1:3001:3001"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=account-service
@@ -120,13 +114,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
-      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
-      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
-      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
-      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
-      - OSS_SECURE=${OSS_SECURE:-true}
+      - JWT_SECRET=${JWT_SECRET:-OneRecycle2025Secure}
     env_file:
       - .env
     depends_on:
@@ -136,25 +124,17 @@ services:
         condition: service_healthy
     networks:
       - one-recycle-network
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3001/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     deploy:
       resources:
         limits:
           cpus: '0.3'
           memory: 384M
 
-  # 订单服务
+  # 订单服务 (gRPC)
   order-service:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-order-service
     restart: always
-    ports:
-      - "127.0.0.1:3003:3003"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=order-service
@@ -168,8 +148,7 @@ services:
       - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
       - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
       - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
-      - OSS_SECURE=${OSS_SECURE:-true}
+      - JWT_SECRET=${JWT_SECRET:-OneRecycle2025Secure}
     env_file:
       - .env
     depends_on:
@@ -179,25 +158,17 @@ services:
         condition: service_healthy
     networks:
       - one-recycle-network
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3003/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     deploy:
       resources:
         limits:
           cpus: '0.3'
           memory: 384M
 
-  # 通知服务
+  # 通知服务 (gRPC)
   notification-service:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-notification-service
     restart: always
-    ports:
-      - "127.0.0.1:3004:3004"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=notification-service
@@ -206,13 +177,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
-      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
-      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
-      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
-      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
-      - OSS_SECURE=${OSS_SECURE:-true}
+      - JWT_SECRET=${JWT_SECRET:-OneRecycle2025Secure}
     env_file:
       - .env
     depends_on:
@@ -222,25 +187,17 @@ services:
         condition: service_healthy
     networks:
       - one-recycle-network
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3004/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     deploy:
       resources:
         limits:
           cpus: '0.2'
           memory: 256M
 
-  # 库存服务
+  # 库存服务 (gRPC)
   inventory-service:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-inventory-service
     restart: always
-    ports:
-      - "127.0.0.1:3009:3009"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=inventory-service
@@ -249,13 +206,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
-      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
-      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
-      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
-      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
-      - OSS_SECURE=${OSS_SECURE:-true}
+      - JWT_SECRET=${JWT_SECRET:-OneRecycle2025Secure}
     env_file:
       - .env
     depends_on:
@@ -265,25 +216,17 @@ services:
         condition: service_healthy
     networks:
       - one-recycle-network
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3009/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     deploy:
       resources:
         limits:
           cpus: '0.2'
           memory: 256M
 
-  # 分类服务
+  # 分类服务 (gRPC)
   category-service:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-category-service
     restart: always
-    ports:
-      - "127.0.0.1:3008:3008"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=category-service
@@ -292,13 +235,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
-      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
-      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
-      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
-      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
-      - OSS_SECURE=${OSS_SECURE:-true}
+      - JWT_SECRET=${JWT_SECRET:-OneRecycle2025Secure}
     env_file:
       - .env
     depends_on:
@@ -308,12 +245,6 @@ services:
         condition: service_healthy
     networks:
       - one-recycle-network
-    healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3008/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     deploy:
       resources:
         limits:
@@ -325,8 +256,6 @@ services:
     image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
-    ports:
-      - "127.0.0.1:3000:3000"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=https://api.${DOMAIN:-backbuy.cn}
@@ -398,13 +327,11 @@ services:
       - -c
       - |
         trap 'exit 0' TERM INT
-
         while true; do
           DOMAIN_NAME="$${DOMAIN:-backbuy.cn}"
           CERT_PATH="/etc/letsencrypt/live/$${DOMAIN_NAME}"
-
           if [ -d "$$CERT_PATH" ] && [ -f "$$CERT_PATH/fullchain.pem" ] && [ -f "$$CERT_PATH/privkey.pem" ]; then
-            echo "Renewing certificate if needed..."
+            echo "Renewing certificate..."
             certbot renew --webroot -w /var/www/certbot --quiet 2>/dev/null || true
           else
             echo "Requesting initial certificate for $${DOMAIN_NAME}..."
@@ -418,7 +345,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-
 
 networks:
   one-recycle-network:

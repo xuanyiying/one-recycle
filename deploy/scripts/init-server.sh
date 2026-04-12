@@ -95,7 +95,7 @@ sleep 10
 
 # Run database migrations
 echo "Running database migrations..."
-docker compose -f deploy/docker-compose.yml run --rm backend npx prisma migrate deploy || true
+docker compose -f deploy/docker-compose.yml run --rm backend npx prisma db push || true
 
 # Start all services
 echo "Starting all services..."
