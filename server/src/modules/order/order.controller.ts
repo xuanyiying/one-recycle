@@ -292,7 +292,10 @@ export class OrderController {
   @ApiOperation({ summary: '删除订单' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: '订单删除成功' })
-  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: any): Promise<void> {
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
+  ): Promise<void> {
     // 仅管理员可删除订单
     if (req.user?.role !== 'ADMIN') {
       throw new ForbiddenException('仅管理员可删除订单');

@@ -1,7 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { CategoryService } from '../services/category.service';
-import { PricingService, PricingItemInput } from '../../pricing/pricing.service';
+import {
+  PricingService,
+  PricingItemInput,
+} from '../../pricing/pricing.service';
 import {
   GetCategoryRequest,
   ListCategoriesRequest,
@@ -33,7 +36,9 @@ export class CategoryGrpcController {
   }
 
   @GrpcMethod('CategoryService', 'ListCategories')
-  async listCategories(data: ListCategoriesRequest): Promise<ListCategoriesResponse> {
+  async listCategories(
+    data: ListCategoriesRequest,
+  ): Promise<ListCategoriesResponse> {
     const result = await this.categoryService.findMany({
       type: data.type as CategoryType,
       parentId: data.parentId,
@@ -120,7 +125,9 @@ export class CategoryGrpcController {
   }
 
   @GrpcMethod('CategoryService', 'GetCategoryTree')
-  async getCategoryTree(data: GetCategoryTreeRequest): Promise<CategoryTreeResponse> {
+  async getCategoryTree(
+    data: GetCategoryTreeRequest,
+  ): Promise<CategoryTreeResponse> {
     const items = await this.categoryService.findTree(data.parentId ?? null);
     return {
       items: items.map((item) => this.mapToCategoryResponse(item)),
@@ -128,14 +135,18 @@ export class CategoryGrpcController {
   }
 
   @GrpcMethod('CategoryService', 'GetPricingEstimate')
-  async getPricingEstimate(data: PricingEstimateRequest): Promise<PricingEstimateResponse> {
-    const items: PricingItemInput[] = (data.items || []).map((item: PricingItem) => ({
-      categoryId: String(item.categoryId),
-      categoryName: item.categoryName,
-      condition: item.condition,
-      weight: item.weight,
-      quantity: item.quantity,
-    }));
+  async getPricingEstimate(
+    data: PricingEstimateRequest,
+  ): Promise<PricingEstimateResponse> {
+    const items: PricingItemInput[] = (data.items || []).map(
+      (item: PricingItem) => ({
+        categoryId: String(item.categoryId),
+        categoryName: item.categoryName,
+        condition: item.condition,
+        weight: item.weight,
+        quantity: item.quantity,
+      }),
+    );
     const result = await this.pricingService.estimatePricing(
       items,
       data.tenantId,

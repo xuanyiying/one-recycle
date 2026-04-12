@@ -9,7 +9,12 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { PaymentProvider, PaymentStatus, RefundStatus, Prisma } from '@prisma/client';
+import {
+  PaymentProvider,
+  PaymentStatus,
+  RefundStatus,
+  Prisma,
+} from '@prisma/client';
 import { toNumber } from '@/common/utils/decimal.util';
 import {
   PersistentSnowflakeIdGenerator,
@@ -262,7 +267,10 @@ export class PaymentService implements OnModuleInit {
     }
 
     // 3. 幂等检查：如果已处理，直接返回
-    if (payment.status === PaymentStatus.SUCCESS || payment.status === PaymentStatus.FAILED) {
+    if (
+      payment.status === PaymentStatus.SUCCESS ||
+      payment.status === PaymentStatus.FAILED
+    ) {
       this.logger.warn(
         `Payment already processed: ${notifyData.outTradeNo}, status: ${payment.status}`,
       );
@@ -314,7 +322,10 @@ export class PaymentService implements OnModuleInit {
     }
 
     // 3. 幂等检查
-    if (refund.status === RefundStatus.SUCCESS || refund.status === RefundStatus.FAILED) {
+    if (
+      refund.status === RefundStatus.SUCCESS ||
+      refund.status === RefundStatus.FAILED
+    ) {
       this.logger.warn(
         `Refund already processed: ${notifyData.outRefundNo}, status: ${refund.status}`,
       );
@@ -465,16 +476,13 @@ export class PaymentService implements OnModuleInit {
     sign: string,
     signType: string,
   ): boolean {
-    const alipayPublicKey = this.configService.get<string>(
-      'ALIPAY_PUBLIC_KEY',
-    );
+    const alipayPublicKey = this.configService.get<string>('ALIPAY_PUBLIC_KEY');
     if (!alipayPublicKey) {
       this.logger.error('ALIPAY_PUBLIC_KEY not configured');
       return false;
     }
 
-    const algorithm =
-      signType === 'RSA2' ? 'RSA-SHA256' : 'RSA-SHA1';
+    const algorithm = signType === 'RSA2' ? 'RSA-SHA256' : 'RSA-SHA1';
 
     try {
       const verify = crypto.createVerify(algorithm);
@@ -485,7 +493,9 @@ export class PaymentService implements OnModuleInit {
         'base64',
       );
     } catch (error) {
-      this.logger.error(`Alipay signature verification failed: ${(error as Error).message}`);
+      this.logger.error(
+        `Alipay signature verification failed: ${(error as Error).message}`,
+      );
       return false;
     }
   }

@@ -290,12 +290,9 @@ export class FinanceService {
    */
   private hashPassword(password: string): string {
     const salt = crypto.randomBytes(PASSWORD_SALT_LENGTH);
-    const derivedKey = crypto.scryptSync(
-      password,
-      salt,
-      PASSWORD_KEY_LENGTH,
-      { N: PASSWORD_ITERATIONS },
-    );
+    const derivedKey = crypto.scryptSync(password, salt, PASSWORD_KEY_LENGTH, {
+      N: PASSWORD_ITERATIONS,
+    });
     return `${PASSWORD_ITERATIONS}$${salt.toString('hex')}$${derivedKey.toString('hex')}`;
   }
 
@@ -325,10 +322,7 @@ export class FinanceService {
       N: iterations,
     });
 
-    return crypto.timingSafeEqual(
-      Buffer.from(storedKey, 'hex'),
-      derivedKey,
-    );
+    return crypto.timingSafeEqual(Buffer.from(storedKey, 'hex'), derivedKey);
   }
 
   async getTenantBalance(tenantId: string) {

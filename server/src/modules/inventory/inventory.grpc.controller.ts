@@ -18,21 +18,32 @@ import {
   CheckAvailabilityResponse,
   Empty,
 } from '@/proto/inventory.pb';
-import { InventoryStatus, ItemType, ItemCondition, ProcessingStatus } from './entities/inventory.entity';
+import {
+  InventoryStatus,
+  ItemType,
+  ItemCondition,
+  ProcessingStatus,
+} from './entities/inventory.entity';
 
 @Controller()
 export class InventoryGrpcController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   @GrpcMethod('InventoryService', 'GetInventoryItem')
-  async getInventoryItem(data: GetInventoryItemRequest): Promise<InventoryItemResponse> {
-    const item = await this.inventoryService.getInventoryItemById(BigInt(data.id));
+  async getInventoryItem(
+    data: GetInventoryItemRequest,
+  ): Promise<InventoryItemResponse> {
+    const item = await this.inventoryService.getInventoryItemById(
+      BigInt(data.id),
+    );
     if (!item) throw new Error('Inventory item not found');
     return this.mapToInventoryItemResponse(item);
   }
 
   @GrpcMethod('InventoryService', 'ListInventoryItems')
-  async listInventoryItems(data: ListInventoryItemsRequest): Promise<ListInventoryItemsResponse> {
+  async listInventoryItems(
+    data: ListInventoryItemsRequest,
+  ): Promise<ListInventoryItemsResponse> {
     const filters: any = {};
     if (data.status) filters.status = data.status as InventoryStatus;
     if (data.itemType) filters.itemType = data.itemType as ItemType;
@@ -45,7 +56,9 @@ export class InventoryGrpcController {
       { page: data.page || 1, pageSize: data.limit || 20 },
     );
     return {
-      items: (result.items || []).map((item: any) => this.mapToInventoryItemResponse(item)),
+      items: (result.items || []).map((item: any) =>
+        this.mapToInventoryItemResponse(item),
+      ),
       total: result.total,
       page: result.page,
       limit: result.pageSize,
@@ -54,7 +67,9 @@ export class InventoryGrpcController {
   }
 
   @GrpcMethod('InventoryService', 'CreateInventoryItem')
-  async createInventoryItem(data: CreateInventoryItemRequest): Promise<InventoryItemResponse> {
+  async createInventoryItem(
+    data: CreateInventoryItemRequest,
+  ): Promise<InventoryItemResponse> {
     const item = await this.inventoryService.createInventoryItem({
       warehouseId: BigInt(data.warehouseId),
       categoryId: BigInt(data.categoryId),
@@ -73,16 +88,21 @@ export class InventoryGrpcController {
   }
 
   @GrpcMethod('InventoryService', 'UpdateInventoryItem')
-  async updateInventoryItem(data: UpdateInventoryItemRequest): Promise<InventoryItemResponse> {
-    const item = await this.inventoryService.updateInventoryItem(BigInt(data.id), {
-      name: data.name,
-      description: data.description,
-      quantity: data.quantity,
-      unitPrice: data.unitPrice,
-      location: data.location,
-      condition: data.condition as ItemCondition,
-      processingStatus: data.processingStatus as ProcessingStatus,
-    });
+  async updateInventoryItem(
+    data: UpdateInventoryItemRequest,
+  ): Promise<InventoryItemResponse> {
+    const item = await this.inventoryService.updateInventoryItem(
+      BigInt(data.id),
+      {
+        name: data.name,
+        description: data.description,
+        quantity: data.quantity,
+        unitPrice: data.unitPrice,
+        location: data.location,
+        condition: data.condition as ItemCondition,
+        processingStatus: data.processingStatus as ProcessingStatus,
+      },
+    );
     return this.mapToInventoryItemResponse(item);
   }
 
@@ -93,7 +113,9 @@ export class InventoryGrpcController {
   }
 
   @GrpcMethod('InventoryService', 'CreateReservation')
-  async createReservation(data: CreateReservationRequest): Promise<ReservationResponse> {
+  async createReservation(
+    data: CreateReservationRequest,
+  ): Promise<ReservationResponse> {
     const reservation = await this.inventoryService.createReservation({
       itemId: BigInt(data.itemId),
       quantity: data.quantity,
@@ -105,14 +127,22 @@ export class InventoryGrpcController {
   }
 
   @GrpcMethod('InventoryService', 'ConfirmReservation')
-  async confirmReservation(data: ConfirmReservationRequest): Promise<ReservationResponse> {
-    const reservation = await this.inventoryService.confirmReservation(BigInt(data.reservationId));
+  async confirmReservation(
+    data: ConfirmReservationRequest,
+  ): Promise<ReservationResponse> {
+    const reservation = await this.inventoryService.confirmReservation(
+      BigInt(data.reservationId),
+    );
     return this.mapToReservationResponse(reservation);
   }
 
   @GrpcMethod('InventoryService', 'CancelReservation')
-  async cancelReservation(data: CancelReservationRequest): Promise<ReservationResponse> {
-    const reservation = await this.inventoryService.cancelReservation(BigInt(data.reservationId));
+  async cancelReservation(
+    data: CancelReservationRequest,
+  ): Promise<ReservationResponse> {
+    const reservation = await this.inventoryService.cancelReservation(
+      BigInt(data.reservationId),
+    );
     return this.mapToReservationResponse(reservation);
   }
 
@@ -123,7 +153,9 @@ export class InventoryGrpcController {
   }
 
   @GrpcMethod('InventoryService', 'CheckAvailability')
-  async checkAvailability(data: CheckAvailabilityRequest): Promise<CheckAvailabilityResponse> {
+  async checkAvailability(
+    data: CheckAvailabilityRequest,
+  ): Promise<CheckAvailabilityResponse> {
     const results: CheckAvailabilityResponse['items'] = [];
     let allAvailable = true;
 
@@ -181,7 +213,10 @@ export class InventoryGrpcController {
       expiresAt: reservation.expiresAt?.toISOString?.() || '',
       confirmedAt: reservation.confirmedAt?.toISOString?.() || undefined,
       cancelledAt: reservation.cancelledAt?.toISOString?.() || undefined,
-      createdAt: reservation.createdAt?.toISOString?.() || reservation.reservedAt?.toISOString?.() || '',
+      createdAt:
+        reservation.createdAt?.toISOString?.() ||
+        reservation.reservedAt?.toISOString?.() ||
+        '',
     };
   }
 }

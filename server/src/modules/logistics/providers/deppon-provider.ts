@@ -3,9 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import * as crypto from 'crypto';
-import {
-  DepponResponse,
-} from '../dto/deppon.dto';
+import { DepponResponse } from '../dto/deppon.dto';
 import {
   CancelOrderDto,
   CreateOrderDto,
@@ -115,7 +113,10 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
       // 德邦 API 返回码: 1000 表示成功
       if (resData.resultCode === '1000' || resData.resultCode === '0') {
         if (responseDtoClass && resData.data) {
-          return this.validateResponse(responseDtoClass as new () => object, resData.data) as T;
+          return this.validateResponse(
+            responseDtoClass as new () => object,
+            resData.data,
+          ) as T;
         }
         return resData.data as T;
       }
@@ -144,8 +145,8 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     } catch (errors) {
       const messages = Array.isArray(errors)
         ? errors
-          .map((e) => Object.values(e.constraints || {}).join(', '))
-          .join('; ')
+            .map((e) => Object.values(e.constraints || {}).join(', '))
+            .join('; ')
         : String(errors);
       throw new BadRequestException(`Parameter Validation Failed: ${messages}`);
     }
@@ -168,8 +169,8 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
     } catch (errors) {
       const messages = Array.isArray(errors)
         ? errors
-          .map((e) => Object.values(e.constraints || {}).join(', '))
-          .join('; ')
+            .map((e) => Object.values(e.constraints || {}).join(', '))
+            .join('; ')
         : String(errors);
       this.logger.error(`Response Validation Failed: ${messages}`);
       throw new Error(`Response Validation Failed: ${messages}`);
@@ -191,9 +192,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   /**
    * 2. Create Order - 创建订单
    */
-  async createOrder(
-    params: CreateOrderDto,
-  ): Promise<CreateOrderResult> {
+  async createOrder(params: CreateOrderDto): Promise<CreateOrderResult> {
     const validParams = await this.validateParams(CreateOrderDto, params);
     return this.post<CreateOrderResult>(
       '/openapi/v1/order/create',
@@ -206,10 +205,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
    * 3. Subscribe Trace - 订阅物流轨迹
    */
   async subscribeTrace(params: SubscribeTraceDto): Promise<boolean> {
-    const validParams = await this.validateParams(
-      SubscribeTraceDto,
-      params,
-    );
+    const validParams = await this.validateParams(SubscribeTraceDto, params);
     await this.post('/openapi/v1/trace/subscribe', validParams);
     return true;
   }
@@ -217,9 +213,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   /**
    * 4. Query Trace - 查询物流轨迹
    */
-  async queryTrace(
-    params: QueryTraceDto,
-  ): Promise<QueryTraceResult> {
+  async queryTrace(params: QueryTraceDto): Promise<QueryTraceResult> {
     const validParams = await this.validateParams(QueryTraceDto, params);
     return this.post<QueryTraceResult>(
       '/openapi/v1/trace/query',
@@ -249,9 +243,7 @@ export class DepponLogisticsProvider implements ILogisticsProvider {
   /**
    * 7. Query Status - 查询运单状态
    */
-  async queryStatus(
-    params: QueryStatusDto,
-  ): Promise<QueryStatusResult> {
+  async queryStatus(params: QueryStatusDto): Promise<QueryStatusResult> {
     const validParams = await this.validateParams(QueryStatusDto, params);
     return this.post<QueryStatusResult>(
       '/openapi/v1/order/status',

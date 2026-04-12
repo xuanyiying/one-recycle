@@ -134,7 +134,9 @@ export function IsDateAfter(
       validator: {
         validate(value: unknown, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints as [string];
-          const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
+          const relatedValue = (args.object as Record<string, unknown>)[
+            relatedPropertyName
+          ];
 
           if (!value || !relatedValue) return true; // 如果任一值为空，跳过验证
 

@@ -36,9 +36,7 @@ export class AddressGrpcController {
 
   @GrpcMethod('AccountService', 'GetAddresses')
   async getAddresses(data: GetAddressesRequest): Promise<AddressListResponse> {
-    const addresses = await this.addressService.findAllByUserId(
-      data.userId,
-    );
+    const addresses = await this.addressService.findAllByUserId(data.userId);
     return {
       addresses: addresses.map((address: Address) =>
         this.mapToAddressResponse(address),

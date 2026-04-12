@@ -107,14 +107,24 @@ async function bootstrapGateway() {
   const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin) return callback(null, true);
       if (normalizedOrigins.includes(origin)) return callback(null, true);
       if (isDev && localhostPattern.test(origin)) return callback(null, true);
       return callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Request-ID'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'X-Request-ID',
+    ],
     exposedHeaders: ['Content-Range', 'X-Content-Range', 'X-Request-ID'],
     credentials: true,
     maxAge: 3600,
@@ -132,14 +142,20 @@ async function bootstrapGateway() {
   );
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new ResponseInterceptor(),
+  );
 
   // Swagger
   const config = new DocumentBuilder()
     .setTitle('OneRecycle API')
     .setDescription('OneRecycle 多平台旧物回收 API 文档')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
     .addTag('auth', '认证相关接口')
     .addTag('users', '用户管理接口')
     .addTag('orders', '订单管理接口')
@@ -149,7 +165,9 @@ async function bootstrapGateway() {
     .addTag('health', '健康检查接口')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, { swaggerOptions: { persistAuthorization: true } });
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
 
   const port = process.env.PORT ? parseInt(process.env.PORT) : 3002;
   await app.listen(port);
@@ -157,18 +175,24 @@ async function bootstrapGateway() {
   logger.log(`Swagger docs: http://localhost:${port}/api/docs`);
 }
 
-async function bootstrapGrpcService(serviceName: string, config: ServiceConfig) {
+async function bootstrapGrpcService(
+  serviceName: string,
+  config: ServiceConfig,
+) {
   const logger = new Logger(serviceName);
   const grpcPort = process.env.PORT ? parseInt(process.env.PORT) : 50051;
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(config.module, {
-    transport: Transport.GRPC,
-    options: {
-      package: config.grpcPackage!,
-      protoPath: join(__dirname, config.protoPath!),
-      url: `0.0.0.0:${grpcPort}`,
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    config.module,
+    {
+      transport: Transport.GRPC,
+      options: {
+        package: config.grpcPackage!,
+        protoPath: join(__dirname, config.protoPath!),
+        url: `0.0.0.0:${grpcPort}`,
+      },
     },
-  });
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -179,7 +203,9 @@ async function bootstrapGrpcService(serviceName: string, config: ServiceConfig) 
   );
 
   await app.listen();
-  logger.log(`gRPC service running on: 0.0.0.0:${grpcPort} (package: ${config.grpcPackage})`);
+  logger.log(
+    `gRPC service running on: 0.0.0.0:${grpcPort} (package: ${config.grpcPackage})`,
+  );
 }
 
 async function bootstrapMonolith() {
@@ -196,33 +222,55 @@ async function bootstrapMonolith() {
   const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin) return callback(null, true);
       if (normalizedOrigins.includes(origin)) return callback(null, true);
       if (isDev && localhostPattern.test(origin)) return callback(null, true);
       return callback(new Error('Not allowed by CORS'));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+    ],
     credentials: true,
     maxAge: 3600,
     optionsSuccessStatus: 204,
   });
 
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, transformOptions: { enableImplicitConversion: true } }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
   );
   app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseInterceptor());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new ResponseInterceptor(),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('OneRecycle API')
     .setDescription('OneRecycle API 文档')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document, { swaggerOptions: { persistAuthorization: true } });
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
 
   const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
   await app.listen(port);
@@ -246,7 +294,9 @@ async function bootstrap() {
 
   const serviceConfig = SERVICE_REGISTRY[serviceName];
   if (!serviceConfig) {
-    throw new Error(`Unknown SERVICE_NAME: ${serviceName}. Available: api-gateway, ${Object.keys(SERVICE_REGISTRY).join(', ')}`);
+    throw new Error(
+      `Unknown SERVICE_NAME: ${serviceName}. Available: api-gateway, ${Object.keys(SERVICE_REGISTRY).join(', ')}`,
+    );
   }
 
   await bootstrapGrpcService(serviceName, serviceConfig);

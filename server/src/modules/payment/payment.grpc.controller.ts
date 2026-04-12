@@ -115,7 +115,10 @@ export class PaymentGrpcController {
   private mapToPayment(payment: Payment) {
     return {
       id: payment.id.toString(),
-      orderId: typeof payment.orderId === 'bigint' ? payment.orderId.toString() : String(payment.orderId),
+      orderId:
+        typeof payment.orderId === 'bigint'
+          ? payment.orderId.toString()
+          : String(payment.orderId),
       transactionId: (payment.transactionId || 0n).toString(),
       outTradeNo: payment.outTradeNo || '',
       total: toNumber(payment.total),
@@ -245,7 +248,10 @@ export class PaymentGrpcController {
   private mapToPaymentLogResponse(paymentLog: PaymentLog): PaymentLogResponse {
     return {
       id: paymentLog.id.toString(),
-      orderId: typeof paymentLog.orderId === 'bigint' ? paymentLog.orderId.toString() : String(paymentLog.orderId),
+      orderId:
+        typeof paymentLog.orderId === 'bigint'
+          ? paymentLog.orderId.toString()
+          : String(paymentLog.orderId),
       transactionId: (paymentLog.transactionId || 0n).toString(),
       status: paymentLog.status,
       amount: paymentLog.amount?.toString() || '0',

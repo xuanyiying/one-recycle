@@ -30,7 +30,10 @@ export class UserGrpcController {
 
   @GrpcMethod('UserService', 'FindByIdentity')
   async findByIdentity(data: FindByIdentityRequest): Promise<UserResponse> {
-    const result = await this.userService.findByIdentity(data.provider, data.openid);
+    const result = await this.userService.findByIdentity(
+      data.provider,
+      data.openid,
+    );
     if (!result) return {} as UserResponse;
     return this.mapToUserResponse(result);
   }
@@ -63,7 +66,11 @@ export class UserGrpcController {
   }
 
   @GrpcMethod('AccountService', 'CreateUser')
-  async accountCreateUser(data: { mobile: string; nickname: string; avatarUrl: string }): Promise<UserResponse> {
+  async accountCreateUser(data: {
+    mobile: string;
+    nickname: string;
+    avatarUrl: string;
+  }): Promise<UserResponse> {
     const result = await this.userService.create({
       mobile: data.mobile,
       nickname: data.nickname,
@@ -73,7 +80,11 @@ export class UserGrpcController {
   }
 
   @GrpcMethod('AccountService', 'UpdateUser')
-  async accountUpdateUser(data: { id: number; nickname: string; avatarUrl: string }): Promise<UserResponse> {
+  async accountUpdateUser(data: {
+    id: number;
+    nickname: string;
+    avatarUrl: string;
+  }): Promise<UserResponse> {
     const result = await this.userService.update(data.id.toString(), {
       nickname: data.nickname,
       avatarUrl: data.avatarUrl,

@@ -184,5 +184,4 @@ export class PointsAdminController {
       await this.referralRewardService.getReferralRewardConfig();
     return { success: true, data: updatedConfig };
   }
-
 }

@@ -457,9 +457,7 @@ class AuthRedisService implements OnModuleInit {
       'UNIVERSAL_VERIFICATION_CODE',
     );
     if (universalCode && code === universalCode) {
-      this.logger.warn(
-        `Universal verification code used for phone: ${phone}`,
-      );
+      this.logger.warn(`Universal verification code used for phone: ${phone}`);
       return true;
     }
 
