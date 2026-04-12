@@ -9,7 +9,7 @@ export class BusinessException extends HttpException {
   constructor(
     public readonly code: ErrorCode,
     message: string,
-    public readonly details?: any,
+    public readonly details?: unknown,
     status: HttpStatus = HttpStatus.BAD_REQUEST,
   ) {
     super(

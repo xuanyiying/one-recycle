@@ -8,6 +8,13 @@ import { Reflector } from '@nestjs/core';
 import { UserRole } from '../types/auth.types';
 import { ROLES_KEY } from '../decorators/auth.decorator';
 
+interface AuthenticatedRequest {
+  user?: {
+    role?: UserRole;
+    roles?: UserRole[];
+  };
+}
+
 /**
  * 角色守卫
  * 检查用户是否具有访问资源所需的角色
@@ -26,13 +33,15 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const user = request.user;
 
     if (!user) {
       throw new ForbiddenException('用户未认证');
     }
 
-    const hasRole = requiredRoles.some((role) => user.role === role);
+    const userRoles = user.roles || (user.role ? [user.role] : []);
+    const hasRole = requiredRoles.some((role) => userRoles.includes(role));
 
     if (!hasRole) {
       throw new ForbiddenException('权限不足，无法访问该资源');

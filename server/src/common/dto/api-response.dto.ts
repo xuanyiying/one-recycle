@@ -50,7 +50,7 @@ export function createSuccessResponse<T>(
 export function createErrorResponse(
   code: string,
   message: string,
-  details?: any,
+  details?: unknown,
 ): ApiResponseDto<null> {
   return {
     success: false,

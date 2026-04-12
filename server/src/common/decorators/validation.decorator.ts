@@ -144,7 +144,7 @@ export function IsDateAfter(
           return currentDate > relatedDate;
         },
         defaultMessage(args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
+          const [relatedPropertyName] = args.constraints as [string];
           return `${args.property} must be after ${relatedPropertyName}`;
         },
       },

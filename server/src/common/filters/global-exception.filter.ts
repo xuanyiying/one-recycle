@@ -8,17 +8,32 @@ import {
 import { BusinessException } from '../exceptions/business.exception';
 import { ApiResponse } from '../types/common.types';
 
+interface ExceptionResponse {
+  message?: string | string[];
+  error?: string;
+  details?: unknown;
+}
+
+interface NestRequest {
+  url?: string;
+}
+
+interface NestResponse {
+  status(code: number): NestResponse;
+  json(body: unknown): void;
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
-    const request = ctx.getRequest();
+    const response = ctx.getResponse<NestResponse>();
+    const request = ctx.getRequest<NestRequest>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
     let code = 'INTERNAL_ERROR';
-    let details: any = undefined;
+    let details: unknown = undefined;
 
     if (exception instanceof BusinessException) {
       status = exception.getStatus();
@@ -30,7 +45,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-        const responseData = exceptionResponse as any;
+        const responseData = exceptionResponse as ExceptionResponse;
         message = Array.isArray(responseData.message)
           ? responseData.message.join('; ')
           : responseData.message || exception.message;
