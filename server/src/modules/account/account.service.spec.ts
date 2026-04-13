@@ -11,6 +11,7 @@ describe('AccountService', () => {
     account: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      upsert: jest.fn(),
     },
   };
 
@@ -105,29 +106,26 @@ describe('AccountService', () => {
   describe('findAccountByUserId', () => {
     const userId = BigInt(1);
 
-    it('should return account if found', async () => {
+    it('should return account from upsert', async () => {
       const mockAccount = { id: BigInt(1), userId };
-      mockPrismaService.account.findUnique.mockResolvedValue(mockAccount);
+      mockPrismaService.account.upsert.mockResolvedValue(mockAccount);
 
       const result = await service.findAccountByUserId(userId);
 
       expect(result).toEqual(mockAccount);
-      expect(mockPrismaService.account.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.account.upsert).toHaveBeenCalledWith({
         where: { userId_accountType: { userId, accountType: 'WALLET' } },
+        update: {},
+        create: {
+          userId,
+          accountType: 'WALLET',
+          accountDetails: {},
+          availableBalance: 0,
+          frozenBalance: 0,
+          totalIncome: 0,
+          totalWithdrawal: 0,
+        },
       });
-    });
-
-    it('should auto-create account if not found', async () => {
-      mockPrismaService.account.findUnique.mockResolvedValue(null);
-      const mockCreatedAccount = { id: BigInt(1), userId };
-      jest
-        .spyOn(service, 'createAccount')
-        .mockResolvedValue(mockCreatedAccount as any);
-
-      const result = await service.findAccountByUserId(userId);
-
-      expect(result).toEqual(mockCreatedAccount);
-      expect(service.createAccount).toHaveBeenCalledWith(userId);
     });
   });
 });

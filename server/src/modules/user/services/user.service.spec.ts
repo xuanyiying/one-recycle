@@ -54,21 +54,34 @@ describe('UserService', () => {
     };
 
     it('should create user and trigger account creation', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.user.create.mockResolvedValue({
+      const mockUser = {
         id: BigInt(1),
         email: 'user@example.com',
-        ...createUserDto,
+        mobile: createUserDto.mobile,
+        nickname: createUserDto.nickname,
+        avatarUrl: createUserDto.avatarUrl,
         status: 'ACTIVE',
         createdAt: new Date(),
         updatedAt: new Date(),
+      };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.$transaction.mockImplementation((callback) => {
+        const mockTx = {
+          user: {
+            create: jest.fn().mockResolvedValue(mockUser),
+          },
+          account: {
+            create: jest.fn().mockResolvedValue({ id: BigInt(1) }),
+          },
+        };
+        return Promise.resolve(callback(mockTx));
       });
       mockAccountService.createAccount.mockResolvedValue({ id: BigInt(1) });
 
       const result = await service.create(createUserDto);
 
-      expect(mockPrismaService.user.create).toHaveBeenCalled();
-      expect(mockAccountService.createAccount).toHaveBeenCalledWith(BigInt(1));
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result.email).toBe('user@example.com');
     });

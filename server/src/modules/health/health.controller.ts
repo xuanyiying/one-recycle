@@ -28,7 +28,7 @@ export class HealthController {
   @Get('live')
   @ApiOperation({ summary: '存活检查' })
   @ApiResponse({ status: 200, description: '服务存活' })
-  async liveness() {
+  liveness() {
     return this.healthService.checkLiveness();
   }
 }

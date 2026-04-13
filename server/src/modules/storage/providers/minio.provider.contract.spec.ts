@@ -23,7 +23,7 @@ describe('MinIOService Contract', () => {
     },
   };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     s3Mock.reset();
     provider = new MinIOService(mockConfig.config as any);
   });

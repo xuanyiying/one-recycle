@@ -2,15 +2,36 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CacheModule } from '@nestjs/cache-manager';
 import { SystemController } from './system.controller';
 import { SystemService } from './system.service';
+import { PrismaService } from '@/prisma/prisma.service';
 
 describe('SystemController', () => {
   let controller: SystemController;
+
+  const mockPrismaService = {
+    fAQ: {
+      findMany: jest.fn().mockResolvedValue(
+        Array.from({ length: 20 }, (_, i) => ({
+          id: i + 1,
+          question: `Question ${i + 1}`,
+          answer: `Answer ${i + 1}`,
+          sortOrder: i,
+          isActive: true,
+        })),
+      ),
+    },
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [CacheModule.register()],
       controllers: [SystemController],
-      providers: [SystemService],
+      providers: [
+        SystemService,
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+      ],
     }).compile();
 
     controller = module.get<SystemController>(SystemController);

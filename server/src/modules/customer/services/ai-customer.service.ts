@@ -541,7 +541,7 @@ export class AICustomerService {
   /**
    * 处理价格查询
    */
-  private async handleQueryPrice(args: any): Promise<CustomerToolResult> {
+  private handleQueryPrice(args: any): CustomerToolResult {
     return {
       success: true,
       data: {

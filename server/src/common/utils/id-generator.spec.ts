@@ -1,15 +1,15 @@
 import {
-  SnowflakeIdGenerator,
-  NanoIdGenerator,
-  IdGeneratorFactory,
-  IdValidator,
-  PersistentSnowflakeIdGenerator,
-  RedisSnowflakeStateStore,
-  IdGeneratorMetrics,
   generateSecureorderNo,
   generateSecurePaymentNumber,
   generateSecureRefundNumber,
   generateUniqueId,
+  IdGeneratorFactory,
+  IdGeneratorMetrics,
+  IdValidator,
+  NanoIdGenerator,
+  PersistentSnowflakeIdGenerator,
+  RedisSnowflakeStateStore,
+  SnowflakeIdGenerator,
 } from './common.util';
 
 describe('分布式ID生成器规范测试', () => {
@@ -57,9 +57,10 @@ describe('分布式ID生成器规范测试', () => {
 
       const store = new Map<string, any>();
       const stateStore = new RedisSnowflakeStateStore({
-        get: async (key) => store.get(key) ?? null,
-        set: async (key, value) => {
+        get: (key) => Promise.resolve(store.get(key) ?? null),
+        set: (key, value) => {
           store.set(key, value);
+          return Promise.resolve();
         },
       });
 
@@ -98,9 +99,10 @@ describe('分布式ID生成器规范测试', () => {
 
       const store = new Map<string, any>();
       const stateStore = new RedisSnowflakeStateStore({
-        get: async (key) => store.get(key) ?? null,
-        set: async (key, value) => {
+        get: (key) => Promise.resolve(store.get(key) ?? null),
+        set: (key, value) => {
           store.set(key, value);
+          return Promise.resolve();
         },
       });
 

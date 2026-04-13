@@ -54,7 +54,7 @@ export class AIService implements OnModuleInit {
   /**
    * 加载所有配置的提供商
    */
-  private async loadProviders() {
+  private loadProviders() {
     // OpenAI
     const openaiConfig = this.loadProviderConfig(AIProviderType.OPENAI);
     if (openaiConfig) {

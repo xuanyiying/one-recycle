@@ -8,6 +8,7 @@ import { PaymentServiceClient } from '../clients/payment-service.client';
 import { Job } from 'bull';
 import { OrderCreatedEventDto } from '../dto/order-events.dto';
 import { PricingService } from '@/modules/pricing/pricing.service';
+import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
 
 describe('OrderProcessor', () => {
   let processor: OrderProcessor;
@@ -36,6 +37,9 @@ describe('OrderProcessor', () => {
       pricing: { totalEstimate: { min: 10, max: 20 } },
     }),
   };
+  const mockReferralRewardService = {
+    processOrderRewards: jest.fn().mockResolvedValue({}),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -53,6 +57,7 @@ describe('OrderProcessor', () => {
         { provide: DispatchServiceClient, useValue: mockDispatchServiceClient },
         { provide: PaymentServiceClient, useValue: mockPaymentServiceClient },
         { provide: PricingService, useValue: mockPricingService },
+        { provide: ReferralRewardService, useValue: mockReferralRewardService },
       ],
     }).compile();
 

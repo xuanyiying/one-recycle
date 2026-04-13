@@ -1,21 +1,21 @@
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { SessionService } from '../services/session.service';
-import { MessageService } from '../services/message.service';
-import { AIReplyService } from '../services/ai-reply.service';
 import { SendMessageDto } from '../dto';
+import { AIReplyService } from '../services/ai-reply.service';
+import { MessageService } from '../services/message.service';
+import { SessionService } from '../services/session.service';
 
 type AuthenticatedSocket = Socket & {
   userId: string;
@@ -136,10 +136,10 @@ export class CustomerServiceGateway
   }
 
   @SubscribeMessage('leave_session')
-  async handleLeaveSession(
+  handleLeaveSession(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { sessionId: string },
-  ): Promise<void> {
+  ): void {
     client.leave(`session:${data.sessionId}`);
     client.sessionId = undefined;
     client.emit('session_left', { sessionId: data.sessionId });
@@ -187,10 +187,10 @@ export class CustomerServiceGateway
   }
 
   @SubscribeMessage('typing')
-  async handleTyping(
+  handleTyping(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { sessionId: string; isTyping: boolean },
-  ): Promise<void> {
+  ): void {
     client.to(`session:${data.sessionId}`).emit('typing', {
       userId: client.userId,
       isTyping: data.isTyping,
@@ -323,10 +323,7 @@ export class CustomerServiceGateway
     this.server.emit('new_waiting_session', { sessionId });
   }
 
-  private async broadcastAgentStatus(
-    agentId: string,
-    status: string,
-  ): Promise<void> {
+  private broadcastAgentStatus(agentId: string, status: string): void {
     this.server.emit('agent_status', { agentId, status });
   }
 

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { FinanceService } from './finance.service';
 import { PrismaService } from '@/prisma/prisma.service';
+import { RedisService } from '@/common/redis/redis.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
@@ -70,12 +71,12 @@ describe('FinanceService - Tenant Recharge', () => {
       findMany: jest.fn(),
       create: jest.fn(),
     },
-    $transaction: jest
-      .fn((fn: any) => fn(mockPrismaService))
-      .mockResolvedValue({
-        wallet: {},
-        tenant: {},
-      }),
+    $transaction: jest.fn((fn: any) => {
+      if (typeof fn === 'function') {
+        return fn(mockPrismaService);
+      }
+      return Promise.resolve({ wallet: {}, tenant: {} });
+    }),
   };
 
   const mockConfigService = {
@@ -85,6 +86,15 @@ describe('FinanceService - Tenant Recharge', () => {
       }
       return undefined;
     }),
+  };
+
+  const mockRedisService = {
+    getClient: jest.fn(() => ({
+      incr: jest.fn(),
+      decr: jest.fn(),
+      get: jest.fn(),
+    })),
+    withLock: jest.fn(async (key: string, fn: () => Promise<any>) => fn()),
   };
 
   beforeEach(async () => {
@@ -100,6 +110,10 @@ describe('FinanceService - Tenant Recharge', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: RedisService,
+          useValue: mockRedisService,
         },
       ],
     }).compile();
@@ -327,6 +341,10 @@ describe('FinanceService - Tenant Recharge', () => {
           {
             provide: ConfigService,
             useValue: { get: jest.fn(() => undefined) },
+          },
+          {
+            provide: RedisService,
+            useValue: mockRedisService,
           },
         ],
       }).compile();

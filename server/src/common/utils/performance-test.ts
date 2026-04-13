@@ -97,13 +97,13 @@ async function testConcurrentPerformance(
   const startTime = process.hrtime.bigint();
 
   // 创建并发任务
-  const promises = Array.from({ length: concurrency }, async () => {
+  const promises = Array.from({ length: concurrency }, () => {
     const workerIds = new Set<string>();
     for (let i = 0; i < iterationsPerWorker; i++) {
       const id = generator();
       workerIds.add(id);
     }
-    return workerIds;
+    return Promise.resolve(workerIds);
   });
 
   // 等待所有任务完成

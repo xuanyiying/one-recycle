@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { OrderService } from '@/modules/order/services/order.service';
-import { KnowledgeService } from './knowledge.service';
 import { AIService, ChatMessage } from '@/modules/ai';
+import { OrderService } from '@/modules/order/services/order.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { KnowledgeService } from './knowledge.service';
 
 export enum UserIntent {
   ORDER_QUERY = 'ORDER_QUERY',
@@ -416,10 +416,11 @@ export class AIReplyService {
     }
   }
 
-  private async handleOrderModify(
+  private handleOrderModify(
     userId: string,
     intentResult: IntentResult,
-  ): Promise<AIResponse> {
+  ): AIResponse {
+    void userId;
     return {
       content:
         '好的，我可以帮您修改订单信息。请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。',
@@ -579,10 +580,11 @@ export class AIReplyService {
     return this.handleUnknownIntent(message, intentResult);
   }
 
-  private async handleUnknownIntent(
+  private handleUnknownIntent(
     message: string,
     intentResult: IntentResult,
-  ): Promise<AIResponse> {
+  ): AIResponse {
+    void message;
     const quickQuestions = [
       '查询订单状态',
       '取消订单',
@@ -604,12 +606,12 @@ export class AIReplyService {
     };
   }
 
-  private async logConversation(
+  private logConversation(
     sessionId: string,
     userId: string,
     message: string,
     intentResult: IntentResult,
-  ): Promise<void> {
+  ): void {
     // AIConversationLog model has been removed from Prisma schema
     // TODO: Re-enable when AI conversation logging is needed
     void sessionId;

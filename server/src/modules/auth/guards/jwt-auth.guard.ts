@@ -66,10 +66,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   /**
    * 检查用户权限
    */
-  private async checkPermissions(
-    context: ExecutionContext,
-    user: any,
-  ): Promise<void> {
+  private checkPermissions(context: ExecutionContext, user: any): void {
     // 检查是否需要管理员权限
     const requireAdmin = this.reflector.getAllAndOverride<boolean>(
       'requireAdmin',

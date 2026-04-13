@@ -13,7 +13,10 @@ describe('PaymentService', () => {
   let paymentProviderFactory: PaymentProviderFactory;
 
   const mockConfigService = {
-    get: jest.fn((key, defaultValue) => defaultValue),
+    get: jest.fn((key, defaultValue) => {
+      if (key === 'NODE_ENV') return 'test';
+      return defaultValue;
+    }),
   };
 
   const mockRedisService = {
@@ -165,7 +168,7 @@ describe('PaymentService', () => {
     const result = await service.handlePaymentNotify({
       outTradeNo: 'OUT9001',
       tradeState: 'SUCCESS',
-      transactionId: 'T1',
+      transactionId: '123456',
       notifyRaw: '{}',
     });
 

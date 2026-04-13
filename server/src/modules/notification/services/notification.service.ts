@@ -1,35 +1,35 @@
 import {
-  Injectable,
-  NotFoundException,
+  PersistentSnowflakeIdGenerator,
+  RedisService,
+  RedisSnowflakeStateStore,
+} from '@/common';
+import { NOTIFICATION_COSTS } from '@/common/constants';
+import { PrismaService } from '@/prisma/prisma.service';
+import {
   BadRequestException,
+  Injectable,
   Logger,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import {
-  INotificationService,
-  SendNotificationData,
-  SendBatchNotificationData,
-  CreateTemplateData,
-  UpdateTemplateData,
-  NotificationFilters,
-  TemplateFilters,
-  BatchFilters,
-  NotificationProvider,
-} from '../interfaces/notification.interface';
-import {
-  NotificationStatsEntity,
-  NotificationType,
-  NotificationStatus,
   NotificationPriority,
+  NotificationStatsEntity,
+  NotificationStatus,
+  NotificationType,
 } from '../entities/notification.entity';
-import { NOTIFICATION_COSTS } from '@/common/constants';
 import {
-  PersistentSnowflakeIdGenerator,
-  RedisSnowflakeStateStore,
-  RedisService,
-} from '@/common';
+  BatchFilters,
+  CreateTemplateData,
+  INotificationService,
+  NotificationFilters,
+  NotificationProvider,
+  SendBatchNotificationData,
+  SendNotificationData,
+  TemplateFilters,
+  UpdateTemplateData,
+} from '../interfaces/notification.interface';
 
 @Injectable()
 export class NotificationService implements INotificationService, OnModuleInit {
@@ -87,9 +87,116 @@ export class NotificationService implements INotificationService, OnModuleInit {
     phone: string;
     template: string;
     params: Record<string, any>;
-  }): Promise<{ messageId: string }> {
+  }): Promise<{ messageId: string; status: string }> {
+    const providers = await this.getProviders();
+    const smsProvider = providers.find(
+      (p) => p.type === NotificationType.SMS && p.isEnabled,
+    );
+
+    if (!smsProvider) {
+      throw new Error('No enabled SMS provider found');
+    }
+
+    try {
+      // 根据提供商类型调用不同的发送逻辑
+      switch (smsProvider.name) {
+        case 'aliyun-sms':
+          return await this.sendAliyunSms(data, smsProvider.config);
+        case 'tencent-sms':
+          return await this.sendTencentSms(data, smsProvider.config);
+        default:
+          // 默认使用通用 HTTP 接口
+          return await this.sendGenericSms(data, smsProvider.config);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send SMS to ${data.phone}:`, error);
+      throw error;
+    }
+  }
+
+  private async sendAliyunSms(
+    data: { phone: string; template: string; params: Record<string, any> },
+    config: Record<string, any>,
+  ): Promise<{ messageId: string; status: string }> {
+    // 阿里云 SMS 实现
+    const { accessKeyId, accessKeySecret } = config;
+    if (!accessKeyId || !accessKeySecret) {
+      throw new Error('Aliyun SMS credentials not configured');
+    }
+
     const messageId = this.generateMessageId();
-    return { messageId };
+    this.logger.log(
+      `Sending Aliyun SMS to ${data.phone}, template: ${data.template}`,
+    );
+
+    // TODO: 集成阿里云 SMS SDK
+    // const client = new AliyunSMSClient({ accessKeyId, accessKeySecret });
+    // await client.sendSMS({
+    //   PhoneNumbers: data.phone,
+    //   SignName: signName,
+    //   TemplateCode: data.template,
+    //   TemplateParam: JSON.stringify(data.params),
+    // });
+
+    return { messageId, status: 'SENT' };
+  }
+
+  private async sendTencentSms(
+    data: { phone: string; template: string; params: Record<string, any> },
+    config: Record<string, any>,
+  ): Promise<{ messageId: string; status: string }> {
+    // 腾讯云 SMS 实现
+    const { secretId, secretKey } = config;
+    if (!secretId || !secretKey) {
+      throw new Error('Tencent SMS credentials not configured');
+    }
+
+    const messageId = this.generateMessageId();
+    this.logger.log(
+      `Sending Tencent SMS to ${data.phone}, template: ${data.template}`,
+    );
+
+    // TODO: 集成腾讯云 SMS SDK
+    void config.appId;
+    void config.signName;
+    return { messageId, status: 'SENT' };
+  }
+
+  private async sendGenericSms(
+    data: { phone: string; template: string; params: Record<string, any> },
+    config: Record<string, any>,
+  ): Promise<{ messageId: string; status: string }> {
+    const { apiKey, endpoint, signName } = config;
+    if (!apiKey || !endpoint) {
+      throw new Error('SMS provider not configured properly');
+    }
+
+    const messageId = this.generateMessageId();
+    this.logger.log(`Sending SMS via generic provider to ${data.phone}`);
+
+    // 通用 HTTP 调用
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        phone: data.phone,
+        template: data.template,
+        params: data.params,
+        signName: signName,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `SMS provider returned ${response.status}: ${await response.text()}`,
+      );
+    }
+
+    const result = await response.json();
+    return { messageId: result.messageId || messageId, status: 'SENT' };
   }
 
   async sendPush(data: {
@@ -103,6 +210,18 @@ export class NotificationService implements INotificationService, OnModuleInit {
     successCount: number;
     sentAt: string;
   }> {
+    const providers = await this.getProviders();
+    const pushProvider = providers.find(
+      (p) => p.type === NotificationType.PUSH && p.isEnabled,
+    );
+
+    if (!pushProvider) {
+      throw new Error('No enabled push provider found');
+    }
+
+    // TODO: 集成推送服务 (FCM, APNS, JPush, 等)
+    this.logger.log(`Sending push notification to user ${data.userId}`);
+
     const devicesCount = 1;
     const successCount = 1;
     return {
@@ -119,9 +238,91 @@ export class NotificationService implements INotificationService, OnModuleInit {
     content: string;
     template?: string;
     params?: Record<string, any>;
-  }): Promise<{ messageId: string }> {
+  }): Promise<{ messageId: string; status: string }> {
+    const providers = await this.getProviders();
+    const emailProvider = providers.find(
+      (p) => p.type === NotificationType.EMAIL && p.isEnabled,
+    );
+
+    if (!emailProvider) {
+      throw new Error('No enabled email provider found');
+    }
+
     const messageId = this.generateMessageId();
-    return { messageId };
+    this.logger.log(`Sending email to ${data.to}, subject: ${data.subject}`);
+
+    // TODO: 集成邮件服务 (SendGrid, AWS SES, 等)
+    return { messageId, status: 'SENT' };
+  }
+
+  async sendWebhook(data: {
+    url: string;
+    payload: Record<string, any>;
+    headers?: Record<string, string>;
+    timeout?: number;
+    retries?: number;
+  }): Promise<{ success: boolean; statusCode: number; response?: string }> {
+    const providers = await this.getProviders();
+    const webhookProvider = providers.find(
+      (p) => p.type === NotificationType.WEBHOOK && p.isEnabled,
+    );
+
+    if (!webhookProvider) {
+      throw new Error('No enabled webhook provider found');
+    }
+
+    const config = webhookProvider.config;
+    const timeout = data.timeout || config.timeout || 30000;
+    const maxRetries = data.retries ?? config.retries ?? 3;
+
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(data.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...data.headers,
+          },
+          body: JSON.stringify(data.payload),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        const responseText = await response.text();
+
+        if (response.ok) {
+          this.logger.log(`Webhook sent successfully to ${data.url}`);
+          return {
+            success: true,
+            statusCode: response.status,
+            response: responseText,
+          };
+        }
+
+        throw new Error(`HTTP ${response.status}: ${responseText}`);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        this.logger.warn(
+          `Webhook attempt ${attempt + 1}/${maxRetries} failed: ${lastError.message}`,
+        );
+
+        if (attempt < maxRetries - 1) {
+          // 指数退避重试
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw new Error(
+      `Webhook failed after ${maxRetries} attempts: ${lastError?.message}`,
+    );
   }
 
   async sendBatch(
@@ -525,51 +726,112 @@ export class NotificationService implements INotificationService, OnModuleInit {
   }
 
   async getProviders(): Promise<NotificationProvider[]> {
-    // 在实际应用中，这可能来自数据库配置或ConfigService
+    // 从配置中读取提供商设置
+    const smsProvider = this.configService.get<string>(
+      'SMS_PROVIDER',
+      'generic',
+    );
+    const emailProvider = this.configService.get<string>(
+      'EMAIL_PROVIDER',
+      'generic',
+    );
+    const pushProvider = this.configService.get<string>(
+      'PUSH_PROVIDER',
+      'generic',
+    );
+
     return [
+      // SMS 提供商
       {
-        name: 'sms-provider',
+        name:
+          smsProvider === 'aliyun'
+            ? 'aliyun-sms'
+            : smsProvider === 'tencent'
+              ? 'tencent-sms'
+              : 'sms-provider',
         type: NotificationType.SMS,
-        isEnabled: true,
+        isEnabled: this.configService.get<boolean>('SMS_ENABLED', true),
         config: {
-          apiKey: this.configService.get('SMS_API_KEY', 'mock-sms-key'),
-          endpoint: this.configService.get(
-            'SMS_ENDPOINT',
-            'https://sms.example.com',
+          // 通用配置
+          apiKey: this.configService.get('SMS_API_KEY'),
+          endpoint: this.configService.get('SMS_ENDPOINT'),
+          signName: this.configService.get('SMS_SIGN_NAME'),
+          // 阿里云 SMS 配置
+          accessKeyId: this.configService.get('ALIYUN_SMS_ACCESS_KEY_ID'),
+          accessKeySecret: this.configService.get(
+            'ALIYUN_SMS_ACCESS_KEY_SECRET',
           ),
+          // 腾讯云 SMS 配置
+          secretId: this.configService.get('TENCENT_SMS_SECRET_ID'),
+          secretKey: this.configService.get('TENCENT_SMS_SECRET_KEY'),
+          appId: this.configService.get('TENCENT_SMS_APP_ID'),
         },
       },
+      // 邮件提供商
       {
-        name: 'email-provider',
+        name:
+          emailProvider === 'sendgrid'
+            ? 'sendgrid-email'
+            : emailProvider === 'ses'
+              ? 'aws-ses'
+              : 'email-provider',
         type: NotificationType.EMAIL,
-        isEnabled: true,
+        isEnabled: this.configService.get<boolean>('EMAIL_ENABLED', true),
         config: {
-          apiKey: this.configService.get('EMAIL_API_KEY', 'mock-email-key'),
-          endpoint: this.configService.get(
-            'EMAIL_ENDPOINT',
-            'https://email.example.com',
+          apiKey: this.configService.get('EMAIL_API_KEY'),
+          endpoint: this.configService.get('EMAIL_ENDPOINT'),
+          fromAddress: this.configService.get('EMAIL_FROM_ADDRESS'),
+          fromName: this.configService.get('EMAIL_FROM_NAME'),
+          // SMTP 配置
+          smtpHost: this.configService.get('SMTP_HOST'),
+          smtpPort: this.configService.get('SMTP_PORT'),
+          smtpUser: this.configService.get('SMTP_USER'),
+          smtpPass: this.configService.get('SMTP_PASS'),
+          // AWS SES 配置
+          sesRegion: this.configService.get('AWS_SES_REGION'),
+          sesAccessKeyId: this.configService.get('AWS_SES_ACCESS_KEY_ID'),
+          sesSecretAccessKey: this.configService.get(
+            'AWS_SES_SECRET_ACCESS_KEY',
           ),
         },
       },
+      // 推送提供商
       {
-        name: 'push-provider',
+        name:
+          pushProvider === 'fcm'
+            ? 'firebase-fcm'
+            : pushProvider === 'jpush'
+              ? 'jpush'
+              : 'push-provider',
         type: NotificationType.PUSH,
-        isEnabled: true,
+        isEnabled: this.configService.get<boolean>('PUSH_ENABLED', true),
         config: {
-          apiKey: this.configService.get('PUSH_API_KEY', 'mock-push-key'),
-          endpoint: this.configService.get(
-            'PUSH_ENDPOINT',
-            'https://push.example.com',
-          ),
+          apiKey: this.configService.get('PUSH_API_KEY'),
+          endpoint: this.configService.get('PUSH_ENDPOINT'),
+          // FCM 配置
+          fcmServerKey: this.configService.get('FCM_SERVER_KEY'),
+          fcmProjectId: this.configService.get('FCM_PROJECT_ID'),
+          // JPush 配置
+          jpushAppKey: this.configService.get('JPUSH_APP_KEY'),
+          jpushMasterSecret: this.configService.get('JPUSH_MASTER_SECRET'),
+          // APNS 配置
+          apnsKeyId: this.configService.get('APNS_KEY_ID'),
+          apnsTeamId: this.configService.get('APNS_TEAM_ID'),
+          apnsBundleId: this.configService.get('APNS_BUNDLE_ID'),
+          apnsPrivateKey: this.configService.get('APNS_PRIVATE_KEY'),
         },
       },
+      // Webhook 提供商
       {
         name: 'webhook-provider',
         type: NotificationType.WEBHOOK,
-        isEnabled: true,
+        isEnabled: this.configService.get<boolean>('WEBHOOK_ENABLED', true),
         config: {
           timeout: this.configService.get('WEBHOOK_TIMEOUT', 30000),
           retries: this.configService.get('WEBHOOK_RETRIES', 3),
+          defaultHeaders: {
+            'User-Agent': 'OneRecycle-Webhook/1.0',
+          },
         },
       },
     ];

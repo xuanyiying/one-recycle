@@ -1,15 +1,15 @@
+import { PrismaService } from '@/prisma/prisma.service';
 import {
   Injectable,
-  UnauthorizedException,
-  NotFoundException,
   Logger,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@/prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { StaffLoginDto } from '../dto/staff-login.dto';
-import { StaffResponseDto, StaffLoginResultDto } from '../dto/staff.dto';
+import { StaffLoginResultDto, StaffResponseDto } from '../dto/staff.dto';
 
 @Injectable()
 export class StaffService {
@@ -129,9 +129,11 @@ export class StaffService {
     return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), key);
   }
 
-  private async generateTokens(
-    staff: any,
-  ): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
+  private generateTokens(staff: any): {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  } {
     const payload = {
       sub: staff.id.toString(),
       username: staff.username,
@@ -348,7 +350,7 @@ export class StaffService {
   /**
    * 初始化租户管理员（用于演示或种子数据）
    */
-  async createInitialStaff(data: {
+  createInitialStaff(data: {
     username: string;
     password: string;
     tenantId: bigint;

@@ -24,8 +24,8 @@ describe('CourierService', () => {
   };
 
   const mockRedisService = {
-    get: jest.fn(async () => null),
-    set: jest.fn(async () => {}),
+    get: jest.fn(() => Promise.resolve(null)),
+    set: jest.fn(() => Promise.resolve()),
   };
 
   beforeEach(async () => {

@@ -62,10 +62,10 @@ export class ReferralRewardService {
     };
   }
 
-  async calculateRewardPoints(
+  calculateRewardPoints(
     orderAmount: number,
     config: ReferralRewardConfig,
-  ): Promise<number> {
+  ): number {
     let rewardPoints: number;
 
     if (config.rewardType === RewardType.FIXED) {

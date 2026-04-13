@@ -81,6 +81,7 @@ describe('AuthFlow Integration', () => {
           useValue: {
             get: jest.fn((key, defaultValue) => {
               if (key === 'NODE_ENV') return 'test';
+              if (key === 'UNIVERSAL_VERIFICATION_CODE') return '123456';
               return defaultValue !== undefined ? defaultValue : null;
             }),
           },

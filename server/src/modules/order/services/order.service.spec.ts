@@ -1,15 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { OrderService } from './order.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
 import { OrderStatus } from '@/common';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { RedisService } from '@/common/redis/redis.service';
-import { InventoryService } from '@/modules/inventory/services/inventory.service';
 import { AccountService } from '@/modules/account/account.service';
+import { CategoryWarehouseService } from '@/modules/category-warehouse/category-warehouse.service';
+import { InventoryService } from '@/modules/inventory/services/inventory.service';
 import { PaymentService } from '@/modules/payment/payment.service';
 import { OrderQueueService } from '@/modules/queue/services/order-queue.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentProvider, Prisma } from '@prisma/client';
+import { OrderService } from './order.service';
 
 describe('OrderService', () => {
   let service: OrderService;
@@ -22,6 +23,7 @@ describe('OrderService', () => {
     incr: jest.fn(),
     decr: jest.fn(),
     get: jest.fn(),
+    expire: jest.fn(),
   };
 
   const mockRedisService = {
@@ -103,6 +105,11 @@ describe('OrderService', () => {
     handleOrderStatusChanged: jest.fn(),
   };
 
+  const mockCategoryWarehouseService = {
+    getWarehouseForCategory: jest.fn(),
+    findActiveByCategoryId: jest.fn().mockResolvedValue(null),
+  };
+
   const baseOrder = {
     id: 1,
     orderNo: 'ORD-1',
@@ -165,6 +172,10 @@ describe('OrderService', () => {
           provide: OrderQueueService,
           useValue: mockOrderQueueService,
         },
+        {
+          provide: CategoryWarehouseService,
+          useValue: mockCategoryWarehouseService,
+        },
       ],
     }).compile();
 
@@ -174,12 +185,12 @@ describe('OrderService', () => {
     inventoryService = module.get<InventoryService>(InventoryService);
     accountService = module.get<AccountService>(AccountService);
     (service as any).idGenerator = {
-      nextId: jest.fn(async () => 123456),
+      nextId: jest.fn(() => Promise.resolve(123456)),
       initialize: jest.fn(),
     };
 
-    mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
-      cb(mockPrismaService),
+    mockPrismaService.$transaction.mockImplementation((cb: any) =>
+      Promise.resolve(cb(mockPrismaService)),
     );
   });
 
@@ -205,31 +216,33 @@ describe('OrderService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: BigInt(1) });
       mockPrismaService.address.findUnique.mockResolvedValue({ id: BigInt(1) });
       mockPrismaService.storage.findMany.mockResolvedValue([]);
-      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
-        cb({
-          order: {
-            create: jest.fn().mockResolvedValue({
-              ...baseOrder,
-              id: BigInt(1),
-              userId: BigInt(1),
-              addressId: BigInt(1),
-              items: [
-                {
-                  id: BigInt(10),
-                  orderId: BigInt(1),
-                  categoryId: 1,
-                  estimatedWeight: 5,
-                  unitPrice: 10,
-                  quantity: 1,
-                  amount: 50,
-                },
-              ],
-              address: { detail: 'Test Address' },
-            }),
-          },
-          storage: mockPrismaService.storage,
-          orderPhoto: mockPrismaService.orderPhoto,
-        }),
+      mockPrismaService.$transaction.mockImplementation((cb: any) =>
+        Promise.resolve(
+          cb({
+            order: {
+              create: jest.fn().mockResolvedValue({
+                ...baseOrder,
+                id: BigInt(1),
+                userId: BigInt(1),
+                addressId: BigInt(1),
+                items: [
+                  {
+                    id: BigInt(10),
+                    orderId: BigInt(1),
+                    categoryId: 1,
+                    estimatedWeight: 5,
+                    unitPrice: 10,
+                    quantity: 1,
+                    amount: 50,
+                  },
+                ],
+                address: { detail: 'Test Address' },
+              }),
+            },
+            storage: mockPrismaService.storage,
+            orderPhoto: mockPrismaService.orderPhoto,
+          }),
+        ),
       );
 
       const result = await service.create(createOrderDto as any);
@@ -277,31 +290,33 @@ describe('OrderService', () => {
       mockOrderQueueService.handleOrderCreated.mockRejectedValue(
         new Error('queue down'),
       );
-      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
-        cb({
-          order: {
-            create: jest.fn().mockResolvedValue({
-              ...baseOrder,
-              id: BigInt(1),
-              userId: BigInt(1),
-              addressId: BigInt(1),
-              items: [
-                {
-                  id: BigInt(10),
-                  orderId: BigInt(1),
-                  categoryId: 1,
-                  estimatedWeight: 5,
-                  unitPrice: 10,
-                  quantity: 1,
-                  amount: 50,
-                },
-              ],
-              address: { detail: 'Test Address' },
-            }),
-          },
-          storage: mockPrismaService.storage,
-          orderPhoto: mockPrismaService.orderPhoto,
-        }),
+      mockPrismaService.$transaction.mockImplementation((cb: any) =>
+        Promise.resolve(
+          cb({
+            order: {
+              create: jest.fn().mockResolvedValue({
+                ...baseOrder,
+                id: BigInt(1),
+                userId: BigInt(1),
+                addressId: BigInt(1),
+                items: [
+                  {
+                    id: BigInt(10),
+                    orderId: BigInt(1),
+                    categoryId: 1,
+                    estimatedWeight: 5,
+                    unitPrice: 10,
+                    quantity: 1,
+                    amount: 50,
+                  },
+                ],
+                address: { detail: 'Test Address' },
+              }),
+            },
+            storage: mockPrismaService.storage,
+            orderPhoto: mockPrismaService.orderPhoto,
+          }),
+        ),
       );
 
       const result = await service.create(createOrderDto as any);
@@ -321,21 +336,23 @@ describe('OrderService', () => {
         id: BigInt(orderId),
         status: OrderStatus.PENDING_PICKUP,
       });
-      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
-        cb({
-          logisticsOrder: {
-            create: logisticsCreate,
-          },
-          order: {
-            findUnique: jest
-              .fn()
-              .mockResolvedValue({ status: OrderStatus.PENDING }),
-            update: orderUpdate,
-          },
-          orderTimeline: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-        }),
+      mockPrismaService.$transaction.mockImplementation((cb: any) =>
+        Promise.resolve(
+          cb({
+            logisticsOrder: {
+              create: logisticsCreate,
+            },
+            order: {
+              findUnique: jest
+                .fn()
+                .mockResolvedValue({ status: OrderStatus.PENDING }),
+              update: orderUpdate,
+            },
+            orderTimeline: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          }),
+        ),
       );
 
       await service.saveDispatchResult(orderId, {
@@ -498,25 +515,28 @@ describe('OrderService', () => {
         userId: BigInt(order.userId),
         addressId: BigInt(order.addressId),
       });
-      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
-        cb({
-          order: {
-            update: jest.fn().mockResolvedValue({
-              ...updatedOrder,
-              id: BigInt(order.id),
-              userId: BigInt(order.userId),
-              addressId: BigInt(order.addressId),
-              settlementAmount: new Prisma.Decimal(88),
-            }),
-          },
-          orderItem: {
-            update: jest.fn().mockResolvedValue({}),
-          },
-          orderTimeline: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-        }),
+      mockPrismaService.$transaction.mockImplementation((cb: any) =>
+        Promise.resolve(
+          cb({
+            order: {
+              update: jest.fn().mockResolvedValue({
+                ...updatedOrder,
+                id: BigInt(order.id),
+                userId: BigInt(order.userId),
+                addressId: BigInt(order.addressId),
+                settlementAmount: new Prisma.Decimal(88),
+              }),
+            },
+            orderItem: {
+              update: jest.fn().mockResolvedValue({}),
+            },
+            orderTimeline: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          }),
+        ),
       );
+
       mockPrismaService.order.findUnique.mockResolvedValue({
         ...updatedOrder,
         id: BigInt(order.id),
@@ -653,28 +673,30 @@ describe('OrderService', () => {
         addressId: BigInt(order.addressId),
         settlementAmount: new Prisma.Decimal(66),
       });
-      mockPrismaService.$transaction.mockImplementation(async (cb: any) =>
-        cb({
-          order: {
-            findUnique: jest.fn().mockResolvedValue({
-              ...order,
-              id: BigInt(order.id),
-              userId: BigInt(order.userId),
-              addressId: BigInt(order.addressId),
-              settlementAmount: new Prisma.Decimal(66),
-            }),
-            update: jest.fn().mockResolvedValue({
-              ...order,
-              status: OrderStatus.COMPLETED,
-              id: BigInt(order.id),
-              userId: BigInt(order.userId),
-              addressId: BigInt(order.addressId),
-            }),
-          },
-          orderTimeline: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-        }),
+      mockPrismaService.$transaction.mockImplementation((cb: any) =>
+        Promise.resolve(
+          cb({
+            order: {
+              findUnique: jest.fn().mockResolvedValue({
+                ...order,
+                id: BigInt(order.id),
+                userId: BigInt(order.userId),
+                addressId: BigInt(order.addressId),
+                settlementAmount: new Prisma.Decimal(66),
+              }),
+              update: jest.fn().mockResolvedValue({
+                ...order,
+                status: OrderStatus.COMPLETED,
+                id: BigInt(order.id),
+                userId: BigInt(order.userId),
+                addressId: BigInt(order.addressId),
+              }),
+            },
+            orderTimeline: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          }),
+        ),
       );
 
       const result = await service.completeSettlement(order.id, {

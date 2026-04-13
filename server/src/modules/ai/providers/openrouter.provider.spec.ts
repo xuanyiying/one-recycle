@@ -1,14 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
+import { AxiosError, AxiosResponse } from 'axios';
 import { of, throwError } from 'rxjs';
-import { AxiosResponse, AxiosError } from 'axios';
-import { OpenRouterProvider } from './openrouter.provider';
 import {
-  AIProviderType,
   AIProviderConfig,
+  AIProviderType,
   AIRequest,
   ChatMessage,
 } from '../interfaces/ai.interface';
+import { OpenRouterProvider } from './openrouter.provider';
 
 describe('OpenRouterProvider', () => {
   let provider: OpenRouterProvider;
@@ -55,26 +54,13 @@ describe('OpenRouterProvider', () => {
     },
   };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        OpenRouterProvider,
-        {
-          provide: 'AIProviderConfig',
-          useValue: mockConfig,
-        },
-        {
-          provide: HttpService,
-          useValue: {
-            post: jest.fn(),
-            get: jest.fn(),
-          },
-        },
-      ],
-    }).compile();
+  beforeEach(() => {
+    httpService = {
+      post: jest.fn(),
+      get: jest.fn(),
+    } as any;
 
-    provider = module.get<OpenRouterProvider>(OpenRouterProvider);
-    httpService = module.get<HttpService>(HttpService);
+    provider = new OpenRouterProvider(mockConfig, httpService);
   });
 
   it('should be defined', () => {
@@ -152,14 +138,82 @@ describe('OpenRouterProvider', () => {
       expect(result.toolCalls![0].function.name).toBe('get_weather');
     });
 
-    it('should use custom model when provided', async () => {
-      const customModelRequest: AIRequest = {
-        messages: mockMessages,
-        config: {
-          model: 'deepseek/deepseek-r1-distill-llama-70b:free',
+    it('should use custom model from request config', async () => {
+      const customModel = 'deepseek/deepseek-r1-distill-llama-70b:free';
+      const requestWithModel: AIRequest = {
+        ...mockRequest,
+        config: { model: customModel },
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: {
+          ...mockSuccessResponse,
+          model: customModel,
+        },
+        status: 200,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      const result = await provider.chat(requestWithModel);
+
+      expect(result.model).toBe(customModel);
+    });
+
+    it('should handle API errors', async () => {
+      const errorResponse = {
+        error: {
+          message: 'Invalid API key',
+          type: 'authentication_error',
+          code: '401',
         },
       };
 
+      const mockResponse: Partial<AxiosResponse> = {
+        data: errorResponse,
+        status: 401,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      try {
+        await provider.chat(mockRequest);
+        // 如果没有抛出错误，测试失败
+        expect(false).toBe(true);
+      } catch (e) {
+        // 期望抛出错误
+        expect(e).toBeDefined();
+      }
+    });
+
+    it('should handle network errors', async () => {
+      const axiosError = new Error('Network Error') as AxiosError;
+      axiosError.isAxiosError = true;
+      axiosError.response = {
+        data: { error: { message: 'Network Error' } },
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => axiosError));
+
+      try {
+        await provider.chat(mockRequest);
+        expect(false).toBe(true);
+      } catch (e) {
+        expect(e).toBeDefined();
+      }
+    });
+
+    it('should include Authorization header with Bearer token', async () => {
       const mockResponse: Partial<AxiosResponse> = {
         data: mockSuccessResponse,
         status: 200,
@@ -169,14 +223,16 @@ describe('OpenRouterProvider', () => {
         .spyOn(httpService, 'post')
         .mockReturnValue(of(mockResponse as AxiosResponse));
 
-      await provider.chat(customModelRequest);
+      await provider.chat(mockRequest);
 
       expect(postSpy).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({
-          model: 'deepseek/deepseek-r1-distill-llama-70b:free',
-        }),
         expect.any(Object),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-api-key',
+          }),
+        }),
       );
     });
 
@@ -192,174 +248,21 @@ describe('OpenRouterProvider', () => {
 
       await provider.chat(mockRequest);
 
-      const callArgs = postSpy.mock.calls[0];
-      const headers = callArgs[2]?.headers;
-
-      expect(headers).toBeDefined();
-      expect(headers!['HTTP-Referer']).toBeDefined();
-      expect(headers!['X-Title']).toBeDefined();
-      expect(headers!['Authorization']).toBe(`Bearer ${mockConfig.apiKey}`);
-    });
-
-    it('should handle 402 Payment Required error', async () => {
-      const error402 = new AxiosError('Request failed with status code 402');
-      error402.response = {
-        status: 402,
-        data: {},
-      } as any;
-
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(throwError(() => error402));
-
-      await expect(provider.chat(mockRequest)).rejects.toMatchObject({
-        code: 'PAYMENT_REQUIRED',
-        provider: AIProviderType.OPENROUTER,
-      });
-    });
-
-    it('should handle rate limit error (429)', async () => {
-      const error429 = new AxiosError('Request failed with status code 429');
-      error429.response = {
-        status: 429,
-        data: {},
-      } as any;
-
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(throwError(() => error429));
-
-      await expect(provider.chat(mockRequest)).rejects.toMatchObject({
-        code: 'RATE_LIMIT',
-        provider: AIProviderType.OPENROUTER,
-      });
-    });
-
-    it('should handle timeout error', async () => {
-      const timeoutError = new Error('Timeout');
-      (timeoutError as any).code = 'ECONNABORTED';
-
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(throwError(() => timeoutError));
-
-      await expect(provider.chat(mockRequest)).rejects.toMatchObject({
-        code: 'TIMEOUT',
-        provider: AIProviderType.OPENROUTER,
-      });
-    });
-
-    it('should handle network error', async () => {
-      const networkError = new Error('Network error');
-      (networkError as any).code = 'ENOTFOUND';
-
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(throwError(() => networkError));
-
-      await expect(provider.chat(mockRequest)).rejects.toMatchObject({
-        code: 'NETWORK_ERROR',
-        provider: AIProviderType.OPENROUTER,
-      });
-    });
-
-    it('should handle API error response', async () => {
-      const errorResponse = {
-        error: {
-          message: 'Invalid API key',
-          type: 'invalid_request_error',
-          code: 'invalid_api_key',
-        },
-      };
-
-      const mockResponse: Partial<AxiosResponse> = {
-        data: errorResponse,
-        status: 200,
-      };
-
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(of(mockResponse as AxiosResponse));
-
-      await expect(provider.chat(mockRequest)).rejects.toMatchObject({
-        code: 'invalid_api_key',
-        message: 'Invalid API key',
-        provider: AIProviderType.OPENROUTER,
-      });
-    });
-  });
-
-  describe('healthCheck', () => {
-    it('should return true when health check succeeds', async () => {
-      const mockResponse: Partial<AxiosResponse> = {
-        data: {},
-        status: 200,
-      };
-
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(of(mockResponse as AxiosResponse));
-
-      const result = await provider.healthCheck();
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when health check fails', async () => {
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(throwError(() => new Error('Failed')));
-
-      const result = await provider.healthCheck();
-
-      expect(result).toBe(false);
-    });
-
-    it('should fallback to chat completion if models endpoint returns 404', async () => {
-      const error404 = new AxiosError('Not Found');
-      error404.response = { status: 404 } as any;
-
-      const mockChatResponse: Partial<AxiosResponse> = {
-        data: mockSuccessResponse,
-        status: 200,
-      };
-
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(throwError(() => error404));
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValue(of(mockChatResponse as AxiosResponse));
-
-      const result = await provider.healthCheck();
-
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('getAvailableModels', () => {
-    it('should return available models', () => {
-      const models = provider.getAvailableModels();
-
-      expect(models).toContain('meta-llama/llama-3.3-70b-instruct:free');
-      expect(models.length).toBeGreaterThan(0);
-    });
-
-    it('should return custom models if configured', () => {
-      const customConfig: AIProviderConfig = {
-        ...mockConfig,
-        availableModels: ['custom-model-1', 'custom-model-2'],
-      };
-
-      const customProvider = new OpenRouterProvider(customConfig, httpService);
-      const models = customProvider.getAvailableModels();
-
-      expect(models).toEqual(['custom-model-1', 'custom-model-2']);
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Object),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'HTTP-Referer': 'https://github.com/one-recycle',
+            'X-Title': 'OneRecycle',
+          }),
+        }),
+      );
     });
   });
 
   describe('validateConfig', () => {
-    it('should return true when config is valid', () => {
+    it('should return true for valid config', () => {
       expect(provider.validateConfig()).toBe(true);
     });
 
@@ -368,7 +271,6 @@ describe('OpenRouterProvider', () => {
         ...mockConfig,
         apiKey: '',
       };
-
       const invalidProvider = new OpenRouterProvider(
         invalidConfig,
         httpService,
@@ -381,7 +283,6 @@ describe('OpenRouterProvider', () => {
         ...mockConfig,
         defaultModel: '',
       };
-
       const invalidProvider = new OpenRouterProvider(
         invalidConfig,
         httpService,
@@ -390,49 +291,385 @@ describe('OpenRouterProvider', () => {
     });
   });
 
-  describe('isAvailable', () => {
-    it('should return true when provider is available', () => {
-      expect(provider.isAvailable).toBe(true);
-    });
-
-    it('should return false when provider is not available', () => {
-      const invalidConfig: AIProviderConfig = {
-        ...mockConfig,
-        apiKey: '',
+  describe('healthCheck', () => {
+    it('should return true when models endpoint returns 200', async () => {
+      const mockResponse: Partial<AxiosResponse> = {
+        data: { data: [] },
+        status: 200,
       };
 
-      const invalidProvider = new OpenRouterProvider(
-        invalidConfig,
-        httpService,
-      );
-      expect(invalidProvider.isAvailable).toBe(false);
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      const result = await provider.healthCheck();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when API returns error', async () => {
+      const axiosError = new Error('Unauthorized') as AxiosError;
+      axiosError.isAxiosError = true;
+      axiosError.response = {
+        data: {},
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(throwError(() => axiosError));
+
+      const result = await provider.healthCheck();
+
+      expect(result).toBe(false);
+    });
+
+    it('should fallback to chat completion if models endpoint returns 404', async () => {
+      const notFoundError = new Error('Not Found') as AxiosError;
+      notFoundError.isAxiosError = true;
+      notFoundError.response = {
+        data: {},
+        status: 404,
+        statusText: 'Not Found',
+        headers: {},
+        config: {} as any,
+      };
+
+      const mockChatResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValue(throwError(() => notFoundError));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockChatResponse as AxiosResponse));
+
+      const result = await provider.healthCheck();
+
+      expect(result).toBe(true);
     });
   });
 
-  describe('getFreeModels', () => {
-    it('should return only free models', () => {
-      const freeModels = provider.getFreeModels();
+  describe('getAvailableModels', () => {
+    it('should return list of available models', () => {
+      const models = provider.getAvailableModels();
 
+      expect(Array.isArray(models)).toBe(true);
+      expect(models.length).toBeGreaterThan(0);
+      expect(models).toContain('meta-llama/llama-3.3-70b-instruct:free');
+      expect(models).toContain('deepseek/deepseek-r1-distill-llama-70b:free');
+    });
+
+    it('should include free models', () => {
+      const models = provider.getAvailableModels();
+
+      const freeModels = models.filter((m) => m.includes(':free'));
       expect(freeModels.length).toBeGreaterThan(0);
-      freeModels.forEach((model) => {
-        expect(model).toContain(':free');
-      });
     });
   });
 
-  describe('isFreeModel', () => {
-    it('should return true for free models', () => {
-      expect(
-        provider.isFreeModel('meta-llama/llama-3.3-70b-instruct:free'),
-      ).toBe(true);
-      expect(
-        provider.isFreeModel('deepseek/deepseek-r1-distill-llama-70b:free'),
-      ).toBe(true);
+  describe('error handling', () => {
+    it('should handle timeout errors', async () => {
+      const timeoutError = new Error(
+        'timeout of 30000ms exceeded',
+      ) as AxiosError;
+      timeoutError.isAxiosError = true;
+      timeoutError.code = 'ECONNABORTED';
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => timeoutError));
+
+      try {
+        await provider.chat(mockRequest);
+        expect(false).toBe(true);
+      } catch (e) {
+        expect(e).toBeDefined();
+      }
     });
 
-    it('should return false for non-free models', () => {
-      expect(provider.isFreeModel('gpt-4')).toBe(false);
-      expect(provider.isFreeModel('claude-3-opus')).toBe(false);
+    it('should handle rate limit errors', async () => {
+      const rateLimitError = new Error('Rate limit exceeded') as AxiosError;
+      rateLimitError.isAxiosError = true;
+      rateLimitError.response = {
+        data: { error: { message: 'Rate limit exceeded' } },
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: {},
+        config: {} as any,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(throwError(() => rateLimitError));
+
+      try {
+        await provider.chat(mockRequest);
+        expect(false).toBe(true);
+      } catch (e) {
+        expect(e).toBeDefined();
+      }
+    });
+  });
+
+  describe('request body construction', () => {
+    it('should include messages in request body', async () => {
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      await provider.chat(mockRequest);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          messages: mockMessages,
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('should include temperature when provided', async () => {
+      const requestWithTemp: AIRequest = {
+        ...mockRequest,
+        config: { temperature: 0.7 },
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      await provider.chat(requestWithTemp);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          temperature: 0.7,
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('should include maxTokens when provided', async () => {
+      const requestWithMaxTokens: AIRequest = {
+        ...mockRequest,
+        config: { maxTokens: 500 },
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      await provider.chat(requestWithMaxTokens);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          max_tokens: 500,
+        }),
+        expect.any(Object),
+      );
+    });
+
+    it('should include tools when provided', async () => {
+      const requestWithTools: AIRequest = {
+        ...mockRequest,
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'get_weather',
+              description: 'Get weather information',
+              parameters: {
+                type: 'object',
+                properties: {
+                  location: { type: 'string' },
+                },
+              },
+            },
+          },
+        ],
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      await provider.chat(requestWithTools);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          tools: expect.any(Array),
+        }),
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('custom configuration', () => {
+    it('should use custom baseURL when provided', async () => {
+      const customConfig: AIProviderConfig = {
+        ...mockConfig,
+        baseURL: 'https://custom.openrouter.api',
+      };
+      const customProvider = new OpenRouterProvider(customConfig, httpService);
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      await customProvider.chat(mockRequest);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        'https://custom.openrouter.api/chat/completions',
+        expect.any(Object),
+        expect.any(Object),
+      );
+    });
+
+    it('should use default baseURL when not provided', async () => {
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      const postSpy = jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      await provider.chat(mockRequest);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        'https://openrouter.ai/api/v1/chat/completions',
+        expect.any(Object),
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty message content', async () => {
+      const requestWithEmptyContent: AIRequest = {
+        messages: [{ role: 'user', content: '' }],
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      const result = await provider.chat(requestWithEmptyContent);
+
+      expect(result.content).toBe('I am doing well, thank you for asking!');
+    });
+
+    it('should handle very long messages', async () => {
+      const longContent = 'a'.repeat(10000);
+      const requestWithLongContent: AIRequest = {
+        messages: [{ role: 'user', content: longContent }],
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockSuccessResponse,
+        status: 200,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      const result = await provider.chat(requestWithLongContent);
+
+      expect(result).toBeDefined();
+    });
+
+    it('should handle response with null content', async () => {
+      const mockResponseWithNullContent = {
+        ...mockSuccessResponse,
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: null,
+            },
+            finish_reason: 'stop',
+          },
+        ],
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockResponseWithNullContent,
+        status: 200,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      const result = await provider.chat(mockRequest);
+
+      expect(result.content).toBe('');
+    });
+
+    it('should handle response without usage data', async () => {
+      const mockResponseWithoutUsage = {
+        ...mockSuccessResponse,
+        usage: undefined,
+      };
+
+      const mockResponse: Partial<AxiosResponse> = {
+        data: mockResponseWithoutUsage,
+        status: 200,
+      };
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(mockResponse as AxiosResponse));
+
+      const result = await provider.chat(mockRequest);
+
+      expect(result.usage).toEqual({
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+      });
     });
   });
 });

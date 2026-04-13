@@ -200,7 +200,7 @@ export class CourierController {
   }
 
   @Get('utils/distance')
-  async calculateDistance(
+  calculateDistance(
     @Query('fromLat') fromLat: number,
     @Query('fromLng') fromLng: number,
     @Query('toLat') toLat: number,
