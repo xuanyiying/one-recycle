@@ -416,23 +416,75 @@ export class AIReplyService {
     }
   }
 
-  private handleOrderModify(
+  private async handleOrderModify(
     userId: string,
     intentResult: IntentResult,
-  ): AIResponse {
-    void userId;
-    return {
-      content:
-        '好的，我可以帮您修改订单信息。请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。',
-      intent: UserIntent.ORDER_MODIFY,
-      confidence: intentResult.confidence,
-      needTransfer: false,
-      suggestedActions: [
-        { type: 'modify_address', label: '修改地址' },
-        { type: 'modify_time', label: '修改时间' },
-        { type: 'modify_other', label: '其他修改' },
-      ],
-    };
+  ): Promise<AIResponse> {
+    try {
+      // 获取用户最近的订单
+      const { orders } = await this.orderService.findAll(
+        {
+          userId,
+        },
+        1,
+        3,
+      );
+
+      let content =
+        '好的，我可以帮您修改订单信息。请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。';
+
+      // 如果有进行中的订单，提供具体信息
+      const activeOrder = orders.find(
+        (o: { status: string }) =>
+          o.status === 'PENDING' ||
+          o.status === 'PENDING_PICKUP' ||
+          o.status === 'IN_TRANSIT',
+      );
+
+      if (activeOrder) {
+        const statusText =
+          activeOrder.status === 'PENDING'
+            ? '待处理'
+            : activeOrder.status === 'PENDING_PICKUP'
+              ? '待取件'
+              : '运输中';
+        content = `好的，我可以帮您修改订单 **#${activeOrder.orderNo}**（${statusText}）。\n\n请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。`;
+      } else if (orders.length > 0) {
+        content = `我注意到您有 ${orders.length} 个历史订单。如果您想修改最近的订单，请告诉我订单号，或者选择：\n\n1. 查询所有订单\n2. 创建新订单\n3. 联系人工客服`;
+      }
+
+      return {
+        content,
+        intent: UserIntent.ORDER_MODIFY,
+        confidence: intentResult.confidence,
+        needTransfer: false,
+        suggestedActions: activeOrder
+          ? [
+              { type: 'modify_address', label: '修改地址' },
+              { type: 'modify_time', label: '修改时间' },
+              { type: 'modify_other', label: '其他修改' },
+            ]
+          : [
+              { type: 'query_orders', label: '查询订单' },
+              { type: 'create_order', label: '创建新订单' },
+              { type: 'transfer_agent', label: '联系客服' },
+            ],
+      };
+    } catch {
+      // 如果查询失败，返回默认响应
+      return {
+        content:
+          '好的，我可以帮您修改订单信息。请问您要修改什么内容？\n\n1. 修改收货地址\n2. 修改上门时间\n3. 修改其他信息\n\n请回复对应的数字或描述您的需求。',
+        intent: UserIntent.ORDER_MODIFY,
+        confidence: intentResult.confidence,
+        needTransfer: false,
+        suggestedActions: [
+          { type: 'modify_address', label: '修改地址' },
+          { type: 'modify_time', label: '修改时间' },
+          { type: 'modify_other', label: '其他修改' },
+        ],
+      };
+    }
   }
 
   private async handleLogisticsQuery(
@@ -584,7 +636,11 @@ export class AIReplyService {
     message: string,
     intentResult: IntentResult,
   ): AIResponse {
-    void message;
+    // 基于用户消息内容提供更智能的响应
+    const normalizedMessage = message.toLowerCase().trim();
+
+    // 根据消息内容推断可能的意图
+    let content = '抱歉，我没有完全理解您的问题。';
     const quickQuestions = [
       '查询订单状态',
       '取消订单',
@@ -594,8 +650,63 @@ export class AIReplyService {
       '转人工客服',
     ];
 
+    // 关键词匹配提供更相关的建议
+    if (
+      normalizedMessage.includes('价格') ||
+      normalizedMessage.includes('多少钱') ||
+      normalizedMessage.includes('怎么收费')
+    ) {
+      content =
+        '您似乎想了解回收价格。不同品类的回收价格不同，您可以：\n\n1. 查看价格表\n2. 使用估价工具\n3. 咨询具体品类价格';
+    } else if (
+      normalizedMessage.includes('时间') ||
+      normalizedMessage.includes('什么时候') ||
+      normalizedMessage.includes('几点')
+    ) {
+      content =
+        '您可能在询问时间安排。我可以帮您：\n\n1. 查询上门时间\n2. 修改预约时间\n3. 查看服务时间';
+    } else if (
+      normalizedMessage.includes('地址') ||
+      normalizedMessage.includes('在哪') ||
+      normalizedMessage.includes('位置')
+    ) {
+      content =
+        '您可能在询问地址相关问题。我可以帮您：\n\n1. 查看当前地址\n2. 修改收货地址\n3. 查询服务范围';
+    } else if (
+      normalizedMessage.includes('谢谢') ||
+      normalizedMessage.includes('感谢')
+    ) {
+      content = '不客气！很高兴能为您服务。如果您还有其他问题，随时告诉我。';
+      return {
+        content,
+        intent: UserIntent.GENERAL_QUESTION,
+        confidence: intentResult.confidence,
+        needTransfer: false,
+        suggestedActions: [
+          { type: 'new_question', label: '还有其他问题' },
+          { type: 'end_chat', label: '结束对话' },
+        ],
+      };
+    } else if (
+      normalizedMessage.includes('投诉') ||
+      normalizedMessage.includes('不满') ||
+      normalizedMessage.includes('问题')
+    ) {
+      content =
+        '非常抱歉给您带来不好的体验。我会立即为您转接人工客服处理您的问题。';
+      return {
+        content,
+        intent: UserIntent.UNKNOWN,
+        confidence: intentResult.confidence,
+        needTransfer: true,
+        suggestedActions: [{ type: 'transfer_agent', label: '转人工客服' }],
+      };
+    } else {
+      content = `抱歉，我没有完全理解"${message.slice(0, 20)}${message.length > 20 ? '...' : ''}"。请问您是想：`;
+    }
+
     return {
-      content: '抱歉，我没有理解您的问题。请问您是想：',
+      content,
       intent: UserIntent.UNKNOWN,
       confidence: intentResult.confidence,
       needTransfer: false,
