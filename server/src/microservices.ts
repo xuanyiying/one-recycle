@@ -12,11 +12,11 @@
  * 默认(不设置 SERVICE_NAME): 单体模式, 启动所有模块
  */
 
-import { NestFactory } from '@nestjs/core';
-import { Transport, MicroserviceOptions } from '@nestjs/microservices';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
 
 import { AppModule } from './app.module';
@@ -181,6 +181,7 @@ async function bootstrapGrpcService(
 ) {
   const logger = new Logger(serviceName);
   const grpcPort = process.env.PORT ? parseInt(process.env.PORT) : 50051;
+  const healthPort = grpcPort + 10000;
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     config.module,
@@ -203,6 +204,21 @@ async function bootstrapGrpcService(
   );
 
   await app.listen();
+
+  const http = require('http');
+  const healthServer = http.createServer((req: any, res: any) => {
+    if (req.url === '/api/health' || req.url === '/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', service: serviceName }));
+    } else {
+      res.writeHead(404);
+      res.end('Not Found');
+    }
+  });
+  healthServer.listen(healthPort, () => {
+    logger.log(`Health check HTTP on port ${healthPort}`);
+  });
+
   logger.log(
     `gRPC service running on: 0.0.0.0:${grpcPort} (package: ${config.grpcPackage})`,
   );

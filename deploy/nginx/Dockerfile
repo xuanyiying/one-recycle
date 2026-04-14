@@ -11,6 +11,6 @@ COPY nginx-entrypoint.sh /nginx-entrypoint.sh
 RUN chmod +x /nginx-entrypoint.sh
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget -q --spider http://localhost/health || exit 1
+    CMD wget -q --spider http://localhost:80/health || exit 1
 
 ENTRYPOINT ["/bin/sh", "/nginx-entrypoint.sh"]

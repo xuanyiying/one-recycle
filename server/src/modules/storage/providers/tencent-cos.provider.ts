@@ -67,17 +67,40 @@ export class TencentCosService implements OssService {
         } catch (createError) {
           const errorMessage =
             createError instanceof Error
-              ? createError.message
+              ? this.formatErrorMessage(createError)
               : String(createError);
           this.logger.error(`Error creating COS bucket: ${errorMessage}`);
           // Don't throw, bucket might already exist or be managed elsewhere
         }
       } else {
         const errorMessage =
-          error instanceof Error ? error.message : String(error);
+          error instanceof Error
+            ? this.formatErrorMessage(error)
+            : String(error);
         this.logger.error(`Error checking COS bucket: ${errorMessage}`);
       }
     }
+  }
+
+  private formatErrorMessage(error: Error & { code?: string; statusCode?: number; err?: Error }): string {
+    const parts: string[] = [];
+    if (error.message && typeof error.message === 'string' && error.message !== '[object Object]') {
+      parts.push(error.message);
+    }
+    if ('code' in error && typeof (error as any).code === 'string') {
+      parts.push(`code: ${(error as any).code}`);
+    }
+    if ('statusCode' in error && typeof (error as any).statusCode === 'number') {
+      parts.push(`statusCode: ${(error as any).statusCode}`);
+    }
+    if ('err' in error && (error as any).err instanceof Error) {
+      const err = (error as any).err;
+      parts.push(`err: ${err.message || String(err)}`);
+    }
+    if (parts.length === 0) {
+      parts.push(String(error));
+    }
+    return parts.join(' | ');
   }
 
   /**

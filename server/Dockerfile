@@ -76,9 +76,13 @@ USER appuser
 # Expose port (HTTP for gateway/monolith, gRPC for microservices)
 EXPOSE 3000 3001 3002 3003 3004 3008 3009 50051
 
-# Health check (default for HTTP services)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
+# Health check - gRPC services use PORT+10000 for HTTP health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD if [ -n "$SERVICE_NAME" ] && [ "$SERVICE_NAME" != "api-gateway" ]; then \
+        curl -f http://localhost:$((${PORT:-50051}+10000))/api/health || exit 1; \
+    else \
+        curl -f http://localhost:${PORT:-3000}/api/health || exit 1; \
+    fi
 
 # Start application:
 # - If SERVICE_NAME is set -> microservice mode (dist/microservices.js)
