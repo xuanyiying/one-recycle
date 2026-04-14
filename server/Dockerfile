@@ -36,9 +36,8 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the application (tsc + tsc-alias)
-RUN ./node_modules/.bin/tsc -p tsconfig.build.json --incremental false && \
-    ./node_modules/.bin/tsc-alias
+# Build the application using nest build which handles tsc-alias automatically
+RUN pnpm build
 
 # Copy proto files (tsc doesn't copy .proto files)
 RUN mkdir -p dist/proto && cp src/proto/*.proto dist/proto/
