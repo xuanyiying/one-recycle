@@ -8,13 +8,14 @@ import {
   QAResponseDto,
   SystemRankingResponseDto as RankingResponseDto,
 } from './dto';
-import { CACHE_TTL } from '@/common';
+import { CACHE_TTL, Public } from '@/common';
 
 @ApiTags('system')
 @Controller('system')
 export class SystemController {
   constructor(private readonly systemService: SystemService) {}
 
+  @Public()
   @Get('banners')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.SHORT)
@@ -24,6 +25,7 @@ export class SystemController {
     return this.systemService.getBanners();
   }
 
+  @Public()
   @Get('articles')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(CACHE_TTL.SHORT)
@@ -33,6 +35,7 @@ export class SystemController {
     return this.systemService.getArticles();
   }
 
+  @Public()
   @Get('news-briefs')
   @ApiOperation({ summary: '获取简讯列表 (Mock)' })
   @ApiResponse({ status: 200 })
@@ -40,6 +43,7 @@ export class SystemController {
     return this.systemService.getNewsBriefs();
   }
 
+  @Public()
   @Get('qa')
   @ApiOperation({ summary: '获取问答列表' })
   @ApiResponse({ status: 200, type: [QAResponseDto] })
@@ -47,6 +51,7 @@ export class SystemController {
     return this.systemService.getQA();
   }
 
+  @Public()
   @Get('rankings')
   @ApiOperation({ summary: '获取环保榜单' })
   @ApiResponse({ status: 200, type: [RankingResponseDto] })

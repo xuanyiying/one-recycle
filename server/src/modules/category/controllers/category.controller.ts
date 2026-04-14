@@ -20,6 +20,7 @@ import {
   CategoryListResponseDto,
   CategoryType,
 } from '../dto';
+import { Public } from '@/common/decorators/auth.decorator';
 
 @ApiTags('categories')
 @Controller('category/categories')
@@ -46,6 +47,7 @@ export class CategoryController {
     return this.categoryService.findMany(query);
   }
 
+  @Public()
   @Get('active')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(300)
@@ -61,6 +63,7 @@ export class CategoryController {
     return result.items;
   }
 
+  @Public()
   @Get('featured')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(300)
