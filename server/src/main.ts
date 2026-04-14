@@ -20,7 +20,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
  */
 
 // 解决 BigInt 序列化问题 - BigInt转为字符串以便JSON传输
-BigInt.prototype.toJSON = function () {
+(BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
 
