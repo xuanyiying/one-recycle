@@ -421,13 +421,19 @@ export class AIReplyService {
     intentResult: IntentResult,
   ): Promise<AIResponse> {
     try {
+      // 分页参数验证
+      const pageParam = 1;
+      const limitParam = 3;
+      const page = Math.max(1, pageParam || 1);
+      const limit = Math.min(Math.max(1, limitParam || 10), 50);
+
       // 获取用户最近的订单
       const { orders } = await this.orderService.findAll(
         {
           userId,
         },
-        1,
-        3,
+        page,
+        limit,
       );
 
       let content =
@@ -470,7 +476,13 @@ export class AIReplyService {
               { type: 'transfer_agent', label: '联系客服' },
             ],
       };
-    } catch {
+    } catch (error) {
+      // 记录错误日志以便调试和监控
+      this.logger.error(
+        `Order modify query failed for user ${userId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
       // 如果查询失败，返回默认响应
       return {
         content:
