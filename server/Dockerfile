@@ -41,11 +41,7 @@ RUN ./node_modules/.bin/tsc -p tsconfig.build.json --incremental false && \
     ./node_modules/.bin/tsc-alias
 
 # Copy proto files (tsc doesn't copy .proto files)
-# Note: dist/proto may already exist from .pb.ts compilation, so copy only .proto files
 RUN mkdir -p dist/proto && cp src/proto/*.proto dist/proto/
-
-# Verify proto files are copied
-RUN echo "=== Proto files ===" && ls -la dist/proto/*.proto
 
 # Verify build output
 RUN echo "=== Build output ===" && \

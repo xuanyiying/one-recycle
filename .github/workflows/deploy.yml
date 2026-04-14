@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [prod]
+    branches: [prod, withoutai]
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-micro'
@@ -38,6 +38,8 @@ jobs:
             else
               echo "mode=monolith" >> $GITHUB_OUTPUT
             fi
+          elif [ "${{ github.ref_name }}" = "refs/heads/withoutai" ] || [ "${{ github.ref_name }}" = "withoutai" ]; then
+            echo "mode=microservices" >> $GITHUB_OUTPUT
           else
             echo "mode=monolith" >> $GITHUB_OUTPUT
           fi
