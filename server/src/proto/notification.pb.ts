@@ -5,6 +5,9 @@
 // source: notification.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "notification";
 
@@ -87,3 +90,83 @@ export interface CallbackStatusRequest {
 export interface CallbackStatusResponse {
   success: boolean;
 }
+
+export const NOTIFICATION_PACKAGE_NAME = "notification";
+
+export interface NotificationServiceClient {
+  sendNotification(request: SendNotificationRequest, metadata?: Metadata): Observable<SendNotificationResponse>;
+
+  sendBatch(request: SendBatchRequest, metadata?: Metadata): Observable<SendBatchResponse>;
+
+  createTemplate(request: CreateTemplateRequest, metadata?: Metadata): Observable<TemplateResponse>;
+
+  updateTemplate(request: UpdateTemplateRequest, metadata?: Metadata): Observable<TemplateResponse>;
+
+  getTemplate(request: GetTemplateRequest, metadata?: Metadata): Observable<TemplateResponse>;
+
+  listTemplates(request: ListTemplatesRequest, metadata?: Metadata): Observable<ListTemplatesResponse>;
+
+  callbackStatus(request: CallbackStatusRequest, metadata?: Metadata): Observable<CallbackStatusResponse>;
+}
+
+export interface NotificationServiceController {
+  sendNotification(
+    request: SendNotificationRequest,
+    metadata?: Metadata,
+  ): Promise<SendNotificationResponse> | Observable<SendNotificationResponse> | SendNotificationResponse;
+
+  sendBatch(
+    request: SendBatchRequest,
+    metadata?: Metadata,
+  ): Promise<SendBatchResponse> | Observable<SendBatchResponse> | SendBatchResponse;
+
+  createTemplate(
+    request: CreateTemplateRequest,
+    metadata?: Metadata,
+  ): Promise<TemplateResponse> | Observable<TemplateResponse> | TemplateResponse;
+
+  updateTemplate(
+    request: UpdateTemplateRequest,
+    metadata?: Metadata,
+  ): Promise<TemplateResponse> | Observable<TemplateResponse> | TemplateResponse;
+
+  getTemplate(
+    request: GetTemplateRequest,
+    metadata?: Metadata,
+  ): Promise<TemplateResponse> | Observable<TemplateResponse> | TemplateResponse;
+
+  listTemplates(
+    request: ListTemplatesRequest,
+    metadata?: Metadata,
+  ): Promise<ListTemplatesResponse> | Observable<ListTemplatesResponse> | ListTemplatesResponse;
+
+  callbackStatus(
+    request: CallbackStatusRequest,
+    metadata?: Metadata,
+  ): Promise<CallbackStatusResponse> | Observable<CallbackStatusResponse> | CallbackStatusResponse;
+}
+
+export function NotificationServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "sendNotification",
+      "sendBatch",
+      "createTemplate",
+      "updateTemplate",
+      "getTemplate",
+      "listTemplates",
+      "callbackStatus",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("NotificationService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("NotificationService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const NOTIFICATION_SERVICE_NAME = "NotificationService";

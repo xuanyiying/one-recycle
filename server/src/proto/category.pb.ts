@@ -5,6 +5,9 @@
 // source: category.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "category";
 
@@ -141,3 +144,80 @@ export interface CategoryTreeResponse {
 
 export interface Empty {
 }
+
+export const CATEGORY_PACKAGE_NAME = "category";
+
+export interface CategoryServiceClient {
+  getCategory(request: GetCategoryRequest, metadata?: Metadata): Observable<CategoryResponse>;
+
+  listCategories(request: ListCategoriesRequest, metadata?: Metadata): Observable<ListCategoriesResponse>;
+
+  createCategory(request: CreateCategoryRequest, metadata?: Metadata): Observable<CategoryResponse>;
+
+  updateCategory(request: UpdateCategoryRequest, metadata?: Metadata): Observable<CategoryResponse>;
+
+  deleteCategory(request: DeleteCategoryRequest, metadata?: Metadata): Observable<Empty>;
+
+  getCategoryTree(request: GetCategoryTreeRequest, metadata?: Metadata): Observable<CategoryTreeResponse>;
+
+  getPricingEstimate(request: PricingEstimateRequest, metadata?: Metadata): Observable<PricingEstimateResponse>;
+}
+
+export interface CategoryServiceController {
+  getCategory(
+    request: GetCategoryRequest,
+    metadata?: Metadata,
+  ): Promise<CategoryResponse> | Observable<CategoryResponse> | CategoryResponse;
+
+  listCategories(
+    request: ListCategoriesRequest,
+    metadata?: Metadata,
+  ): Promise<ListCategoriesResponse> | Observable<ListCategoriesResponse> | ListCategoriesResponse;
+
+  createCategory(
+    request: CreateCategoryRequest,
+    metadata?: Metadata,
+  ): Promise<CategoryResponse> | Observable<CategoryResponse> | CategoryResponse;
+
+  updateCategory(
+    request: UpdateCategoryRequest,
+    metadata?: Metadata,
+  ): Promise<CategoryResponse> | Observable<CategoryResponse> | CategoryResponse;
+
+  deleteCategory(request: DeleteCategoryRequest, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
+
+  getCategoryTree(
+    request: GetCategoryTreeRequest,
+    metadata?: Metadata,
+  ): Promise<CategoryTreeResponse> | Observable<CategoryTreeResponse> | CategoryTreeResponse;
+
+  getPricingEstimate(
+    request: PricingEstimateRequest,
+    metadata?: Metadata,
+  ): Promise<PricingEstimateResponse> | Observable<PricingEstimateResponse> | PricingEstimateResponse;
+}
+
+export function CategoryServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "getCategory",
+      "listCategories",
+      "createCategory",
+      "updateCategory",
+      "deleteCategory",
+      "getCategoryTree",
+      "getPricingEstimate",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("CategoryService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("CategoryService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const CATEGORY_SERVICE_NAME = "CategoryService";

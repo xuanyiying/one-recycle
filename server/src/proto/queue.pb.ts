@@ -5,6 +5,9 @@
 // source: queue.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "queue";
 
@@ -46,3 +49,45 @@ export interface TaskMessage {
   payload: string;
   priority: number;
 }
+
+export const QUEUE_PACKAGE_NAME = "queue";
+
+export interface QueueServiceClient {
+  publishTask(request: PublishTaskRequest, metadata?: Metadata): Observable<PublishTaskResponse>;
+
+  ack(request: AckRequest, metadata?: Metadata): Observable<AckResponse>;
+
+  nack(request: NackRequest, metadata?: Metadata): Observable<NackResponse>;
+
+  consume(request: ConsumeRequest, metadata?: Metadata): Observable<TaskMessage>;
+}
+
+export interface QueueServiceController {
+  publishTask(
+    request: PublishTaskRequest,
+    metadata?: Metadata,
+  ): Promise<PublishTaskResponse> | Observable<PublishTaskResponse> | PublishTaskResponse;
+
+  ack(request: AckRequest, metadata?: Metadata): Promise<AckResponse> | Observable<AckResponse> | AckResponse;
+
+  nack(request: NackRequest, metadata?: Metadata): Promise<NackResponse> | Observable<NackResponse> | NackResponse;
+
+  consume(request: ConsumeRequest, metadata?: Metadata): Observable<TaskMessage>;
+}
+
+export function QueueServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = ["publishTask", "ack", "nack", "consume"];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("QueueService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("QueueService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const QUEUE_SERVICE_NAME = "QueueService";

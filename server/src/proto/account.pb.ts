@@ -5,6 +5,9 @@
 // source: account.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "account";
 
@@ -87,3 +90,80 @@ export interface AddressListResponse {
 
 export interface Empty {
 }
+
+export const ACCOUNT_PACKAGE_NAME = "account";
+
+export interface AccountServiceClient {
+  getUser(request: GetUserRequest, metadata?: Metadata): Observable<UserResponse>;
+
+  createUser(request: CreateUserRequest, metadata?: Metadata): Observable<UserResponse>;
+
+  updateUser(request: UpdateUserRequest, metadata?: Metadata): Observable<UserResponse>;
+
+  createAddress(request: CreateAddressRequest, metadata?: Metadata): Observable<AddressResponse>;
+
+  getAddresses(request: GetAddressesRequest, metadata?: Metadata): Observable<AddressListResponse>;
+
+  updateAddress(request: UpdateAddressRequest, metadata?: Metadata): Observable<AddressResponse>;
+
+  deleteAddress(request: DeleteAddressRequest, metadata?: Metadata): Observable<Empty>;
+}
+
+export interface AccountServiceController {
+  getUser(
+    request: GetUserRequest,
+    metadata?: Metadata,
+  ): Promise<UserResponse> | Observable<UserResponse> | UserResponse;
+
+  createUser(
+    request: CreateUserRequest,
+    metadata?: Metadata,
+  ): Promise<UserResponse> | Observable<UserResponse> | UserResponse;
+
+  updateUser(
+    request: UpdateUserRequest,
+    metadata?: Metadata,
+  ): Promise<UserResponse> | Observable<UserResponse> | UserResponse;
+
+  createAddress(
+    request: CreateAddressRequest,
+    metadata?: Metadata,
+  ): Promise<AddressResponse> | Observable<AddressResponse> | AddressResponse;
+
+  getAddresses(
+    request: GetAddressesRequest,
+    metadata?: Metadata,
+  ): Promise<AddressListResponse> | Observable<AddressListResponse> | AddressListResponse;
+
+  updateAddress(
+    request: UpdateAddressRequest,
+    metadata?: Metadata,
+  ): Promise<AddressResponse> | Observable<AddressResponse> | AddressResponse;
+
+  deleteAddress(request: DeleteAddressRequest, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
+}
+
+export function AccountServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "getUser",
+      "createUser",
+      "updateUser",
+      "createAddress",
+      "getAddresses",
+      "updateAddress",
+      "deleteAddress",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("AccountService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("AccountService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const ACCOUNT_SERVICE_NAME = "AccountService";

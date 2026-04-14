@@ -17,6 +17,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.984.0
         version: 3.984.0
+      '@bufbuild/protobuf':
+        specifier: ^2.11.0
+        version: 2.11.0
       '@grpc/grpc-js':
         specifier: ^1.14.1
         version: 1.14.2

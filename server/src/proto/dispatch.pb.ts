@@ -5,6 +5,9 @@
 // source: dispatch.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "dispatch";
 
@@ -59,3 +62,75 @@ export interface ListAssignmentsResponse {
   items: AssignmentResponse[];
   total: number;
 }
+
+export const DISPATCH_PACKAGE_NAME = "dispatch";
+
+export interface DispatchServiceClient {
+  assignOrder(request: AssignOrderRequest, metadata?: Metadata): Observable<AssignOrderResponse>;
+
+  getAssignment(request: GetAssignmentRequest, metadata?: Metadata): Observable<AssignmentResponse>;
+
+  updateAssignmentStatus(request: UpdateAssignmentStatusRequest, metadata?: Metadata): Observable<AssignmentResponse>;
+
+  acceptAssignment(request: AcceptAssignmentRequest, metadata?: Metadata): Observable<AssignmentResponse>;
+
+  rejectAssignment(request: RejectAssignmentRequest, metadata?: Metadata): Observable<AssignmentResponse>;
+
+  listAssignments(request: ListAssignmentsRequest, metadata?: Metadata): Observable<ListAssignmentsResponse>;
+}
+
+export interface DispatchServiceController {
+  assignOrder(
+    request: AssignOrderRequest,
+    metadata?: Metadata,
+  ): Promise<AssignOrderResponse> | Observable<AssignOrderResponse> | AssignOrderResponse;
+
+  getAssignment(
+    request: GetAssignmentRequest,
+    metadata?: Metadata,
+  ): Promise<AssignmentResponse> | Observable<AssignmentResponse> | AssignmentResponse;
+
+  updateAssignmentStatus(
+    request: UpdateAssignmentStatusRequest,
+    metadata?: Metadata,
+  ): Promise<AssignmentResponse> | Observable<AssignmentResponse> | AssignmentResponse;
+
+  acceptAssignment(
+    request: AcceptAssignmentRequest,
+    metadata?: Metadata,
+  ): Promise<AssignmentResponse> | Observable<AssignmentResponse> | AssignmentResponse;
+
+  rejectAssignment(
+    request: RejectAssignmentRequest,
+    metadata?: Metadata,
+  ): Promise<AssignmentResponse> | Observable<AssignmentResponse> | AssignmentResponse;
+
+  listAssignments(
+    request: ListAssignmentsRequest,
+    metadata?: Metadata,
+  ): Promise<ListAssignmentsResponse> | Observable<ListAssignmentsResponse> | ListAssignmentsResponse;
+}
+
+export function DispatchServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "assignOrder",
+      "getAssignment",
+      "updateAssignmentStatus",
+      "acceptAssignment",
+      "rejectAssignment",
+      "listAssignments",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("DispatchService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("DispatchService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const DISPATCH_SERVICE_NAME = "DispatchService";

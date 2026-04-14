@@ -5,6 +5,9 @@
 // source: payment.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "payment";
 
@@ -138,3 +141,122 @@ export interface PaymentStatsResponse {
   closed: number;
   totalAmount: string;
 }
+
+export const PAYMENT_PACKAGE_NAME = "payment";
+
+export interface PaymentServiceClient {
+  createPayment(request: CreatePaymentRequest, metadata?: Metadata): Observable<CreatePaymentResponse>;
+
+  getPayment(request: GetPaymentRequest, metadata?: Metadata): Observable<GetPaymentResponse>;
+
+  updatePaymentStatus(
+    request: UpdatePaymentStatusRequest,
+    metadata?: Metadata,
+  ): Observable<UpdatePaymentStatusResponse>;
+
+  createRefund(request: CreateRefundRequest, metadata?: Metadata): Observable<CreateRefundResponse>;
+
+  getRefund(request: GetRefundRequest, metadata?: Metadata): Observable<GetRefundResponse>;
+
+  createPaymentLog(request: CreatePaymentLogRequest, metadata?: Metadata): Observable<PaymentLogResponse>;
+
+  getPaymentLogsByOrderId(
+    request: GetPaymentLogsByOrderIdRequest,
+    metadata?: Metadata,
+  ): Observable<PaymentLogsResponse>;
+
+  getPaymentLogByTransactionId(
+    request: GetPaymentLogByTransactionIdRequest,
+    metadata?: Metadata,
+  ): Observable<PaymentLogResponse>;
+
+  isTransactionProcessed(
+    request: IsTransactionProcessedRequest,
+    metadata?: Metadata,
+  ): Observable<IsTransactionProcessedResponse>;
+
+  getPaymentStats(request: GetPaymentStatsRequest, metadata?: Metadata): Observable<PaymentStatsResponse>;
+}
+
+export interface PaymentServiceController {
+  createPayment(
+    request: CreatePaymentRequest,
+    metadata?: Metadata,
+  ): Promise<CreatePaymentResponse> | Observable<CreatePaymentResponse> | CreatePaymentResponse;
+
+  getPayment(
+    request: GetPaymentRequest,
+    metadata?: Metadata,
+  ): Promise<GetPaymentResponse> | Observable<GetPaymentResponse> | GetPaymentResponse;
+
+  updatePaymentStatus(
+    request: UpdatePaymentStatusRequest,
+    metadata?: Metadata,
+  ): Promise<UpdatePaymentStatusResponse> | Observable<UpdatePaymentStatusResponse> | UpdatePaymentStatusResponse;
+
+  createRefund(
+    request: CreateRefundRequest,
+    metadata?: Metadata,
+  ): Promise<CreateRefundResponse> | Observable<CreateRefundResponse> | CreateRefundResponse;
+
+  getRefund(
+    request: GetRefundRequest,
+    metadata?: Metadata,
+  ): Promise<GetRefundResponse> | Observable<GetRefundResponse> | GetRefundResponse;
+
+  createPaymentLog(
+    request: CreatePaymentLogRequest,
+    metadata?: Metadata,
+  ): Promise<PaymentLogResponse> | Observable<PaymentLogResponse> | PaymentLogResponse;
+
+  getPaymentLogsByOrderId(
+    request: GetPaymentLogsByOrderIdRequest,
+    metadata?: Metadata,
+  ): Promise<PaymentLogsResponse> | Observable<PaymentLogsResponse> | PaymentLogsResponse;
+
+  getPaymentLogByTransactionId(
+    request: GetPaymentLogByTransactionIdRequest,
+    metadata?: Metadata,
+  ): Promise<PaymentLogResponse> | Observable<PaymentLogResponse> | PaymentLogResponse;
+
+  isTransactionProcessed(
+    request: IsTransactionProcessedRequest,
+    metadata?: Metadata,
+  ):
+    | Promise<IsTransactionProcessedResponse>
+    | Observable<IsTransactionProcessedResponse>
+    | IsTransactionProcessedResponse;
+
+  getPaymentStats(
+    request: GetPaymentStatsRequest,
+    metadata?: Metadata,
+  ): Promise<PaymentStatsResponse> | Observable<PaymentStatsResponse> | PaymentStatsResponse;
+}
+
+export function PaymentServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "createPayment",
+      "getPayment",
+      "updatePaymentStatus",
+      "createRefund",
+      "getRefund",
+      "createPaymentLog",
+      "getPaymentLogsByOrderId",
+      "getPaymentLogByTransactionId",
+      "isTransactionProcessed",
+      "getPaymentStats",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("PaymentService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("PaymentService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const PAYMENT_SERVICE_NAME = "PaymentService";

@@ -422,10 +422,8 @@ export class AIReplyService {
   ): Promise<AIResponse> {
     try {
       // 分页参数验证
-      const pageParam = 1;
-      const limitParam = 3;
-      const page = Math.max(1, pageParam || 1);
-      const limit = Math.min(Math.max(1, limitParam || 10), 50);
+      const page = Math.max(1, 1);
+      const limit = Math.min(Math.max(1, 3), 50);
 
       // 获取用户最近的订单
       const { orders } = await this.orderService.findAll(
@@ -466,15 +464,15 @@ export class AIReplyService {
         needTransfer: false,
         suggestedActions: activeOrder
           ? [
-              { type: 'modify_address', label: '修改地址' },
-              { type: 'modify_time', label: '修改时间' },
-              { type: 'modify_other', label: '其他修改' },
-            ]
+            { type: 'modify_address', label: '修改地址' },
+            { type: 'modify_time', label: '修改时间' },
+            { type: 'modify_other', label: '其他修改' },
+          ]
           : [
-              { type: 'query_orders', label: '查询订单' },
-              { type: 'create_order', label: '创建新订单' },
-              { type: 'transfer_agent', label: '联系客服' },
-            ],
+            { type: 'query_orders', label: '查询订单' },
+            { type: 'create_order', label: '创建新订单' },
+            { type: 'transfer_agent', label: '联系客服' },
+          ],
       };
     } catch (error) {
       // 记录错误日志以便调试和监控

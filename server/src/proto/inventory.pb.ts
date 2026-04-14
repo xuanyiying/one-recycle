@@ -5,6 +5,9 @@
 // source: inventory.proto
 
 /* eslint-disable */
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export const protobufPackage = "inventory";
 
@@ -144,3 +147,107 @@ export interface InventoryStatsResponse {
 
 export interface Empty {
 }
+
+export const INVENTORY_PACKAGE_NAME = "inventory";
+
+export interface InventoryServiceClient {
+  getInventoryItem(request: GetInventoryItemRequest, metadata?: Metadata): Observable<InventoryItemResponse>;
+
+  listInventoryItems(request: ListInventoryItemsRequest, metadata?: Metadata): Observable<ListInventoryItemsResponse>;
+
+  createInventoryItem(request: CreateInventoryItemRequest, metadata?: Metadata): Observable<InventoryItemResponse>;
+
+  updateInventoryItem(request: UpdateInventoryItemRequest, metadata?: Metadata): Observable<InventoryItemResponse>;
+
+  deleteInventoryItem(request: DeleteInventoryItemRequest, metadata?: Metadata): Observable<Empty>;
+
+  createReservation(request: CreateReservationRequest, metadata?: Metadata): Observable<ReservationResponse>;
+
+  confirmReservation(request: ConfirmReservationRequest, metadata?: Metadata): Observable<ReservationResponse>;
+
+  cancelReservation(request: CancelReservationRequest, metadata?: Metadata): Observable<ReservationResponse>;
+
+  getInventoryStats(request: Empty, metadata?: Metadata): Observable<InventoryStatsResponse>;
+
+  checkAvailability(request: CheckAvailabilityRequest, metadata?: Metadata): Observable<CheckAvailabilityResponse>;
+}
+
+export interface InventoryServiceController {
+  getInventoryItem(
+    request: GetInventoryItemRequest,
+    metadata?: Metadata,
+  ): Promise<InventoryItemResponse> | Observable<InventoryItemResponse> | InventoryItemResponse;
+
+  listInventoryItems(
+    request: ListInventoryItemsRequest,
+    metadata?: Metadata,
+  ): Promise<ListInventoryItemsResponse> | Observable<ListInventoryItemsResponse> | ListInventoryItemsResponse;
+
+  createInventoryItem(
+    request: CreateInventoryItemRequest,
+    metadata?: Metadata,
+  ): Promise<InventoryItemResponse> | Observable<InventoryItemResponse> | InventoryItemResponse;
+
+  updateInventoryItem(
+    request: UpdateInventoryItemRequest,
+    metadata?: Metadata,
+  ): Promise<InventoryItemResponse> | Observable<InventoryItemResponse> | InventoryItemResponse;
+
+  deleteInventoryItem(
+    request: DeleteInventoryItemRequest,
+    metadata?: Metadata,
+  ): Promise<Empty> | Observable<Empty> | Empty;
+
+  createReservation(
+    request: CreateReservationRequest,
+    metadata?: Metadata,
+  ): Promise<ReservationResponse> | Observable<ReservationResponse> | ReservationResponse;
+
+  confirmReservation(
+    request: ConfirmReservationRequest,
+    metadata?: Metadata,
+  ): Promise<ReservationResponse> | Observable<ReservationResponse> | ReservationResponse;
+
+  cancelReservation(
+    request: CancelReservationRequest,
+    metadata?: Metadata,
+  ): Promise<ReservationResponse> | Observable<ReservationResponse> | ReservationResponse;
+
+  getInventoryStats(
+    request: Empty,
+    metadata?: Metadata,
+  ): Promise<InventoryStatsResponse> | Observable<InventoryStatsResponse> | InventoryStatsResponse;
+
+  checkAvailability(
+    request: CheckAvailabilityRequest,
+    metadata?: Metadata,
+  ): Promise<CheckAvailabilityResponse> | Observable<CheckAvailabilityResponse> | CheckAvailabilityResponse;
+}
+
+export function InventoryServiceControllerMethods() {
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "getInventoryItem",
+      "listInventoryItems",
+      "createInventoryItem",
+      "updateInventoryItem",
+      "deleteInventoryItem",
+      "createReservation",
+      "confirmReservation",
+      "cancelReservation",
+      "getInventoryStats",
+      "checkAvailability",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("InventoryService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("InventoryService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
+}
+
+export const INVENTORY_SERVICE_NAME = "InventoryService";
