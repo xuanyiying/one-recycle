@@ -1,11 +1,10 @@
 #!/bin/sh
 set -e
 
-# Function to check if certificates exist
+DOMAIN=${DOMAIN:-backbuy.cn}
+CERT_PATH="/etc/nginx/ssl/live/$DOMAIN"
+
 check_certificates() {
-    DOMAIN=${DOMAIN:-backbuy.cn}
-    CERT_PATH="/etc/nginx/ssl/live/$DOMAIN"
-    
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
         return 0
     else
@@ -13,75 +12,66 @@ check_certificates() {
     fi
 }
 
-# Function to setup HTTPS configuration
-setup_https() {
-    local changed=0
+generate_self_signed_cert() {
+    echo "Generating self-signed certificate for initial setup..."
+    mkdir -p "$CERT_PATH"
     
-    if check_certificates; then
-        if [ ! -f /etc/nginx/conf.d/https.conf ]; then
-            echo "Enabling HTTPS configuration..."
-            # Copy and process template
-            if [ -f /tmp/https.conf.template ]; then
-                cp /tmp/https.conf.template /etc/nginx/conf.d/https.conf
-                # Replace domain placeholder in template
-                DOMAIN_NAME=${DOMAIN:-backbuy.cn}
-                sed -i "s/backbuy.cn/$DOMAIN_NAME/g" /etc/nginx/conf.d/https.conf
-                echo "HTTPS enabled for domain: $DOMAIN_NAME"
-                changed=1
-            fi
-        fi
-    else
-        if [ -f /etc/nginx/conf.d/https.conf ]; then
-            echo "Disabling HTTPS configuration (certificates not found)..."
-            rm -f /etc/nginx/conf.d/https.conf
-            changed=1
-        fi
-    fi
+    openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+        -keyout "$CERT_PATH/privkey.pem" \
+        -out "$CERT_PATH/fullchain.pem" \
+        -subj "/CN=$DOMAIN" 2>/dev/null
     
-    return $changed
+    echo "Self-signed certificate generated for $DOMAIN"
 }
 
-# Function to reload nginx if config changed
+setup_https() {
+    mkdir -p /etc/nginx/conf.d
+    
+    if check_certificates; then
+        echo "Valid certificates found, setting up HTTPS..."
+    else
+        echo "Certificates not found, generating self-signed cert for initial startup..."
+        generate_self_signed_cert
+    fi
+    
+    if [ -f /tmp/https.conf.template ]; then
+        cp /tmp/https.conf.template /etc/nginx/conf.d/https.conf
+        sed -i "s/backbuy.cn/$DOMAIN/g" /etc/nginx/conf.d/https.conf
+        echo "HTTPS configuration enabled for domain: $DOMAIN"
+    fi
+}
+
 reload_nginx() {
     if nginx -t 2>/dev/null; then
         echo "Reloading Nginx..."
         nginx -s reload 2>/dev/null || true
-    else
-        echo "Nginx config test failed, not reloading"
     fi
 }
 
-# Initial setup
-mkdir -p /etc/nginx/conf.d
+setup_https
 
-if check_certificates; then
-    echo "Certificates found, setting up HTTPS..."
-else
-    echo "Certificates not found, starting with HTTP only"
-    echo "Certbot will attempt to obtain certificates in the background"
+echo "Testing Nginx configuration..."
+if ! nginx -t; then
+    echo "Nginx config test failed, removing HTTPS config..."
+    rm -f /etc/nginx/conf.d/https.conf
+    nginx -t || { echo "FATAL: Nginx config still invalid"; exit 1; }
 fi
 
-setup_https || true
-
-# Test nginx config
-echo "Testing Nginx configuration..."
-nginx -t
-
-# Start nginx in background
 echo "Starting Nginx..."
 nginx -g 'daemon off;' &
 NGINX_PID=$!
 
-# Monitor for certificate changes in background
 (
     while true; do
         sleep 60
-        if setup_https; then
-            echo "Certificate status changed, reloading Nginx..."
-            reload_nginx
+        if check_certificates; then
+            if [ ! -f /etc/nginx/conf.d/https.conf ]; then
+                echo "Valid certificates detected, enabling HTTPS..."
+                setup_https
+                reload_nginx
+            fi
         fi
     done
 ) &
 
-# Wait for nginx
 wait $NGINX_PID

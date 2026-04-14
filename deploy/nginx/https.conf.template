@@ -2,8 +2,9 @@
 # backbuy.cn - 官网（隐私政策/用户协议/引导页）
 # =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -32,8 +33,9 @@ server {
 # www.backbuy.cn → backbuy.cn 重定向
 # =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name www.backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -46,8 +48,9 @@ server {
 # api.backbuy.cn - API 服务
 # =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name api.backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -96,8 +99,9 @@ server {
 # admin.backbuy.cn - 管理后台
 # =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name admin.backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;

@@ -419,19 +419,20 @@ export class AIReplyService {
   private async handleOrderModify(
     userId: string,
     intentResult: IntentResult,
+    page: number = 1,
+    limit: number = 3,
   ): Promise<AIResponse> {
     try {
-      // 分页参数验证
-      const page = Math.max(1, 1);
-      const limit = Math.min(Math.max(1, 3), 50);
+      const validatedPage = Math.max(1, page);
+      const validatedLimit = Math.min(Math.max(1, limit), 50);
 
       // 获取用户最近的订单
       const { orders } = await this.orderService.findAll(
         {
           userId,
         },
-        page,
-        limit,
+        validatedPage,
+        validatedLimit,
       );
 
       let content =
