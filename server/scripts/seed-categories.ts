@@ -21,15 +21,18 @@ async function main() {
 
   try {
     const existingTenant = await prisma.tenant.findFirst({
-      where: { code: 'test_tenant' },
+      where: { code: 'DEFAULT' },
       select: { id: true },
     });
     let tenantId = existingTenant?.id;
     if (!tenantId) {
       const createdTenant = await prisma.tenant.create({
         data: {
-          name: '测试租户',
-          code: 'test_tenant',
+          name: '默认租户',
+          code: 'DEFAULT',
+          contactName: '管理员',
+          contactPhone: '13812345678',
+          status: 'ACTIVE',
         },
         select: { id: true },
       });

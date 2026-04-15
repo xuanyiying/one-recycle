@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { execSync } from 'child_process';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as crypto from 'crypto';
@@ -45,20 +44,9 @@ async function main() {
             description: '拥有所有权限的系统管理员',
         },
     });
+    console.log(`角色已创建: ADMIN(${adminRole.id})`);
 
-    const managerRole = await prisma.role.upsert({
-        where: { code: 'MANAGER' },
-        update: {},
-        create: {
-            name: '部门经理',
-            code: 'MANAGER',
-            tenantId: tenant1.id,
-            description: '负责部门管理',
-        },
-    });
-    console.log(`角色已创建: ADMIN(${adminRole.id}), MANAGER(${managerRole.id})`);
-
-    // 3. 创建测试员工
+    // 3. 创建管理员员工
     const staff1 = await prisma.staff.upsert({
         where: { username: 'admin' },
         update: {
@@ -82,13 +70,6 @@ async function main() {
     console.log(`- 租户代码: ${tenant1.code}`);
     console.log(`- 用户名: ${staff1.username}`);
     console.log(`- 密码: 123456`);
-
-    const seedScriptPath = path.join(__dirname, 'seed-order-status.ts');
-    execSync(`npx ts-node ${seedScriptPath}`, {
-        cwd: path.join(__dirname, '..'),
-        stdio: 'inherit',
-        env: { ...process.env, FORCE_COLOR: '1' },
-    });
 }
 
 main()
@@ -98,4 +79,5 @@ main()
     })
     .finally(async () => {
         await prisma.$disconnect();
+        await pool.end();
     });
