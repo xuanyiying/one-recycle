@@ -17,6 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as http from 'http';
 import { join } from 'path';
 
 import { AppModule } from './app.module';
@@ -205,7 +206,6 @@ async function bootstrapGrpcService(
 
   await app.listen();
 
-  const http = require('http');
   const healthServer = http.createServer((req: any, res: any) => {
     if (req.url === '/api/health' || req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -222,15 +222,17 @@ async function bootstrapGrpcService(
     logger.log(`Health check HTTP on port ${healthPort}`);
   });
 
-  const gracefulShutdown = async (signal: string) => {
+  const gracefulShutdown = (signal: string) => {
     logger.log(`Received ${signal}, shutting down gracefully...`);
+    let exitCode = 0;
     try {
       healthServer.close();
-      await app.close();
+      app.close();
     } catch (err) {
       logger.error('Shutdown error:', err);
+      exitCode = 1;
     } finally {
-      process.exit(0);
+      process.exit(exitCode);
     }
   };
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

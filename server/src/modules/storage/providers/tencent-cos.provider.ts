@@ -82,15 +82,24 @@ export class TencentCosService implements OssService {
     }
   }
 
-  private formatErrorMessage(error: Error & { code?: string; statusCode?: number; err?: Error }): string {
+  private formatErrorMessage(
+    error: Error & { code?: string; statusCode?: number; err?: Error },
+  ): string {
     const parts: string[] = [];
-    if (error.message && typeof error.message === 'string' && error.message !== '[object Object]') {
+    if (
+      error.message &&
+      typeof error.message === 'string' &&
+      error.message !== '[object Object]'
+    ) {
       parts.push(error.message);
     }
     if ('code' in error && typeof (error as any).code === 'string') {
       parts.push(`code: ${(error as any).code}`);
     }
-    if ('statusCode' in error && typeof (error as any).statusCode === 'number') {
+    if (
+      'statusCode' in error &&
+      typeof (error as any).statusCode === 'number'
+    ) {
       parts.push(`statusCode: ${(error as any).statusCode}`);
     }
     if ('err' in error && (error as any).err instanceof Error) {

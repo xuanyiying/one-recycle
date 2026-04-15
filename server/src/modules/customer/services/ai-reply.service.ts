@@ -465,15 +465,15 @@ export class AIReplyService {
         needTransfer: false,
         suggestedActions: activeOrder
           ? [
-            { type: 'modify_address', label: '修改地址' },
-            { type: 'modify_time', label: '修改时间' },
-            { type: 'modify_other', label: '其他修改' },
-          ]
+              { type: 'modify_address', label: '修改地址' },
+              { type: 'modify_time', label: '修改时间' },
+              { type: 'modify_other', label: '其他修改' },
+            ]
           : [
-            { type: 'query_orders', label: '查询订单' },
-            { type: 'create_order', label: '创建新订单' },
-            { type: 'transfer_agent', label: '联系客服' },
-          ],
+              { type: 'query_orders', label: '查询订单' },
+              { type: 'create_order', label: '创建新订单' },
+              { type: 'transfer_agent', label: '联系客服' },
+            ],
       };
     } catch (error) {
       // 记录错误日志以便调试和监控
