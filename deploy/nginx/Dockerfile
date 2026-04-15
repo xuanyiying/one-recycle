@@ -1,8 +1,8 @@
 FROM nginx:alpine
 
 RUN apk add --no-cache openssl && \
-    mkdir -p /etc/nginx/conf.d /var/www/html && \
-    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/www/html
+    mkdir -p /etc/nginx/conf.d /var/www/html /var/www/certbot && \
+    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/www/html /var/www/certbot
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY https.conf.template /tmp/https.conf.template

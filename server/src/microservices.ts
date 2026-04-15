@@ -222,12 +222,12 @@ async function bootstrapGrpcService(
     logger.log(`Health check HTTP on port ${healthPort}`);
   });
 
-  const gracefulShutdown = (signal: string) => {
+  const gracefulShutdown = async (signal: string) => {
     logger.log(`Received ${signal}, shutting down gracefully...`);
     let exitCode = 0;
     try {
       healthServer.close();
-      app.close();
+      await app.close();
     } catch (err) {
       logger.error('Shutdown error:', err);
       exitCode = 1;
@@ -235,8 +235,12 @@ async function bootstrapGrpcService(
       process.exit(exitCode);
     }
   };
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGTERM', () => {
+    gracefulShutdown('SIGTERM').catch(() => {});
+  });
+  process.on('SIGINT', () => {
+    gracefulShutdown('SIGINT').catch(() => {});
+  });
 
   logger.log(
     `gRPC service running on: 0.0.0.0:${grpcPort} (package: ${config.grpcPackage})`,
