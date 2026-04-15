@@ -224,9 +224,14 @@ async function bootstrapGrpcService(
 
   const gracefulShutdown = async (signal: string) => {
     logger.log(`Received ${signal}, shutting down gracefully...`);
-    healthServer.close();
-    await app.close();
-    process.exit(0);
+    try {
+      healthServer.close();
+      await app.close();
+    } catch (err) {
+      logger.error('Shutdown error:', err);
+    } finally {
+      process.exit(0);
+    }
   };
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
