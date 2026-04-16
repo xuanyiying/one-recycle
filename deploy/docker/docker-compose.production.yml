@@ -303,6 +303,10 @@ services:
           memory: 384M
 
   # Nginx 反向代理
+  # 注意: 首次部署前需要确保以下目录存在:
+  #   - deploy/ssl (SSL证书存储)
+  #   - deploy/certbot-webroot (Let's Encrypt 验证目录)
+  # 可通过运行: mkdir -p deploy/ssl deploy/certbot-webroot
   nginx:
     build:
       context: ../nginx
@@ -328,6 +332,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
     deploy:
       resources:
         limits:
