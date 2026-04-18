@@ -1,9 +1,7 @@
-# =========================================================================
-# backbuy.cn - 官网（隐私政策/用户协议/引导页）
-# =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -19,7 +17,6 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-    # 静态页面（隐私政策/用户协议/引导页）
     root /var/www/html;
     index index.html;
 
@@ -28,12 +25,10 @@ server {
     }
 }
 
-# =========================================================================
-# www.backbuy.cn → backbuy.cn 重定向
-# =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name www.backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -42,12 +37,10 @@ server {
     return 301 https://backbuy.cn$request_uri;
 }
 
-# =========================================================================
-# api.backbuy.cn - API 服务
-# =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name api.backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -63,7 +56,6 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-    # 健康检查
     location /health {
         access_log off;
         proxy_pass http://backend/api/health;
@@ -74,7 +66,6 @@ server {
         proxy_read_timeout 5s;
     }
 
-    # API 路由
     location / {
         limit_req zone=api burst=20 nodelay;
         proxy_pass http://backend;
@@ -92,12 +83,10 @@ server {
     }
 }
 
-# =========================================================================
-# admin.backbuy.cn - 管理后台
-# =========================================================================
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name admin.backbuy.cn;
 
     ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
@@ -113,7 +102,6 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-    # Next.js 管理后台
     location / {
         proxy_pass http://admin_web;
         proxy_http_version 1.1;
@@ -126,7 +114,6 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    # API 代理（管理端直接调用同域名 /api/）
     location /api/ {
         proxy_pass http://backend/;
         proxy_http_version 1.1;

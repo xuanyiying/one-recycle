@@ -1,4 +1,7 @@
 services:
+  # Certbot SSL 证书管理
+  # 通过 webroot 方式验证域名，需要 nginx 先启动（HTTP 80 可用）
+  # 首次部署：nginx 用自签名证书启动 → certbot 申请正式证书 → nginx 自动 reload
   certbot:
     image: certbot/certbot:latest
     container_name: one-recycle-certbot
@@ -6,22 +9,26 @@ services:
     volumes:
       - ./ssl:/etc/letsencrypt
       - ./certbot-webroot:/var/www/certbot
+    depends_on:
+      nginx:
+        condition: service_healthy
     entrypoint: >
-      sh -c '
-      trap "exit 0" TERM INT
-      while true; do
-        if [ -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
-          certbot renew --webroot -w /var/www/certbot --quiet 2>/dev/null || true
+      sh -c ' trap "exit 0" TERM INT while true; do
+        DOMAIN_NAME="$${DOMAIN:-backbuy.cn}"
+        CERT_PATH="/etc/letsencrypt/live/$${DOMAIN_NAME}"
+        if [ -d "$$CERT_PATH" ] && [ -f "$$CERT_PATH/fullchain.pem" ] && [ -f "$$CERT_PATH/privkey.pem" ]; then
+          echo "[$(date)] Renewing certificate for $${DOMAIN_NAME}..."
+          certbot renew --webroot -w /var/www/certbot --quiet 2>&1 || echo "[$(date)] Renewal failed, will retry in 12h"
         else
+          echo "[$(date)] Requesting initial certificate for $${DOMAIN_NAME}..."
           certbot certonly --webroot -w /var/www/certbot \
-            -d "${DOMAIN}" -d "www.${DOMAIN}" -d "api.${DOMAIN}" -d "admin.${DOMAIN}" \
-            --email "${EMAIL}" --agree-tos --no-eff-email --non-interactive 2>/dev/null || true
+            -d "$${DOMAIN_NAME}" -d "www.$$DOMAIN_NAME" -d "api.$$DOMAIN_NAME" -d "admin.$$DOMAIN_NAME" \
+            --email "$${EMAIL}" --agree-tos --no-eff-email --non-interactive 2>&1 || echo "[$(date)] Certificate request failed, will retry in 12h"
         fi
         sleep 12h
-      done
-      '
+      done '
     environment:
-      - DOMAIN=${DOMAIN}
+      - DOMAIN=${DOMAIN:-backbuy.cn}
       - EMAIL=${EMAIL}
 
   postgres:
@@ -37,7 +44,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U one_recycle"]
+      test: [ "CMD-SHELL", "pg_isready -U one_recycle" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -57,7 +64,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -80,7 +87,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -101,7 +108,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -125,9 +132,9 @@ services:
     depends_on:
       - backend
       - admin-web
-    entrypoint: ["/bin/sh", "/nginx-entrypoint.sh"]
+    entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
