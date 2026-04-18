@@ -8,6 +8,13 @@ echo "=== Nginx Entrypoint ==="
 echo "DOMAIN: $DOMAIN"
 echo "CERT_PATH: $CERT_PATH"
 
+if ! command -v openssl >/dev/null 2>&1; then
+    echo "Installing openssl..."
+    apk add --no-cache openssl 2>/dev/null || {
+        echo "WARNING: Failed to install openssl, HTTPS setup may fail"
+    }
+fi
+
 check_certificates() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
         echo "Certificates found at $CERT_PATH"
@@ -21,12 +28,15 @@ check_certificates() {
 generate_self_signed_cert() {
     echo "Generating self-signed certificate for initial setup..."
     
-    # 确保目录存在（处理 volume 挂载的情况）
     mkdir -p "$CERT_PATH"
     
-    # 检查是否可写
     if [ ! -w "$CERT_PATH" ]; then
         echo "ERROR: Certificate directory is not writable: $CERT_PATH"
+        return 1
+    fi
+    
+    if ! command -v openssl >/dev/null 2>&1; then
+        echo "ERROR: openssl not available, cannot generate certificate"
         return 1
     fi
     
@@ -41,7 +51,6 @@ generate_self_signed_cert() {
     fi
     
     if [ -f "$CERT_PATH/privkey.pem" ] && [ -f "$CERT_PATH/fullchain.pem" ]; then
-        # 设置正确的权限
         chmod 644 "$CERT_PATH/fullchain.pem"
         chmod 600 "$CERT_PATH/privkey.pem"
         echo "Self-signed certificate generated successfully for $DOMAIN"
@@ -71,8 +80,6 @@ setup_https() {
         cp /tmp/https.conf.template /etc/nginx/conf.d/https.conf
         sed -i "s/backbuy.cn/$DOMAIN/g" /etc/nginx/conf.d/https.conf
         echo "HTTPS configuration enabled for domain: $DOMAIN"
-        
-        # 验证替换后的配置中的证书路径
         echo "Verifying certificate paths in config:"
         grep "ssl_certificate" /etc/nginx/conf.d/https.conf | head -2
         return 0
@@ -93,7 +100,6 @@ if ! nginx -t 2>&1; then
     echo "Retrying Nginx config test without HTTPS..."
     if ! nginx -t 2>&1; then
         echo "FATAL: Nginx config still invalid after removing HTTPS"
-        echo "Dumping nginx.conf for debugging:"
         cat /etc/nginx/nginx.conf 2>/dev/null || echo "Cannot read nginx.conf"
         exit 1
     fi

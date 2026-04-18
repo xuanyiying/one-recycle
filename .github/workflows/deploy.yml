@@ -182,6 +182,11 @@ jobs:
           echo "=== Deploying monolith ==="
           cd "$PROJECT_DIR"
 
+          # 拉取最新代码（确保 nginx 配置和入口脚本是最新的）
+          echo "=== Pulling latest code ==="
+          git fetch origin
+          git reset --hard origin/${{ github.ref_name }} || true
+
           # 创建必要目录
           echo "=== Ensuring directories exist ==="
           mkdir -p deploy/ssl deploy/certbot-webroot deploy/data/postgres deploy/data/redis
@@ -222,7 +227,7 @@ jobs:
           docker compose -f deploy/docker-compose.yml down || true
 
           echo "=== Starting monolith ==="
-          docker compose -f deploy/docker-compose.yml up -d --build
+          docker compose -f deploy/docker-compose.yml up -d
 
           echo "=== Waiting for services ==="
           sleep 15
@@ -286,6 +291,11 @@ jobs:
           echo "=== Deploying microservices ==="
           cd "$PROJECT_DIR"
 
+          # 拉取最新代码（确保 nginx 配置和入口脚本是最新的）
+          echo "=== Pulling latest code ==="
+          git fetch origin
+          git reset --hard origin/${{ github.ref_name }} || true
+
           # 创建必要目录
           echo "=== Ensuring directories exist ==="
           mkdir -p deploy/ssl deploy/certbot-webroot deploy/data/postgres deploy/data/redis
@@ -326,7 +336,7 @@ jobs:
           docker compose -f deploy/docker/docker-compose.production.yml down || true
 
           echo "=== Starting microservices ==="
-          docker compose -f deploy/docker/docker-compose.production.yml up -d --build
+          docker compose -f deploy/docker/docker-compose.production.yml up -d
 
           echo "=== Waiting for services ==="
           sleep 15
