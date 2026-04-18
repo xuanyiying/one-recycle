@@ -167,25 +167,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Check rsync availability
-        run: which rsync || sudo apt-get install -y rsync
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-
-      - name: Sync config files (monolith)
-        if: needs.determine-mode.outputs.mode == 'monolith'
-        run: |
-          rsync -avz --delete \
-            --exclude '.env' \
-            --exclude 'ssl/' \
-            --exclude 'data/' \
-            --exclude 'certbot-webroot/' \
-            deploy/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/deploy/
 
       - name: Deploy monolith
         run: |
@@ -285,24 +272,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Check rsync availability
-        run: which rsync || sudo apt-get install -y rsync
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-
-      - name: Sync config files (microservices)
-        run: |
-          rsync -avz --delete \
-            --exclude '.env' \
-            --exclude 'ssl/' \
-            --exclude 'data/' \
-            --exclude 'certbot-webroot/' \
-            deploy/ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:~/one-recycle/deploy/
 
       - name: Deploy microservices
         run: |
