@@ -69,12 +69,13 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  api-gateway:
     image: ${REGISTRY:-ghcr.io/xuanyiying}/one-recycle/server:${IMAGE_TAG:-latest}
-    container_name: one-recycle-backend
+    container_name: one-recycle-api-gateway
     restart: always
     environment:
       NODE_ENV: production
+      PORT: 3002
       DATABASE_URL: postgresql://one_recycle:${DB_PASSWORD}@postgres:5432/one_recycle
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -87,7 +88,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3002/health || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -106,9 +107,9 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://api.${DOMAIN}
     depends_on:
-      - backend
+      - api-gateway
     healthcheck:
-      test: [ "CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"" ]
+      test: [ "CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -130,7 +131,7 @@ services:
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
     depends_on:
-      - backend
+      - api-gateway
       - admin-web
     entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:

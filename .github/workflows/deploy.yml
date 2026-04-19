@@ -132,6 +132,8 @@ jobs:
     name: Build Admin Web Image
     needs: [determine-mode, lint-and-test]
     runs-on: ubuntu-latest
+    env:
+      DOMAIN: ${{ secrets.DOMAIN || 'backbuy.cn' }}
     permissions:
       contents: read
       packages: write
@@ -156,6 +158,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:${{ github.ref_name }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.${{ env.DOMAIN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -270,8 +274,8 @@ jobs:
               echo "Health check passed (HTTPS)!"
               exit 0
             fi
-            if curl -sf --max-time 10 http://${DEPLOY_HOST}:3002/api/health 2>/dev/null; then
-              echo "Health check passed (HTTP direct)!"
+            if ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker exec one-recycle-api-gateway curl -sf http://127.0.0.1:3002/api/health" 2>/dev/null; then
+              echo "Health check passed (Docker internal)!"
               exit 0
             fi
             sleep 10
@@ -398,8 +402,8 @@ jobs:
               echo "Health check passed (HTTPS)!"
               exit 0
             fi
-            if curl -sf --max-time 10 http://${DEPLOY_HOST}:3002/api/health 2>/dev/null; then
-              echo "Health check passed (HTTP direct)!"
+            if ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker exec one-recycle-api-gateway curl -sf http://127.0.0.1:3002/api/health" 2>/dev/null; then
+              echo "Health check passed (Docker internal)!"
               exit 0
             fi
             sleep 10
