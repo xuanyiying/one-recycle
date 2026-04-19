@@ -134,7 +134,7 @@ export class TencentCosService implements OssService {
       } catch {
         // circular reference or other issue
       }
-      return typeof error === 'object' ? 'Unknown error' : String(error);
+      return error instanceof Error ? error.message : 'Unknown error';
     }
 
     return parts.join(' | ');
