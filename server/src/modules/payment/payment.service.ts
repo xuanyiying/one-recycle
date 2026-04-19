@@ -1,28 +1,28 @@
 import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-  OnModuleInit,
-  Logger,
-} from '@nestjs/common';
+  PersistentSnowflakeIdGenerator,
+  RedisService,
+  RedisSnowflakeStateStore,
+} from '@/common';
+import { toNumber } from '@/common/utils/decimal.util';
 import { PrismaService } from '@/prisma/prisma.service';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CreatePaymentDto } from './dto/create-payment.dto';
 import {
   PaymentProvider,
   PaymentStatus,
-  RefundStatus,
   Prisma,
+  RefundStatus,
 } from '@prisma/client';
-import { toNumber } from '@/common/utils/decimal.util';
-import {
-  PersistentSnowflakeIdGenerator,
-  RedisSnowflakeStateStore,
-  RedisService,
-} from '@/common';
-import { PaymentProviderFactory } from './payment-provider.factory';
 import * as crypto from 'crypto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { PaymentProviderFactory } from './payment-provider.factory';
 
 /**
  * 支付回调通知数据接口
@@ -277,7 +277,7 @@ export class PaymentService implements OnModuleInit {
       return payment;
     }
 
-    // 4. 更新状态
+    // 4. 使用条件更新确保并发安全：只有 PENDING 状态才能被更新
     const newStatus =
       notifyData.tradeState === 'SUCCESS'
         ? PaymentStatus.SUCCESS
@@ -287,8 +287,11 @@ export class PaymentService implements OnModuleInit {
       `Handling notify for ${notifyData.outTradeNo}, status: ${newStatus}`,
     );
 
-    return this.prisma.payment.update({
-      where: { id: payment.id },
+    const updated = await this.prisma.payment.updateMany({
+      where: {
+        id: payment.id,
+        status: PaymentStatus.PENDING,
+      },
       data: {
         transactionId: notifyData.transactionId
           ? BigInt(notifyData.transactionId)
@@ -298,6 +301,15 @@ export class PaymentService implements OnModuleInit {
         updatedAt: new Date(),
       },
     });
+
+    if (updated.count === 0) {
+      this.logger.warn(
+        `Payment already updated by another request: ${notifyData.outTradeNo}`,
+      );
+      return this.prisma.payment.findUnique({ where: { id: payment.id } });
+    }
+
+    return this.prisma.payment.findUnique({ where: { id: payment.id } });
   }
 
   async handleRefundNotify(notifyData: RefundNotifyData) {
@@ -332,7 +344,7 @@ export class PaymentService implements OnModuleInit {
       return refund;
     }
 
-    // 4. 更新状态
+    // 4. 使用条件更新确保并发安全：只有 PROCESSING 状态才能被更新
     const newStatus =
       notifyData.refundStatus === 'SUCCESS'
         ? RefundStatus.SUCCESS
@@ -342,14 +354,26 @@ export class PaymentService implements OnModuleInit {
       `Handling refund notify for ${notifyData.outRefundNo}, status: ${newStatus}`,
     );
 
-    return this.prisma.refund.update({
-      where: { id: refund.id },
+    const updated = await this.prisma.refund.updateMany({
+      where: {
+        id: refund.id,
+        status: RefundStatus.PROCESSING,
+      },
       data: {
         status: newStatus,
         notifyRaw: notifyData.notifyRaw,
         updatedAt: new Date(),
       },
     });
+
+    if (updated.count === 0) {
+      this.logger.warn(
+        `Refund already updated by another request: ${notifyData.outRefundNo}`,
+      );
+      return this.prisma.refund.findUnique({ where: { id: refund.id } });
+    }
+
+    return this.prisma.refund.findUnique({ where: { id: refund.id } });
   }
 
   /**

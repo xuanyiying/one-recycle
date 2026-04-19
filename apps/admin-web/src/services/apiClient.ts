@@ -207,6 +207,8 @@ export class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
+      document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
+      window.location.href = '/login';
     }
   }
 

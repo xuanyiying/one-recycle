@@ -1,9 +1,9 @@
-import Taro from '@tarojs/taro'
-import { API_BASE_URL, post } from '@/utils/request'
-import { PlatformDetector } from '@/utils/platformDetector'
 import { LoginProvider, LoginResult } from '@/types'
-import { Storage } from '@/utils/storage'
 import { logger } from '@/utils/logger'
+import { PlatformDetector } from '@/utils/platformDetector'
+import { API_BASE_URL, post } from '@/utils/request'
+import { Storage } from '@/utils/storage'
+import Taro from '@tarojs/taro'
 
 export interface LoginParams {
     code: string
@@ -153,7 +153,7 @@ export class AuthService {
     }
 
     /**
-     * 手机号登录 {"success":true,"data":{"user":{"id":"1","mobile":"13800138000","nickname":"测试用户","role":"USER","status":"ACTIVE","createdAt":"2026-02-02T12:56:21.415Z","updatedAt":"2026-02-02T12:56:21.415Z"},"tokens":{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwibW9iaWxlIjoiMTM4MDAxMzgwMDAiLCJpYXQiOjE3NzE1MTE2NjUsImV4cCI6MTc3MjExNjQ2NX0.EnsZRiPGXuxGNIIZC7QiFviOAPvLVad7kbZKK32hgMs","refreshToken":"812331262370033664","expiresIn":7200}},"message":"Success","code":"SUCCESS","timestamp":"2026-02-19T14:34:25.338Z"}
+     * 手机号登录
      */
     static async phoneLogin(phone: string, code: string): Promise<LoginResult> {
         try {

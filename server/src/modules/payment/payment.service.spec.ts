@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentService } from './payment.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
 import { RedisService } from '@/common/redis/redis.service';
-import { PaymentProviderFactory } from './payment-provider.factory';
+import { PrismaService } from '@/prisma/prisma.service';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentProvider, PaymentStatus, RefundStatus } from '@prisma/client';
+import { PaymentProviderFactory } from './payment-provider.factory';
+import { PaymentService } from './payment.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
@@ -32,6 +32,7 @@ describe('PaymentService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       findUnique: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
@@ -160,7 +161,10 @@ describe('PaymentService', () => {
     mockPrismaService.payment.findFirst.mockResolvedValue({
       id: BigInt(1),
     });
-    mockPrismaService.payment.update.mockResolvedValue({
+    mockPrismaService.payment.updateMany.mockResolvedValue({
+      count: 1,
+    });
+    mockPrismaService.payment.findUnique.mockResolvedValue({
       id: BigInt(1),
       status: PaymentStatus.SUCCESS,
     });
@@ -172,7 +176,7 @@ describe('PaymentService', () => {
       notifyRaw: '{}',
     });
 
-    expect(result.status).toBe(PaymentStatus.SUCCESS);
+    expect(result?.status).toBe(PaymentStatus.SUCCESS);
   });
 
   it('should throw on notify when payment not found', async () => {

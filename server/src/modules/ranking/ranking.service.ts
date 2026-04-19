@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { RankingQueryDto, RankingResponseDto } from './dto';
 import { toNumber } from '@/common/utils/decimal.util';
+import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { RankingQueryDto, RankingResponseDto } from './dto';
 
 @Injectable()
 export class RankingService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(RankingService.name);
+
+  constructor(private readonly prisma: PrismaService) { }
 
   async getRankings(query: RankingQueryDto): Promise<RankingResponseDto[]> {
     const { type = 'total', page = 1, pageSize = 20 } = query;
@@ -106,30 +109,22 @@ export class RankingService {
       dateFilter = `AND "completedAt" >= NOW() - INTERVAL '30 days'`;
     }
 
-    // Note: using Prisma.sql is safer but queryRawUnsafe allows dynamic string building easier for simple cases
-    // Ensure table/column names match DB schema (CamelCase in Prisma usually maps to snake_case or specific map)
-    // Checking schema.prisma: Order -> "Order" (if not mapped), userId -> @map("user_id"), settlementAmount -> @map("settlement_amount")
-    // But table name in DB might be "Order" or "order" depending on Prisma config.
-    // Prisma default for model Order is "Order".
-
-    const sql = `
+    const sql = Prisma.sql`
             SELECT COUNT(*) as count FROM (
                 SELECT "user_id", SUM("settlement_amount") as score
                 FROM "orders"
-                WHERE "status" = 'COMPLETED' ${dateFilter}
+                WHERE "status" = 'COMPLETED' ${Prisma.raw(dateFilter)}
                 GROUP BY "user_id"
                 HAVING SUM("settlement_amount") > ${myScore}
             ) as better_users
         `;
 
-    // Use try-catch to handle potential SQL errors (e.g. table name mismatch)
-    // Fallback to "999+" if error? Or throw?
     let rank = 0;
     try {
-      const result: any[] = await this.prisma.$queryRawUnsafe(sql);
+      const result: any[] = await this.prisma.$queryRaw(sql);
       rank = Number(result[0]?.count || 0) + 1;
     } catch (e) {
-      console.error('Error calculating rank:', e);
+      this.logger.error('Error calculating rank:', e);
       rank = 999;
     }
 

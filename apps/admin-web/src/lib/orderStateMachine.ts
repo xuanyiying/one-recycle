@@ -51,6 +51,7 @@ export const orderStatusSequence: OrderStatus[] = [
 ];
 
 export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
+  if (from === to) return true;
   return orderStatusTransitions[from]?.includes(to) ?? false;
 }
 

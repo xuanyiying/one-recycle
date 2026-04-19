@@ -67,6 +67,8 @@ export default function LoginPage() {
         localStorage.setItem('login_mode', 'tenant');
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);
 
+        document.cookie = `auth_token=${res.accessToken}; path=/; max-age=${data.rememberMe ? 86400 * 7 : 86400}; SameSite=Lax`;
+
         if (data.rememberMe) {
           localStorage.setItem('remember_account', data.account);
         } else {
