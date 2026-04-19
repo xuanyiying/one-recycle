@@ -108,20 +108,23 @@ if ! nginx -t 2>&1; then
     echo "Nginx will start without HTTPS (HTTP only mode)"
 fi
 
-echo "Starting Nginx..."
-nginx -g 'daemon off;' &
-
-echo "=== Watching for certificate changes (polling every 60s) ==="
-LAST_MTIME=""
-while true; do
-    if [ -f "$CERT_PATH/fullchain.pem" ]; then
-        CURRENT_MTIME=$(stat -c %Y "$CERT_PATH/fullchain.pem" 2>/dev/null || echo "0")
-        if [ -n "$LAST_MTIME" ] && [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
-            echo "[$(date)] Certificate file changed, reloading nginx..."
-            sleep 2
-            nginx -s reload 2>/dev/null && echo "[$(date)] Nginx reloaded successfully" || echo "[$(date)] Nginx reload failed"
+echo "Starting Nginx in foreground..."
+(
+    echo "=== Watching for certificate changes (polling every 60s) ==="
+    LAST_MTIME=""
+    while true; do
+        if [ -f "$CERT_PATH/fullchain.pem" ]; then
+            CURRENT_MTIME=$(stat -c %Y "$CERT_PATH/fullchain.pem" 2>/dev/null || echo "0")
+            if [ -n "$LAST_MTIME" ] && [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
+                echo "[$(date)] Certificate file changed, reloading nginx..."
+                sleep 2
+                nginx -s reload 2>/dev/null && echo "[$(date)] Nginx reloaded successfully" || echo "[$(date)] Nginx reload failed"
+            fi
+            LAST_MTIME=$CURRENT_MTIME
         fi
-        LAST_MTIME=$CURRENT_MTIME
-    fi
-    sleep 60
-done
+        sleep 60
+    done
+) &
+
+# Use exec to replace the shell process with Nginx, making it PID 1
+exec nginx -g 'daemon off;'
