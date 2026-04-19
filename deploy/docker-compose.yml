@@ -11,7 +11,7 @@ services:
       - ./certbot-webroot:/var/www/certbot
     depends_on:
       nginx:
-        condition: service_healthy
+        condition: service_started
     entrypoint: >
       sh -c ' trap "exit 0" TERM INT while true; do
         DOMAIN_NAME="$${DOMAIN:-backbuy.cn}"
@@ -108,11 +108,11 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://localhost:3000 || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
 
   nginx:
     image: nginx:alpine
@@ -134,7 +134,8 @@ services:
       - admin-web
     entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://localhost/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
