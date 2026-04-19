@@ -27,10 +27,8 @@ export class TencentCosService implements OssService {
 
     // Initialize bucket asynchronously
     this.initializeBucket().catch((error) => {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Failed to initialize bucket during construction: ${errorMessage}`,
+      this.logger.warn(
+        `Failed to initialize bucket during construction: ${this.formatCosError(error)}`,
       );
     });
   }
@@ -50,8 +48,9 @@ export class TencentCosService implements OssService {
         this.logger.log(`COS Bucket ${this.bucket} already exists`);
       }
     } catch (error: any) {
+      const statusCode = error?.statusCode ?? error?.StatusCode;
       // Bucket may not exist, try to create it
-      if (error.statusCode === 404) {
+      if (statusCode === 404) {
         try {
           this.logger.log('Creating COS bucket...', {
             bucket: this.bucket,
@@ -65,50 +64,79 @@ export class TencentCosService implements OssService {
 
           this.logger.log(`COS Bucket ${this.bucket} created successfully`);
         } catch (createError) {
-          const errorMessage =
-            createError instanceof Error
-              ? this.formatErrorMessage(createError)
-              : String(createError);
-          this.logger.error(`Error creating COS bucket: ${errorMessage}`);
+          this.logger.warn(
+            `Error creating COS bucket: ${this.formatCosError(createError)}`,
+          );
           // Don't throw, bucket might already exist or be managed elsewhere
         }
       } else {
-        const errorMessage =
-          error instanceof Error
-            ? this.formatErrorMessage(error)
-            : String(error);
-        this.logger.error(`Error checking COS bucket: ${errorMessage}`);
+        this.logger.warn(
+          `Error checking COS bucket: ${this.formatCosError(error)}`,
+        );
       }
     }
   }
 
-  private formatErrorMessage(
-    error: Error & { code?: string; statusCode?: number; err?: Error },
-  ): string {
+  /**
+   * Format any COS SDK error (Error instance or plain object) into a readable string.
+   * COS SDK often throws plain objects like { statusCode, code, message, err, ... }
+   */
+  private formatCosError(error: unknown): string {
+    if (error == null) return 'Unknown error (null)';
+
+    // If it's a string already, return it
+    if (typeof error === 'string') return error;
+
+    const obj = error as Record<string, any>;
     const parts: string[] = [];
+
+    // Extract message
+    const message = obj.message ?? obj.Message;
     if (
-      error.message &&
-      typeof error.message === 'string' &&
-      error.message !== '[object Object]'
+      message &&
+      typeof message === 'string' &&
+      message !== '[object Object]'
     ) {
-      parts.push(error.message);
+      parts.push(message);
     }
-    if ('code' in error && typeof (error as any).code === 'string') {
-      parts.push(`code: ${(error as any).code}`);
+
+    // Extract error code (e.g. 'InvalidAccessKeyId', 'SignatureDoesNotMatch')
+    const code = obj.code ?? obj.Code;
+    if (code && typeof code === 'string') {
+      parts.push(`code: ${code}`);
     }
-    if (
-      'statusCode' in error &&
-      typeof (error as any).statusCode === 'number'
-    ) {
-      parts.push(`statusCode: ${(error as any).statusCode}`);
+
+    // Extract status code
+    const statusCode = obj.statusCode ?? obj.StatusCode;
+    if (statusCode != null && typeof statusCode === 'number') {
+      parts.push(`statusCode: ${statusCode}`);
     }
-    if ('err' in error && (error as any).err instanceof Error) {
-      const err = (error as any).err;
-      parts.push(`err: ${err.message || String(err)}`);
+
+    // Extract nested error
+    const nestedErr = obj.err ?? obj.error;
+    if (nestedErr) {
+      const nestedMsg =
+        nestedErr instanceof Error
+          ? nestedErr.message
+          : typeof nestedErr === 'string'
+            ? nestedErr
+            : JSON.stringify(nestedErr);
+      if (nestedMsg && nestedMsg !== '[object Object]') {
+        parts.push(`err: ${nestedMsg}`);
+      }
     }
+
+    // Fallback: try JSON.stringify for plain objects
     if (parts.length === 0) {
-      parts.push(String(error));
+      try {
+        const json = JSON.stringify(error);
+        if (json && json !== '{}') return json;
+      } catch {
+        // circular reference or other issue
+      }
+      return String(error);
     }
+
     return parts.join(' | ');
   }
 

@@ -318,6 +318,7 @@ services:
       - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ../ssl:/etc/nginx/ssl
       - ../certbot-webroot:/var/www/certbot:ro
+      - ../www:/var/www/html:ro
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
     networks:

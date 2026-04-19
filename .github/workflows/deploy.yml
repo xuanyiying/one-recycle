@@ -272,12 +272,31 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - uses: actions/checkout@v4
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync config files to server
+        run: |
+          REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+
+          # Ensure remote directories exist
+          ssh $REMOTE "mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker"
+
+          # Sync nginx config files
+          scp deploy/nginx/nginx.conf $REMOTE:~/one-recycle/deploy/nginx/nginx.conf
+          scp deploy/nginx/https.conf.template $REMOTE:~/one-recycle/deploy/nginx/https.conf.template
+          scp deploy/nginx/nginx-entrypoint.sh $REMOTE:~/one-recycle/deploy/nginx/nginx-entrypoint.sh
+
+          # Sync docker-compose file
+          scp deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/docker-compose.production.yml
+
+          echo "Config files synced to server"
 
       - name: Deploy microservices
         run: |
