@@ -283,6 +283,7 @@ jobs:
 
       - name: Sync config files to server
         run: |
+          set -e
           REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
 
           # Ensure remote directories exist
