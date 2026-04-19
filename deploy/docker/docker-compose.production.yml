@@ -291,7 +291,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"" ]
+      test: [ "CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r => process.exit(r.ok || r.status === 404 ? 0 : 1)).catch(() => process.exit(1))\"" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -318,7 +318,7 @@ services:
       - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ../ssl:/etc/nginx/ssl
       - ../certbot-webroot:/var/www/certbot:ro
-      - ../www:/var/www/html:ro
+      - ../www/html:/var/www/html:ro
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
     networks:
@@ -328,7 +328,7 @@ services:
       - admin-web
     entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:80/health || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -373,10 +373,6 @@ services:
             certbot certonly --webroot -w /var/www/certbot \
               -d "$$DOMAIN_NAME" -d "www.$$DOMAIN_NAME" -d "api.$$DOMAIN_NAME" -d "admin.$$DOMAIN_NAME" \
               --email "$$EMAIL" --agree-tos --no-eff-email --non-interactive 2>&1 || echo "[$(date)] Certificate request failed, will retry in 12h"
-            if [ -f "$$CERT_PATH/fullchain.pem" ] && [ -f "$$CERT_PATH/privkey.pem" ]; then
-              echo "[$(date)] Certificate obtained! Sending reload signal to nginx..."
-              nginx -s reload 2>/dev/null || echo "[$(date)] Could not reload nginx directly, it will pick up new cert on next restart"
-            fi
           fi
           sleep 12h
         done
