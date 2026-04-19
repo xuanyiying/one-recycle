@@ -18,23 +18,41 @@ fi
 
 check_certificates() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
-        return 0
+        # Verify it's a valid certificate (not self-signed)
+        ISSUER=$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -issuer 2>/dev/null || echo "")
+        echo "Found certificate, issuer: $ISSUER"
+        # Check if it's a Let's Encrypt certificate
+        if echo "$ISSUER" | grep -q "Let's Encrypt"; then
+            return 0
+        fi
+        # Check if it's a valid CA-signed certificate (not self-signed)
+        if echo "$ISSUER" | grep -qv "CN=$DOMAIN"; then
+            return 0
+        fi
+        echo "Certificate appears to be self-signed, waiting for Let's Encrypt..."
+        return 1
     else
         return 1
     fi
 }
 
 generate_self_signed_cert() {
-    echo "Generating self-signed dummy certificate for initial startup in sandbox..."
+    echo "Generating self-signed dummy certificate for initial startup..."
     mkdir -p "$DUMMY_CERT_PATH"
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout "$DUMMY_CERT_PATH/privkey.pem" \
+    # Generate a 2048-bit RSA key
+    openssl genrsa -out "$DUMMY_CERT_PATH/privkey.pem" 2048 2>/dev/null
+    # Generate a self-signed certificate with SAN for all subdomains
+    openssl req -new -x509 -key "$DUMMY_CERT_PATH/privkey.pem" -days 365 \
+        -out "$DUMMY_CERT_PATH/fullchain.pem" \
+        -subj "/CN=$DOMAIN" \
+        -addext "subjectAltName=DNS:$DOMAIN,DNS:www.$DOMAIN,DNS:api.$DOMAIN,DNS:admin.$DOMAIN" 2>/dev/null || \
+    openssl req -new -x509 -key "$DUMMY_CERT_PATH/privkey.pem" -days 365 \
         -out "$DUMMY_CERT_PATH/fullchain.pem" \
         -subj "/CN=$DOMAIN" 2>/dev/null
     if [ -f "$DUMMY_CERT_PATH/privkey.pem" ] && [ -f "$DUMMY_CERT_PATH/fullchain.pem" ]; then
         chmod 644 "$DUMMY_CERT_PATH/fullchain.pem"
         chmod 600 "$DUMMY_CERT_PATH/privkey.pem"
-        echo "Self-signed dummy certificate generated in sandbox."
+        echo "Self-signed dummy certificate generated (temporary, will be replaced by Let's Encrypt)."
         return 0
     fi
     return 1
@@ -91,33 +109,55 @@ fi
 echo "=== Starting background certificate Poller ==="
 (
     LAST_MTIME=""
+    CHECK_COUNT=0
     while true; do
+        CHECK_COUNT=$((CHECK_COUNT + 1))
+        
         if [ -f "$CERT_PATH/fullchain.pem" ]; then
+            # Verify it's a real Let's Encrypt certificate
+            ISSUER=$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -issuer 2>/dev/null || echo "")
+            IS_LE_CERT=0
+            if echo "$ISSUER" | grep -q "Let's Encrypt"; then
+                IS_LE_CERT=1
+            fi
+            
             CURRENT_MTIME=$(stat -c %Y "$CERT_PATH/fullchain.pem" 2>/dev/null || echo "0")
             
             # Trigger reload if:
-            # 1. We are currently using dummy certs (transition case)
+            # 1. We are currently using dummy certs AND real LE cert is available
             # 2. OR the real certificate has been updated (renewal case)
             SHOULD_RELOAD=0
-            if grep -q "/tmp/dummy_certs" "$HTTPS_CONF" 2>/dev/null; then
+            if [ "$IS_LE_CERT" -eq 1 ] && grep -q "/tmp/dummy_certs" "$HTTPS_CONF" 2>/dev/null; then
+                echo "[$(date)] Let's Encrypt certificate detected, preparing to switch from dummy cert..."
                 SHOULD_RELOAD=1
             elif [ -n "$LAST_MTIME" ] && [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
+                echo "[$(date)] Certificate file modified, preparing to reload..."
                 SHOULD_RELOAD=1
             fi
 
             if [ "$SHOULD_RELOAD" -eq 1 ]; then
-                echo "[$(date)] Let's Encrypt Certificate file appeared/changed, reloading config..."
+                echo "[$(date)] Reloading nginx with new certificate..."
 
                 if grep -q "/tmp/dummy_certs" "$HTTPS_CONF" 2>/dev/null; then
-                     echo "Hot-swapping from dummy certificate to real Let's Encrypt certificates..."
+                     echo "[$(date)] Switching from dummy certificate to Let's Encrypt certificates..."
                      cp /tmp/https.conf.template "$HTTPS_CONF"
                      sed -i "s/backbuy.cn/$DOMAIN/g" "$HTTPS_CONF"
                 fi
 
-                sleep 2
-                nginx -s reload 2>/dev/null && echo "[$(date)] Nginx reloaded OK" || echo "[$(date)] Nginx reload failed"
+                # Test configuration before reloading
+                if nginx -t 2>/dev/null; then
+                    sleep 2
+                    nginx -s reload 2>/dev/null && echo "[$(date)] Nginx reloaded successfully with new certificate" || echo "[$(date)] Nginx reload failed"
+                else
+                    echo "[$(date)] Nginx config test failed, not reloading"
+                fi
             fi
             LAST_MTIME=$CURRENT_MTIME
+        else
+            # Log every 30 checks (5 minutes) that we're still waiting
+            if [ $((CHECK_COUNT % 30)) -eq 0 ]; then
+                echo "[$(date)] Waiting for Let's Encrypt certificate at $CERT_PATH..."
+            fi
         fi
         sleep 10
     done
