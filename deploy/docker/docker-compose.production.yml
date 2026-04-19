@@ -86,7 +86,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3002/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3002/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -121,7 +121,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13001/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13001/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -161,7 +161,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13003/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13003/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -196,7 +196,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13004/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13004/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -231,7 +231,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13009/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13009/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -266,7 +266,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:13008/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13008/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -291,7 +291,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://localhost:3000 || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000 || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -328,7 +328,7 @@ services:
       - admin-web
     entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://localhost/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/health || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5

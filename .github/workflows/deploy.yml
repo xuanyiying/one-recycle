@@ -193,7 +193,7 @@ jobs:
           scp deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/docker-compose.yml
           
           # Sync static website files
-          scp -r deploy/www/html/* $REMOTE:~/one-recycle/deploy/www/html/ 2>/dev/null || true
+          scp -r deploy/www/html/* $REMOTE:~/one-recycle/deploy/www/html/
 
           echo "Config and static files synced to server"
 
@@ -321,7 +321,7 @@ jobs:
           scp deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/docker-compose.production.yml
 
           # Sync static website files
-          scp -r deploy/www/html/* $REMOTE:~/one-recycle/deploy/www/html/ 2>/dev/null || true
+          scp -r deploy/www/html/* $REMOTE:~/one-recycle/deploy/www/html/
 
           echo "Config and static files synced to server"
 

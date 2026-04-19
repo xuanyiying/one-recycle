@@ -87,11 +87,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:3000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -108,7 +108,7 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://localhost:3000 || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000 || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -134,7 +134,7 @@ services:
       - admin-web
     entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://localhost/health || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/health || exit 1" ]
       interval: 15s
       timeout: 5s
       retries: 5
