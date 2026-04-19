@@ -1,0 +1,101 @@
+@use '../../../styles/global.scss' as *;
+
+.withdrawal-list-page {
+  min-height: 100vh;
+  background-color: $bg-color;
+  @include responsive-page-padding;
+
+  .page-header {
+    padding: 0 $page-padding $spacing-12;
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .back-btn {
+      @include ios-button-text;
+    }
+
+    .header-title {
+      @include ios-headline;
+    }
+
+    .header-count {
+      @include ios-footnote;
+      color: $text-tertiary;
+    }
+  }
+
+  .empty-state {
+    padding-top: 200rpx;  // 使用 rpx
+    text-align: center;
+
+    .empty-title {
+      @include ios-title3;
+      margin-bottom: $spacing-8;
+    }
+
+    .empty-text {
+      @include ios-footnote;
+      color: $text-tertiary;
+    }
+  }
+
+  .withdrawal-list {
+    min-height: 900rpx;
+    padding: $spacing-16 $page-padding $spacing-24;
+
+    .withdrawal-item {
+      background: #fff;
+      border-radius: $card-radius;
+      padding: $spacing-20;
+      margin-bottom: $spacing-12;
+      box-shadow: $box-shadow-sm;
+
+      .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: $spacing-12;
+
+        .item-amount {
+          @include ios-title2;
+          font-weight: $font-weight-semibold;
+        }
+      }
+
+      .item-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .info-text {
+          @include ios-footnote;
+          color: $text-secondary;
+        }
+      }
+
+      .item-reason {
+        margin-top: $spacing-12;
+        padding: $spacing-8 $spacing-12;
+        background: rgba(255, 109, 0, 0.08);
+        border-radius: $border-radius-sm;
+
+        .reason-text {
+          @include ios-caption1;
+          color: $secondary-color;
+        }
+      }
+    }
+
+    .loading-more,
+    .no-more {
+      text-align: center;
+      padding: $spacing-20;
+      color: $text-tertiary;
+      font-size: $font-size-footnote;
+    }
+  }
+}

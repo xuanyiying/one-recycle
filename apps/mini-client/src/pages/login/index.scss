@@ -1,0 +1,575 @@
+@use '../../styles/global.scss' as *;
+
+// ==================== 登录页面样式 - 柔和自然主题 ====================
+
+.login-container {
+  min-height: 100vh;
+  background: $gradient-bg;
+  display: flex;
+  flex-direction: column;
+
+  // iOS 安全区域适配与响应式边距
+  @include responsive-page-padding;
+}
+
+// ==================== 加载状态 ====================
+.loading-container {
+  @include flex-center;
+  min-height: 100vh;
+  background-color: var(--ios-system-background);
+
+  .loading-text {
+    @include ios-body;
+    color: var(--ios-secondary-label);
+  }
+}
+
+// ==================== 登录页头部 ====================
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-40 0 $spacing-32;
+  width: 100%;
+  flex-shrink: 0;
+
+  .logo {
+    width: 160rpx;
+    height: 160rpx;
+    margin-bottom: $spacing-24;
+    border-radius: 60rpx;
+    overflow: hidden;
+    background: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8rpx 32rpx rgba($primary-color, 0.2);
+
+    .logo-image {
+      width: 128rpx;
+      height: 128rpx;
+    }
+  }
+
+  .welcome-text {
+    @include ios-large-title;
+    text-align: center;
+    margin-top: $spacing-16;
+    color: $text-color;
+    font-weight: 600;
+  }
+}
+
+// ==================== 主要内容区域 ====================
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 $spacing-32;
+  width: 100%;
+  min-height: 0;
+}
+
+// ==================== 头像区域 ====================
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: $spacing-32;
+  width: 100%;
+
+  .avatar-container {
+    width: 240rpx;
+    height: 240rpx;
+    overflow: hidden;
+    margin-bottom: $spacing-12;
+    background: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+    border: 4rpx solid rgba($primary-color, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 8rpx 32rpx rgba($primary-color, 0.15);
+
+    &:active {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+
+    .user-avatar {
+      width: 100%;
+      height: 100%;
+    }
+
+    .avatar-icon {
+      width: 80rpx;
+      height: 80rpx;
+      opacity: 0.6;
+    }
+  }
+
+  .avatar-tip {
+    @include ios-footnote;
+    color: var(--ios-secondary-label);
+    text-align: center;
+  }
+}
+
+// ==================== 昵称输入区域 ====================
+.nickname-section {
+  width: 100%;
+  margin-bottom: $spacing-24;
+  padding: 0rpx 36rpx;
+
+  .input-wrapper {
+    width: 100%;
+
+    .nickname-input {
+      @include ios-input;
+      width: 100%;
+
+      &.error {
+        border-color: $error-color;
+        background-color: rgba($error-color, 0.05);
+        animation: ios-shake 0.3s ease-in-out;
+      }
+    }
+  }
+
+  .error-message {
+    margin-top: $spacing-8;
+    padding: 0 $spacing-4;
+
+    text {
+      @include ios-caption1;
+      color: $error-color;
+    }
+  }
+}
+
+// ==================== 授权说明区域 ====================
+.auth-description {
+  text-align: center;
+  margin-bottom: $spacing-24;
+  width: 100%;
+  max-width: 520rpx;
+
+  .description-title {
+    @include ios-headline;
+    margin-bottom: $spacing-8;
+    display: block;
+    color: $text-color;
+  }
+
+  .description-content {
+    @include ios-footnote;
+    color: var(--ios-secondary-label);
+    line-height: $line-height-relaxed;
+  }
+}
+
+// ==================== 手机号登录表单 ====================
+.phone-login-form {
+  width: 100%;
+  padding: 0 36rpx;
+  margin-bottom: $spacing-24;
+
+  .input-group {
+    margin-bottom: $spacing-16;
+    background: var(--ios-secondary-system-background);
+    border-radius: $border-radius-lg;
+    overflow: hidden;
+    border: 2rpx solid $border-color;
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: $primary-color;
+    }
+
+    &.code-group {
+      display: flex;
+      align-items: center;
+      padding-right: $spacing-12;
+
+      .custom-input {
+        flex: 1;
+        background: transparent;
+      }
+
+      .code-btn {
+        margin: 0;
+        min-width: 180rpx;
+        font-size: 26rpx;
+        border-radius: 40rpx !important;
+        background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 4rpx 16rpx rgba($primary-color, 0.3);
+
+        &[disabled] {
+          opacity: 0.5;
+          background: linear-gradient(135deg, $text-tertiary 0%, $text-disabled 100%) !important;
+          box-shadow: none;
+        }
+
+        &:active:not([disabled]) {
+          transform: translateY(2rpx);
+          box-shadow: 0 2rpx 8rpx rgba($primary-color, 0.2);
+        }
+      }
+    }
+
+    .custom-input {
+      width: 100%;
+      height: 96rpx;
+      padding: 0 $spacing-24;
+      background: transparent;
+      font-size: 32rpx;
+      color: var(--ios-label);
+
+      &::placeholder {
+        color: var(--ios-placeholder-text);
+      }
+    }
+  }
+}
+
+// ==================== 一键登录区域 ====================
+.quick-login-section {
+  width: 100%;
+  padding: 0 48rpx;
+  margin-bottom: $spacing-24;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-quick-login {
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none !important;
+  color: #fff !important;
+  width: 100%;
+  max-width: 560rpx;
+  padding: 0 32rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.3);
+  transition: all 0.2s ease;
+
+  &::after {
+    border: none;
+  }
+
+  &.wechat {
+    background: linear-gradient(135deg, $wechat-primary 0%, $wechat-secondary 100%) !important;
+    box-shadow: 0 8rpx 24rpx rgba($wechat-primary, 0.3);
+  }
+
+  &.alipay {
+    background: linear-gradient(135deg, #1677FF 0%, #0056D6 100%) !important;
+    box-shadow: 0 8rpx 24rpx rgba(#1677FF, 0.3);
+  }
+
+  &[disabled] {
+    opacity: 0.5 !important;
+    box-shadow: none;
+  }
+
+  &:active:not([disabled]) {
+    transform: translateY(4rpx);
+    box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.2);
+  }
+
+  &.loading {
+    opacity: 0.8;
+  }
+}
+
+// ==================== 模式切换 ====================
+.switch-mode-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: $spacing-32;
+  padding: 0 $spacing-16;
+}
+
+.btn-switch-mode {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  background: transparent !important;
+  border: 2rpx solid rgba($primary-color, 0.4) !important;
+  color: $primary-color !important;
+  padding: 0 48rpx;
+  transition: all 0.2s ease;
+
+  &::after {
+    border: none;
+  }
+
+  &:active {
+    background: rgba($primary-color, 0.1) !important;
+    border-color: rgba($primary-color, 0.6) !important;
+  }
+}
+
+// ==================== 协议勾选区域 ====================
+.agreement-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $spacing-24;
+  width: 100%;
+  padding: 0 36rpx;
+
+  .agreement-text-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-left: $spacing-8;
+
+    .agreement-text {
+      @include ios-caption1;
+      color: var(--ios-secondary-label);
+    }
+
+    .agreement-link {
+      @include ios-caption1;
+      color: $primary-color;
+      font-weight: 500;
+
+      &:active {
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+// ==================== 提交错误信息 - 优化为更柔和的提示 ====================
+.submit-error {
+  width: 100%;
+  margin-bottom: $spacing-16;
+  padding: $spacing-16 $spacing-20;
+  background: linear-gradient(135deg, rgba($error-color, 0.08) 0%, rgba($error-color, 0.04) 100%);
+  border: 2rpx solid rgba($error-color, 0.2);
+  border-radius: $border-radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .error-text {
+    @include ios-footnote;
+    color: $error-color;
+    text-align: center;
+    font-weight: 500;
+  }
+}
+
+// ==================== 操作按钮区域 ====================
+.action-buttons {
+  width: 100%;
+  margin-bottom: $spacing-24;
+  padding: 0 36rpx;
+
+  .btn-login {
+    height: 96rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 48rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+    color: #fff !important;
+    border: none !important;
+    width: 100%;
+    margin-bottom: $spacing-16;
+    box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.3);
+    transition: all 0.2s ease;
+
+    &::after {
+      border: none;
+    }
+
+    &[disabled] {
+      opacity: 0.5 !important;
+      background: linear-gradient(135deg, $text-tertiary 0%, $text-disabled 100%) !important;
+      box-shadow: none;
+    }
+
+    &:not([disabled]):active {
+      transform: translateY(4rpx);
+      box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.2);
+    }
+
+    &.loading {
+      position: relative;
+      color: transparent !important;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 32rpx;
+        height: 32rpx;
+        margin-top: -16rpx;
+        margin-left: -16rpx;
+        border: 4rpx solid #ffffff;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+    }
+  }
+
+  .skip-btn {
+    @include ios-button-secondary;
+    width: 100%;
+  }
+}
+
+// ==================== 社交登录区域 ====================
+.social-login-section {
+  width: 100%;
+  padding: 0 36rpx;
+  margin-top: $spacing-16;
+  padding-bottom: $spacing-32;
+
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: $spacing-32;
+
+    .line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, $border-color 50%, transparent 100%);
+    }
+
+    .text {
+      @include ios-caption1;
+      color: var(--ios-tertiary-label);
+      margin: 0 $spacing-16;
+    }
+  }
+
+  .social-buttons {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 $spacing-40;
+
+    .social-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: $spacing-16;
+      border-radius: $border-radius-lg;
+      transition: all 0.2s ease;
+
+      &:active {
+        background: rgba($primary-color, 0.05);
+      }
+
+      .social-icon {
+        width: 96rpx;
+        height: 96rpx;
+        border-radius: 50%;
+        margin-bottom: $spacing-8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48rpx;
+
+        &.wechat {
+          background: linear-gradient(135deg, $wechat-primary 0%, $wechat-secondary 100%);
+          color: #fff;
+          box-shadow: 0 4rpx 16rpx rgba($wechat-primary, 0.3);
+        }
+
+        &.alipay {
+          background: linear-gradient(135deg, #1677FF 0%, #0056D6 100%);
+          color: #fff;
+          box-shadow: 0 4rpx 16rpx rgba(#1677FF, 0.3);
+        }
+      }
+
+      .social-text {
+        @include ios-caption1;
+        color: var(--ios-secondary-label);
+      }
+    }
+  }
+}
+
+// ==================== 动画 ====================
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ios-shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-8rpx);
+  }
+
+  75% {
+    transform: translateX(8rpx);
+  }
+}
+
+// ==================== 响应式适配 ====================
+@media screen and (max-width: 375px) {
+  .login-header {
+    padding: $spacing-32 0 $spacing-24;
+
+    .logo {
+      width: 140rpx;
+      height: 140rpx;
+    }
+
+    .welcome-text {
+      font-size: 56rpx;
+    }
+  }
+
+  .phone-login-form,
+  .action-buttons,
+  .agreement-checkbox {
+    padding: 0 24rpx;
+  }
+
+  .quick-login-section {
+    padding: 0 32rpx;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .login-container {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 60rpx rgba(0, 0, 0, 0.1);
+  }
+}

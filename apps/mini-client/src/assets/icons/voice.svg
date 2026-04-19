@@ -1,0 +1,30 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 麦克风主体 -->
+  <rect x="70" y="50" width="60" height="90" rx="30" fill="#2E7D32"/>
+  
+  <!-- 麦克风顶部 -->
+  <circle cx="100" cy="50" r="30" fill="#2E7D32"/>
+  
+  <!-- 麦克风底部 -->
+  <path d="M85 140 L85 160 Q85 175 100 175 Q115 175 115 160 L115 140" stroke="#2E7D32" stroke-width="10" stroke-linecap="round"/>
+  
+  <!-- 麦克风底座 -->
+  <rect x="60" y="175" width="80" height="10" rx="5" fill="#2E7D32"/>
+  
+  <!-- 声波效果 -->
+  <path d="M40 100 Q30 100 30 100" stroke="#4CAF50" stroke-width="6" stroke-linecap="round" opacity="0.6">
+    <animate attributeName="d" values="M40 100 Q30 100 30 100; M40 100 Q20 100 20 100; M40 100 Q30 100 30 100" dur="1s" repeatCount="indefinite"/>
+  </path>
+  
+  <path d="M160 100 Q170 100 170 100" stroke="#4CAF50" stroke-width="6" stroke-linecap="round" opacity="0.6">
+    <animate attributeName="d" values="M160 100 Q170 100 170 100; M160 100 Q180 100 180 100; M160 100 Q170 100 170 100" dur="1s" repeatCount="indefinite"/>
+  </path>
+  
+  <path d="M50 80 Q35 80 35 80" stroke="#4CAF50" stroke-width="6" stroke-linecap="round" opacity="0.4">
+    <animate attributeName="d" values="M50 80 Q35 80 35 80; M50 80 Q25 80 25 80; M50 80 Q35 80 35 80" dur="1.2s" repeatCount="indefinite"/>
+  </path>
+  
+  <path d="M150 80 Q165 80 165 80" stroke="#4CAF50" stroke-width="6" stroke-linecap="round" opacity="0.4">
+    <animate attributeName="d" values="M150 80 Q165 80 165 80; M150 80 Q175 80 175 80; M150 80 Q165 80 165 80" dur="1.2s" repeatCount="indefinite"/>
+  </path>
+</svg>

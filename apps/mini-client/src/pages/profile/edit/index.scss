@@ -1,0 +1,543 @@
+@use '../../../styles/global.scss' as *;
+
+// ==================== 个人资料编辑页面样式 ====================
+
+.profile-edit-page {
+  min-height: 100vh;
+  background: $bg-color;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  // ==================== 加载状态 ====================
+  .loading-container {
+    @include flex-center;
+    flex-direction: column;
+    min-height: 60vh;
+    padding: $spacing-32;
+
+    .loading-spinner {
+      width: 48rpx;
+      height: 48rpx;
+      border: 4rpx solid rgba($primary-color, 0.2);
+      border-top-color: $primary-color;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: $spacing-16;
+    }
+
+    .loading-text {
+      @include ios-footnote;
+      color: $text-secondary;
+      text-align: center;
+    }
+
+    .error-title {
+      @include ios-headline;
+      color: $text-color;
+      margin-bottom: $spacing-8;
+    }
+
+    .error-actions {
+      margin-top: $spacing-24;
+
+      .retry-btn {
+        @include ios-button-secondary;
+        background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+        color: #fff;
+        padding: $spacing-16 $spacing-32;
+        border-radius: $border-radius-pill;
+      }
+    }
+  }
+
+  // ==================== 编辑区块 - 简洁分割线样式 ====================
+  .edit-section {
+    background: $bg-secondary;
+    padding: $spacing-24 $spacing-32;
+    border-bottom: 1rpx solid $border-light;
+
+    &:last-of-type {
+      border-bottom: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-16;
+
+      .section-title {
+        @include ios-body;
+        font-weight: $font-weight-semibold;
+        color: $text-color;
+      }
+
+      .section-action {
+        @include ios-footnote;
+        color: $primary-color;
+        cursor: pointer;
+
+        &:active {
+          opacity: 0.7;
+        }
+      }
+    }
+
+    .section-desc {
+      @include ios-caption1;
+      color: $text-tertiary;
+      display: block;
+      margin-top: $spacing-12;
+    }
+  }
+
+  // ==================== 头像编辑 ====================
+  .avatar-section {
+    padding: $spacing-32;
+    text-align: center;
+
+    .avatar-edit {
+      position: relative;
+      width: 160rpx;
+      height: 160rpx;
+      margin: 0 auto;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      .avatar-preview {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4rpx solid $border-color;
+        background: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+      }
+
+      .avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      &:active .avatar-overlay {
+        opacity: 1;
+      }
+    }
+
+    .avatar-hint {
+      @include ios-caption1;
+      color: $text-tertiary;
+      margin-top: $spacing-16;
+    }
+  }
+
+  // ==================== 输入框包装 ====================
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: $bg-tertiary;
+    border-radius: $border-radius-md;
+    border: 1rpx solid $border-color;
+    transition: all 0.2s ease;
+
+    &:focus-within {
+      border-color: $primary-color;
+    }
+
+    &.error {
+      border-color: $error-color;
+      background: rgba($error-color, 0.02);
+    }
+
+    .input-field {
+      flex: 1;
+      height: 80rpx;
+      padding: 0 $spacing-20;
+      font-size: $font-size-body;
+      color: $text-color;
+      background: transparent;
+      border: none;
+
+      &::placeholder {
+        color: $text-tertiary;
+      }
+    }
+
+    .input-counter {
+      @include ios-caption1;
+      color: $text-tertiary;
+      padding-right: $spacing-16;
+    }
+  }
+
+  // ==================== 错误提示 ====================
+  .error-text {
+    @include ios-caption1;
+    color: $error-color;
+    display: block;
+    margin-top: $spacing-8;
+  }
+
+  // ==================== 手机号显示 - 已绑定 ====================
+  .phone-bound {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .phone-info {
+      display: flex;
+      align-items: center;
+      gap: $spacing-12;
+
+      .phone-icon {
+        width: 72rpx;
+        height: 72rpx;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba($success-color, 0.1) 0%, rgba($success-color, 0.05) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .phone-details {
+        .phone-number {
+          @include ios-body;
+          color: $text-color;
+          font-weight: $font-weight-medium;
+          font-family: $font-family-number;
+        }
+
+        .phone-status {
+          @include ios-caption1;
+          color: $success-color;
+          display: flex;
+          align-items: center;
+          gap: $spacing-4;
+          margin-top: $spacing-4;
+        }
+      }
+    }
+
+    .phone-action {
+      @include ios-footnote;
+      color: $primary-color;
+      padding: $spacing-8 $spacing-16;
+      border: 1rpx solid $primary-color;
+      border-radius: $border-radius-pill;
+      background: transparent;
+
+      &::after {
+        border: none;
+      }
+
+      &:active {
+        background: rgba($primary-color, 0.05);
+      }
+    }
+  }
+
+  // ==================== 绑定手机号按钮 - 未绑定 ====================
+  .bind-phone-btn {
+    width: 100%;
+    height: 80rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-8;
+    background: transparent;
+    color: $primary-color;
+    font-size: $font-size-body;
+    font-weight: $font-weight-medium;
+    border: 1rpx dashed $primary-color;
+    border-radius: $border-radius-md;
+    transition: all 0.2s ease;
+
+    &:active {
+      background: rgba($primary-color, 0.05);
+    }
+
+    &::after {
+      border: none;
+    }
+  }
+
+  // ==================== 保存区域 ====================
+  .save-section {
+    padding: $spacing-24 $spacing-32;
+    margin-top: $spacing-32;
+
+    .save-btn {
+      width: 100%;
+      height: 88rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: $text-disabled;
+      color: #fff;
+      font-size: $font-size-body;
+      font-weight: $font-weight-semibold;
+      border-radius: $border-radius-lg;
+      border: none;
+      transition: all 0.2s ease;
+
+      &::after {
+        border: none;
+      }
+
+      &.active {
+        background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+
+        &:active {
+          opacity: 0.9;
+        }
+      }
+
+      &:disabled {
+        opacity: 0.6;
+      }
+
+      .btn-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $spacing-8;
+
+        .loading-dot {
+          width: 20rpx;
+          height: 20rpx;
+          border: 2rpx solid rgba(255, 255, 255, 0.3);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+      }
+    }
+  }
+
+  // ==================== 手机号绑定弹窗 ====================
+  .phone-binding-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    .modal-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      position: relative;
+      width: 100%;
+      max-height: 80vh;
+      background: $bg-secondary;
+      border-radius: $border-radius-xl $border-radius-xl 0 0;
+      overflow: hidden;
+      animation: modal-slide-up 0.3s ease-out;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: $spacing-24 $spacing-32;
+      border-bottom: 1rpx solid $border-light;
+
+      .modal-title {
+        @include ios-headline;
+        font-weight: $font-weight-semibold;
+        color: $text-color;
+      }
+
+      .close-btn {
+        width: 56rpx;
+        height: 56rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 50%;
+
+        &:active {
+          background: $bg-tertiary;
+        }
+      }
+    }
+
+    .modal-body {
+      padding: $spacing-24 $spacing-32;
+
+      .form-item {
+        margin-bottom: $spacing-24;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .form-label {
+          @include ios-footnote;
+          color: $text-secondary;
+          display: block;
+          margin-bottom: $spacing-8;
+        }
+
+        .form-input {
+          width: 100%;
+          height: 80rpx;
+          padding: 0 $spacing-20;
+          font-size: $font-size-body;
+          color: $text-color;
+          background: $bg-tertiary;
+          border: 1rpx solid $border-color;
+          border-radius: $border-radius-md;
+          transition: all 0.2s ease;
+
+          &::placeholder {
+            color: $text-tertiary;
+          }
+
+          &:focus {
+            outline: none;
+            border-color: $primary-color;
+          }
+
+          &.error {
+            border-color: $error-color;
+            background: rgba($error-color, 0.02);
+          }
+        }
+
+        .sms-input-wrapper {
+          display: flex;
+          align-items: center;
+          gap: $spacing-12;
+
+          .sms-input {
+            flex: 1;
+          }
+
+          .send-sms-btn {
+            flex-shrink: 0;
+            height: 80rpx;
+            padding: 0 $spacing-24;
+            background: $primary-color;
+            color: #fff;
+            font-size: $font-size-footnote;
+            font-weight: $font-weight-medium;
+            border-radius: $border-radius-md;
+            border: none;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+
+            &::after {
+              border: none;
+            }
+
+            &:active:not(:disabled) {
+              opacity: 0.8;
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              background: $text-disabled;
+            }
+
+            &.counting {
+              background: $text-disabled;
+            }
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: $spacing-16 $spacing-32 $spacing-32;
+
+      .confirm-btn {
+        width: 100%;
+        height: 88rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: $primary-color;
+        color: #fff;
+        font-size: $font-size-body;
+        font-weight: $font-weight-semibold;
+        border-radius: $border-radius-lg;
+        border: none;
+        transition: all 0.2s ease;
+
+        &::after {
+          border: none;
+        }
+
+        &:active:not(:disabled) {
+          opacity: 0.9;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          background: $text-disabled;
+        }
+
+        .btn-loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: $spacing-8;
+
+          .loading-dot {
+            width: 20rpx;
+            height: 20rpx;
+            border: 2rpx solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ==================== 动画 ====================
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

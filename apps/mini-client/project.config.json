@@ -1,0 +1,49 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "yishu-recycle",
+  "description": " 一键预约，上门回收旧书旧衣，让闲置物品重获新生。环保公益两不误，每一份回收都在为地球减负，为爱心添彩。简单操作，即时估价，专业团队，全程无忧。",
+  "appid": "wxb6c79df12dca2d46",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "enhance": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "preloadBackgroundData": false,
+    "minified": false,
+    "newFeature": true,
+    "autoAudits": false,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": false,
+    "scopeDataCheck": false,
+    "useCompilerModule": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "simulatorType": "wechat",
+  "simulatorPluginLibVersion": {},
+  "condition": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {},
+  "libVersion": "3.14.1"
+}

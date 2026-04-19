@@ -1,0 +1,260 @@
+@use '../../styles/global.scss' as *;
+
+// ==================== 设置页面 - 现代极简风格 ====================
+
+.settings-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8faf8 0%, #f0f4f0 100%);
+  padding: 0 32rpx;
+  padding-bottom: calc(48rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+
+  // 页面头部
+  .settings-header {
+    padding: 48rpx 0 32rpx;
+    
+    .header-title {
+      font-size: 40rpx;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: -0.5rpx;
+    }
+  }
+
+  // 设置分组
+  .settings-section {
+    margin-bottom: 32rpx;
+
+    .section-header {
+      padding: 24rpx 8rpx 16rpx;
+      
+      text {
+        font-size: 26rpx;
+        color: #666;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5rpx;
+      }
+    }
+
+    .settings-group {
+      background: #fff;
+      border-radius: 24rpx;
+      overflow: hidden;
+      box-shadow: 
+        0 4rpx 20rpx rgba(0,0,0,0.04),
+        0 1rpx 4rpx rgba(0,0,0,0.02);
+
+      .setting-item {
+        padding: 28rpx 24rpx;
+        border-bottom: 1rpx solid #f0f0f0;
+        transition: all 0.2s ease;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:active {
+          background: #fafafa;
+        }
+
+        .setting-content {
+          display: flex;
+          align-items: center;
+          width: 100%;
+
+          .setting-icon {
+            width: 72rpx;
+            height: 72rpx;
+            border-radius: 20rpx;
+            @include flex-center;
+            margin-right: 20rpx;
+            transition: all 0.3s ease;
+
+            // 不同设置项的图标颜色 - 现代渐变风格
+            &.notifications { 
+              background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); 
+              color: #E53935;
+              box-shadow: 0 4rpx 12rpx rgba(229, 57, 53, 0.15);
+            }
+            &.location { 
+              background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); 
+              color: #43A047;
+              box-shadow: 0 4rpx 12rpx rgba(67, 160, 71, 0.15);
+            }
+            &.privacy { 
+              background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); 
+              color: #1976D2;
+              box-shadow: 0 4rpx 12rpx rgba(25, 118, 210, 0.15);
+            }
+            &.account { 
+              background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%); 
+              color: #F57C00;
+              box-shadow: 0 4rpx 12rpx rgba(245, 124, 0, 0.15);
+            }
+            &.help { 
+              background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%); 
+              color: #7B1FA2;
+              box-shadow: 0 4rpx 12rpx rgba(123, 31, 162, 0.15);
+            }
+            &.about { 
+              background: linear-gradient(135deg, #ECEFF1 0%, #CFD8DC 100%); 
+              color: #546E7A;
+              box-shadow: 0 4rpx 12rpx rgba(84, 110, 122, 0.15);
+            }
+            &.feedback { 
+              background: linear-gradient(135deg, #E0F2F1 0%, #B2DFDB 100%); 
+              color: #00897B;
+              box-shadow: 0 4rpx 12rpx rgba(0, 137, 123, 0.15);
+            }
+
+            image {
+              width: 36rpx;
+              height: 36rpx;
+            }
+          }
+
+          .setting-info {
+            flex: 1;
+
+            .setting-title {
+              font-size: 30rpx;
+              color: #1a1a1a;
+              margin-bottom: 4rpx;
+              display: block;
+              font-weight: 500;
+            }
+
+            .setting-description {
+              font-size: 24rpx;
+              color: #999;
+              line-height: 1.4;
+              display: block;
+            }
+          }
+
+          .setting-value {
+            font-size: 28rpx;
+            color: #999;
+            margin-right: 16rpx;
+          }
+
+          // 现代开关样式
+          .setting-switch {
+            width: 104rpx;
+            height: 60rpx;
+            background-color: #e0e0e0;
+            border-radius: 30rpx;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            &.on {
+              background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+            }
+
+            .switch-thumb {
+              width: 52rpx;
+              height: 52rpx;
+              background-color: white;
+              border-radius: 50%;
+              position: absolute;
+              top: 4rpx;
+              left: 4rpx;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+            }
+
+            &.on .switch-thumb {
+              left: 48rpx;
+            }
+          }
+
+          .arrow {
+            font-size: 32rpx;
+            color: #ccc;
+            margin-left: 8rpx;
+          }
+        }
+      }
+    }
+  }
+
+  // 危险操作区域
+  .danger-section {
+    margin-top: 48rpx;
+
+    .danger-item {
+      background: #fff;
+      border-radius: 24rpx;
+      overflow: hidden;
+      box-shadow: 
+        0 4rpx 20rpx rgba(0,0,0,0.04),
+        0 1rpx 4rpx rgba(0,0,0,0.02);
+      transition: all 0.2s ease;
+
+      &:active {
+        background: #fafafa;
+        transform: scale(0.98);
+      }
+
+      .danger-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 28rpx 24rpx;
+
+        .danger-icon {
+          width: 48rpx;
+          height: 48rpx;
+          margin-right: 12rpx;
+          color: #E53935;
+        }
+
+        .danger-text {
+          font-size: 30rpx;
+          color: #E53935;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+
+  // 版本信息区域
+  .version-section {
+    text-align: center;
+    padding: 64rpx 32rpx;
+    margin-top: 32rpx;
+
+    .app-logo {
+      width: 140rpx;
+      height: 140rpx;
+      margin: 0 auto 24rpx;
+      border-radius: 32rpx;
+      background: linear-gradient(135deg, #2E7D32 0%, #43A047 100%);
+      box-shadow: 0 8rpx 24rpx rgba(46, 125, 50, 0.2);
+    }
+
+    .app-name {
+      font-size: 36rpx;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12rpx;
+      display: block;
+    }
+
+    .version-text {
+      font-size: 26rpx;
+      color: #999;
+      margin-bottom: 8rpx;
+      display: block;
+    }
+
+    .build-text {
+      font-size: 24rpx;
+      color: #bbb;
+      display: block;
+      margin-top: 16rpx;
+    }
+  }
+}

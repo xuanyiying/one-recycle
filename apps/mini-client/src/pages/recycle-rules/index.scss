@@ -1,0 +1,242 @@
+@use '../../styles/global.scss' as *;
+
+.recycle-rules-page {
+  min-height: 100vh;
+  background-color: $bg-color;
+  display: flex;
+  flex-direction: column;
+
+  // 自定义导航栏
+  .custom-nav {
+    background: #fff;
+    border-bottom: 1rpx solid #eee;
+
+    .nav-content {
+      height: 88rpx;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 $spacing-base;
+
+      .nav-back {
+        width: 88rpx;
+        height: 88rpx;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .nav-title {
+        font-size: 34rpx;
+        font-weight: 600;
+        color: $text-color;
+      }
+
+      .nav-placeholder {
+        width: 88rpx;
+      }
+    }
+  }
+
+  // 内容区域
+  .rules-content {
+    flex: 1;
+    padding: $spacing-base;
+
+    .section {
+      background: #fff;
+      border-radius: $border-radius-lg;
+      margin-bottom: $spacing-base;
+      overflow: hidden;
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        padding: 24rpx;
+        border-bottom: 1rpx solid #f5f5f5;
+
+        .section-icon {
+          width: 40rpx;
+          height: 40rpx;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 16rpx;
+        }
+
+        .section-title {
+          font-size: 30rpx;
+          font-weight: 600;
+          color: $text-color;
+        }
+      }
+
+      .section-body {
+        padding: 24rpx;
+
+        // 服务类型
+        .service-item {
+          margin-bottom: 24rpx;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .service-name {
+            font-size: 28rpx;
+            font-weight: 600;
+            color: $text-color;
+            margin-bottom: 8rpx;
+            display: block;
+          }
+
+          .service-desc {
+            font-size: 26rpx;
+            color: $text-secondary;
+            line-height: 1.6;
+          }
+        }
+
+        // 规则项
+        .rule-item {
+          margin-bottom: 20rpx;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .rule-label {
+            font-size: 28rpx;
+            font-weight: 600;
+            color: $text-color;
+            margin-bottom: 8rpx;
+            display: block;
+          }
+
+          .rule-value {
+            font-size: 26rpx;
+            color: $text-secondary;
+            line-height: 1.6;
+          }
+        }
+
+        // 步骤列表
+        .step-list {
+          .step-item {
+            display: flex;
+            margin-bottom: 24rpx;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            .step-number {
+              width: 44rpx;
+              height: 44rpx;
+              background: linear-gradient(135deg, $primary-color, $primary-light);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #fff;
+              font-size: 24rpx;
+              font-weight: 600;
+              margin-right: 20rpx;
+              flex-shrink: 0;
+            }
+
+            .step-content {
+              flex: 1;
+
+              .step-title {
+                font-size: 28rpx;
+                font-weight: 600;
+                color: $text-color;
+                margin-bottom: 8rpx;
+                display: block;
+              }
+
+              .step-desc {
+                font-size: 26rpx;
+                color: $text-secondary;
+                line-height: 1.5;
+              }
+            }
+          }
+        }
+
+        // 回收标准
+        .standard-group {
+          margin-bottom: 24rpx;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          .group-title {
+            font-size: 28rpx;
+            font-weight: 600;
+            color: $text-color;
+            margin-bottom: 16rpx;
+            display: block;
+          }
+
+          .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16rpx;
+
+            .tag {
+              padding: 12rpx 24rpx;
+              border-radius: 8rpx;
+              font-size: 24rpx;
+
+              &.success {
+                background: #E8F5E9;
+                color: #4CAF50;
+              }
+
+              &.error {
+                background: #FFEBEE;
+                color: #F44336;
+              }
+            }
+          }
+        }
+
+        // 注意事项
+        .notice-list {
+          .notice-item {
+            font-size: 26rpx;
+            color: $text-secondary;
+            line-height: 1.8;
+            margin-bottom: 12rpx;
+            display: block;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+
+    .bottom-padding {
+      height: 40rpx;
+    }
+
+    .loading-container,
+    .empty-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 100rpx 0;
+    }
+
+    .loading-text,
+    .empty-text {
+      font-size: 28rpx;
+      color: $text-secondary;
+    }
+  }
+}

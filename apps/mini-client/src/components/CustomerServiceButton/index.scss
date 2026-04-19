@@ -1,0 +1,36 @@
+.customer-button {
+  position: fixed;
+  right: 30px;
+  bottom: 200px;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #40e0d0 0%, #36d1c1 100%);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(64, 224, 208, 0.4);
+  z-index: 100;
+
+  .service-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .unread-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 36px;
+    height: 36px;
+    background: #ff4d4f;
+    color: #fff;
+    font-size: 20px;
+    border-radius: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 8px;
+    border: 2px solid #fff;
+  }
+}

@@ -1,0 +1,83 @@
+@use '../../../styles/global.scss' as *;
+
+.address-select-page {
+  min-height: 100vh;
+  background: $bg-secondary;
+  @include responsive-page-padding;
+
+  .loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-size: $font-size-body;
+    color: $text-secondary;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: $page-padding;
+
+    .empty-text {
+      font-size: $font-size-body;
+      color: $text-secondary;
+      margin-top: $spacing-lg;
+      margin-bottom: $spacing-xl;
+    }
+
+    .add-btn {
+      background: $primary-color;
+      color: white;
+      padding: $spacing-md $spacing-xl;
+      border-radius: $border-radius-lg;
+      font-size: $font-size-body;
+      box-shadow: $box-shadow-base;
+
+      &:active {
+        opacity: 0.8;
+      }
+    }
+  }
+
+  .address-list {
+    padding: $page-padding;
+
+    .address-wrapper {
+        margin-bottom: $spacing-md;
+    }
+  }
+
+  .bottom-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+    background: #fff;
+    box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+    z-index: 100;
+
+    .add-address-btn {
+      height: 88rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba($primary-color, 0.1);
+      border-radius: 44rpx;
+      
+      .nut-icon {
+        margin-right: 8rpx;
+      }
+
+      text {
+        color: $primary-color;
+        font-size: 32rpx;
+        font-weight: 500;
+      }
+    }
+  }
+}

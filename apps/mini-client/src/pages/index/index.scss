@@ -1,0 +1,645 @@
+@use '../../styles/global.scss' as *;
+
+.index-page {
+  min-height: 100vh;
+  background-color: $bg-color;
+  padding-bottom: 20px;
+  position: relative;
+
+  // 导航栏背景
+  .nav-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: linear-gradient(180deg, #E8F5E9 0%, $bg-color 100%);
+    z-index: 0;
+  }
+
+  .header {
+    position: relative;
+    z-index: 1;
+    padding-left: $spacing-base;
+    padding-right: $spacing-base;
+    // 使用统一的响应式 padding 替代手动计算
+    // 这里的 padding-top 会由 responsive-page-padding 在 .index-page 上处理，或者在这里单独处理
+    // 由于 index-page 没有使用 mixin (为了背景图全屏)，我们需要在这里保留 padding-top 但使用标准变量
+    padding-top: $page-margin-top;
+    padding-top: calc(constant(safe-area-inset-top) + #{$page-margin-top});
+    padding-top: calc(env(safe-area-inset-top) + #{$page-margin-top});
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: $spacing-24;
+
+      .location-pill {
+        @include flex-center;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 12rpx 24rpx;
+        border-radius: $border-radius-pill;
+        box-shadow: $box-shadow-sm;
+
+        .location-icon {
+          width: 28rpx;
+          height: 28rpx;
+          margin-right: 8rpx;
+        }
+
+        .city-name {
+          font-size: 30rpx;
+          font-weight: 600;
+          color: $text-color;
+          margin-left: 0;
+        }
+      }
+
+      .weather-pill {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.6);
+        padding: 12rpx 24rpx;
+        border-radius: $border-radius-pill;
+
+        .weather-text {
+          font-size: 26rpx;
+          color: $text-color;
+          margin-right: 8rpx;
+          font-weight: 500;
+        }
+
+        .weather-desc {
+          font-size: 24rpx;
+          color: $text-secondary;
+        }
+      }
+    }
+
+    .hello-text {
+      margin-bottom: $spacing-24;
+
+      .title {
+        font-size: 48rpx;
+        font-weight: 800; // ExtraBold
+        color: $text-color;
+        display: block;
+        margin-bottom: 8rpx;
+        letter-spacing: -1rpx;
+      }
+
+      .subtitle {
+        font-size: 30rpx;
+        color: $text-secondary;
+        font-weight: 500;
+      }
+    }
+  }
+
+  // 核心操作区
+  .core-action-area {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 $spacing-base;
+    margin-bottom: $spacing-lg;
+
+    .home-action-card {
+      width: 48%; // Slightly less than half
+    }
+
+    // 分类骨架屏
+    .category-skeleton {
+      width: 48%;
+      height: 380rpx;
+      border-radius: 40rpx;
+      background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+      position: relative;
+      overflow: hidden;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        background-image: linear-gradient(90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.2) 20%,
+            rgba(255, 255, 255, 0.5) 60%,
+            rgba(255, 255, 255, 0));
+        animation: shimmer 2s infinite;
+      }
+    }
+
+    // 空状态：无分类数据
+    .empty-categories {
+      width: 100%;
+      height: 380rpx;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border-radius: 40rpx;
+      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+
+      .empty-icon {
+        font-size: 80rpx;
+        margin-bottom: 20rpx;
+      }
+
+      .empty-text {
+        font-size: 32rpx;
+        font-weight: 600;
+        color: $text-color;
+        margin-bottom: 12rpx;
+      }
+
+      .empty-subtext {
+        font-size: 26rpx;
+        color: $text-secondary;
+      }
+    }
+  }
+
+  // 分类Tab栏区域
+  .category-tabs-section {
+    position: relative;
+    z-index: 1;
+    margin: 0 $spacing-base $spacing-lg;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20rpx;
+
+      .section-title {
+        font-size: 32rpx;
+        font-weight: 700;
+        color: $text-color;
+        margin-right: 16rpx;
+
+        &::before {
+          content: '📦';
+          margin-right: 8rpx;
+        }
+      }
+
+      .section-subtitle {
+        font-size: 24rpx;
+        color: $text-secondary;
+      }
+    }
+
+    .category-tabs-scroll {
+      width: 100%;
+      white-space: nowrap;
+
+      .category-tabs-list {
+        display: inline-flex;
+        padding: 8rpx 0;
+
+        .category-tab-item {
+          display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-width: 140rpx;
+          padding: 20rpx 24rpx;
+          margin-right: 16rpx;
+          background: #fff;
+          border-radius: 24rpx;
+          box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+          position: relative;
+          transition: all 0.2s ease;
+
+          &:last-child {
+            margin-right: 0;
+          }
+
+          &.category-tab-hover {
+            transform: translateY(-4rpx);
+            box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+          }
+
+          .category-tab-icon {
+            width: 64rpx;
+            height: 64rpx;
+            margin-bottom: 12rpx;
+          }
+
+          .category-tab-icon-placeholder {
+            width: 64rpx;
+            height: 64rpx;
+            margin-bottom: 12rpx;
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .category-tab-emoji {
+              font-size: 32rpx;
+            }
+          }
+
+          .category-tab-name {
+            font-size: 24rpx;
+            color: $text-color;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+          }
+
+          .featured-badge {
+            position: absolute;
+            top: 8rpx;
+            right: 8rpx;
+            width: 32rpx;
+            height: 32rpx;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18rpx;
+            color: #fff;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+  }
+
+  // 功能栏 - 浮动 Dock 风格
+  .feature-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    padding: 32rpx 48rpx;
+    background: rgba(255, 255, 255, 0.95);
+    margin: 0 $spacing-base $spacing-lg;
+    border-radius: 40rpx; // Pill shape
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.03);
+    backdrop-filter: blur(20px); // Glass effect
+
+    .feature-item {
+      @include flex-column;
+      align-items: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &.feature-item-hover {
+        transform: translateY(-4rpx);
+        opacity: 0.8;
+      }
+
+      .icon-box {
+        width: 96rpx;
+        height: 96rpx;
+        border-radius: 32rpx; // Soft square
+        @include flex-center;
+        margin-bottom: 16rpx;
+        box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.05);
+
+        .feature-icon {
+          width: 48rpx;
+          height: 48rpx;
+        }
+      }
+
+      .feature-name {
+        font-size: 26rpx;
+        color: $text-color;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  // 问答区域
+  .qa-section {
+    padding: 0 $spacing-base;
+    margin-bottom: $spacing-lg;
+
+    .section-header {
+      @include flex-between;
+      margin-bottom: $spacing-base;
+
+      .section-title {
+        font-size: 32rpx;
+        font-weight: 700;
+        color: $text-color;
+        @include flex-center;
+
+        &::before {
+          content: '💬';
+          margin-right: 12rpx;
+          font-size: 34rpx;
+        }
+      }
+
+      .section-more {
+        font-size: 24rpx;
+        color: $text-tertiary;
+      }
+    }
+
+    .qa-list {
+      .qa-item {
+        background: #fff;
+        border-radius: 24rpx;
+        margin-bottom: 20rpx;
+        padding: 24rpx;
+        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+
+        &.expanded {
+          box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+        }
+
+        .qa-question {
+          @include flex-between;
+          align-items: center;
+
+          .q-icon {
+            width: 36rpx;
+            height: 36rpx;
+            background: $primary-color;
+            color: #fff;
+            border-radius: 8rpx;
+            font-size: 20rpx;
+            font-weight: 800;
+            @include flex-center;
+            margin-right: 16rpx;
+            flex-shrink: 0;
+          }
+
+          .q-text {
+            flex: 1;
+            font-size: 28rpx;
+            color: $text-color;
+            font-weight: 600;
+            @include text-ellipsis;
+          }
+
+          .arrow-icon {
+            width: 32rpx;
+            height: 32rpx;
+            position: relative;
+            margin-left: 16rpx;
+
+            &::after {
+              content: '';
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              width: 12rpx;
+              height: 12rpx;
+              border-right: 2rpx solid $text-tertiary;
+              border-bottom: 2rpx solid $text-tertiary;
+              transform: translate(-50%, -75%) rotate(45deg);
+              transition: all 0.3s ease;
+            }
+
+            &.up::after {
+              transform: translate(-50%, -25%) rotate(-135deg);
+            }
+          }
+        }
+
+        .qa-answer {
+          margin-top: 20rpx;
+          padding-top: 20rpx;
+          border-top: 1rpx solid #f5f5f5;
+          display: flex;
+
+          .a-icon {
+            width: 36rpx;
+            height: 36rpx;
+            background: #FF9800;
+            color: #fff;
+            border-radius: 8rpx;
+            font-size: 20rpx;
+            font-weight: 800;
+            @include flex-center;
+            margin-right: 16rpx;
+            flex-shrink: 0;
+          }
+
+          .a-text {
+            flex: 1;
+            font-size: 26rpx;
+            color: $text-secondary;
+            line-height: 1.6;
+          }
+        }
+      }
+    }
+  }
+
+  // 简讯列表
+  .news-brief-section {
+    padding: 0 $spacing-base;
+    margin-bottom: 40rpx;
+
+    .section-header {
+      @include flex-between;
+      margin-bottom: $spacing-base;
+
+      .title-with-icon {
+        display: flex;
+        align-items: center;
+
+        .section-title {
+          font-size: 32rpx;
+          font-weight: 700;
+          color: $text-color;
+        }
+
+        .live-dot {
+          width: 12rpx;
+          height: 12rpx;
+          background: #ff4d4f;
+          border-radius: 50%;
+          margin-left: 12rpx;
+          position: relative;
+
+          &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            border-radius: inherit;
+            animation: pulse 2s infinite;
+          }
+        }
+      }
+
+      .section-more {
+        font-size: 24rpx;
+        color: $text-tertiary;
+      }
+    }
+
+    .news-list {
+      .news-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #fff;
+        padding: 24rpx;
+        border-radius: 24rpx;
+        margin-bottom: 20rpx;
+        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+
+        .news-left {
+          display: flex;
+          align-items: center;
+          flex: 1;
+
+          .news-icon-circle {
+            width: 72rpx;
+            height: 72rpx;
+            background: #f0f9eb;
+            border-radius: 50%;
+            @include flex-center;
+            font-size: 32rpx;
+            margin-right: 20rpx;
+            flex-shrink: 0;
+          }
+
+          .news-info {
+            .news-top {
+              margin-bottom: 4rpx;
+              font-size: 26rpx;
+
+              .nickname {
+                color: $text-color;
+                font-weight: 600;
+                margin-right: 8rpx;
+              }
+
+              .action {
+                color: $text-tertiary;
+                margin-right: 8rpx;
+              }
+
+              .items {
+                color: $primary-color;
+                font-weight: 600;
+              }
+            }
+
+            .news-bottom {
+              display: flex;
+              align-items: baseline;
+              font-size: 22rpx;
+
+              .earning-label {
+                color: $text-tertiary;
+                margin-right: 8rpx;
+              }
+
+              .earning-value {
+                color: #f5222d;
+                font-weight: 700;
+                font-size: 28rpx;
+                font-family: 'DIN Alternate', sans-serif;
+              }
+            }
+          }
+        }
+
+        .news-time {
+          font-size: 22rpx;
+          color: $text-tertiary;
+          margin-left: 20rpx;
+        }
+      }
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  // Skeleton Styles
+  .skeleton-card {
+    .skeleton-circle {
+      width: 72rpx;
+      height: 72rpx;
+      background: #f0f0f0;
+      border-radius: 50%;
+      margin-right: 20rpx;
+    }
+
+    .skeleton-content {
+      flex: 1;
+
+      .skeleton-line {
+        height: 24rpx;
+        background: #f0f0f0;
+        border-radius: 4rpx;
+        margin-bottom: 12rpx;
+
+        &.w-40 {
+          width: 40%;
+        }
+
+        &.w-60 {
+          width: 60%;
+        }
+      }
+    }
+
+    // Shimmer effect
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      transform: translateX(-100%);
+      background-image: linear-gradient(90deg,
+          rgba(255, 255, 255, 0) 0,
+          rgba(255, 255, 255, 0.2) 20%,
+          rgba(255, 255, 255, 0.5) 60%,
+          rgba(255, 255, 255, 0));
+      animation: shimmer 2s infinite;
+    }
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .empty-state {
+    padding: 40rpx 0;
+    text-align: center;
+    color: $text-tertiary;
+    font-size: 26rpx;
+  }
+}

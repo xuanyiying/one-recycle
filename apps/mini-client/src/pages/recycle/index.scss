@@ -1,0 +1,435 @@
+@use '../../styles/global.scss' as *;
+
+// ==================== iOS 回收页面样式 ====================
+// 严格遵循 Apple Human Interface Guidelines
+
+.recycle-form-page {
+  min-height: 100vh;
+  background-color: var(--ios-system-grouped-background);
+  @include ios-safe-area-top;
+  @include ios-safe-area-bottom;
+  padding-bottom: 120rpx; // 为底部导航留空间
+
+  // iOS 页面头部
+  .page-header {
+    background-color: var(--ios-system-background);
+    // 优化：使用 padding 包含安全区域和间距，确保背景延伸到顶部
+    padding-top: calc(constant(safe-area-inset-top) + #{$spacing-20});
+    padding-top: calc(env(safe-area-inset-top) + #{$spacing-20});
+    padding-left: $page-padding;
+    padding-right: $page-padding;
+    padding-bottom: $spacing-20;
+    text-align: center;
+    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    
+    // 移除 margin-top，改用 padding 实现沉浸式效果
+    margin-top: 0;
+
+    .page-title {
+      @include ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-8; // 8pt
+      color: var(--ios-label);
+    }
+
+    .page-subtitle {
+      @include ios-body; // 使用 iOS Body 样式 (34rpx)
+      color: var(--ios-secondary-label);
+    }
+  }
+
+  .form-container {
+    padding: $spacing-20 $page-padding 0; // 为固定头部留出空间
+    margin-top: $spacing-16; // 增加与头部的间距
+  }
+
+  // iOS 表单区块
+  .form-section {
+    @include ios-card;
+    margin-bottom: $spacing-20; // 20pt
+
+    // 京东快递特殊区块
+    &.jd-express-section {
+      padding: $spacing-20; // 20pt
+
+      .jd-express-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: $spacing-16; // 16pt
+
+        .jd-express-left {
+          display: flex;
+          align-items: center;
+
+          .section-title {
+            @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+            font-weight: $font-weight-semibold;
+            margin-bottom: 0;
+          }
+        }
+
+        .jd-logo {
+          width: 80rpx; // 40pt
+          height: 48rpx; // 24pt
+        }
+      }
+
+      .jd-express-details {
+        margin-top: $spacing-16; // 16pt
+        padding: $spacing-16; // 16pt
+        background-color: rgba(255, 149, 0, 0.1); // iOS 橙色背景
+        border-radius: $border-radius-base; // 12pt
+        border-left: 8rpx solid #FF9500; // 4pt iOS 橙色边框
+
+        .detail-text {
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-label);
+          line-height: $line-height-relaxed;
+          margin-bottom: $spacing-8; // 8pt
+          display: block;
+        }
+
+        .note-text {
+          @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          color: #FF9500; // iOS 橙色
+          margin-top: $spacing-12; // 12pt
+          font-weight: $font-weight-medium;
+          display: block;
+        }
+      }
+    }
+
+    .section-title {
+      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      font-weight: $font-weight-semibold;
+      margin-bottom: $spacing-8; // 8pt
+      display: block;
+    }
+
+    .section-desc {
+      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+      color: var(--ios-secondary-label);
+      margin-bottom: $spacing-16; // 16pt
+      line-height: $line-height-relaxed;
+      display: block;
+    }
+  }
+
+  // 分类选择区域
+  .category-section {
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: $spacing-12; // 12pt
+
+      .category-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: $spacing-16; // 16pt
+        background-color: var(--ios-secondary-system-background);
+        border-radius: $border-radius-base; // 12pt
+        border: 4rpx solid transparent; // 2pt 透明边框
+        transition: all 0.2s ease;
+
+        &:active {
+          transform: scale(0.95);
+          background-color: var(--ios-tertiary-system-background);
+        }
+
+        &.selected {
+          border-color: var(--ios-blue);
+          background-color: rgba(0, 122, 255, 0.1);
+        }
+
+        .category-icon {
+          width: 80rpx; // 40pt
+          height: 80rpx; // 40pt
+          margin-bottom: $spacing-8; // 8pt
+          background-color: var(--ios-blue);
+          border-radius: $border-radius-base; // 12pt
+          @include flex-center;
+
+          image {
+            width: 48rpx; // 24pt
+            height: 48rpx; // 24pt
+          }
+        }
+
+        .category-name {
+          @include ios-callout; // 使用 iOS Callout 样式 (32rpx)
+          text-align: center;
+          font-weight: $font-weight-medium;
+        }
+      }
+    }
+  }
+
+  // 物品详情区域
+  .item-details-section {
+    .form-group {
+      margin-bottom: $spacing-20; // 20pt
+
+      .form-label {
+        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        font-weight: $font-weight-medium;
+        margin-bottom: $spacing-8; // 8pt
+        display: block;
+      }
+
+      .form-input {
+        @include ios-input;
+        width: 100%;
+      }
+
+      .form-textarea {
+        @include ios-input;
+        width: 100%;
+        min-height: 200rpx; // 100pt
+        padding: $spacing-12; // 12pt
+        resize: none;
+      }
+
+      .weight-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $spacing-8; // 8pt
+
+        .weight-option {
+          flex: 1;
+          min-width: 120rpx; // 60pt
+          padding: $spacing-12 $spacing-16; // 12pt 16pt
+          background-color: var(--ios-secondary-system-background);
+          border: 4rpx solid transparent; // 2pt 透明边框
+          border-radius: $border-radius-base; // 12pt
+          text-align: center;
+          transition: all 0.2s ease;
+
+          &:active {
+            transform: scale(0.95);
+          }
+
+          &.selected {
+            border-color: var(--ios-blue);
+            background-color: rgba(0, 122, 255, 0.1);
+          }
+
+          text {
+            @include ios-body; // 使用 iOS Body 样式 (34rpx)
+            font-weight: $font-weight-medium;
+          }
+        }
+      }
+    }
+  }
+
+  // 图片上传区域
+  .photo-upload-section {
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: $spacing-12; // 12pt
+
+      .upload-item {
+        aspect-ratio: 1;
+        border-radius: $border-radius-base; // 12pt
+        overflow: hidden;
+        position: relative;
+        background-color: var(--ios-secondary-system-background);
+        border: 4rpx dashed var(--ios-separator); // 2pt 虚线边框
+
+        &.has-image {
+          border-style: solid;
+          border-color: var(--ios-blue);
+        }
+
+        .upload-placeholder {
+          @include flex-center;
+          height: 100%;
+          flex-direction: column;
+
+          .upload-icon {
+            font-size: 80rpx; // 40pt
+            color: var(--ios-tertiary-label);
+            margin-bottom: $spacing-8; // 8pt
+          }
+
+          .upload-text {
+            @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+            color: var(--ios-secondary-label);
+            text-align: center;
+          }
+        }
+
+        .uploaded-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .delete-btn {
+          position: absolute;
+          top: $spacing-4; // 4pt
+          right: $spacing-4; // 4pt
+          width: 48rpx; // 24pt
+          height: 48rpx; // 24pt
+          background-color: rgba(255, 59, 48, 0.8);
+          border-radius: 50%;
+          @include flex-center;
+          color: white;
+          font-size: 32rpx; // 16pt
+
+          &:active {
+            background-color: #FF3B30;
+          }
+        }
+      }
+    }
+  }
+
+  // 地址选择区域
+  .address-section {
+    .address-selector {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: $spacing-16; // 16pt
+      background-color: var(--ios-secondary-system-background);
+      border-radius: $border-radius-base; // 12pt
+      border: 4rpx solid var(--ios-separator); // 2pt 边框
+      transition: all 0.2s ease;
+
+      &:active {
+        background-color: var(--ios-tertiary-system-background);
+        border-color: var(--ios-blue);
+      }
+
+      .address-content {
+        flex: 1;
+
+        .address-name {
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-weight: $font-weight-medium;
+          margin-bottom: $spacing-4; // 4pt
+        }
+
+        .address-detail {
+          @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          color: var(--ios-secondary-label);
+          line-height: $line-height-relaxed;
+        }
+
+        .address-placeholder {
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
+          color: var(--ios-tertiary-label);
+        }
+      }
+
+      .address-arrow {
+        @include ios-body; // 使用 iOS Body 样式 (34rpx)
+        color: var(--ios-tertiary-label);
+        margin-left: $spacing-8; // 8pt
+      }
+    }
+  }
+
+  // 时间选择区域
+  .time-section {
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-12; // 12pt
+
+      .time-slot {
+        padding: $spacing-16; // 16pt
+        background-color: var(--ios-secondary-system-background);
+        border: 4rpx solid transparent; // 2pt 透明边框
+        border-radius: $border-radius-base; // 12pt
+        text-align: center;
+        transition: all 0.2s ease;
+
+        &:active {
+          transform: scale(0.95);
+        }
+
+        &.selected {
+          border-color: var(--ios-blue);
+          background-color: rgba(0, 122, 255, 0.1);
+        }
+
+        &.disabled {
+          opacity: 0.3;
+          pointer-events: none;
+        }
+
+        .time-text {
+          @include ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-weight: $font-weight-medium;
+          margin-bottom: $spacing-4; // 4pt
+        }
+
+        .time-desc {
+          @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
+          color: var(--ios-secondary-label);
+        }
+      }
+    }
+  }
+
+  // 提交按钮区域
+  .submit-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: $spacing-16 $page-padding; // 16pt
+    background-color: var(--ios-system-background);
+    border-top: 2rpx solid var(--ios-separator); // 1pt 顶部边框
+    @include ios-safe-area-bottom;
+
+    .submit-btn {
+      @include ios-button-primary;
+      width: 100%;
+
+      &.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+      }
+    }
+
+    .price-estimate {
+      text-align: center;
+      margin-bottom: $spacing-12; // 12pt
+
+      .estimate-text {
+        @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        color: var(--ios-secondary-label);
+        margin-bottom: $spacing-4; // 4pt
+      }
+
+      .estimate-price {
+        @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+        font-weight: $font-weight-bold;
+        color: var(--ios-blue);
+      }
+    }
+  }
+}
+
+// ==================== 响应式适配 ====================
+@include mobile-standard {
+  .recycle-form-page {
+    .category-section .category-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-8; // 8pt
+    }
+    
+    .photo-upload-section .upload-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}

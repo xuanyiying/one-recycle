@@ -1,0 +1,678 @@
+@use '../../../styles/global.scss' as *;
+
+.order-confirm-page {
+  min-height: 100vh;
+  background: $bg-secondary;
+  @include responsive-page-padding;
+  padding-bottom: 140rpx;
+
+  .loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1200rpx; // Use fixed min-height instead of vh
+
+    .loading-text {
+      font-size: $font-size-headline;
+      color: $text-secondary;
+    }
+  }
+
+  .page-header {
+    background: white;
+    padding-left: $page-padding; padding-right: $page-padding;
+    padding-top: $spacing-xxl;
+    padding-bottom: $spacing-lg;
+    text-align: center;
+    box-shadow: $box-shadow-base;
+
+    .page-title {
+      font-size: 72rpx;
+      font-weight: $font-weight-semibold;
+      color: $text-color;
+      margin-bottom: $spacing-xs;
+      display: block;
+    }
+
+    .page-subtitle {
+      font-size: $font-size-headline3;
+      color: $text-secondary;
+      display: block;
+    }
+  }
+
+  .content-container {
+    min-height: 1000rpx; // Use fixed min-height instead of vh calculation
+    padding-left: $page-padding; padding-right: $page-padding;
+  }
+
+  // 通用卡片样式
+  .order-card,
+  .pickup-card,
+  .price-card,
+  .user-card {
+    background: white;
+    border-radius: $border-radius-lg;
+    padding-left: $spacing-lg; padding-right: $spacing-lg;
+    padding-top: $spacing-lg; padding-bottom: $spacing-lg;
+    margin-bottom: $spacing-lg;
+    box-shadow: $box-shadow-lg;
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-sm;
+      border-bottom: 2rpx solid $border-color;
+
+      .card-title {
+        font-size: $font-size-headline;
+        font-weight: $font-weight-semibold;
+        color: $text-color;
+      }
+
+      .edit-btn {
+        background: $gradient-primary;
+        color: white;
+        font-size: $font-size-body;
+        padding-left: $spacing-sm; padding-right: $spacing-sm;
+        padding-top: $spacing-xs; padding-bottom: $spacing-xs;
+        border-radius: $border-radius-pill;
+        border: none;
+      }
+    }
+
+    .info-row {
+      display: flex;
+      margin-bottom: $spacing-lg;
+      align-items: flex-start;
+
+      .info-label {
+        font-size: $font-size-headline3;
+        color: $text-secondary;
+        width: 160rpx;
+        flex-shrink: 0;
+      }
+
+      .info-value {
+        font-size: $font-size-headline3;
+        color: $text-color;
+        flex: 1;
+        line-height: 1.4;
+
+        &.description {
+          line-height: 1.5;
+        }
+      }
+    }
+
+    .images-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+
+      .order-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 2px solid #f0f0f0;
+      }
+    }
+  }
+
+  // 价格卡片特殊样式
+  .price-card {
+    .price-info {
+      .price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 24px;
+        background: linear-gradient(135deg, #00c896 0%, #00b386 100%);
+        border-radius: 12px;
+        margin-bottom: 16px;
+
+        .price-label {
+          font-size: 30px;
+          color: #fff;
+          font-weight: 500;
+        }
+
+        .price-value {
+          font-size: 36px;
+          color: #fff;
+          font-weight: 600;
+        }
+      }
+
+      .price-note {
+        .note-text {
+          font-size: 24px;
+          color: #999;
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+
+  // 服务协议部分
+  .agreement-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+    .agreement-checkbox {
+      display: flex;
+      align-items: center;
+
+      .checkbox {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #ddd;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        transition: all 0.3s ease;
+
+        &.checked {
+          background: linear-gradient(135deg, #00c896 0%, #00b386 100%);
+          border-color: #00c896;
+
+          .check-icon {
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+          }
+        }
+      }
+
+      .agreement-text {
+        font-size: 28px;
+        color: #666;
+        line-height: 1.4;
+
+        .agreement-link {
+          color: #00c896;
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  // 底部提交区域
+  .submit-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    padding: 24px 32px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+
+    .price-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+
+      .summary-label {
+        font-size: 30px;
+        color: #666;
+      }
+
+      .summary-price {
+        font-size: 36px;
+        font-weight: 600;
+        color: #00c896;
+      }
+    }
+
+    .submit-btn {
+      width: 100%;
+      height: 88px;
+      background: linear-gradient(135deg, #00c896 0%, #00b386 100%);
+      color: #fff;
+      font-size: 32px;
+      font-weight: 600;
+      border-radius: 44px;
+      border: none;
+      box-shadow: 0 8px 24px rgba(0, 200, 150, 0.3);
+      transition: all 0.3s ease;
+
+      &:active {
+        transform: translateY(2px);
+        box-shadow: 0 4px 12px rgba(0, 200, 150, 0.3);
+      }
+
+      &.button-loading,
+      &.button-disabled {
+        background: #ccc;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+// 响应式适配
+@media (max-width: $breakpoint-xs) {
+  .order-confirm-page {
+    .content-container {
+      padding: 24px;
+    }
+
+    .order-card,
+    .pickup-card,
+    .price-card,
+    .user-card,
+    .agreement-section {
+      padding: 24px;
+
+      .card-header {
+        .card-title {
+          font-size: 30px;
+        }
+
+        .edit-btn {
+          font-size: 24px;
+          padding: 10px 20px;
+        }
+      }
+
+      .info-row {
+        .info-label {
+          font-size: 26px;
+          width: 140px;
+        }
+
+        .info-value {
+          font-size: 26px;
+        }
+      }
+
+      .images-container {
+        .order-image {
+          width: 100px;
+          height: 100px;
+        }
+      }
+    }
+
+    .price-card {
+      .price-info {
+        .price-row {
+          padding: 20px;
+
+          .price-label {
+            font-size: 28px;
+          }
+
+          .price-value {
+            font-size: 32px;
+          }
+        }
+
+        .price-note {
+          .note-text {
+            font-size: 22px;
+          }
+        }
+      }
+    }
+
+    .agreement-section {
+      .agreement-checkbox {
+        .checkbox {
+          width: 36px;
+          height: 36px;
+
+          .check-icon {
+            font-size: 20px;
+          }
+        }
+
+        .agreement-text {
+          font-size: 26px;
+        }
+      }
+    }
+
+    .submit-container {
+      padding: 20px 24px;
+
+      .price-summary {
+        .summary-label {
+          font-size: 28px;
+        }
+
+        .summary-price {
+          font-size: 32px;
+        }
+      }
+
+      .submit-btn {
+        height: 80px;
+        font-size: 30px;
+      }
+    }
+  }
+}
+
+// 动画效果
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.order-card,
+.pickup-card,
+.price-card,
+.user-card,
+.agreement-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.order-card { animation-delay: 0.1s; }
+.pickup-card { animation-delay: 0.2s; }
+.price-card { animation-delay: 0.3s; }
+.user-card { animation-delay: 0.4s; }
+.agreement-section { animation-delay: 0.5s; }
+
+// 价格高亮动画
+@keyframes priceGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 200, 150, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 200, 150, 0.5);
+  }
+}
+
+.price-row {
+  animation: priceGlow 2s ease-in-out infinite;
+}
+
+.order-confirm {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 120px;
+
+  &.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+  }
+
+  .section {
+    background: white;
+    margin-bottom: 12px;
+    padding: 20px;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      position: relative;
+
+      .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin-left: 8px;
+        flex: 1;
+      }
+
+      .edit-btn {
+        display: flex;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+        font-size: 12px;
+        color: #666;
+
+        text {
+          margin-left: 4px;
+        }
+
+        &:active {
+          background-color: #e9ecef;
+        }
+      }
+    }
+  }
+
+  // 地址信息
+  .address-section {
+    .address-info {
+      .address-text {
+        font-size: 15px;
+        color: #333;
+        line-height: 1.5;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .contact-text {
+        font-size: 13px;
+        color: #666;
+      }
+    }
+  }
+
+  // 时间信息
+  .time-section {
+    .time-info {
+      .time-text {
+        font-size: 15px;
+        color: #333;
+        margin-bottom: 6px;
+        display: block;
+      }
+
+      .time-tip {
+        font-size: 12px;
+        color: #999;
+      }
+    }
+  }
+
+  // 物品信息
+  .items-section {
+    .item-info {
+      .item-basic {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+
+        .category {
+          font-size: 15px;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .weight {
+          font-size: 13px;
+          color: #666;
+        }
+      }
+
+      .description {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+        margin-bottom: 16px;
+        display: block;
+      }
+
+      .images-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+
+        .item-image {
+          width: 80px;
+          height: 80px;
+          border-radius: 8px;
+          background-color: #f8f9fa;
+        }
+      }
+
+      .remarks {
+        background-color: #f8f9fa;
+        padding: 12px;
+        border-radius: 8px;
+        border-left: 3px solid #00B894;
+
+        .remarks-label {
+          font-size: 13px;
+          color: #666;
+          margin-right: 8px;
+        }
+
+        .remarks-text {
+          font-size: 13px;
+          color: #333;
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+
+  // 价格信息
+  .price-section {
+    .price-info {
+      .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+
+        .price-label {
+          font-size: 15px;
+          color: #333;
+        }
+
+        .price-value {
+          font-size: 20px;
+          font-weight: 600;
+          color: #00B894;
+        }
+      }
+
+      .price-note {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: #fff3cd;
+        border-radius: 6px;
+        border-left: 3px solid #ffc107;
+
+        .note-text {
+          font-size: 12px;
+          color: #856404;
+          margin-left: 6px;
+        }
+      }
+    }
+  }
+
+  // 服务协议
+  .agreement-section {
+    background: white;
+    padding: 20px;
+    margin-bottom: 12px;
+
+    .agreement-checkbox {
+      display: flex;
+      align-items: flex-start;
+
+      checkbox {
+        margin-right: 12px;
+        margin-top: 2px;
+      }
+
+      .agreement-text {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.5;
+        flex: 1;
+
+        .agreement-link {
+          color: #00B894;
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  // 提交按钮
+  .submit-section {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+
+    .submit-btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      margin-bottom: 8px;
+
+      &.active {
+        background: linear-gradient(135deg, #00B894 0%, #00A085 100%);
+        color: white;
+      }
+
+      &.disabled {
+        background-color: #e9ecef;
+        color: #adb5bd;
+      }
+
+      &:active.active {
+        background: linear-gradient(135deg, #00A085 0%, #008F76 100%);
+      }
+    }
+
+    .submit-tip {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+      display: block;
+    }
+  }
+}
+
+// 分割线样式覆盖
+.at-divider {
+  margin: 0 !important;
+  
+  &::before {
+    border-top-color: #eee !important;
+  }
+}

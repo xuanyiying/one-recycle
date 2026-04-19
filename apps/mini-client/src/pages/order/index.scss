@@ -1,0 +1,460 @@
+@use '../../styles/global.scss' as *;
+
+// ==================== 扁平化订单列表样式 ====================
+
+.order-list-page {
+  min-height: 100vh;
+  background-color: #F7F8FA; // 更加扁平柔和的背景色
+
+  @include responsive-page-padding;
+  padding-left: 0;
+  padding-right: 0;
+
+  // 登录提示区域
+  .login-prompt {
+    @include flex-center;
+    flex-direction: column;
+    min-height: 80vh;
+    padding: $spacing-40;
+
+    .prompt-icon {
+      font-size: 160rpx;
+      color: #E0E0E0;
+      margin-bottom: $spacing-24;
+    }
+
+    .prompt-text {
+      font-size: 32rpx;
+      color: $text-secondary;
+      margin-bottom: $spacing-32;
+      text-align: center;
+    }
+
+    .login-btn {
+      background: $primary-color;
+      color: #fff;
+      font-size: 30rpx;
+      padding: 20rpx 60rpx;
+      border-radius: 40rpx;
+      box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.3);
+
+      &:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+      }
+    }
+  }
+
+  // 顶部 Tab 栏
+  .tab-container {
+    background-color: transparent; // Make it blend
+    padding: $spacing-24 $page-padding;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    .tab-list {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 8rpx;
+      border-radius: 20rpx;
+      box-shadow: $box-shadow-sm;
+
+      .tab-item {
+        flex: 1;
+        text-align: center;
+        padding: 16rpx 0;
+        position: relative;
+        border-radius: 16rpx;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+
+        .tab-text {
+          font-size: 28rpx;
+          color: $text-secondary;
+          transition: all 0.3s;
+          position: relative;
+          z-index: 2;
+        }
+
+        &.active {
+          .tab-text {
+            color: $success-color; // Active text
+            font-weight: 600;
+          }
+
+          .active-indicator {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            border-radius: 16rpx;
+            box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+            z-index: 1;
+            // In a real implementation this would slide, but static is fine for now
+          }
+        }
+      }
+    }
+  }
+
+  // 内容容器
+  .content-container {
+    padding: 24rpx $page-padding;
+    min-height: 70vh;
+    width: inherit;
+    // 加载状态
+    .loading-container {
+      @include flex-center;
+      height: 400rpx;
+
+      .loading-text {
+        font-size: 28rpx;
+        color: $text-secondary;
+      }
+    }
+
+    // 订单列表
+    .order-list {
+      .order-card {
+        background: #fff;
+        border-radius: 24rpx;
+        padding: 30rpx;
+        margin-bottom: 24rpx;
+        box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+
+        // 悬停效果 (Hover Class)
+        &.order-card-hover {
+          transform: translateY(-2rpx);
+          box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.06);
+        }
+
+        // 卡片头部：订单号与状态
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 24rpx;
+          padding-bottom: 20rpx;
+          border-bottom: 1px dashed $border-color; // Lighter separator
+
+          .order-no {
+            font-size: 24rpx;
+            color: $text-tertiary;
+            font-family: $font-family-number;
+            letter-spacing: 0.5px;
+          }
+
+          .status-tag {
+            padding: 8rpx 20rpx;
+            border-radius: 20rpx; // Pill shape
+            font-size: 22rpx;
+            font-weight: 600;
+
+            &.pending {
+              background-color: #FFF3E0; // Lighter orange bg
+              color: #FF9800;
+            }
+
+            &.confirmed {
+              background-color: #E3F2FD;
+              color: #2196F3;
+            }
+
+            &.picked_up {
+              background-color: #E8F5E9;
+              color: #4CAF50;
+            }
+
+            &.completed {
+              background-color: #FAFAFA;
+              color: $text-tertiary;
+            }
+
+            &.cancelled {
+              background-color: #FFEBEE;
+              color: #F44336;
+            }
+          }
+        }
+
+        // 卡片主体：商品信息与关键数据
+        .card-body {
+          padding-top: 10rpx;
+
+          .item-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 24rpx;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            .item-image-placeholder {
+              width: 120rpx;
+              height: 120rpx;
+              background-color: #F7F8FA;
+              border-radius: 16rpx;
+              overflow: hidden;
+              margin-right: 24rpx;
+              flex-shrink: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 1px solid rgba(0, 0, 0, 0.02);
+
+              .item-img {
+                width: 100%;
+                height: 100%;
+              }
+
+              .icon-wrapper {
+                opacity: 0.5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+              }
+            }
+
+            .item-content {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              min-height: 120rpx;
+              padding: 4rpx 0;
+
+              .item-main {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 12rpx;
+
+                .item-title {
+                  font-size: 30rpx;
+                  font-weight: 600;
+                  color: $text-color;
+                  line-height: 1.4;
+                  flex: 1;
+                  margin-right: 20rpx;
+                }
+
+                .item-price {
+                  font-size: 32rpx;
+                  font-weight: bold;
+                  color: $text-color;
+                  font-family: 'DIN Alternate', sans-serif;
+                }
+              }
+
+              .item-sub {
+                display: flex;
+                align-items: center;
+
+                .item-specs {
+                  font-size: 24rpx;
+                  color: $text-secondary;
+                  background: #F7F8FA;
+                  padding: 6rpx 16rpx;
+                  border-radius: 8rpx;
+                }
+              }
+            }
+          }
+        }
+
+        // 卡片底部：操作与汇总
+        .card-footer {
+          margin-top: 24rpx;
+          padding-top: 24rpx;
+          border-top: 1px dashed rgba(0, 0, 0, 0.06);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .info-col {
+            .info-text {
+              font-size: 24rpx;
+              color: $text-tertiary;
+            }
+          }
+
+          .total-col {
+            display: flex;
+            align-items: baseline;
+
+            .total-label {
+              font-size: 24rpx;
+              color: $text-secondary;
+              margin-right: 12rpx;
+            }
+
+            .total-price {
+              color: #E65100;
+              font-weight: bold;
+              font-family: 'DIN Alternate', sans-serif;
+              font-size: 36rpx;
+
+              .symbol {
+                font-size: 24rpx;
+                margin-right: 4rpx;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // 空状态
+    .empty-container {
+      @include flex-center;
+      flex-direction: column;
+      padding: 120rpx 0;
+
+      .empty-img {
+        width: 320rpx;
+        height: 320rpx;
+        margin-bottom: 32rpx;
+      }
+
+      .empty-title {
+        font-size: 32rpx;
+        font-weight: 600;
+        color: $text-color;
+        margin-bottom: 16rpx;
+      }
+
+      .empty-desc {
+        font-size: 26rpx;
+        color: $text-secondary;
+        margin-bottom: 48rpx;
+        text-align: center;
+        max-width: 60%;
+      }
+
+      .create-order-btn {
+        background: $primary-color;
+        color: #fff;
+        padding: 0 64rpx;
+        height: 88rpx;
+        line-height: 88rpx;
+        border-radius: 44rpx;
+        font-size: 30rpx;
+        font-weight: 600;
+        box-shadow: 0 8rpx 20rpx rgba($success-color, 0.3); // Colored shadow
+
+        &::after {
+          border: none;
+        }
+
+        &:active {
+          opacity: 0.9;
+          transform: scale(0.98);
+        }
+      }
+    }
+
+    // 错误状态
+    .error-state {
+      @include flex-center;
+      flex-direction: column;
+      padding: 100rpx 0;
+
+      .error-icon {
+        font-size: 100rpx;
+        color: #FF3B30;
+        margin-bottom: 20rpx;
+      }
+
+      .error-title {
+        font-size: 30rpx;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8rpx;
+      }
+
+      .error-desc {
+        font-size: 24rpx;
+        color: #999;
+        margin-bottom: 30rpx;
+      }
+
+      .retry-btn {
+        font-size: 26rpx;
+        color: #666;
+        border: 1px solid #ddd;
+        padding: 10rpx 30rpx;
+        border-radius: 30rpx;
+      }
+    }
+  }
+
+  // 悬浮按钮 (FAB)
+  .fab-container {
+    position: fixed;
+    right: 32rpx;
+    bottom: calc(120rpx + env(safe-area-inset-bottom));
+    z-index: 99;
+
+    .fab-btn {
+      width: 110rpx;
+      height: 110rpx;
+      border-radius: 50%;
+      background: $primary-color;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.4);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      &:active {
+        transform: scale(0.9);
+      }
+
+      &::after {
+        border: none;
+      }
+    }
+  }
+
+  // 分类选择弹窗
+  .category-popup {
+    .nut-popup-content {
+      background: #fff;
+      border-top-left-radius: 32rpx;
+      border-top-right-radius: 32rpx;
+    }
+
+    .popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 30rpx;
+
+      .popup-title {
+        font-size: 34rpx;
+        font-weight: 600;
+        color: $text-color;
+      }
+    }
+
+    .category-options {
+      display: flex;
+      justify-content: space-between;
+      padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+
+      .popup-action-card {
+        width: 48%;
+      }
+    }
+  }
+}
