@@ -10,6 +10,10 @@ echo "=== Nginx Entrypoint ==="
 echo "DOMAIN: $DOMAIN"
 echo "CERT_PATH: $CERT_PATH"
 
+# Debug: List certificate directory
+echo "Certificate directory contents:"
+ls -la "$CERT_PATH/" 2>/dev/null || echo "  Directory not found or empty"
+
 # Install openssl if not available
 if ! command -v openssl >/dev/null 2>&1; then
     echo "Installing openssl..."
@@ -20,22 +24,47 @@ check_certificates() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
         # Verify it's a valid certificate (not self-signed)
         ISSUER=$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -issuer 2>/dev/null || echo "")
-        echo "Found certificate, issuer: $ISSUER"
+        SUBJECT=$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -subject 2>/dev/null || echo "")
+        echo "Found certificate:"
+        echo "  Subject: $SUBJECT"
+        echo "  Issuer:  $ISSUER"
+        echo "  File size: $(wc -c < "$CERT_PATH/fullchain.pem") bytes"
+        
+        # Debug: Show certificate details
+        echo "  Certificate details (first 200 chars):"
+        head -c 200 "$CERT_PATH/fullchain.pem" | cat -v | head -5
+        
         # Check if it's a Let's Encrypt certificate
         if echo "$ISSUER" | grep -q "Let's Encrypt"; then
+            echo "  Detected: Let's Encrypt certificate"
             return 0
         fi
         # Check if it's a TrustAsia certificate (Tencent Cloud)
         if echo "$ISSUER" | grep -qi "TrustAsia"; then
+            echo "  Detected: TrustAsia/Tencent Cloud certificate"
             return 0
         fi
-        # Check if it's a valid CA-signed certificate (not self-signed)
-        if echo "$ISSUER" | grep -qv "CN=$DOMAIN"; then
+        # Check if it's a DigiCert certificate
+        if echo "$ISSUER" | grep -qi "DigiCert"; then
+            echo "  Detected: DigiCert certificate"
             return 0
         fi
-        echo "Certificate appears to be self-signed, using as temporary..."
+        # Check if subject equals issuer (self-signed)
+        ISSUER_CN=$(echo "$ISSUER" | grep -o 'CN=[^,]*' | sed 's/CN=//' | tr -d ' ')
+        SUBJECT_CN=$(echo "$SUBJECT" | grep -o 'CN=[^,]*' | sed 's/CN=//' | tr -d ' ')
+        if [ "$ISSUER_CN" = "$SUBJECT_CN" ]; then
+            echo "  WARNING: Certificate appears to be self-signed (subject == issuer)"
+            return 1
+        fi
+        # If issuer is not empty and not equal to subject, assume it's a valid CA-signed cert
+        if [ -n "$ISSUER" ] && [ "$ISSUER" != "$SUBJECT" ]; then
+            echo "  Detected: CA-signed certificate (issuer != subject)"
+            return 0
+        fi
+        echo "  WARNING: Certificate validation failed, using as temporary..."
         return 1
     else
+        echo "Certificate files not found at $CERT_PATH"
         return 1
     fi
 }
@@ -67,7 +96,7 @@ setup_https() {
 
     if check_certificates; then
         ISSUER=$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -issuer 2>/dev/null || echo "unknown")
-        echo "Valid Let's Encrypt certificate found (issuer: $ISSUER)"
+        echo "Valid CA-signed certificate found (issuer: $ISSUER)"
         
         if [ -f /tmp/https.conf.template ]; then
             cp /tmp/https.conf.template "$HTTPS_CONF"
@@ -117,13 +146,32 @@ setup_cors() {
     if [ -f /nginx/generate-cors.sh ]; then
         echo "Generating CORS configuration..."
         # Use sh to execute to avoid issues with read-only mounts or permission bits in Docker
-        sh /nginx/generate-cors.sh
+        if sh /nginx/generate-cors.sh; then
+            echo "CORS configuration generated successfully"
+        else
+            echo "WARNING: generate-cors.sh failed, using default cors.conf"
+            cat > /etc/nginx/conf.d/cors.conf << 'EOF'
+# Default CORS configuration (fallback)
+set $cors_origin "";
+if ($http_origin = 'https://backbuy.cn') {
+    set $cors_origin $http_origin;
+}
+if ($http_origin = 'https://admin.backbuy.cn') {
+    set $cors_origin $http_origin;
+}
+EOF
+        fi
     else
-        echo "WARNING: generate-cors.sh not found, creating default cors.conf"
+        echo "WARNING: generate-cors.sh not found at /nginx/generate-cors.sh"
+        echo "Available files in /nginx/:"
+        ls -la /nginx/ 2>/dev/null || echo "Directory /nginx/ not accessible"
         cat > /etc/nginx/conf.d/cors.conf << 'EOF'
 # Default CORS configuration (fallback)
 set $cors_origin "";
-if ($http_origin ~* '^https?://(www\.)?backbuy\.cn$') {
+if ($http_origin = 'https://backbuy.cn') {
+    set $cors_origin $http_origin;
+}
+if ($http_origin = 'https://admin.backbuy.cn') {
     set $cors_origin $http_origin;
 }
 EOF

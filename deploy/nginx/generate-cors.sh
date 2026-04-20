@@ -29,8 +29,10 @@ EOF
 OLD_IFS=$IFS
 IFS=','
 for origin in $CORS_ORIGINS; do
-  # Trim whitespace using shell expansion if possible or simple sed
-  origin=$(echo "$origin" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  # Trim leading and trailing whitespace using shell parameter expansion
+  # More portable than sed, works in all POSIX shells including busybox/ash
+  origin="${origin#"${origin%%[![:space:]]*}"}"
+  origin="${origin%"${origin##*[![:space:]]}"}"
   
   if [ -n "$origin" ]; then
     cat >> "$CORS_CONF" << EOF
