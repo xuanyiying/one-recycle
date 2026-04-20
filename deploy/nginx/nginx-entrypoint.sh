@@ -16,6 +16,13 @@ if ! command -v openssl >/dev/null 2>&1; then
     apk add --no-cache openssl 2>/dev/null || echo "WARNING: openssl install failed"
 fi
 
+# Generate CORS configuration from environment variable
+if [ -f /nginx/generate-cors.sh ]; then
+    echo "Generating CORS configuration..."
+    chmod +x /nginx/generate-cors.sh
+    /nginx/generate-cors.sh
+fi
+
 check_certificates() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
         # Verify it's a valid certificate (not self-signed)
@@ -25,11 +32,15 @@ check_certificates() {
         if echo "$ISSUER" | grep -q "Let's Encrypt"; then
             return 0
         fi
+        # Check if it's a TrustAsia certificate (Tencent Cloud)
+        if echo "$ISSUER" | grep -qi "TrustAsia"; then
+            return 0
+        fi
         # Check if it's a valid CA-signed certificate (not self-signed)
         if echo "$ISSUER" | grep -qv "CN=$DOMAIN"; then
             return 0
         fi
-        echo "Certificate appears to be self-signed, waiting for Let's Encrypt..."
+        echo "Certificate appears to be self-signed, using as temporary..."
         return 1
     else
         return 1
@@ -94,14 +105,26 @@ setup_https() {
     return 1
 }
 
+setup_basic_config() {
+    if [ -f /etc/nginx/nginx.conf.template ]; then
+        echo "Processing nginx.conf.template..."
+        cp /etc/nginx/nginx.conf.template /etc/nginx/nginx.conf
+        sed -i "s/backbuy.cn/$DOMAIN/g" /etc/nginx/nginx.conf
+    fi
+}
+
+setup_basic_config
 setup_https
 
 echo "Testing Nginx configuration..."
+# Make sure we test with the actual binary and paths
 if ! nginx -t 2>&1; then
     echo "Config test failed, disabling HTTPS..."
     echo "# HTTPS disabled" > "$HTTPS_CONF"
     if ! nginx -t 2>&1; then
         echo "FATAL: Nginx config invalid even without HTTPS"
+        # Try to restore basic config if possible
+        cp /etc/nginx/nginx.conf.template /etc/nginx/nginx.conf 2>/dev/null || true
         exit 1
     fi
 fi
@@ -114,21 +137,23 @@ echo "=== Starting background certificate Poller ==="
         CHECK_COUNT=$((CHECK_COUNT + 1))
         
         if [ -f "$CERT_PATH/fullchain.pem" ]; then
-            # Verify it's a real Let's Encrypt certificate
+            # Verify it's a valid CA-signed certificate (Let's Encrypt or TrustAsia/Tencent)
             ISSUER=$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -issuer 2>/dev/null || echo "")
-            IS_LE_CERT=0
+            IS_VALID_CA_CERT=0
             if echo "$ISSUER" | grep -q "Let's Encrypt"; then
-                IS_LE_CERT=1
+                IS_VALID_CA_CERT=1
+            elif echo "$ISSUER" | grep -qi "TrustAsia"; then
+                IS_VALID_CA_CERT=1
             fi
             
             CURRENT_MTIME=$(stat -c %Y "$CERT_PATH/fullchain.pem" 2>/dev/null || echo "0")
             
             # Trigger reload if:
-            # 1. We are currently using dummy certs AND real LE cert is available
+            # 1. We are currently using dummy certs AND real CA cert is available
             # 2. OR the real certificate has been updated (renewal case)
             SHOULD_RELOAD=0
-            if [ "$IS_LE_CERT" -eq 1 ] && grep -q "/tmp/dummy_certs" "$HTTPS_CONF" 2>/dev/null; then
-                echo "[$(date)] Let's Encrypt certificate detected, preparing to switch from dummy cert..."
+            if [ "$IS_VALID_CA_CERT" -eq 1 ] && grep -q "/tmp/dummy_certs" "$HTTPS_CONF" 2>/dev/null; then
+                echo "[$(date)] Valid CA certificate detected, preparing to switch from dummy cert..."
                 SHOULD_RELOAD=1
             elif [ -n "$LAST_MTIME" ] && [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
                 echo "[$(date)] Certificate file modified, preparing to reload..."
@@ -139,7 +164,7 @@ echo "=== Starting background certificate Poller ==="
                 echo "[$(date)] Reloading nginx with new certificate..."
 
                 if grep -q "/tmp/dummy_certs" "$HTTPS_CONF" 2>/dev/null; then
-                     echo "[$(date)] Switching from dummy certificate to Let's Encrypt certificates..."
+                     echo "[$(date)] Switching from dummy certificate to CA-signed certificates..."
                      cp /tmp/https.conf.template "$HTTPS_CONF"
                      sed -i "s/backbuy.cn/$DOMAIN/g" "$HTTPS_CONF"
                 fi

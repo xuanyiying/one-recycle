@@ -316,11 +316,13 @@ services:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../nginx/https.conf.template:/tmp/https.conf.template:ro
       - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
+      - ../nginx/generate-cors.sh:/nginx/generate-cors.sh:ro
       - ../ssl:/etc/nginx/ssl
       - ../certbot-webroot:/var/www/certbot:ro
       - ../www/html:/var/www/html:ro
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}
     networks:
       - one-recycle-network
     depends_on:

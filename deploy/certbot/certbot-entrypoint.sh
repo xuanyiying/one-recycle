@@ -42,6 +42,13 @@ request_cert() {
     echo "[$(date)] Requesting initial certificate for $DOMAIN_NAME..."
     echo "Domains: $DOMAIN_NAME, www.$DOMAIN_NAME, api.$DOMAIN_NAME, admin.$DOMAIN_NAME"
     
+    # Pre-check DNS resolution for all domains to provide better diagnostics
+    for d in "$DOMAIN_NAME" "www.$DOMAIN_NAME" "api.$DOMAIN_NAME" "admin.$DOMAIN_NAME"; do
+        if ! nslookup "$d" >/dev/null 2>&1 && ! host "$d" >/dev/null 2>&1; then
+            echo "WARNING: Domain $d does not seem to resolve. Certbot might fail."
+        fi
+    done
+    
     certbot certonly \
         --webroot \
         --webroot-path "$WEBROOT_PATH" \
