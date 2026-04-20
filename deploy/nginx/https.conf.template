@@ -23,6 +23,45 @@ server {
     location / {
         try_files $uri $uri/ /index.html;
     }
+
+    # Temporary workaround: proxy admin and api via main domain
+    # until wildcard certificate is obtained
+    location /admin/ {
+        proxy_pass http://admin_web/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /api/ {
+        # CORS headers
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Request-ID, X-CSRF-Token' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            add_header 'Access-Control-Max-Age' 3600 always;
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Request-ID, X-CSRF-Token' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+        proxy_pass http://backend/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 
 server {
@@ -37,6 +76,11 @@ server {
     return 301 https://backbuy.cn$request_uri;
 }
 
+# NOTE: This server block requires a wildcard certificate *.backbuy.cn
+# or a certificate with SAN: DNS:api.backbuy.cn
+# Current certificate only covers backbuy.cn and www.backbuy.cn
+# Using the same certificate will cause browser warnings
+# Temporary workaround: use https://backbuy.cn/api/ instead
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
@@ -103,6 +147,11 @@ server {
     }
 }
 
+# NOTE: This server block requires a wildcard certificate *.backbuy.cn
+# or a certificate with SAN: DNS:admin.backbuy.cn
+# Current certificate only covers backbuy.cn and www.backbuy.cn
+# Using the same certificate will cause browser warnings
+# Temporary workaround: use https://backbuy.cn/admin/ instead
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
