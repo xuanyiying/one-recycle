@@ -1,6 +1,5 @@
 #!/bin/sh
 # Generate CORS configuration based on environment variables
-
 set -e
 
 CORS_CONF="/etc/nginx/conf.d/cors.conf"
@@ -13,6 +12,9 @@ fi
 
 echo "Generating CORS configuration for origins: $CORS_ORIGINS"
 
+# Ensure directory exists
+mkdir -p "$(dirname "$CORS_CONF")"
+
 # Start generating the CORS configuration
 cat > "$CORS_CONF" << 'EOF'
 # Auto-generated CORS configuration
@@ -23,9 +25,12 @@ set $cors_origin "";
 EOF
 
 # Generate exact match for each origin
-echo "$CORS_ORIGINS" | tr ',' '\n' | while read -r origin; do
-  # Trim whitespace
-  origin=$(echo "$origin" | xargs)
+# Using IFS to split the comma-separated string correctly in POSIX sh
+OLD_IFS=$IFS
+IFS=','
+for origin in $CORS_ORIGINS; do
+  # Trim whitespace using shell expansion if possible or simple sed
+  origin=$(echo "$origin" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
   
   if [ -n "$origin" ]; then
     cat >> "$CORS_CONF" << EOF
@@ -36,6 +41,15 @@ if (\$http_origin = '$origin') {
 EOF
   fi
 done
+IFS=$OLD_IFS
 
 echo "CORS configuration generated at $CORS_CONF"
-cat "$CORS_CONF"
+# Check if file exists and has content
+if [ -s "$CORS_CONF" ]; then
+    echo "Content of $CORS_CONF:"
+    cat "$CORS_CONF"
+else
+    echo "ERROR: $CORS_CONF is empty or was not created correctly"
+    exit 1
+fi
+

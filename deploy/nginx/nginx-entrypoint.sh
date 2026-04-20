@@ -16,13 +16,6 @@ if ! command -v openssl >/dev/null 2>&1; then
     apk add --no-cache openssl 2>/dev/null || echo "WARNING: openssl install failed"
 fi
 
-# Generate CORS configuration from environment variable
-if [ -f /nginx/generate-cors.sh ]; then
-    echo "Generating CORS configuration..."
-    chmod +x /nginx/generate-cors.sh
-    /nginx/generate-cors.sh
-fi
-
 check_certificates() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
         # Verify it's a valid certificate (not self-signed)
@@ -106,10 +99,34 @@ setup_https() {
 }
 
 setup_basic_config() {
+    # Generate CORS configuration FIRST, before any nginx config test
+    setup_cors
+
     if [ -f /etc/nginx/nginx.conf.template ]; then
         echo "Processing nginx.conf.template..."
         cp /etc/nginx/nginx.conf.template /etc/nginx/nginx.conf
         sed -i "s/backbuy.cn/$DOMAIN/g" /etc/nginx/nginx.conf
+    fi
+}
+
+setup_cors() {
+    mkdir -p /etc/nginx/conf.d
+    # Always ensure the file exists so Nginx test doesn't fail even if generation fails
+    touch /etc/nginx/conf.d/cors.conf
+    
+    if [ -f /nginx/generate-cors.sh ]; then
+        echo "Generating CORS configuration..."
+        # Use sh to execute to avoid issues with read-only mounts or permission bits in Docker
+        sh /nginx/generate-cors.sh
+    else
+        echo "WARNING: generate-cors.sh not found, creating default cors.conf"
+        cat > /etc/nginx/conf.d/cors.conf << 'EOF'
+# Default CORS configuration (fallback)
+set $cors_origin "";
+if ($http_origin ~* '^https?://(www\.)?backbuy\.cn$') {
+    set $cors_origin $http_origin;
+}
+EOF
     fi
 }
 
@@ -120,11 +137,16 @@ echo "Testing Nginx configuration..."
 # Make sure we test with the actual binary and paths
 if ! nginx -t 2>&1; then
     echo "Config test failed, disabling HTTPS..."
+    # If the fail was due to something else than certs, disabling HTTPS might not help
+    # but the current logic tries to fallback to HTTP-only to stay alive
     echo "# HTTPS disabled" > "$HTTPS_CONF"
     if ! nginx -t 2>&1; then
         echo "FATAL: Nginx config invalid even without HTTPS"
         # Try to restore basic config if possible
-        cp /etc/nginx/nginx.conf.template /etc/nginx/nginx.conf 2>/dev/null || true
+        if [ -f /etc/nginx/nginx.conf.template ]; then
+             cp /etc/nginx/nginx.conf.template /etc/nginx/nginx.conf
+             sed -i "s/backbuy.cn/$DOMAIN/g" /etc/nginx/nginx.conf
+        fi
         exit 1
     fi
 fi

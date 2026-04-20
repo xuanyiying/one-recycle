@@ -313,7 +313,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
       - ../nginx/https.conf.template:/tmp/https.conf.template:ro
       - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ../nginx/generate-cors.sh:/nginx/generate-cors.sh:ro
@@ -340,27 +340,25 @@ services:
         limits:
           cpus: '0.2'
           memory: 128M
-
-  # Certbot SSL 证书管理
-  # 通过 webroot 方式验证域名，需要 nginx 先启动（HTTP 80 可用）
-  # 首次部署：nginx 用自签名证书启动 → certbot 申请正式证书 → nginx reload
-  certbot:
-    image: certbot/certbot:latest
-    container_name: one-recycle-certbot
-    restart: always
-    volumes:
-      - ../ssl:/etc/letsencrypt
-      - ../certbot-webroot:/var/www/certbot
-      - ../certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
-    environment:
-      - DOMAIN=${DOMAIN:-backbuy.cn}
-      - EMAIL=${EMAIL}
-    networks:
-      - one-recycle-network
-    depends_on:
-      nginx:
-        condition: service_started
-    entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
+  # Certbot SSL 证书管理 (已禁用 - 使用腾讯云证书)
+  # 如需使用 Let's Encrypt 自动证书，取消注释以下服务
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   container_name: one-recycle-certbot
+  #   restart: always
+  #   volumes:
+  #     - ../ssl:/etc/letsencrypt
+  #     - ../certbot-webroot:/var/www/certbot
+  #     - ../certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
+  #   environment:
+  #     - DOMAIN=${DOMAIN:-backbuy.cn}
+  #     - EMAIL=${EMAIL}
+  #   networks:
+  #     - one-recycle-network
+  #   depends_on:
+  #     nginx:
+  #       condition: service_started
+  #   entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
 
 volumes:
   postgres_data:

@@ -52,37 +52,36 @@ setup_dirs() {
 start() {
     cd "$DEPLOY_DIR"
     export DOMAIN EMAIL DB_PASSWORD REDIS_PASSWORD
-    docker compose up -d --build
+    docker compose -f docker/docker-compose.production.yml up -d --build
     log "Services started"
 }
 
 stop() {
     cd "$DEPLOY_DIR"
-    docker compose down
+    docker compose -f docker/docker-compose.production.yml down
     log "Services stopped"
 }
 
 update() {
     cd "$DEPLOY_DIR"
-    docker compose pull
-    docker compose up -d --build
+    docker compose -f docker/docker-compose.production.yml pull
+    docker compose -f docker/docker-compose.production.yml up -d --build
     log "Services updated"
 }
 
 logs() {
     cd "$DEPLOY_DIR"
-    docker compose logs -f "$@"
+    docker compose -f docker/docker-compose.production.yml logs -f "$@"
 }
 
 migrate() {
     cd "$DEPLOY_DIR"
-    docker compose exec api-gateway npx prisma db push || \
     docker compose -f docker/docker-compose.production.yml exec api-gateway npx prisma db push
 }
 
 status() {
     cd "$DEPLOY_DIR"
-    docker compose ps
+    docker compose -f docker/docker-compose.production.yml ps
 }
 
 cmd=${1:-deploy}
