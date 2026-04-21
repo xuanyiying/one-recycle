@@ -319,6 +319,7 @@ services:
       - ../nginx/https.conf.template:/tmp/https.conf.template:ro
       - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ../nginx/generate-cors.sh:/nginx/generate-cors.sh:ro
+      - ../nginx/proxy-params.conf:/etc/nginx/proxy-params.conf:ro
       - ../ssl:/etc/nginx/ssl
       - ../certbot-webroot:/var/www/certbot:ro
       - ../www/html:/var/www/html:ro
