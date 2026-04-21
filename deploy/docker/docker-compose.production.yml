@@ -320,7 +320,7 @@ services:
       - ../nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
       - ../nginx/generate-cors.sh:/nginx/generate-cors.sh:ro
       - ../nginx/proxy-params.conf:/etc/nginx/proxy-params.conf:ro
-      - ../ssl:/etc/nginx/ssl
+      - ../ssl:/etc/letsencrypt:ro
       - ../certbot-webroot:/var/www/certbot:ro
       - ../www/html:/var/www/html:ro
     environment:
@@ -354,6 +354,7 @@ services:
       - ../certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
       - ../certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
       - ../certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
+      - ../certbot/dnspod_client.py:/certbot/dnspod_client.py:ro
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
       - EMAIL=${EMAIL}

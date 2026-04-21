@@ -2,7 +2,7 @@
 set -e
 
 DOMAIN=${DOMAIN:-backbuy.cn}
-CERT_PATH="/etc/nginx/ssl/live/$DOMAIN"
+CERT_PATH="/etc/letsencrypt/live/$DOMAIN"
 DUMMY_CERT_PATH="/tmp/dummy_certs/$DOMAIN"
 HTTPS_CONF="/etc/nginx/conf.d/https.conf"
 
@@ -116,7 +116,7 @@ setup_https() {
             cp /tmp/https.conf.template "$HTTPS_CONF"
             sed -i "s/backbuy.cn/$DOMAIN/g" "$HTTPS_CONF"
             # Hijack the path strictly for the dummy cert start
-            sed -i "s|/etc/nginx/ssl/live/$DOMAIN|/tmp/dummy_certs/$DOMAIN|g" "$HTTPS_CONF"
+            sed -i "s|/etc/letsencrypt/live/$DOMAIN|/tmp/dummy_certs/$DOMAIN|g" "$HTTPS_CONF"
             echo "HTTPS config written and hijacked for dummy cert."
             return 0
         fi

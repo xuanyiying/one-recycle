@@ -27,78 +27,33 @@ if [ -z "$TENCENT_CLOUD_SECRET_ID" ] || [ -z "$TENCENT_CLOUD_SECRET_KEY" ]; then
     exit 1
 fi
 
-# Tencent Cloud DNS API configuration
-DNS_API_URL="https://dnspod.tencentcloudapi.com"
+# Check if Python is available
+if ! command -v python3 > /dev/null 2>&1; then
+    echo "ERROR: python3 is required but not installed in certbot container"
+    exit 1
+fi
 
-# Function to call Tencent Cloud DNS API
-tencent_api_call() {
-    local action="$1"
-    local payload="$2"
+# Check if dnspod_client.py exists
+if [ ! -f "/certbot/dnspod_client.py" ]; then
+    echo "ERROR: /certbot/dnspod_client.py not found"
+    exit 1
+fi
 
-    # Use openssl to generate HMAC-SHA256 signature
-    local timestamp=$(date +%s)
-    local nonce=$((RANDOM * RANDOM))
+# Check if auth/cleanup hooks exist
+if [ ! -f "/certbot-auth-hook.sh" ]; then
+    echo "ERROR: /certbot-auth-hook.sh not found"
+    exit 1
+fi
 
-    # Construct the request payload
-    local request_body=$(cat <<EOF
-{
-    "Action": "${action}",
-    "Timestamp": ${timestamp},
-    "Nonce": ${nonce},
-    "SecretId": "${TENCENT_CLOUD_SECRET_ID}",
-    "SignatureVersion": "1.0",
-    "Region": "",
-    ${payload}
-}
-EOF
-)
+if [ ! -f "/certbot-cleanup-hook.sh" ]; then
+    echo "ERROR: /certbot-cleanup-hook.sh not found"
+    exit 1
+fi
 
-    # Calculate signature (simplified - in production use proper HMAC)
-    local signature=$(echo -n "${action}${timestamp}${nonce}" | \
-        openssl dgst -sha256 -hmac "${TENCENT_CLOUD_SECRET_KEY}" | \
-        sed 's/^.* //')
+# Make hooks executable
+chmod +x /certbot-auth-hook.sh /certbot-cleanup-hook.sh 2>/dev/null || true
 
-    # Make the API call
-    curl -s -X POST "${DNS_API_URL}" \
-        -H "Content-Type: application/json" \
-        -d "{\"Action\":\"${action}\",\"Timestamp\":${timestamp},\"Nonce\":${nonce},\"SecretId\":\"${TENCENT_CLOUD_SECRET_ID}\",\"SignatureVersion\":\"1.0\",\"Region\":\"\",\"Signature\":\"${signature}\",${payload}}" 2>/dev/null
-}
-
-# Function to create DNS TXT record for DNS-01 challenge
-create_txt_record() {
-    local challenge_token="$1"
-    local record_name="_acme-challenge.${DOMAIN_NAME}"
-    local record_value="\"${challenge_token}\""
-
-    echo "[DNS-01] Creating TXT record: ${record_name} = ${challenge_token}"
-
-    # Note: This is a simplified implementation
-    # In production, you would use the Tencent Cloud DNS API properly
-    # API endpoint: https://dnspod.tencentcloudapi.com
-    # Action: CreateRecord
-
-    # For now, we'll use a simpler approach with certbot's --manual flag
-    # and the auth-hook will receive the token via environment variable
-
-    echo "[DNS-01] TXT record creation would be done here"
-    echo "[DNS-01] Record: ${record_name}"
-    echo "[DNS-01] Value: ${challenge_token}"
-
-    return 0
-}
-
-# Function to delete DNS TXT record after verification
-delete_txt_record() {
-    local record_name="_acme-challenge.${DOMAIN_NAME}"
-
-    echo "[DNS-01] Deleting TXT record: ${record_name}"
-
-    # In production, call Tencent Cloud DNS API to delete the record
-
-    return 0
-}
-
-# Check if certificate exists and is valid
+# Function to check if certificate exists and is valid
 check_cert() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
         # Check if certificate is valid and not expiring soon (30 days)
@@ -170,97 +125,6 @@ renew_cert() {
         return 1
     fi
 }
-
-# Create auth hook script
-create_auth_hook() {
-    cat > /certbot-auth-hook.sh << 'AUTHHOOK'
-#!/bin/sh
-set -e
-
-# Certbot DNS-01 authentication hook
-# This script is called by certbot to create the DNS challenge record
-
-DOMAIN_NAME="${DOMAIN:-backbuy.cn}"
-TENCENT_CLOUD_SECRET_ID="${TENCENT_CLOUD_SECRET_ID:-}"
-TENCENT_CLOUD_SECRET_KEY="${TENCENT_CLOUD_SECRET_KEY:-}"
-
-# The challenge token is passed via environment variable CERTBOT_VALIDATION
-CHALLENGE_TOKEN="${CERTBOT_VALIDATION}"
-RECORD_NAME="_acme-challenge.${DOMAIN_NAME}"
-
-echo "[Auth Hook] Creating TXT record for DNS-01 challenge"
-echo "[Auth Hook] Record: ${RECORD_NAME}"
-echo "[Auth Hook] Token: ${CHALLENGE_TOKEN}"
-
-if [ -z "$CHALLENGE_TOKEN" ]; then
-    echo "[Auth Hook] ERROR: CERTBOT_VALIDATION is not set"
-    exit 1
-fi
-
-# In production, call Tencent Cloud DNS API to create the TXT record
-# For now, we'll just log and rely on external DNS configuration
-
-# Example API call structure (for reference):
-# POST https://dnspod.tencentcloudapi.com
-# {
-#     "Action": "CreateRecord",
-#     "Domain": "${DOMAIN_NAME}",
-#     "SubDomain": "_acme-challenge",
-#     "RecordType": "TXT",
-#     "RecordLine": "默认",
-#     "Value": "${CHALLENGE_TOKEN}",
-#     "TTL": 300
-# }
-
-echo "[Auth Hook] DNS record should be created (implement Tencent Cloud API call in production)"
-echo "[Auth Hook] Waiting 30 seconds for DNS propagation..."
-sleep 30
-
-exit 0
-AUTHHOOK
-    chmod +x /certbot-auth-hook.sh
-    echo "[$(date)] Auth hook script created"
-}
-
-# Create cleanup hook script
-create_cleanup_hook() {
-    cat > /certbot-cleanup-hook.sh << 'CLEANUPHOOK'
-#!/bin/sh
-set -e
-
-# Certbot DNS-01 cleanup hook
-# This script is called by certbot to delete the DNS challenge record after verification
-
-DOMAIN_NAME="${DOMAIN:-backbuy.cn}"
-TENCENT_CLOUD_SECRET_ID="${TENCENT_CLOUD_SECRET_ID:-}"
-TENCENT_CLOUD_SECRET_KEY="${TENCENT_CLOUD_SECRET_KEY:-}"
-
-RECORD_NAME="_acme-challenge.${DOMAIN_NAME}"
-
-echo "[Cleanup Hook] Deleting TXT record for DNS-01 challenge"
-echo "[Cleanup Hook] Record: ${RECORD_NAME}"
-
-# In production, call Tencent Cloud DNS API to delete the TXT record
-# Example API call structure (for reference):
-# POST https://dnspod.tencentcloudapi.com
-# {
-#     "Action": "DeleteRecord",
-#     "Domain": "${DOMAIN_NAME}",
-#     "SubDomain": "_acme-challenge",
-#     "RecordType": "TXT"
-# }
-
-echo "[Cleanup Hook] DNS record should be deleted (implement Tencent Cloud API call in production)"
-
-exit 0
-CLEANUPHOOK
-    chmod +x /certbot-cleanup-hook.sh
-    echo "[$(date)] Cleanup hook script created"
-}
-
-# Create hook scripts
-create_auth_hook
-create_cleanup_hook
 
 # Main loop
 trap 'echo "[$(date)] Received signal, exiting..."; exit 0' TERM INT
