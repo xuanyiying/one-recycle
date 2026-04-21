@@ -343,25 +343,28 @@ services:
         limits:
           cpus: '0.2'
           memory: 128M
-  # Certbot SSL 证书管理 (已禁用 - 使用腾讯云证书)
-  # 如需使用 Let's Encrypt 自动证书，取消注释以下服务
-  # certbot:
-  #   image: certbot/certbot:latest
-  #   container_name: one-recycle-certbot
-  #   restart: always
-  #   volumes:
-  #     - ../ssl:/etc/letsencrypt
-  #     - ../certbot-webroot:/var/www/certbot
-  #     - ../certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
-  #   environment:
-  #     - DOMAIN=${DOMAIN:-backbuy.cn}
-  #     - EMAIL=${EMAIL}
-  #   networks:
-  #     - one-recycle-network
-  #   depends_on:
-  #     nginx:
-  #       condition: service_started
-  #   entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
+  # Certbot SSL 证书管理 - 使用 Let's Encrypt 通配符证书 (*.backbuy.cn)
+  certbot:
+    image: certbot/certbot:latest
+    container_name: one-recycle-certbot
+    restart: always
+    volumes:
+      - ../ssl:/etc/letsencrypt
+      - ../certbot-webroot:/var/www/certbot
+      - ../certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
+      - ../certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
+      - ../certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
+    environment:
+      - DOMAIN=${DOMAIN:-backbuy.cn}
+      - EMAIL=${EMAIL}
+      - TENCENT_CLOUD_SECRET_ID=${TENCENT_CLOUD_SECRET_ID}
+      - TENCENT_CLOUD_SECRET_KEY=${TENCENT_CLOUD_SECRET_KEY}
+    networks:
+      - one-recycle-network
+    depends_on:
+      nginx:
+        condition: service_started
+    entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
 
 volumes:
   postgres_data:

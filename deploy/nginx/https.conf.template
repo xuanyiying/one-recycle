@@ -4,8 +4,8 @@ server {
     http2 on;
     server_name backbuy.cn;
 
-    ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/backbuy.cn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/backbuy.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/backbuy.cn/privkey.pem;
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:50m;
     ssl_session_tickets off;
@@ -65,8 +65,8 @@ server {
     http2 on;
     server_name www.backbuy.cn;
 
-    ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/backbuy.cn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/backbuy.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/backbuy.cn/privkey.pem;
 
     return 301 https://backbuy.cn$request_uri;
 }
@@ -82,8 +82,8 @@ server {
     http2 on;
     server_name api.backbuy.cn;
 
-    ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/backbuy.cn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/backbuy.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/backbuy.cn/privkey.pem;
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:50m;
     ssl_session_tickets off;
@@ -153,8 +153,8 @@ server {
     http2 on;
     server_name admin.backbuy.cn;
 
-    ssl_certificate /etc/nginx/ssl/live/backbuy.cn/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/live/backbuy.cn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/backbuy.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/backbuy.cn/privkey.pem;
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:50m;
     ssl_session_tickets off;
