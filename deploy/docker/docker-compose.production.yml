@@ -284,7 +284,9 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://api.${DOMAIN:-backbuy.cn}
+      # Temporary workaround: use main domain with /api/ path until wildcard certificate is obtained
+      # NOTE: Requires wildcard certificate *.backbuy.cn for api.backbuy.cn to work properly
+      - NEXT_PUBLIC_API_URL=https://${DOMAIN:-backbuy.cn}/api
       - PORT=3000
     depends_on:
       - api-gateway
