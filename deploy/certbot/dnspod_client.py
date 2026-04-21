@@ -9,7 +9,9 @@ import json
 import hmac
 import hashlib
 import datetime
-from urllib.parse import urlencode
+import socket
+import urllib.request
+import urllib.error
 
 
 class DNSPodClient:
@@ -21,6 +23,7 @@ class DNSPodClient:
         self.service = "dnspod"
         self.version = "2021-03-23"
         self.region = ""
+        self.timeout = 30
 
     def _sha256_hex(self, data: str) -> str:
         return hashlib.sha256(data.encode('utf-8')).hexdigest()
@@ -43,17 +46,14 @@ class DNSPodClient:
         return signature
 
     def _do_sign(self, payload: str, timestamp: int) -> tuple:
-        # 1. Build canonical request
         http_request_method = "POST"
         canonical_uri = "/"
         canonical_query_string = ""
         canonical_headers = f"content-type:application/json\nhost:{self.endpoint}\n"
         signed_headers = "content-type;host"
 
-        # Hash the payload
         hashed_request_payload = self._sha256_hex(payload)
 
-        # Build canonical request
         canonical_request = (
             f"{http_request_method}\n"
             f"{canonical_uri}\n"
@@ -63,9 +63,8 @@ class DNSPodClient:
             f"{hashed_request_payload}"
         )
 
-        # 2. Build string to sign
         date = datetime.datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d")
-        credential_scope = f"{date}/{service}/tc3_request"
+        credential_scope = f"{date}/{self.service}/tc3_request"
         hashed_canonical_request = self._sha256_hex(canonical_request)
 
         string_to_sign = (
@@ -75,10 +74,8 @@ class DNSPodClient:
             f"{hashed_canonical_request}"
         )
 
-        # 3. Calculate signature
-        signature = self._sign(self.secret_key, date, service, string_to_sign)
+        signature = self._sign(self.secret_key, date, self.service, string_to_sign)
 
-        # 4. Build authorization header
         authorization = (
             f"TC3-HMAC-SHA256 "
             f"Credential={self.secret_id}/{credential_scope}, "
@@ -89,7 +86,6 @@ class DNSPodClient:
         return authorization, hashed_request_payload
 
     def create_txt_record(self, subdomain: str, value: str, ttl: int = 300) -> dict:
-        """Create a TXT record for DNS-01 challenge"""
         params = {
             "Domain": self.domain,
             "SubDomain": subdomain,
@@ -98,34 +94,24 @@ class DNSPodClient:
             "Value": value,
             "TTL": ttl
         }
-
         return self._api_call("CreateRecord", params)
 
     def delete_record(self, record_id: int) -> dict:
-        """Delete a DNS record by ID"""
         params = {
             "Domain": self.domain,
             "Id": record_id
         }
-
         return self._api_call("DeleteRecord", params)
 
     def describe_records(self, subdomain: str = "", record_type: str = "TXT") -> dict:
-        """List DNS records"""
-        params = {
-            "Domain": self.domain
-        }
+        params = {"Domain": self.domain}
         if subdomain:
             params["SubDomain"] = subdomain
         if record_type:
             params["RecordType"] = record_type
-
         return self._api_call("DescribeRecordList", params)
 
     def _api_call(self, action: str, params: dict) -> dict:
-        import urllib.request
-        import urllib.error
-
         timestamp = int(datetime.datetime.now().timestamp())
 
         payload = json.dumps(params, ensure_ascii=False)
@@ -150,22 +136,55 @@ class DNSPodClient:
                 headers=headers,
                 method="POST"
             )
-            with urllib.request.urlopen(req, timeout=30) as response:
-                result = json.loads(response.read().decode('utf-8'))
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                raw_body = response.read().decode('utf-8')
+                result = json.loads(raw_body)
+
+                if "Response" in result and "Error" in result["Response"]:
+                    error_info = result["Response"]["Error"]
+                    return {
+                        "error": {
+                            "code": error_info.get("Code", "UNKNOWN"),
+                            "message": error_info.get("Message", "Unknown API error"),
+                            "request_id": result["Response"].get("RequestId", "")
+                        }
+                    }
+
                 return result
+
         except urllib.error.HTTPError as e:
-            error_body = e.read().decode('utf-8') if e.fp else ""
-            return {"error": {"code": e.code, "message": str(e), "body": error_body}}
+            try:
+                error_body = e.read().decode('utf-8') if e.fp else ""
+            except Exception:
+                error_body = ""
+            return {"error": {"code": e.code, "message": f"HTTP {e.code}: {str(e)}", "body": error_body}}
+
+        except urllib.error.URLError as e:
+            if hasattr(e, 'reason') and isinstance(e.reason, socket.timeout):
+                return {"error": {"code": -2, "message": f"Request timed out after {self.timeout}s"}}
+            return {"error": {"code": -3, "message": f"Connection failed: {str(e.reason) if hasattr(e, 'reason') else str(e)}"}}
+
+        except socket.timeout:
+            return {"error": {"code": -2, "message": f"Socket timeout after {self.timeout}s"}}
+
+        except json.JSONDecodeError as e:
+            return {"error": {"code": -4, "message": f"Invalid JSON response: {str(e)}"}}
+
+        except ValueError as e:
+            return {"error": {"code": -5, "message": f"Value error: {str(e)}"}}
+
         except Exception as e:
-            return {"error": {"code": -1, "message": str(e)}}
+            return {"error": {"code": -1, "message": f"Unexpected error: {type(e).__name__}: {str(e)}"}}
 
     def get_record_id_by_challenge(self, challenge_token: str) -> int:
-        """Find the TXT record ID for the given challenge token"""
         try:
             result = self.describe_records(subdomain="_acme-challenge")
+            if "error" in result:
+                print(f"[DNSPod] API error while finding record: {result['error']}", file=sys.stderr)
+                return -1
             if "Response" in result and "RecordList" in result["Response"]:
                 for record in result["Response"]["RecordList"]:
-                    if record["Value"] == challenge_token:
+                    if record.get("Value") == challenge_token:
                         return int(record["Id"])
             return -1
         except Exception as e:
