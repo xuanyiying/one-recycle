@@ -179,25 +179,47 @@ jobs:
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          
+          cat >> ~/.ssh/config << 'EOF'
+          Host *
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+            ControlMaster auto
+            ControlPath ~/.ssh/sockets/%r@%h-%p
+            ControlPersist 600
+          EOF
+          mkdir -p ~/.ssh/sockets
 
       - name: Sync config files to server
         run: |
           set -e
           REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
-
-          # Ensure remote directories exist
-          ssh $REMOTE "mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html"
-
-          # Sync nginx config files
-          scp deploy/nginx/nginx.conf.template $REMOTE:~/one-recycle/deploy/nginx/nginx.conf.template
-          scp deploy/nginx/https.conf.template $REMOTE:~/one-recycle/deploy/nginx/https.conf.template
-          scp deploy/nginx/nginx-entrypoint.sh $REMOTE:~/one-recycle/deploy/nginx/nginx-entrypoint.sh
           
-          # Sync docker-compose file
-          scp deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/docker-compose.yml
+          max_retries=3
+          retry_delay=5
           
-          # Sync static website files
-          scp -r deploy/www/html/* $REMOTE:~/one-recycle/deploy/www/html/
+          retry_command() {
+            local cmd="$1"
+            for i in $(seq 1 $max_retries); do
+              echo "Attempt $i/$max_retries: $cmd"
+              if eval "$cmd"; then
+                return 0
+              fi
+              if [ $i -lt $max_retries ]; then
+                echo "Failed, retrying in ${retry_delay}s..."
+                sleep $retry_delay
+              fi
+            done
+            return 1
+          }
+
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config'"
+          
+          retry_command "rsync -avz --progress deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          
+          retry_command "rsync -avz deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/"
+          
+          retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
 
           echo "Config and static files synced to server"
 
@@ -292,25 +314,47 @@ jobs:
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          
+          cat >> ~/.ssh/config << 'EOF'
+          Host *
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+            ControlMaster auto
+            ControlPath ~/.ssh/sockets/%r@%h-%p
+            ControlPersist 600
+          EOF
+          mkdir -p ~/.ssh/sockets
 
       - name: Sync config files to server
         run: |
           set -e
           REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
+          
+          max_retries=3
+          retry_delay=5
+          
+          retry_command() {
+            local cmd="$1"
+            for i in $(seq 1 $max_retries); do
+              echo "Attempt $i/$max_retries: $cmd"
+              if eval "$cmd"; then
+                return 0
+              fi
+              if [ $i -lt $max_retries ]; then
+                echo "Failed, retrying in ${retry_delay}s..."
+                sleep $retry_delay
+              fi
+            done
+            return 1
+          }
 
-          # Ensure remote directories exist
-          ssh $REMOTE "mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html"
-
-          # Sync nginx config files
-          scp deploy/nginx/nginx.conf.template $REMOTE:~/one-recycle/deploy/nginx/nginx.conf.template
-          scp deploy/nginx/https.conf.template $REMOTE:~/one-recycle/deploy/nginx/https.conf.template
-          scp deploy/nginx/nginx-entrypoint.sh $REMOTE:~/one-recycle/deploy/nginx/nginx-entrypoint.sh
-
-          # Sync docker-compose file
-          scp deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/docker-compose.production.yml
-
-          # Sync static website files
-          scp -r deploy/www/html/* $REMOTE:~/one-recycle/deploy/www/html/
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config'"
+          
+          retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          
+          retry_command "rsync -avz deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/"
+          
+          retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
 
           echo "Config and static files synced to server"
 
