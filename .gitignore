@@ -18,6 +18,8 @@ out/
 # Deploy - sensitive configs and SSL certificates
 deploy/ssl/
 deploy/config/.env.production
+deploy/.env.production
+deploy/deploy.conf
 
 # Logs
 npm-debug.log*

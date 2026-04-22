@@ -1256,7 +1256,10 @@ export class OrderService implements OnModuleInit {
         },
       });
 
-      this.validateTransition(OrderStatus.INBOUNDED, OrderStatus.PENDING_SETTLEMENT);
+      this.validateTransition(
+        OrderStatus.INBOUNDED,
+        OrderStatus.PENDING_SETTLEMENT,
+      );
 
       const pendingSettlement = await tx.order.update({
         where: { id: BigInt(id) },

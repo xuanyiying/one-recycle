@@ -26,7 +26,16 @@ type AuthenticatedSocket = Socket & {
 @WebSocketGateway({
   namespace: '/customer',
   cors: {
-    origin: '*',
+    origin: (origin, callback) => {
+      const allowedOrigins =
+        process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) || [];
+      const isDev = (process.env.NODE_ENV || 'development') === 'development';
+      const localhostPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (isDev && localhostPattern.test(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'), false);
+    },
     credentials: true,
   },
 })
@@ -58,7 +67,8 @@ export class CustomerServiceGateway
       }
 
       const payload = this.jwtService.verify(token as string, {
-        secret: this.configService.get<string>('JWT_SECRET', 'your-secret-key'),
+        secret:
+          this.configService.get<string>('JWT_SECRET') || 'dev-only-secret-key',
       });
 
       client.userId = payload.sub || payload.userId;

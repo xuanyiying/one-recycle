@@ -34,10 +34,17 @@ export interface AuthConfig {
   };
 }
 
-export default registerAs(
-  'auth',
-  (): AuthConfig => ({
-    jwtSecret: process.env.JWT_SECRET || 'super-secret-key',
+export default registerAs('auth', (): AuthConfig => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (isProduction && !jwtSecret) {
+    console.error('[FATAL] JWT_SECRET must be set in production environment');
+    process.exit(1);
+  }
+
+  return {
+    jwtSecret: jwtSecret || 'dev-only-secret-key',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
     accessTokenExpiresInSeconds: parseInt(
       process.env.ACCESS_TOKEN_EXPIRES_IN_SECONDS || '7200',
@@ -81,5 +88,5 @@ export default registerAs(
       appSecret: process.env.KUAISHOU_APP_SECRET || '',
       apiUrl: 'https://open.kuaishou.com/oauth2/mp/code2session',
     },
-  }),
-);
+  };
+});

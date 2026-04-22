@@ -63,7 +63,7 @@ class DNSPodClient:
             f"{hashed_request_payload}"
         )
 
-        date = datetime.datetime.utcfromtimestamp(timestamp).strftime("%Y-%m-%d")
+        date = datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc).strftime("%Y-%m-%d")
         credential_scope = f"{date}/{self.service}/tc3_request"
         hashed_canonical_request = self._sha256_hex(canonical_request)
 

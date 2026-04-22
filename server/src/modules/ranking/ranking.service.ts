@@ -8,7 +8,7 @@ import { RankingQueryDto, RankingResponseDto } from './dto';
 export class RankingService {
   private readonly logger = new Logger(RankingService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getRankings(query: RankingQueryDto): Promise<RankingResponseDto[]> {
     const { type = 'total', page = 1, pageSize = 20 } = query;

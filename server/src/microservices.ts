@@ -17,6 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import * as http from 'http';
 import { join } from 'path';
 
@@ -98,6 +99,14 @@ async function bootstrapGateway() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('ApiGateway');
   const configService = app.get(ConfigService);
+
+  // 安全头中间件 - Helmet
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: false,
+    }),
+  );
 
   app.setGlobalPrefix('api');
 
@@ -251,6 +260,14 @@ async function bootstrapMonolith() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Monolith');
   const configService = app.get(ConfigService);
+
+  // 安全头中间件 - Helmet
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: false,
+    }),
+  );
 
   app.setGlobalPrefix('api');
 

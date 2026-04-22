@@ -19,11 +19,15 @@ import { UserModule } from '../user/user.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret && configService.get<string>('NODE_ENV') === 'production') {
+          throw new Error('JWT_SECRET must be set in production environment');
+        }
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN', '15m');
         return {
-          secret: configService.get<string>('JWT_SECRET'),
+          secret: secret || 'dev-only-secret-key',
           signOptions: {
-            expiresIn: parseInt(expiresIn), // 类型断言以解决版本兼容性问题
+            expiresIn: parseInt(expiresIn),
           },
         };
       },
