@@ -39,7 +39,8 @@ export default registerAs('auth', (): AuthConfig => {
   const jwtSecret = process.env.JWT_SECRET;
 
   if (isProduction && !jwtSecret) {
-    throw new Error('JWT_SECRET must be set in production environment');
+    console.error('[FATAL] JWT_SECRET must be set in production environment');
+    process.exit(1);
   }
 
   return {
