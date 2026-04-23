@@ -30,8 +30,7 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # Temporary workaround: proxy admin and api via main domain
-    # until wildcard certificate is obtained
+    # Admin panel (proxied to admin-web)
     location /admin/ {
         proxy_pass http://admin_web/;
         include /etc/nginx/proxy-params.conf;
@@ -77,11 +76,8 @@ server {
     return 301 https://backbuy.cn$request_uri;
 }
 
-# NOTE: This server block requires a wildcard certificate *.backbuy.cn
-# or a certificate with SAN: DNS:api.backbuy.cn
-# Current certificate only covers backbuy.cn and www.backbuy.cn
-# Using the same certificate will cause browser warnings
-# Temporary workaround: use https://backbuy.cn/api/ instead
+# API server (api.backbuy.cn)
+# Uses wildcard certificate *.backbuy.cn (obtained via DNS-01 challenge)
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
@@ -154,11 +150,8 @@ server {
     }
 }
 
-# NOTE: This server block requires a wildcard certificate *.backbuy.cn
-# or a certificate with SAN: DNS:admin.backbuy.cn
-# Current certificate only covers backbuy.cn and www.backbuy.cn
-# Using the same certificate will cause browser warnings
-# Temporary workaround: use https://backbuy.cn/admin/ instead
+# Admin panel (admin.backbuy.cn)
+# Uses wildcard certificate *.backbuy.cn (obtained via DNS-01 challenge)
 server {
     listen 443 ssl;
     listen [::]:443 ssl;

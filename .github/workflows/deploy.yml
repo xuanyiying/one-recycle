@@ -213,11 +213,13 @@ jobs:
             return 1
           }
 
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config'"
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot'"
           
-          retry_command "rsync -avz --progress deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
           
           retry_command "rsync -avz deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/"
+          
+          retry_command "rsync -avz deploy/certbot/ $REMOTE:~/one-recycle/deploy/certbot/"
           
           retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
 
@@ -243,6 +245,8 @@ jobs:
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=$DOMAIN"
             echo "EMAIL=${{ secrets.EMAIL }}"
+            echo "TENCENT_CLOUD_SECRET_ID=${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
+            echo "TENCENT_CLOUD_SECRET_KEY=${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
             if [ -f deploy/config/.env.production ]; then
               cat deploy/config/.env.production
             fi
@@ -348,11 +352,13 @@ jobs:
             return 1
           }
 
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config'"
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot'"
           
           retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
           
           retry_command "rsync -avz deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/"
+          
+          retry_command "rsync -avz deploy/certbot/ $REMOTE:~/one-recycle/deploy/certbot/"
           
           retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
 
@@ -378,6 +384,8 @@ jobs:
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=$DOMAIN"
             echo "EMAIL=${{ secrets.EMAIL }}"
+            echo "TENCENT_CLOUD_SECRET_ID=${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
+            echo "TENCENT_CLOUD_SECRET_KEY=${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
             if [ -f deploy/config/.env.production ]; then
               cat deploy/config/.env.production
             fi

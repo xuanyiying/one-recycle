@@ -1,35 +1,27 @@
 services:
   # Certbot SSL 证书管理
-  # 通过 webroot 方式验证域名，需要 nginx 先启动（HTTP 80 可用）
-  # 首次部署：nginx 用自签名证书启动 → certbot 申请正式证书 → nginx 自动 reload
+  # 通过 DNS-01 验证方式申请通配符证书 (*.backbuy.cn)
+  # 使用腾讯云 DNSPod API 自动添加/删除 TXT 记录
   certbot:
     image: certbot/certbot:latest
     container_name: one-recycle-certbot
     restart: always
     volumes:
       - ./ssl:/etc/letsencrypt
-      - ./certbot-webroot:/var/www/certbot
+      - ./certbot-webroot:/var/www/certbot:ro
+      - ./certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
+      - ./certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
+      - ./certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
+      - ./certbot/dnspod_client.py:/certbot/dnspod_client.py:ro
     depends_on:
       nginx:
         condition: service_started
-    entrypoint: >
-      sh -c ' trap "exit 0" TERM INT while true; do
-        DOMAIN_NAME="$${DOMAIN:-backbuy.cn}"
-        CERT_PATH="/etc/letsencrypt/live/$${DOMAIN_NAME}"
-        if [ -d "$$CERT_PATH" ] && [ -f "$$CERT_PATH/fullchain.pem" ] && [ -f "$$CERT_PATH/privkey.pem" ]; then
-          echo "[$(date)] Renewing certificate for $${DOMAIN_NAME}..."
-          certbot renew --webroot -w /var/www/certbot --quiet 2>&1 || echo "[$(date)] Renewal failed, will retry in 12h"
-        else
-          echo "[$(date)] Requesting initial certificate for $${DOMAIN_NAME}..."
-          certbot certonly --webroot -w /var/www/certbot \
-            -d "$${DOMAIN_NAME}" -d "www.$$DOMAIN_NAME" -d "api.$$DOMAIN_NAME" -d "admin.$$DOMAIN_NAME" \
-            --email "$${EMAIL}" --agree-tos --no-eff-email --non-interactive 2>&1 || echo "[$(date)] Certificate request failed, will retry in 12h"
-        fi
-        sleep 12h
-      done '
+    entrypoint: [ "/bin/sh", "/certbot/certbot-entrypoint.sh" ]
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
       - EMAIL=${EMAIL}
+      - TENCENT_CLOUD_SECRET_ID=${TENCENT_CLOUD_SECRET_ID}
+      - TENCENT_CLOUD_SECRET_KEY=${TENCENT_CLOUD_SECRET_KEY}
 
   postgres:
     image: postgres:15-alpine
