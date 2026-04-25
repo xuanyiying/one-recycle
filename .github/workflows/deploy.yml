@@ -190,9 +190,11 @@ jobs:
           }
 
           require_secret "DOMAIN" "${{ secrets.DOMAIN || 'backbuy.cn' }}"
-          require_secret "EMAIL" "${{ secrets.EMAIL }}"
-          require_secret "TENCENT_CLOUD_SECRET_ID" "${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
-          require_secret "TENCENT_CLOUD_SECRET_KEY" "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
+          # EMAIL, TENCENT_CLOUD_SECRET_ID, TENCENT_CLOUD_SECRET_KEY are now optional for Caddy HTTP-01
+          [ -n "${{ secrets.EMAIL }}" ] && echo "EMAIL: configured" || echo "EMAIL: not set (optional for Caddy)"
+          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_ID }}" ] && echo "TENCENT_CLOUD_SECRET_ID: configured" || echo "TENCENT_CLOUD_SECRET_ID: not set (optional for Caddy)"
+          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}" ] && echo "TENCENT_CLOUD_SECRET_KEY: configured" || echo "TENCENT_CLOUD_SECRET_KEY: not set (optional for Caddy)"
+          
           require_secret "DEPLOY_HOST" "${{ secrets.DEPLOY_HOST }}"
           require_secret "DEPLOY_USER" "${{ secrets.DEPLOY_USER }}"
           require_secret "DEPLOY_KEY" "${{ secrets.DEPLOY_KEY }}"
@@ -454,9 +456,11 @@ jobs:
           }
 
           require_secret "DOMAIN" "${{ secrets.DOMAIN || 'backbuy.cn' }}"
-          require_secret "EMAIL" "${{ secrets.EMAIL }}"
-          require_secret "TENCENT_CLOUD_SECRET_ID" "${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
-          require_secret "TENCENT_CLOUD_SECRET_KEY" "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
+          # EMAIL, TENCENT_CLOUD_SECRET_ID, TENCENT_CLOUD_SECRET_KEY are now optional for Caddy HTTP-01
+          [ -n "${{ secrets.EMAIL }}" ] && echo "EMAIL: configured" || echo "EMAIL: not set (optional for Caddy)"
+          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_ID }}" ] && echo "TENCENT_CLOUD_SECRET_ID: configured" || echo "TENCENT_CLOUD_SECRET_ID: not set (optional for Caddy)"
+          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}" ] && echo "TENCENT_CLOUD_SECRET_KEY: configured" || echo "TENCENT_CLOUD_SECRET_KEY: not set (optional for Caddy)"
+          
           require_secret "DEPLOY_HOST" "${{ secrets.DEPLOY_HOST }}"
           require_secret "DEPLOY_USER" "${{ secrets.DEPLOY_USER }}"
           require_secret "DEPLOY_KEY" "${{ secrets.DEPLOY_KEY }}"
