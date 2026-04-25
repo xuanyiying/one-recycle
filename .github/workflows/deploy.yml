@@ -244,9 +244,11 @@ jobs:
             return 1
           }
 
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot'"
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot ~/one-recycle/deploy/caddy'"
           
           retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          
+          retry_command "rsync -avz deploy/caddy/ $REMOTE:~/one-recycle/deploy/caddy/"
           
           retry_command "rsync -avz deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/"
           
@@ -510,9 +512,11 @@ jobs:
             return 1
           }
 
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot'"
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot ~/one-recycle/deploy/caddy'"
           
           retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          
+          retry_command "rsync -avz deploy/caddy/ $REMOTE:~/one-recycle/deploy/caddy/"
           
           retry_command "rsync -avz deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/"
           
