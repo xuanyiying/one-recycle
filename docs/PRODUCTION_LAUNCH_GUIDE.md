@@ -174,7 +174,8 @@ npm run build
 
 ```bash
 # .env.production
-NEXT_PUBLIC_API_URL=https://api.backbuy.cn
+NEXT_PUBLIC_API_URL=https://backbuy.cn/api
+# 兼容入口（过渡期保留）：https://api.backbuy.cn
 NODE_ENV=production
 ```
 
@@ -260,7 +261,7 @@ cd apps/mini-client
 # 1. 设置生产环境 API
 # 修改 config/prod.ts
 export default {
-  API_BASE_URL: 'https://api.backbuy.cn',
+  API_BASE_URL: 'https://backbuy.cn/api',
   ENV: 'production'
 }
 

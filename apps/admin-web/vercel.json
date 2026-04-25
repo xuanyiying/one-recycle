@@ -52,7 +52,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://api.backbuy.cn/api/:path*"
+            "destination": "https://backbuy.cn/api/:path*"
         }
     ]
 }

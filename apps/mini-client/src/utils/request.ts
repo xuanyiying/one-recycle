@@ -6,7 +6,7 @@ import networkStatusManager from './networkStatus'
 import { Storage } from './storage'
 import logger from './logger'
 const env: Partial<NodeJS.ProcessEnv> = typeof process !== 'undefined' ? process.env : {}
-export const API_BASE_URL = env.TARO_APP_API_BASE_URL || env.API_BASE_URL || 'http://localhost:3008/api'
+export const API_BASE_URL = env.TARO_APP_API_BASE_URL || env.API_BASE_URL || 'https://backbuy.cn/api'
 // 请求配置接口
 interface RequestOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE'

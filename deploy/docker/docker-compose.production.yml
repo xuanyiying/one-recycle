@@ -303,13 +303,43 @@ services:
           cpus: '0.3'
           memory: 384M
 
-  # Nginx 反向代理
-  # 使用官方 nginx:alpine 镜像 + volume 挂载配置，无需自定义构建
-  # 入口脚本自动处理 SSL 证书生成和 HTTPS 配置
+  # Caddy 统一入口（自动 HTTPS + 反向代理）
+  caddy:
+    image: caddy:2-alpine
+    container_name: one-recycle-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../www/html:/var/www/html:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - one-recycle-network
+    depends_on:
+      - api-gateway
+      - admin-web
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:2019/config/ || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+
+  # 兼容回滚：非默认启动的 Nginx 入口
   nginx:
     image: nginx:alpine
     container_name: one-recycle-nginx
     restart: always
+    profiles:
+      - legacy
     ports:
       - "80:80"
       - "443:443"
@@ -342,11 +372,14 @@ services:
         limits:
           cpus: '0.2'
           memory: 128M
-  # Certbot SSL 证书管理 - 使用 Let's Encrypt 通配符证书 (*.backbuy.cn)
+
+  # 兼容回滚：非默认启动的 Certbot 证书任务
   certbot:
     image: certbot/certbot:latest
     container_name: one-recycle-certbot
     restart: always
+    profiles:
+      - legacy
     volumes:
       - ../ssl:/etc/letsencrypt
       - ../certbot-webroot:/var/www/certbot
@@ -366,6 +399,8 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  caddy_data:
+  caddy_config:
 
 
 networks:

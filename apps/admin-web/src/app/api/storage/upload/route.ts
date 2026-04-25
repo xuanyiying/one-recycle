@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3008';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://backbuy.cn/api';
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +13,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
 
     // 转发到后端服务器
-    const response = await fetch(`${API_BASE_URL}/api/storage/upload`, {
+    const response = await fetch(`${API_BASE_URL}/storage/upload`, {
       method: 'POST',
       body: formData,
       headers: {

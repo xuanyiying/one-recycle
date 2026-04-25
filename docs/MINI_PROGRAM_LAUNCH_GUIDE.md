@@ -28,7 +28,7 @@
 | 类型错误修复 | ❌ | 15 个错误待修复 |
 | 调试代码清理 | ⚠️ | 100+ 处 console 语句 |
 | AI 功能禁用 | ⚠️ | 配置已禁用，代码需清理 |
-| 生产环境 API | ⏳ | 需配置为 https://api.backbuy.cn |
+| 生产环境 API | ⏳ | 需配置为 https://backbuy.cn/api（兼容入口：https://api.backbuy.cn） |
 | 隐私政策 | ⏳ | 需准备隐私政策页面 |
 | 用户协议 | ⏳ | 需准备用户协议页面 |
 
@@ -122,7 +122,7 @@ rm -rf pages/points-mall/tasks
 ```typescript
 // config/prod.ts
 export default {
-  API_BASE_URL: 'https://api.backbuy.cn',
+  API_BASE_URL: 'https://backbuy.cn/api',
   ENV: 'production',
   // 其他配置...
 };

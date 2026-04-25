@@ -1,25 +1,4 @@
 services:
-  # Certbot SSL 证书管理
-  # 通过 DNS-01 验证方式申请通配符证书 (*.backbuy.cn)
-  # 使用腾讯云 DNSPod API 自动添加/删除 TXT 记录
-  certbot:
-    image: certbot/certbot:latest
-    container_name: one-recycle-certbot
-    restart: always
-    volumes:
-      - ./ssl:/etc/letsencrypt
-      - ./certbot-webroot:/var/www/certbot:ro
-      - ./certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
-      - ./certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
-      - ./certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
-      - ./certbot/dnspod_client.py:/certbot/dnspod_client.py:ro
-    entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
-    environment:
-      - DOMAIN=${DOMAIN:-backbuy.cn}
-      - EMAIL=${EMAIL}
-      - TENCENT_CLOUD_SECRET_ID=${TENCENT_CLOUD_SECRET_ID}
-      - TENCENT_CLOUD_SECRET_KEY=${TENCENT_CLOUD_SECRET_KEY}
-
   postgres:
     image: postgres:15-alpine
     container_name: one-recycle-postgres
@@ -94,7 +73,7 @@ services:
     restart: always
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: https://api.${DOMAIN}
+      NEXT_PUBLIC_API_URL: https://${DOMAIN}/api
     depends_on:
       - api-gateway
     healthcheck:
@@ -104,10 +83,36 @@ services:
       retries: 5
       start_period: 60s
 
+  # Caddy 统一入口（自动 HTTPS + 反向代理）
+  caddy:
+    image: caddy:2-alpine
+    container_name: one-recycle-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./www/html:/var/www/html:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api-gateway
+      - admin-web
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:2019/config/ || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # 兼容回滚：非默认启动的 Nginx 入口
   nginx:
     image: nginx:alpine
     container_name: one-recycle-nginx
     restart: always
+    profiles:
+      - legacy
     ports:
       - "80:80"
       - "443:443"
@@ -133,3 +138,28 @@ services:
       timeout: 5s
       retries: 5
       start_period: 60s
+
+  # 兼容回滚：非默认启动的 Certbot 证书任务
+  certbot:
+    image: certbot/certbot:latest
+    container_name: one-recycle-certbot
+    restart: always
+    profiles:
+      - legacy
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - ./certbot-webroot:/var/www/certbot:ro
+      - ./certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
+      - ./certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
+      - ./certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
+      - ./certbot/dnspod_client.py:/certbot/dnspod_client.py:ro
+    entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
+    environment:
+      - DOMAIN=${DOMAIN:-backbuy.cn}
+      - EMAIL=${EMAIL}
+      - TENCENT_CLOUD_SECRET_ID=${TENCENT_CLOUD_SECRET_ID}
+      - TENCENT_CLOUD_SECRET_KEY=${TENCENT_CLOUD_SECRET_KEY}
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -12,11 +12,11 @@ import axios, {
  * 支持请求拦截、响应处理、错误处理等功能
  */
 
-// API基础URL配置 - 从环境变量读取，默认本地开发地址
+// API基础URL配置 - 从环境变量读取，默认生产主入口地址
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:3008';
+  'https://backbuy.cn/api';
 
 /**
  * 通用API响应接口

@@ -1,0 +1,67 @@
+# OneRecycle Caddy v2 配置
+# 覆盖四域名：backbuy.cn / www.backbuy.cn / api.backbuy.cn / admin.backbuy.cn
+
+{
+	# 关闭管理 API，减少暴露面
+	admin off
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+}
+
+(access_log_json) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 20MiB
+			roll_keep 10
+			roll_keep_for 720h
+		}
+		format json
+	}
+}
+
+# 主站 + /api 反向代理
+backbuy.cn {
+	import security_headers
+	import access_log_json
+
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy api-gateway:3002
+	}
+
+	root * /var/www/html
+	handle {
+		try_files {path} {path}/ /index.html
+		file_server
+	}
+}
+
+# www 统一跳转到主域
+www.backbuy.cn {
+	import security_headers
+	import access_log_json
+	redir https://backbuy.cn{uri} permanent
+}
+
+# 独立 API 域名
+api.backbuy.cn {
+	import security_headers
+	import access_log_json
+	reverse_proxy api-gateway:3002
+}
+
+# Admin 后台
+admin.backbuy.cn {
+	import security_headers
+	import access_log_json
+	reverse_proxy admin-web:3000
+}

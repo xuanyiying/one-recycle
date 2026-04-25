@@ -1,0 +1,8 @@
+- [ ] Caddy 已成为生产反向代理入口，并成功自动签发可信证书
+- [ ] `https://backbuy.cn/api/*` 路由可稳定访问 API Gateway
+- [ ] `https://api.backbuy.cn/*` 兼容入口在过渡期可用
+- [x] 部署日志可输出 issuer/SAN/有效期并在异常时告警
+- [ ] `https://api.backbuy.cn/tenant/auth/login` 不再出现 `ERR_CERT_AUTHORITY_INVALID`
+- [ ] 管理端与官网页面在 Caddy 下访问正常
+- [x] monolith 与 microservices 两套部署编排均完成迁移
+- [x] 回滚方案可执行并已记录

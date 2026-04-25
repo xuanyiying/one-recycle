@@ -34,6 +34,11 @@ DEPLOY_DATA_DIR=./data         # 数据目录
 # JWT
 JWT_SECRET=OneRecycle2025Secure
 
+# 前端 API 主入口（默认）
+NEXT_PUBLIC_API_URL=https://backbuy.cn/api
+# 兼容入口（过渡期仍可访问）
+# https://api.backbuy.cn
+
 # 微信支付
 WECHAT_APP_ID=xxx
 WECHAT_APP_SECRET=xxx
@@ -79,7 +84,7 @@ WECHAT_APP_SECRET=xxx
 
 确保 DNS 解析：
 - `backbuy.cn` → 服务器 IP（官网/小程序端）
-- `api.backbuy.cn` → 服务器 IP（API 服务）
+- `api.backbuy.cn` → 服务器 IP（API 兼容入口）
 - `admin.backbuy.cn` → 服务器 IP（管理后台）
 
 ## SSL 证书
