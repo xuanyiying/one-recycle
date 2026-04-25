@@ -49,9 +49,48 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     fetchSession();
     fetchMessages();
     fetchQuickReplies();
-    connectWebSocket();
+
+    let unregisterMessage: (() => void) | undefined;
+    let unregisterAgentJoined: (() => void) | undefined;
+    let unregisterError: (() => void) | undefined;
+
+    const setupWebSocket = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        if (!token) {
+          toast.error('未登录或登录已过期');
+          return;
+        }
+
+        await customerSocketService.connect(token);
+        customerSocketService.joinSession(sessionId);
+
+        unregisterMessage = customerSocketService.onMessage((data: Message) => {
+          setMessages((prev) => [...prev, data]);
+        });
+
+        unregisterAgentJoined = customerSocketService.onAgentJoined(() => {
+          toast.success('客服已接入');
+        });
+
+        unregisterError = customerSocketService.onError((error) => {
+          console.error('Socket error:', error);
+          toast.error(error.message || '连接错误');
+        });
+      } catch (error) {
+        console.error('Failed to connect WebSocket:', error);
+        toast.error('连接失败，请刷新页面重试');
+      }
+    };
+
+    setupWebSocket().catch((error) => {
+      console.error('WebSocket setup failed:', error);
+    });
 
     return () => {
+      if (unregisterMessage) unregisterMessage();
+      if (unregisterAgentJoined) unregisterAgentJoined();
+      if (unregisterError) unregisterError();
       customerSocketService.leaveSession(sessionId);
       customerSocketService.disconnect();
     };
@@ -98,36 +137,6 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
       }
     } catch (error) {
       console.error('Failed to fetch quick replies:', error);
-    }
-  };
-
-  const connectWebSocket = async () => {
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      if (!token) {
-        toast.error('未登录或登录已过期');
-        return;
-      }
-
-      await customerSocketService.connect(token);
-      customerSocketService.joinSession(sessionId);
-
-      // 注册事件处理器
-      customerSocketService.onMessage((data: Message) => {
-        setMessages((prev) => [...prev, data]);
-      });
-
-      customerSocketService.onAgentJoined(() => {
-        toast.success('客服已接入');
-      });
-
-      customerSocketService.onError((error) => {
-        console.error('Socket error:', error);
-        toast.error(error.message || '连接错误');
-      });
-    } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
-      toast.error('连接失败，请刷新页面重试');
     }
   };
 
