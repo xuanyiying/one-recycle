@@ -13,10 +13,7 @@ services:
       - ./certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
       - ./certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
       - ./certbot/dnspod_client.py:/certbot/dnspod_client.py:ro
-    depends_on:
-      nginx:
-        condition: service_started
-    entrypoint: [ "/bin/sh", "/certbot/certbot-entrypoint.sh" ]
+    entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
     environment:
       - DOMAIN=${DOMAIN:-backbuy.cn}
       - EMAIL=${EMAIL}

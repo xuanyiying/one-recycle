@@ -7,8 +7,18 @@ set -e
 
 CHALLENGE_TOKEN="${CERTBOT_VALIDATION}"
 DOMAIN_NAME="${DOMAIN:-backbuy.cn}"
+CHALLENGE_DOMAIN="${CERTBOT_DOMAIN:-$DOMAIN_NAME}"
 
 RECORD_NAME="_acme-challenge"
+
+record_id_file() {
+    if command -v openssl > /dev/null 2>&1; then
+        SUFFIX=$(printf '%s' "${CHALLENGE_DOMAIN}:${CHALLENGE_TOKEN}" | openssl dgst -sha256 | awk '{print $2}')
+    else
+        SUFFIX=$(printf '%s' "${CHALLENGE_DOMAIN}:${CHALLENGE_TOKEN}" | cksum | awk '{print $1}')
+    fi
+    echo "/tmp/certbot_record_id_${SUFFIX}"
+}
 
 echo "[Auth Hook] Starting DNS-01 challenge for ${DOMAIN_NAME}"
 echo "[Auth Hook] SubDomain: ${RECORD_NAME}"
@@ -34,7 +44,9 @@ if [ $? -eq 0 ] && [ -n "$RECORD_ID" ] && [ "$RECORD_ID" -gt 0 ] 2>/dev/null; th
     echo "[Auth Hook] TXT record created successfully with ID: ${RECORD_ID}"
 
     # Store RecordId for cleanup
-    echo "$RECORD_ID" > /tmp/certbot_record_id
+    RECORD_ID_FILE="$(record_id_file)"
+    echo "$RECORD_ID" > "$RECORD_ID_FILE"
+    echo "[Auth Hook] RecordId file: ${RECORD_ID_FILE}"
 
     echo "[Auth Hook] Waiting 30 seconds for DNS propagation..."
     sleep 30

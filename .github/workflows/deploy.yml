@@ -243,7 +243,7 @@ jobs:
           {
             echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
             echo "IMAGE_TAG=${{ github.ref_name }}"
-            echo "DOMAIN=$DOMAIN"
+            echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
             echo "EMAIL=${{ secrets.EMAIL }}"
             echo "TENCENT_CLOUD_SECRET_ID=${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
             echo "TENCENT_CLOUD_SECRET_KEY=${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
@@ -277,16 +277,36 @@ jobs:
           echo "Waiting for services to start..."
           sleep 30
 
-          DOMAIN="${{ secrets.DOMAIN }}"
+          DOMAIN="${{ secrets.DOMAIN || 'backbuy.cn' }}"
           DEPLOY_HOST="${{ secrets.DEPLOY_HOST }}"
+
+          print_cert_status() {
+            echo "=== External certificate status for api.${DOMAIN} ==="
+            CERT_OUTPUT="$(echo | openssl s_client -connect "api.${DOMAIN}:443" -servername "api.${DOMAIN}" 2>/dev/null | openssl x509 -noout -issuer -subject -dates -ext subjectAltName 2>/dev/null || true)"
+            if [ -n "$CERT_OUTPUT" ]; then
+              echo "$CERT_OUTPUT"
+              if ! echo "$CERT_OUTPUT" | grep -q "DNS:api.${DOMAIN}" && ! echo "$CERT_OUTPUT" | grep -q "DNS:\\*.${DOMAIN}"; then
+                echo "::warning title=Certificate SAN mismatch::api.${DOMAIN} is not present in the certificate SAN list"
+              fi
+              if echo "$CERT_OUTPUT" | grep -qi "issuer=.*backbuy.cn"; then
+                echo "::warning title=Self-signed certificate detected::api.${DOMAIN} is still serving a self-signed certificate"
+              fi
+            else
+              echo "::warning title=Certificate probe failed::Could not read certificate details from api.${DOMAIN}:443"
+            fi
+          }
+
           for i in {1..10}; do
             echo "Health check attempt $i/10..."
             if curl -sf --max-time 10 https://api.${DOMAIN}/api/health 2>/dev/null; then
               echo "Health check passed (HTTPS)!"
+              print_cert_status
               exit 0
             fi
             if ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker exec one-recycle-api-gateway curl -sf http://127.0.0.1:3002/api/health" 2>/dev/null; then
               echo "Health check passed (Docker internal)!"
+              echo "::warning title=External HTTPS not ready::Internal health passed, but external HTTPS validation has not succeeded yet"
+              print_cert_status
               exit 0
             fi
             sleep 10
@@ -382,7 +402,7 @@ jobs:
           {
             echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
             echo "IMAGE_TAG=${{ github.ref_name }}"
-            echo "DOMAIN=$DOMAIN"
+            echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
             echo "EMAIL=${{ secrets.EMAIL }}"
             echo "TENCENT_CLOUD_SECRET_ID=${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
             echo "TENCENT_CLOUD_SECRET_KEY=${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
@@ -416,16 +436,36 @@ jobs:
           echo "Waiting for services to start..."
           sleep 30
 
-          DOMAIN="${{ secrets.DOMAIN }}"
+          DOMAIN="${{ secrets.DOMAIN || 'backbuy.cn' }}"
           DEPLOY_HOST="${{ secrets.DEPLOY_HOST }}"
+
+          print_cert_status() {
+            echo "=== External certificate status for api.${DOMAIN} ==="
+            CERT_OUTPUT="$(echo | openssl s_client -connect "api.${DOMAIN}:443" -servername "api.${DOMAIN}" 2>/dev/null | openssl x509 -noout -issuer -subject -dates -ext subjectAltName 2>/dev/null || true)"
+            if [ -n "$CERT_OUTPUT" ]; then
+              echo "$CERT_OUTPUT"
+              if ! echo "$CERT_OUTPUT" | grep -q "DNS:api.${DOMAIN}" && ! echo "$CERT_OUTPUT" | grep -q "DNS:\\*.${DOMAIN}"; then
+                echo "::warning title=Certificate SAN mismatch::api.${DOMAIN} is not present in the certificate SAN list"
+              fi
+              if echo "$CERT_OUTPUT" | grep -qi "issuer=.*backbuy.cn"; then
+                echo "::warning title=Self-signed certificate detected::api.${DOMAIN} is still serving a self-signed certificate"
+              fi
+            else
+              echo "::warning title=Certificate probe failed::Could not read certificate details from api.${DOMAIN}:443"
+            fi
+          }
+
           for i in {1..10}; do
             echo "Health check attempt $i/10..."
             if curl -sf --max-time 10 https://api.${DOMAIN}/api/health 2>/dev/null; then
               echo "Health check passed (HTTPS)!"
+              print_cert_status
               exit 0
             fi
             if ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker exec one-recycle-api-gateway curl -sf http://127.0.0.1:3002/api/health" 2>/dev/null; then
               echo "Health check passed (Docker internal)!"
+              echo "::warning title=External HTTPS not ready::Internal health passed, but external HTTPS validation has not succeeded yet"
+              print_cert_status
               exit 0
             fi
             sleep 10

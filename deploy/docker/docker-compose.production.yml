@@ -361,9 +361,6 @@ services:
       - TENCENT_CLOUD_SECRET_KEY=${TENCENT_CLOUD_SECRET_KEY}
     networks:
       - one-recycle-network
-    depends_on:
-      nginx:
-        condition: service_started
     entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
 
 volumes:

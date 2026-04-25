@@ -1,12 +1,13 @@
 #!/bin/bash
-# SSL Certificate Monitor and Renewal Script for Tencent Cloud Certificates
-# This script monitors certificate expiration and sends alerts
+# SSL certificate monitor
+# This script monitors certificate expiration and warns when renewal attention is needed
 
 set -e
 
 # Configuration
 DOMAIN=${DOMAIN:-"backbuy.cn"}
-CERT_PATH="/etc/nginx/ssl/live/$DOMAIN"
+DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CERT_PATH="$DEPLOY_DIR/ssl/live/$DOMAIN"
 ALERT_DAYS_BEFORE=30  # Alert 30 days before expiration
 EMAIL=${EMAIL:-"admin@backbuy.cn"}
 
@@ -61,22 +62,16 @@ log "Certificate issuer: $ISSUER"
 # Check if certificate is expiring soon
 if [ $DAYS_UNTIL_EXPIRY -le $ALERT_DAYS_BEFORE ]; then
     warn "Certificate will expire in $DAYS_UNTIL_EXPIRY days!"
-    warn "Please renew the certificate from Tencent Cloud Console:"
-    warn "https://console.cloud.tencent.com/ssl"
+    warn "Please verify Certbot renewal logs and certificate status"
     
     # Send email alert (if mail command is available)
     if command -v mail >/dev/null 2>&1; then
         echo "SSL Certificate for $DOMAIN will expire in $DAYS_UNTIL_EXPIRY days on $EXPIRY_DATE.
 
-Please renew the certificate from Tencent Cloud Console:
-https://console.cloud.tencent.com/ssl
-
-After renewal:
-1. Download the new certificate
-2. Replace files in deploy/ssl/ directory:
-   - backbuy.cn_bundle.crt -> fullchain.pem
-   - backbuy.cn.key -> privkey.pem
-3. Restart nginx: docker restart one-recycle-nginx
+Please verify Certbot renewal logs and certificate status:
+- docker logs --tail 50 one-recycle-certbot
+- docker restart one-recycle-certbot
+- docker restart one-recycle-nginx
 
 Certificate Details:
 - Domain: $DOMAIN

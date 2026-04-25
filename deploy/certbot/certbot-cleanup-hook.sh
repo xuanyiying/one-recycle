@@ -5,8 +5,24 @@ set -e
 # Deletes TXT record after ACME challenge verification
 
 DOMAIN_NAME="${DOMAIN:-backbuy.cn}"
+CHALLENGE_DOMAIN="${CERTBOT_DOMAIN:-$DOMAIN_NAME}"
+CHALLENGE_TOKEN="${CERTBOT_VALIDATION:-}"
 
 RECORD_NAME="_acme-challenge"
+
+record_id_file() {
+    if [ -n "$CHALLENGE_TOKEN" ]; then
+        if command -v openssl > /dev/null 2>&1; then
+            SUFFIX=$(printf '%s' "${CHALLENGE_DOMAIN}:${CHALLENGE_TOKEN}" | openssl dgst -sha256 | awk '{print $2}')
+        else
+            SUFFIX=$(printf '%s' "${CHALLENGE_DOMAIN}:${CHALLENGE_TOKEN}" | cksum | awk '{print $1}')
+        fi
+        echo "/tmp/certbot_record_id_${SUFFIX}"
+        return 0
+    fi
+
+    echo "/tmp/certbot_record_id"
+}
 
 echo "[Cleanup Hook] Starting cleanup for DNS-01 challenge"
 
@@ -16,7 +32,7 @@ if ! command -v python3 > /dev/null 2>&1; then
     exit 0
 fi
 
-RECORD_ID_FILE="/tmp/certbot_record_id"
+RECORD_ID_FILE="$(record_id_file)"
 
 if [ ! -f "$RECORD_ID_FILE" ]; then
     echo "[Cleanup Hook] No RecordId file found, skipping cleanup"

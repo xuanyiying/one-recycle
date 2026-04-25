@@ -56,6 +56,17 @@ chmod +x /certbot-auth-hook.sh /certbot-cleanup-hook.sh 2>/dev/null || true
 # Function to check if certificate exists and is valid
 check_cert() {
     if [ -d "$CERT_PATH" ] && [ -f "$CERT_PATH/fullchain.pem" ] && [ -f "$CERT_PATH/privkey.pem" ]; then
+        ISSUER="$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -issuer 2>/dev/null || echo "")"
+        SUBJECT="$(openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -subject 2>/dev/null || echo "")"
+
+        # Ignore self-signed certificates (common fallback/dummy cert case)
+        ISSUER_CN="$(echo "$ISSUER" | sed -n 's/.*CN[[:space:]]*=[[:space:]]*\([^,\/]*\).*/\1/p' | tr -d ' ')"
+        SUBJECT_CN="$(echo "$SUBJECT" | sed -n 's/.*CN[[:space:]]*=[[:space:]]*\([^,\/]*\).*/\1/p' | tr -d ' ')"
+        if [ -n "$ISSUER_CN" ] && [ -n "$SUBJECT_CN" ] && [ "$ISSUER_CN" = "$SUBJECT_CN" ]; then
+            echo "Certificate exists but is self-signed (issuer == subject), will request CA certificate"
+            return 1
+        fi
+
         # Check if certificate is valid and not expiring soon (30 days)
         if openssl x509 -in "$CERT_PATH/fullchain.pem" -noout -checkend 2592000 2>/dev/null; then
             echo "Certificate exists and is valid for more than 30 days"

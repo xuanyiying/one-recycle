@@ -6,7 +6,8 @@ set -e
 
 # Configuration
 DOMAIN=${DOMAIN:-"backbuy.cn"}
-SSL_DIR="/etc/nginx/ssl"
+DEPLOY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SSL_DIR="$DEPLOY_DIR/ssl"
 LIVE_DIR="$SSL_DIR/live/$DOMAIN"
 BACKUP_DIR="$SSL_DIR/backup/$(date +%Y%m%d_%H%M%S)"
 
