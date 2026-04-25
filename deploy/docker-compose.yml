@@ -106,60 +106,6 @@ services:
       retries: 5
       start_period: 60s
 
-  # 兼容回滚：非默认启动的 Nginx 入口
-  nginx:
-    image: nginx:alpine
-    container_name: one-recycle-nginx
-    restart: always
-    profiles:
-      - legacy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template:ro
-      - ./nginx/https.conf.template:/tmp/https.conf.template:ro
-      - ./nginx/nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
-      - ./nginx/generate-cors.sh:/nginx/generate-cors.sh:ro
-      - ./nginx/proxy-params.conf:/etc/nginx/proxy-params.conf:ro
-      - ./ssl:/etc/letsencrypt:ro
-      - ./certbot-webroot:/var/www/certbot:ro
-      - ./www/html:/var/www/html:ro
-    environment:
-      - DOMAIN=${DOMAIN:-backbuy.cn}
-      - CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}
-    depends_on:
-      - api-gateway
-      - admin-web
-    entrypoint: [ "/bin/sh", "/nginx-entrypoint.sh" ]
-    healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1/health || exit 1" ]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
-
-  # 兼容回滚：非默认启动的 Certbot 证书任务
-  certbot:
-    image: certbot/certbot:latest
-    container_name: one-recycle-certbot
-    restart: always
-    profiles:
-      - legacy
-    volumes:
-      - ./ssl:/etc/letsencrypt
-      - ./certbot-webroot:/var/www/certbot:ro
-      - ./certbot/certbot-entrypoint.sh:/certbot-entrypoint.sh:ro
-      - ./certbot/certbot-auth-hook.sh:/certbot-auth-hook.sh:ro
-      - ./certbot/certbot-cleanup-hook.sh:/certbot-cleanup-hook.sh:ro
-      - ./certbot/dnspod_client.py:/certbot/dnspod_client.py:ro
-    entrypoint: [ "/bin/sh", "/certbot-entrypoint.sh" ]
-    environment:
-      - DOMAIN=${DOMAIN:-backbuy.cn}
-      - EMAIL=${EMAIL}
-      - TENCENT_CLOUD_SECRET_ID=${TENCENT_CLOUD_SECRET_ID}
-      - TENCENT_CLOUD_SECRET_KEY=${TENCENT_CLOUD_SECRET_KEY}
-
 volumes:
   caddy_data:
   caddy_config:

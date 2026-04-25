@@ -244,15 +244,11 @@ jobs:
             return 1
           }
 
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot ~/one-recycle/deploy/caddy'"
-          
-          retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/caddy ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config'"
           
           retry_command "rsync -avz deploy/caddy/ $REMOTE:~/one-recycle/deploy/caddy/"
           
           retry_command "rsync -avz deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/"
-          
-          retry_command "rsync -avz deploy/certbot/ $REMOTE:~/one-recycle/deploy/certbot/"
           
           retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
 
@@ -269,7 +265,7 @@ jobs:
 
           # 创建必要目录
           echo "=== Ensuring directories exist ==="
-          mkdir -p deploy/ssl deploy/certbot-webroot deploy/data/postgres deploy/data/redis deploy/nginx deploy/config
+          mkdir -p deploy/caddy deploy/data/postgres deploy/data/redis deploy/config
 
           # (Self-signed certificates handled by container entrypoint)
 
@@ -512,15 +508,11 @@ jobs:
             return 1
           }
 
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/nginx ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/certbot ~/one-recycle/deploy/caddy'"
-          
-          retry_command "rsync -avz deploy/nginx/ $REMOTE:~/one-recycle/deploy/nginx/"
+          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/caddy'"
           
           retry_command "rsync -avz deploy/caddy/ $REMOTE:~/one-recycle/deploy/caddy/"
           
           retry_command "rsync -avz deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/"
-          
-          retry_command "rsync -avz deploy/certbot/ $REMOTE:~/one-recycle/deploy/certbot/"
           
           retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
 
@@ -537,7 +529,7 @@ jobs:
 
           # 创建必要目录
           echo "=== Ensuring directories exist ==="
-          mkdir -p deploy/ssl deploy/certbot-webroot deploy/data/postgres deploy/data/redis deploy/docker deploy/nginx deploy/config
+          mkdir -p deploy/caddy deploy/data/postgres deploy/data/redis deploy/docker deploy/config
 
           # (Self-signed certificates handled by container entrypoint)
 
