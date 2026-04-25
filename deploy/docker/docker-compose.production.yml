@@ -285,7 +285,7 @@ services:
     environment:
       - NODE_ENV=production
       # API URL: uses main domain /api path for admin-web to call API gateway
-      - NEXT_PUBLIC_API_URL=https://backbuy.cn/api
+      - NEXT_PUBLIC_API_URL=https://${DOMAIN:-backbuy.cn}/api
       - PORT=3000
     depends_on:
       - api-gateway

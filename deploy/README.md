@@ -63,8 +63,8 @@ WECHAT_APP_SECRET=xxx
 
 ```
 ┌─────────────┐     ┌─────────────┐
-│   Nginx     │────▶│   Certbot   │  SSL 自动续期
-│  (80/443)   │     └─────────────┘
+│   Caddy     │
+│  (80/443)   │
 └──────┬──────┘
        │
        ├────▶ backend:3000    API 服务
@@ -89,9 +89,13 @@ WECHAT_APP_SECRET=xxx
 
 ## SSL 证书
 
-Let's Encrypt 自动申请，每 12 小时检查续期。
+Caddy 自动通过 ACME 申请并续期（默认为 Let's Encrypt）。
 
-证书位置：`deploy/ssl/live/backbuy.cn/`
+证书存储：Docker volume `caddy_data`（容器内路径 `/data`）。
+
+如果浏览器提示自签名证书或证书链不受信任：
+- 确认域名 A 记录指向服务器 IP，且 80/443 入站已放通
+- 查看 Caddy 日志：`docker logs -f --tail 200 one-recycle-caddy`
 
 ## 生产检查清单
 

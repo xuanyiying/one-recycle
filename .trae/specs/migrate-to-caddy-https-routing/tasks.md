@@ -37,13 +37,13 @@
 ## 追加修复任务（核验失败项）
 
 - [ ] Task 6: 修复 Caddy 证书信任链，消除自签名证书告警
-  - [ ] SubTask 6.1: 审核 `deploy/caddy/Caddyfile` 的证书策略，确保启用 ACME 自动签发并移除本地自签证书兜底逻辑
+  - [x] SubTask 6.1: 审核 `deploy/caddy/Caddyfile` 的证书策略，确保启用 ACME 自动签发并移除本地自签证书兜底逻辑
   - [ ] SubTask 6.2: 核对 DNS A/AAAA 记录与 80/443 入站策略，确保 `backbuy.cn`、`api.backbuy.cn`、`admin.backbuy.cn`、`www.backbuy.cn` 均满足签发前提
   - [ ] SubTask 6.3: 在目标环境重建 Caddy 证书缓存并触发重新签发，确认证书 `issuer != subject` 且受信任
   - [ ] SubTask 6.4: 回填发布日志与校验产物（issuer/SAN/有效期/TLS 校验码）到验收文档
 
 - [ ] Task 7: 修复 `https://backbuy.cn/api/*` 到 API Gateway 的转发
-  - [ ] SubTask 7.1: 排查 Caddy `@api` 匹配与 `handle` 顺序，确认 `/api/health` 不被静态站点路由吞掉
+  - [x] SubTask 7.1: 排查 Caddy `@api` 匹配与 `handle` 顺序，确认 `/api/health` 不被静态站点路由吞掉
   - [ ] SubTask 7.2: 在服务器侧通过容器内外双路径验证（`api-gateway:3002/api/health` 与 `https://backbuy.cn/api/health`）定位 404 来源
   - [ ] SubTask 7.3: 修复后验证 `backbuy.cn/api/*` 与 `api.backbuy.cn/api/*` 在严格 TLS 下均返回预期状态码
 

@@ -2,8 +2,7 @@
 # 覆盖三域名：backbuy.cn / www.backbuy.cn / admin.backbuy.cn
 
 {
-	# 关闭管理 API，减少暴露面
-	admin off
+	admin 127.0.0.1:2019
 }
 
 (security_headers) {
@@ -19,7 +18,7 @@
 
 (access_log_json) {
 	log {
-		output file /var/log/caddy/access.log {
+		output file /data/access.log {
 			roll_size 20MiB
 			roll_keep 10
 			roll_keep_for 720h
@@ -42,6 +41,20 @@ backbuy.cn {
 	handle {
 		try_files {path} {path}/ /index.html
 		file_server
+	}
+}
+
+api.backbuy.cn {
+	import security_headers
+	import access_log_json
+
+	@withApi path /api /api/*
+	handle @withApi {
+		reverse_proxy api-gateway:3002
+	}
+
+	handle {
+		redir https://backbuy.cn/api{uri} permanent
 	}
 }
 

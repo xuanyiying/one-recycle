@@ -46,7 +46,7 @@ check_deps() {
 }
 
 setup_dirs() {
-    mkdir -p "$DEPLOY_DIR"/{ssl,certbot-webroot,data/{postgres,redis}}
+    mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis}}
 }
 
 start() {

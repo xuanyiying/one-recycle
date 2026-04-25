@@ -159,7 +159,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:${{ github.ref_name }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=https://api.${{ env.DOMAIN }}
+            NEXT_PUBLIC_API_URL=https://${{ env.DOMAIN }}/api
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
@@ -382,13 +382,6 @@ jobs:
               EXTERNAL_HEALTH_OK=1
               break
             fi
-            if curl -sf --max-time 10 "https://api.${DOMAIN}/api/health" >/dev/null 2>&1; then
-              echo "Application health passed via compatibility HTTPS endpoint: https://api.${DOMAIN}/api/health"
-              echo "::warning title=Primary API route not ready::Compatibility endpoint is healthy but https://${DOMAIN}/api/health is not ready yet"
-              APP_HEALTH_OK=1
-              EXTERNAL_HEALTH_OK=1
-              break
-            fi
             if ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker exec one-recycle-api-gateway curl -sf http://127.0.0.1:3002/api/health" >/dev/null 2>&1; then
               echo "Application health passed via Docker internal endpoint."
               echo "::warning title=External HTTPS not ready::Internal health passed, but external HTTPS validation has not succeeded yet"
@@ -409,8 +402,8 @@ jobs:
             ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'ENDSSH'
             cd $HOME/one-recycle
             docker compose -f deploy/docker-compose.yml ps -a
-            echo "=== Nginx logs ==="
-            docker logs one-recycle-nginx --tail=30 2>/dev/null || true
+            echo "=== Caddy logs ==="
+            docker logs one-recycle-caddy --tail=30 2>/dev/null || true
             echo "=== Backend logs ==="
             docker logs one-recycle-backend --tail=30 2>/dev/null || true
             ENDSSH
@@ -419,13 +412,12 @@ jobs:
 
           echo "=== Certificate health checks ==="
           check_cert_for_host "${DOMAIN}"
-          check_cert_for_host "api.${DOMAIN}"
 
           echo "=== Certificate health summary ==="
           [ "$CERT_HEALTH_OK" -eq 1 ] && echo "cert_health=PASS" || echo "cert_health=WARN"
           if [ "$CERT_HEALTH_OK" -ne 1 ]; then
             echo "::warning title=Certificate health degraded::Application is healthy but certificate checks reported issues"
-            echo "::warning title=Certificate troubleshooting::Run 'openssl s_client -connect api.${DOMAIN}:443 -servername api.${DOMAIN}' and verify DNS/SAN, issuer chain, and renewal job status"
+            echo "::warning title=Certificate troubleshooting::Run 'openssl s_client -connect ${DOMAIN}:443 -servername ${DOMAIN}' and verify DNS/SAN, issuer chain, and renewal job status"
           fi
 
   deploy-microservices:
@@ -646,13 +638,6 @@ jobs:
               EXTERNAL_HEALTH_OK=1
               break
             fi
-            if curl -sf --max-time 10 "https://api.${DOMAIN}/api/health" >/dev/null 2>&1; then
-              echo "Application health passed via compatibility HTTPS endpoint: https://api.${DOMAIN}/api/health"
-              echo "::warning title=Primary API route not ready::Compatibility endpoint is healthy but https://${DOMAIN}/api/health is not ready yet"
-              APP_HEALTH_OK=1
-              EXTERNAL_HEALTH_OK=1
-              break
-            fi
             if ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker exec one-recycle-api-gateway curl -sf http://127.0.0.1:3002/api/health" >/dev/null 2>&1; then
               echo "Application health passed via Docker internal endpoint."
               echo "::warning title=External HTTPS not ready::Internal health passed, but external HTTPS validation has not succeeded yet"
@@ -673,8 +658,8 @@ jobs:
             ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'ENDSSH'
             cd $HOME/one-recycle
             docker compose -f deploy/docker/docker-compose.production.yml ps -a
-            echo "=== Nginx logs ==="
-            docker logs one-recycle-nginx --tail=30 2>/dev/null || true
+            echo "=== Caddy logs ==="
+            docker logs one-recycle-caddy --tail=30 2>/dev/null || true
             echo "=== API Gateway logs ==="
             docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
             ENDSSH
@@ -683,11 +668,10 @@ jobs:
 
           echo "=== Certificate health checks ==="
           check_cert_for_host "${DOMAIN}"
-          check_cert_for_host "api.${DOMAIN}"
 
           echo "=== Certificate health summary ==="
           [ "$CERT_HEALTH_OK" -eq 1 ] && echo "cert_health=PASS" || echo "cert_health=WARN"
           if [ "$CERT_HEALTH_OK" -ne 1 ]; then
             echo "::warning title=Certificate health degraded::Application is healthy but certificate checks reported issues"
-            echo "::warning title=Certificate troubleshooting::Run 'openssl s_client -connect api.${DOMAIN}:443 -servername api.${DOMAIN}' and verify DNS/SAN, issuer chain, and renewal job status"
+            echo "::warning title=Certificate troubleshooting::Run 'openssl s_client -connect ${DOMAIN}:443 -servername ${DOMAIN}' and verify DNS/SAN, issuer chain, and renewal job status"
           fi
