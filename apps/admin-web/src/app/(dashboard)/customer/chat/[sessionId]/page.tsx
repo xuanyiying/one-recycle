@@ -7,20 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
+import { customerSocketService, Message } from '@/services/customerSocketService';
 import { Bot, History, Image, Loader2, Send, User, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-
-interface Message {
-  id: string;
-  sessionId: string;
-  senderType: 'USER' | 'AGENT' | 'SYSTEM' | 'AI';
-  senderId?: string;
-  messageType: 'TEXT' | 'IMAGE' | 'ORDER_CARD' | 'TICKET_CARD';
-  content?: string;
-  mediaUrl?: string;
-  extraData?: any;
-  createdAt: string;
-}
 
 interface Session {
   id: string;
@@ -54,7 +43,6 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
   const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [closeModalVisible, setCloseModalVisible] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -64,9 +52,8 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     connectWebSocket();
 
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      customerSocketService.leaveSession(sessionId);
+      customerSocketService.disconnect();
     };
   }, [sessionId]);
 
@@ -114,46 +101,33 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     }
   };
 
-  const connectWebSocket = () => {
+  const connectWebSocket = async () => {
     try {
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://api.backbuy.cn/customer';
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (!token) {
+        toast.error('未登录或登录已过期');
+        return;
+      }
 
-      if (!token) return;
+      await customerSocketService.connect(token);
+      customerSocketService.joinSession(sessionId);
 
-      wsRef.current = new WebSocket(`${wsUrl}?token=${token}`);
+      // 注册事件处理器
+      customerSocketService.onMessage((data: Message) => {
+        setMessages((prev) => [...prev, data]);
+      });
 
-      wsRef.current.onopen = () => {
-        wsRef.current?.send(JSON.stringify({
-          event: 'join_session',
-          data: { sessionId },
-        }));
-      };
+      customerSocketService.onAgentJoined(() => {
+        toast.success('客服已接入');
+      });
 
-      wsRef.current.onmessage = (event) => {
-        try {
-          const { event: eventType, data } = JSON.parse(event.data);
-
-          switch (eventType) {
-            case 'message':
-              setMessages((prev) => [...prev, data]);
-              break;
-            case 'typing':
-              break;
-            case 'agent_joined':
-              toast.success('客服已接入');
-              break;
-          }
-        } catch (error) {
-          console.error('WebSocket message error:', error);
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
+      customerSocketService.onError((error) => {
+        console.error('Socket error:', error);
+        toast.error(error.message || '连接错误');
+      });
     } catch (error) {
       console.error('Failed to connect WebSocket:', error);
+      toast.error('连接失败，请刷新页面重试');
     }
   };
 
@@ -166,22 +140,14 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
 
     setSending(true);
     try {
-      const res = await fetch('/api/customer/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          messageType,
-          content,
-          mediaUrl,
-        }),
+      // 使用 WebSocket 发送消息
+      customerSocketService.sendMessage({
+        sessionId,
+        messageType,
+        content,
+        mediaUrl,
       });
-
-      if (res.ok) {
-        setInputValue('');
-      } else {
-        toast.error('发送失败');
-      }
+      setInputValue('');
     } catch (error) {
       toast.error('发送失败');
     } finally {

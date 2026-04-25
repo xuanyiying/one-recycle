@@ -24,6 +24,7 @@ export default registerAs(
             'https://backbuy.cn',
             'https://www.backbuy.cn',
             'https://admin.backbuy.cn',
+            'https://backbuy.cn/api',
             'https://api.backbuy.cn',
           ]
         : [

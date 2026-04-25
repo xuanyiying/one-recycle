@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { Storage } from '@/utils/storage';
 import logger from '@/utils/logger';
+import { Storage } from '@/utils/storage';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { io, Socket } from 'socket.io-client';
 
 const env: Partial<NodeJS.ProcessEnv> = typeof process !== 'undefined' ? process.env : {};
-const WS_URL = env.TARO_APP_WS_URL || 'ws://localhost:3008';
+const WS_URL = env.TARO_APP_WS_URL || 'wss://backbuy.cn';
 
 type WSEventHandler = (data: any) => void;
 

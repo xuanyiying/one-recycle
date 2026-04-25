@@ -1,5 +1,5 @@
 # OneRecycle Caddy v2 配置
-# 覆盖四域名：backbuy.cn / www.backbuy.cn / api.backbuy.cn / admin.backbuy.cn
+# 覆盖三域名：backbuy.cn / www.backbuy.cn / admin.backbuy.cn
 
 {
 	# 关闭管理 API，减少暴露面
@@ -50,18 +50,6 @@ www.backbuy.cn {
 	import security_headers
 	import access_log_json
 	redir https://backbuy.cn{uri} permanent
-}
-
-# 独立 API 域名 (兼容老版本)
-api.backbuy.cn {
-	import security_headers
-	import access_log_json
-	
-	# 如果请求不带 /api 前缀，自动补齐转发
-	@no_api_prefix not path /api /api/*
-	rewrite @no_api_prefix /api{uri}
-	
-	reverse_proxy api-gateway:3002
 }
 
 # Admin 后台

@@ -12,7 +12,7 @@ import axios, {
  * 支持请求拦截、响应处理、错误处理等功能
  */
 
-// API基础URL配置 - 从环境变量读取，默认生产主入口地址
+// API基础URL配置 - 从环境变量读取，默认使用主域名 /api 路径
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
