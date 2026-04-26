@@ -67,6 +67,9 @@ export default function LoginPage() {
         localStorage.setItem('login_mode', 'tenant');
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);
 
+        // 同时设置 cookie，让中间件能识别
+        document.cookie = `auth_token=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+
         if (data.rememberMe) {
           localStorage.setItem('remember_account', data.account);
         } else {

@@ -155,6 +155,16 @@ export class ApiClient {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
+      localStorage.removeItem('login_mode');
+      localStorage.removeItem('tenant_code');
+      
+      // 清除 cookie
+      document.cookie = 'auth_token=; path=/; max-age=0';
+      
+      // 重定向到登录页面
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
   }
 

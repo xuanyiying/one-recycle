@@ -32,6 +32,7 @@ const Header: React.FC = () => {
       localStorage.removeItem('user_info');
       localStorage.removeItem('login_mode');
       localStorage.removeItem('tenant_code');
+      document.cookie = 'auth_token=; path=/; max-age=0';
       toast.success('已退出登录');
       router.push('/login');
     } catch (error) {
@@ -39,6 +40,8 @@ const Header: React.FC = () => {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
       localStorage.removeItem('login_mode');
+      localStorage.removeItem('tenant_code');
+      document.cookie = 'auth_token=; path=/; max-age=0';
       router.push('/login');
     } finally {
       setLoggingOut(false);
