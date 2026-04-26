@@ -1,0 +1,17 @@
+# OneRecycle 部署配置文件
+# 复制此文件为 deploy.conf 并填写实际值
+# 或者直接在部署时输入
+
+# GitHub Container Registry 认证
+GHCR_USER=xuanyiying
+# GHCR_TOKEN=ghp_xxxxxxxxxxxxxxxxxx  # 在 GitHub Settings > Developer settings > Personal access tokens 生成
+
+# 服务器配置
+DEPLOY_HOST=101.42.31.216
+DEPLOY_USER=root
+
+# SSH 私钥路径 (可选，默认使用 ~/.ssh/id_rsa)
+# SSH_KEY=~/.ssh/id_rsa
+
+# 部署模式: monolith 或 microservices
+# DEPLOY_MODE=monolith

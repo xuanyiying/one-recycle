@@ -13,7 +13,7 @@
     left: 0;
     right: 0;
     height: 300px;
-    background: linear-gradient(180deg, #E8F5E9 0%, $bg-color 100%);
+    background: linear-gradient(180deg, $primary-color 0%, $bg-color 100%);
     z-index: 0;
   }
 
@@ -37,7 +37,7 @@
 
       .location-pill {
         @include flex-center;
-        background: rgba(255, 255, 255, 0.9);
+        background: $bg-secondary;
         padding: 12rpx 24rpx;
         border-radius: $border-radius-pill;
         box-shadow: $box-shadow-sm;
@@ -51,7 +51,7 @@
         .city-name {
           font-size: 30rpx;
           font-weight: 600;
-          color: $text-color;
+          color: $primary-color;
           margin-left: 0;
         }
       }
@@ -59,7 +59,7 @@
       .weather-pill {
         display: flex;
         align-items: center;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.8);
         padding: 12rpx 24rpx;
         border-radius: $border-radius-pill;
 
@@ -144,9 +144,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #fff;
-      border-radius: 40rpx;
-      box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
+      background: $bg-secondary;
+      border-radius: $card-radius;
+      box-shadow: $box-shadow-sm;
 
       .empty-icon {
         font-size: 80rpx;
@@ -212,7 +212,7 @@
           min-width: 140rpx;
           padding: 20rpx 24rpx;
           margin-right: 16rpx;
-          background: #fff;
+          background: $bg-secondary;
           border-radius: 24rpx;
           box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
           position: relative;
@@ -223,8 +223,7 @@
           }
 
           &.category-tab-hover {
-            transform: translateY(-4rpx);
-            box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+            box-shadow: $box-shadow-md;
           }
 
           .category-tab-icon {
@@ -268,7 +267,7 @@
             align-items: center;
             justify-content: center;
             font-size: 18rpx;
-            color: #fff;
+            color: $bg-secondary;
             font-weight: 600;
           }
         }
@@ -295,8 +294,7 @@
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
       &.feature-item-hover {
-        transform: translateY(-4rpx);
-        opacity: 0.8;
+        transform: scale(0.96);
       }
 
       .icon-box {
@@ -352,12 +350,12 @@
 
     .qa-list {
       .qa-item {
-        background: #fff;
-        border-radius: 24rpx;
-        margin-bottom: 20rpx;
-        padding: 24rpx;
-        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
-        transition: all 0.3s ease;
+          background: $bg-secondary;
+          border-radius: 24rpx;
+          margin-bottom: 20rpx;
+          padding: 24rpx;
+          box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+          transition: all 0.3s ease;
 
         &.expanded {
           box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05);
@@ -371,7 +369,7 @@
             width: 36rpx;
             height: 36rpx;
             background: $primary-color;
-            color: #fff;
+            color: $bg-secondary;
             border-radius: 8rpx;
             font-size: 20rpx;
             font-weight: 800;
@@ -422,8 +420,8 @@
           .a-icon {
             width: 36rpx;
             height: 36rpx;
-            background: #FF9800;
-            color: #fff;
+            background: $warning-color;
+            color: $bg-secondary;
             border-radius: 8rpx;
             font-size: 20rpx;
             font-weight: 800;
@@ -465,7 +463,7 @@
         .live-dot {
           width: 12rpx;
           height: 12rpx;
-          background: #ff4d4f;
+          background: $error-color;
           border-radius: 50%;
           margin-left: 12rpx;
           position: relative;
@@ -495,7 +493,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #fff;
+        background: $bg-secondary;
         padding: 24rpx;
         border-radius: 24rpx;
         margin-bottom: 20rpx;
@@ -550,7 +548,7 @@
               }
 
               .earning-value {
-                color: #f5222d;
+                color: $error-color;
                 font-weight: 700;
                 font-size: 28rpx;
                 font-family: 'DIN Alternate', sans-serif;

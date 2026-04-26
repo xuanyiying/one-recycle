@@ -1,20 +1,19 @@
 @use '../../../styles/global.scss' as *;
 
-// ==================== iOS 交易记录页面样式 ====================
-// 严格遵循 Apple Human Interface Guidelines
-
 .transaction-list-page {
   min-height: 100vh;
-  background-color: var(--ios-system-grouped-background);
+  background-color: $bg-color;
   @include responsive-page-padding;
 }
 
-// iOS 页面头部
 .page-header {
-  @include ios-navigation-bar;
-  background-color: var(--ios-system-background);
-  padding: $spacing-16 $page-padding; // 16pt
-  border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  padding: 0 $spacing-16;
+  background-color: $bg-secondary;
+  padding: $spacing-16 $page-padding;
+  border-bottom: 2rpx solid $border-color;
 
   .header-content {
     display: flex;
@@ -22,70 +21,129 @@
     align-items: center;
 
     .back-btn {
-      @include ios-button-text;
-      padding: $spacing-8; // 8pt
-      margin-left: -$spacing-8; // -8pt 扩大触摸区域
-      
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: $button-height-md;
+      padding: 0 $spacing-16;
+      border-radius: $button-radius;
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      text-align: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: $touch-target-min;
+      background-color: transparent;
+      color: $primary-color;
+      padding: $spacing-8;
+      margin-left: -$spacing-8;
+
+      &:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
       text {
-        @include ios-body; // 使用 iOS Body 样式 (34rpx)
-        color: var(--ios-blue);
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $primary-color;
       }
     }
 
     .header-title {
-      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      font-family: $font-family-primary;
+      font-size: $font-size-headline;
+      font-weight: $font-weight-semibold;
+      line-height: $line-height-normal;
+      color: $text-color;
       font-weight: $font-weight-semibold;
     }
 
     .filter-btn {
-      @include ios-button-text;
-      padding: $spacing-8; // 8pt
-      margin-right: -$spacing-8; // -8pt 扩大触摸区域
-      
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: $button-height-md;
+      padding: 0 $spacing-16;
+      border-radius: $button-radius;
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      text-align: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: $touch-target-min;
+      background-color: transparent;
+      color: $primary-color;
+      padding: $spacing-8;
+      margin-right: -$spacing-8;
+
+      &:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
       text {
-        @include ios-body; // 使用 iOS Body 样式 (34rpx)
-        color: var(--ios-blue);
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $primary-color;
       }
     }
   }
 }
 
-// 筛选区域
 .filter-section {
-  background-color: var(--ios-system-background);
-  padding: $spacing-16 $page-padding; // 16pt
-  border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+  background-color: $bg-secondary;
+  padding: $spacing-16 $page-padding;
+  border-bottom: 2rpx solid $border-color;
 
   .filter-picker {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: $spacing-12 $spacing-16; // 12pt 16pt
-    background-color: var(--ios-secondary-system-background);
-    border-radius: $border-radius-base; // 12pt
+    padding: $spacing-12 $spacing-16;
+    background-color: $bg-tertiary;
+    border-radius: $border-radius-base;
     transition: all 0.2s ease;
 
     &:active {
-      background-color: var(--ios-tertiary-system-background);
+      background-color: $bg-secondary;
     }
 
     .filter-text {
-      @include ios-body; // 使用 iOS Body 样式 (34rpx)
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-color;
     }
 
     .filter-arrow {
-      @include ios-body; // 使用 iOS Body 样式 (34rpx)
-      color: var(--ios-tertiary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-color;
+      color: $text-tertiary;
     }
   }
 }
 
-// 统计信息卡片
 .stats-section {
-  padding: $spacing-16 $page-padding; // 16pt
+  padding: $spacing-16 $page-padding;
 
   .stats-card {
-    @include ios-card;
+    background-color: $bg-secondary;
+    border-radius: $card-radius;
+    padding: $card-padding;
+    margin-bottom: $spacing-16;
     background: $gradient-primary;
     color: white;
 
@@ -93,16 +151,24 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: $spacing-16; // 16pt
+      margin-bottom: $spacing-16;
 
       .stats-title {
-        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        font-family: $font-family-primary;
+        font-size: $font-size-headline;
+        font-weight: $font-weight-semibold;
+        line-height: $line-height-normal;
+        color: $text-color;
         font-weight: $font-weight-semibold;
         color: white;
       }
 
       .stats-period {
-        @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+        font-family: $font-family-primary;
+        font-size: $font-size-footnote;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $text-secondary;
         color: rgba(255, 255, 255, 0.8);
       }
     }
@@ -110,21 +176,29 @@
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: $spacing-16; // 16pt
+      gap: $spacing-16;
 
       .stats-item {
         text-align: center;
 
         .stats-value {
-          @include ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-headline2;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
           font-weight: $font-weight-bold;
           color: white;
-          margin-bottom: $spacing-4; // 4pt
-          font-family: $font-family-number; // 使用数字字体
+          margin-bottom: $spacing-4;
+          font-family: $font-family-number;
         }
 
         .stats-label {
-          @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-footnote;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-secondary;
           color: rgba(255, 255, 255, 0.8);
         }
       }
@@ -132,24 +206,30 @@
   }
 }
 
-// 交易列表
 .transaction-list {
-  padding: 0 $page-padding $spacing-20; // 0 16pt 20pt
+  padding: 0 $page-padding $spacing-20;
 
   .list-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: $spacing-16 0 $spacing-12; // 16pt 0 12pt
+    padding: $spacing-16 0 $spacing-12;
 
     .list-title {
-      @include ios-title2; // 使用 iOS Title 2 样式 (44rpx)
+      font-family: $font-family-primary;
+      font-size: $font-size-headline2;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-color;
       font-weight: $font-weight-semibold;
     }
 
     .list-count {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-secondary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
     }
   }
 
@@ -158,12 +238,15 @@
   }
 
   .transaction-item {
-    @include ios-card;
-    margin-bottom: $spacing-12; // 12pt
+    background-color: $bg-secondary;
+    border-radius: $card-radius;
+    padding: $card-padding;
+    margin-bottom: $spacing-16;
+    margin-bottom: $spacing-12;
     transition: all 0.2s ease;
 
     &:active {
-      background-color: var(--ios-tertiary-system-grouped-background);
+      background-color: $bg-tertiary;
       transform: scale(0.98);
     }
 
@@ -178,40 +261,39 @@
         flex: 1;
 
         .item-icon {
-          width: 80rpx; // 40pt
-          height: 80rpx; // 40pt
+          width: 80rpx;
+          height: 80rpx;
           border-radius: 50%;
           @include flex-center;
-          margin-right: $spacing-12; // 12pt
+          margin-right: $spacing-12;
 
-          // 不同交易类型的图标颜色
           &.icon-income {
             background-color: rgba(52, 199, 89, 0.15);
-            color: #34C759; // iOS 绿色
+            color: #34C759;
           }
 
           &.icon-expense {
             background-color: rgba(255, 59, 48, 0.15);
-            color: #FF3B30; // iOS 红色
+            color: #FF3B30;
           }
 
           &.icon-refund {
             background-color: rgba(255, 149, 0, 0.15);
-            color: #FF9500; // iOS 橙色
+            color: #FF9500;
           }
 
           &.icon-transfer {
             background-color: rgba(0, 122, 255, 0.15);
-            color: var(--ios-blue);
+            color: $primary-color;
           }
 
           &.icon-pending {
             background-color: rgba(142, 142, 147, 0.15);
-            color: #8E8E93; // iOS 灰色
+            color: #8E8E93;
           }
 
           .icon-text {
-            font-size: 32rpx; // 16pt
+            font-size: 32rpx;
           }
         }
 
@@ -219,23 +301,34 @@
           flex: 1;
 
           .item-title {
-            @include ios-body; // 使用 iOS Body 样式 (34rpx)
+            font-family: $font-family-primary;
+            font-size: $font-size-body;
+            font-weight: $font-weight-regular;
+            line-height: $line-height-normal;
+            color: $text-color;
             font-weight: $font-weight-medium;
-            margin-bottom: $spacing-4; // 4pt
+            margin-bottom: $spacing-4;
             display: block;
           }
 
           .item-time {
-            @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
-            color: var(--ios-secondary-label);
-            margin-bottom: $spacing-2; // 2pt
+            font-family: $font-family-primary;
+            font-size: $font-size-caption1;
+            font-weight: $font-weight-regular;
+            line-height: $line-height-normal;
+            color: $text-secondary;
+            margin-bottom: $spacing-2;
             display: block;
           }
 
           .item-order {
-            @include ios-caption2; // 使用 iOS Caption 2 样式 (22rpx)
-            color: var(--ios-tertiary-label);
-            font-family: $font-family-number; // 使用数字字体
+            font-family: $font-family-primary;
+            font-size: $font-size-caption12;
+            font-weight: $font-weight-regular;
+            line-height: $line-height-normal;
+            color: $text-secondary;
+            color: $text-tertiary;
+            font-family: $font-family-number;
             display: block;
           }
         }
@@ -245,103 +338,146 @@
         text-align: right;
 
         .item-amount {
-          @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-headline3;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
           font-weight: $font-weight-bold;
-          font-family: $font-family-number; // 使用数字字体
-          margin-bottom: $spacing-2; // 2pt
+          font-family: $font-family-number;
+          margin-bottom: $spacing-2;
 
-          // 不同金额类型的颜色
           &.amount-income {
-            color: #34C759; // iOS 绿色
+            color: #34C759;
           }
 
           &.amount-expense {
-            color: #FF3B30; // iOS 红色
+            color: #FF3B30;
           }
 
           &.amount-refund {
-            color: #FF9500; // iOS 橙色
+            color: #FF9500;
           }
 
           &.amount-transfer {
-            color: var(--ios-blue);
+            color: $primary-color;
           }
 
           &.amount-pending {
-            color: #8E8E93; // iOS 灰色
+            color: #8E8E93;
           }
         }
 
         .item-status {
-          @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
-          color: var(--ios-secondary-label);
+          font-family: $font-family-primary;
+          font-size: $font-size-caption1;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-secondary;
         }
       }
     }
   }
 
-  // 加载更多
   .loading-more {
     @include flex-center;
-    padding: $spacing-20; // 20pt
+    padding: $spacing-20;
 
     .loading-text {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-secondary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
     }
   }
 
   .no-more {
     text-align: center;
-    padding: $spacing-20; // 20pt
+    padding: $spacing-20;
 
     .no-more-text {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-tertiary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
+      color: $text-tertiary;
     }
   }
 
-  // 空状态
   .empty-state {
     @include flex-center;
     flex-direction: column;
-    padding: $spacing-40; // 40pt
+    padding: $spacing-40;
     text-align: center;
 
     .empty-icon {
-      font-size: 160rpx; // 80pt
-      color: var(--ios-quaternary-label);
-      margin-bottom: $spacing-24; // 24pt
+      font-size: 160rpx;
+      color: $text-disabled;
+      margin-bottom: $spacing-24;
     }
 
     .empty-title {
-      @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+      font-family: $font-family-primary;
+      font-size: $font-size-headline3;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-color;
       font-weight: $font-weight-semibold;
-      margin-bottom: $spacing-8; // 8pt
+      margin-bottom: $spacing-8;
     }
 
     .empty-desc {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-secondary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
       line-height: $line-height-relaxed;
-      margin-bottom: $spacing-24; // 24pt
+      margin-bottom: $spacing-24;
     }
 
     .empty-action {
-      @include ios-button-primary;
-      padding: 0 $spacing-32; // 0 32pt
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: $button-height-md;
+      padding: 0 $spacing-16;
+      border-radius: $button-radius;
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      text-align: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: $touch-target-min;
+      background-color: $primary-color;
+      color: #FFFFFF;
+      padding: 0 $spacing-32;
+
+      &:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        transform: none;
+      }
     }
   }
 }
 
-// ==================== 筛选弹窗 ====================
 .filter-modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4); // iOS 遮罩颜色
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1000;
   display: flex;
   align-items: flex-end;
@@ -350,89 +486,147 @@
 
   .modal-content {
     width: 100%;
-    background: var(--ios-secondary-system-grouped-background);
-    border-radius: $border-radius-lg $border-radius-lg 0 0; // 20pt 顶部圆角
+    background: $bg-secondary;
+    border-radius: $border-radius-lg $border-radius-lg 0 0;
     animation: ios-slide-in-up 0.3s ease-out;
     overflow: hidden;
-    @include ios-safe-area-bottom;
+    @include safe-area-padding(bottom);
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: $spacing-16 $page-padding; // 16pt
-      border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+      padding: $spacing-16 $page-padding;
+      border-bottom: 2rpx solid $border-color;
 
       .cancel-btn {
-        @include ios-button-text;
-        padding: $spacing-8; // 8pt
-        
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: $button-height-md;
+        padding: 0 $spacing-16;
+        border-radius: $button-radius;
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        font-weight: $font-weight-regular;
+        text-align: center;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: $touch-target-min;
+        background-color: transparent;
+        color: $primary-color;
+        padding: $spacing-8;
+
+        &:active {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+
         text {
-          @include ios-body; // 使用 iOS Body 样式 (34rpx)
-          color: var(--ios-blue);
+          font-family: $font-family-primary;
+          font-size: $font-size-body;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $primary-color;
         }
       }
 
       .modal-title {
-        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        font-family: $font-family-primary;
+        font-size: $font-size-headline;
+        font-weight: $font-weight-semibold;
+        line-height: $line-height-normal;
+        color: $text-color;
         font-weight: $font-weight-semibold;
       }
 
       .confirm-btn {
-        @include ios-button-text;
-        padding: $spacing-8; // 8pt
-        
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: $button-height-md;
+        padding: 0 $spacing-16;
+        border-radius: $button-radius;
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        font-weight: $font-weight-regular;
+        text-align: center;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: $touch-target-min;
+        background-color: transparent;
+        color: $primary-color;
+        padding: $spacing-8;
+
+        &:active {
+          transform: scale(0.95);
+          opacity: 0.8;
+        }
+
         text {
-          @include ios-body; // 使用 iOS Body 样式 (34rpx)
-          color: var(--ios-blue);
+          font-family: $font-family-primary;
+          font-size: $font-size-body;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $primary-color;
         }
       }
     }
 
     .filter-options {
-      padding: $spacing-16; // 16pt
+      padding: $spacing-16;
 
       .filter-group {
-        margin-bottom: $spacing-24; // 24pt
+        margin-bottom: $spacing-24;
 
         &:last-child {
           margin-bottom: 0;
         }
 
         .group-title {
-          @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-headline;
           font-weight: $font-weight-semibold;
-          margin-bottom: $spacing-12; // 12pt
+          line-height: $line-height-normal;
+          color: $text-color;
+          font-weight: $font-weight-semibold;
+          margin-bottom: $spacing-12;
         }
 
         .option-list {
           display: flex;
           flex-wrap: wrap;
-          gap: $spacing-8; // 8pt
+          gap: $spacing-8;
 
           .option-item {
-            padding: $spacing-8 $spacing-16; // 8pt 16pt
-            background-color: var(--ios-secondary-system-background);
-            border: 2rpx solid transparent; // 1pt 透明边框
-            border-radius: $border-radius-pill; // 胶囊形
+            padding: $spacing-8 $spacing-16;
+            background-color: $bg-tertiary;
+            border: 2rpx solid transparent;
+            border-radius: $border-radius-pill;
             transition: all 0.2s ease;
 
             &:active {
-              background-color: var(--ios-tertiary-system-background);
+              background-color: $bg-secondary;
             }
 
             &.selected {
-              border-color: var(--ios-blue);
-              background-color: rgba(0, 122, 255, 0.1);
-              
+              border-color: $primary-color;
+              background-color: rgba($primary-color, 0.1);
+
               .option-text {
-                color: var(--ios-blue);
+                color: $primary-color;
                 font-weight: $font-weight-semibold;
               }
             }
 
             .option-text {
-              @include ios-body; // 使用 iOS Body 样式 (34rpx)
+              font-family: $font-family-primary;
+              font-size: $font-size-body;
+              font-weight: $font-weight-regular;
+              line-height: $line-height-normal;
+              color: $text-color;
             }
           }
         }
@@ -441,19 +635,27 @@
   }
 }
 
-// ==================== 响应式适配 ====================
 @include mobile-standard {
   .transaction-list-page {
     .stats-section .stats-card .stats-grid {
       grid-template-columns: 1fr;
-      gap: $spacing-12; // 12pt
+      gap: $spacing-12;
     }
 
     .transaction-list .transaction-item .item-content {
       .item-left .item-icon {
-        width: 64rpx; // 32pt
-        height: 64rpx; // 32pt
+        width: 64rpx;
+        height: 64rpx;
       }
     }
+  }
+}
+
+@keyframes ios-slide-in-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }

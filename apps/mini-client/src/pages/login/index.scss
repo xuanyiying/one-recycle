@@ -1,30 +1,28 @@
 @use '../../styles/global.scss' as *;
 
-// ==================== 登录页面样式 - 柔和自然主题 ====================
-
 .login-container {
   min-height: 100vh;
   background: $gradient-bg;
   display: flex;
   flex-direction: column;
-
-  // iOS 安全区域适配与响应式边距
   @include responsive-page-padding;
 }
 
-// ==================== 加载状态 ====================
 .loading-container {
   @include flex-center;
   min-height: 100vh;
-  background-color: var(--ios-system-background);
+  background-color: $bg-secondary;
 
   .loading-text {
-    @include ios-body;
-    color: var(--ios-secondary-label);
+    font-family: $font-family-primary;
+    font-size: $font-size-body;
+    font-weight: $font-weight-regular;
+    line-height: $line-height-normal;
+    color: $text-color;
+    color: $text-secondary;
   }
 }
 
-// ==================== 登录页头部 ====================
 .login-header {
   display: flex;
   flex-direction: column;
@@ -52,7 +50,11 @@
   }
 
   .welcome-text {
-    @include ios-large-title;
+    font-family: $font-family-primary;
+    font-size: $font-size-large-title;
+    font-weight: $font-weight-regular;
+    line-height: $line-height-tight;
+    color: $text-color;
     text-align: center;
     margin-top: $spacing-16;
     color: $text-color;
@@ -60,7 +62,6 @@
   }
 }
 
-// ==================== 主要内容区域 ====================
 .main-content {
   flex: 1;
   display: flex;
@@ -71,7 +72,6 @@
   min-height: 0;
 }
 
-// ==================== 头像区域 ====================
 .avatar-section {
   display: flex;
   flex-direction: column;
@@ -112,13 +112,15 @@
   }
 
   .avatar-tip {
-    @include ios-footnote;
-    color: var(--ios-secondary-label);
+    font-family: $font-family-primary;
+    font-size: $font-size-footnote;
+    font-weight: $font-weight-regular;
+    line-height: $line-height-normal;
+    color: $text-secondary;
     text-align: center;
   }
 }
 
-// ==================== 昵称输入区域 ====================
 .nickname-section {
   width: 100%;
   margin-bottom: $spacing-24;
@@ -128,8 +130,31 @@
     width: 100%;
 
     .nickname-input {
-      @include ios-input;
       width: 100%;
+      height: $input-height;
+      padding: 0 $spacing-16;
+      border: 2rpx solid $border-color;
+      border-radius: $input-radius;
+      background-color: $bg-secondary;
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      color: $text-color;
+      width: 100%;
+
+      &::placeholder {
+        color: $text-tertiary;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        background-color: $bg-secondary;
+      }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
 
       &.error {
         border-color: $error-color;
@@ -144,13 +169,16 @@
     padding: 0 $spacing-4;
 
     text {
-      @include ios-caption1;
+      font-family: $font-family-primary;
+      font-size: $font-size-caption1;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
       color: $error-color;
     }
   }
 }
 
-// ==================== 授权说明区域 ====================
 .auth-description {
   text-align: center;
   margin-bottom: $spacing-24;
@@ -158,20 +186,26 @@
   max-width: 520rpx;
 
   .description-title {
-    @include ios-headline;
+    font-family: $font-family-primary;
+    font-size: $font-size-headline;
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-normal;
+    color: $text-color;
     margin-bottom: $spacing-8;
     display: block;
     color: $text-color;
   }
 
   .description-content {
-    @include ios-footnote;
-    color: var(--ios-secondary-label);
+    font-family: $font-family-primary;
+    font-size: $font-size-footnote;
+    font-weight: $font-weight-regular;
+    line-height: $line-height-normal;
+    color: $text-secondary;
     line-height: $line-height-relaxed;
   }
 }
 
-// ==================== 手机号登录表单 ====================
 .phone-login-form {
   width: 100%;
   padding: 0 36rpx;
@@ -179,7 +213,7 @@
 
   .input-group {
     margin-bottom: $spacing-16;
-    background: var(--ios-secondary-system-background);
+    background: $bg-tertiary;
     border-radius: $border-radius-lg;
     overflow: hidden;
     border: 2rpx solid $border-color;
@@ -228,16 +262,15 @@
       padding: 0 $spacing-24;
       background: transparent;
       font-size: 32rpx;
-      color: var(--ios-label);
+      color: $text-color;
 
       &::placeholder {
-        color: var(--ios-placeholder-text);
+        color: $text-tertiary;
       }
     }
   }
 }
 
-// ==================== 一键登录区域 ====================
 .quick-login-section {
   width: 100%;
   padding: 0 48rpx;
@@ -294,7 +327,6 @@
   }
 }
 
-// ==================== 模式切换 ====================
 .switch-mode-container {
   width: 100%;
   display: flex;
@@ -327,7 +359,6 @@
   }
 }
 
-// ==================== 协议勾选区域 ====================
 .agreement-checkbox {
   display: flex;
   align-items: center;
@@ -343,12 +374,19 @@
     margin-left: $spacing-8;
 
     .agreement-text {
-      @include ios-caption1;
-      color: var(--ios-secondary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-caption1;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
     }
 
     .agreement-link {
-      @include ios-caption1;
+      font-family: $font-family-primary;
+      font-size: $font-size-caption1;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
       color: $primary-color;
       font-weight: 500;
 
@@ -359,7 +397,6 @@
   }
 }
 
-// ==================== 提交错误信息 - 优化为更柔和的提示 ====================
 .submit-error {
   width: 100%;
   margin-bottom: $spacing-16;
@@ -372,14 +409,17 @@
   justify-content: center;
 
   .error-text {
-    @include ios-footnote;
+    font-family: $font-family-primary;
+    font-size: $font-size-footnote;
+    font-weight: $font-weight-regular;
+    line-height: $line-height-normal;
+    color: $text-secondary;
     color: $error-color;
     text-align: center;
     font-weight: 500;
   }
 }
 
-// ==================== 操作按钮区域 ====================
 .action-buttons {
   width: 100%;
   margin-bottom: $spacing-24;
@@ -438,12 +478,37 @@
   }
 
   .skip-btn {
-    @include ios-button-secondary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: $button-height-md;
+    padding: 0 $spacing-16;
+    border-radius: $button-radius;
+    font-family: $font-family-primary;
+    font-size: $font-size-body;
+    font-weight: $font-weight-regular;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: $touch-target-min;
+    background-color: rgba($primary-color, 0.15);
+    color: $primary-color;
     width: 100%;
+
+    &:active {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+    }
   }
 }
 
-// ==================== 社交登录区域 ====================
 .social-login-section {
   width: 100%;
   padding: 0 36rpx;
@@ -463,8 +528,12 @@
     }
 
     .text {
-      @include ios-caption1;
-      color: var(--ios-tertiary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-caption1;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
+      color: $text-tertiary;
       margin: 0 $spacing-16;
     }
   }
@@ -510,14 +579,16 @@
       }
 
       .social-text {
-        @include ios-caption1;
-        color: var(--ios-secondary-label);
+        font-family: $font-family-primary;
+        font-size: $font-size-caption1;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $text-secondary;
       }
     }
   }
 }
 
-// ==================== 动画 ====================
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -525,7 +596,6 @@
 }
 
 @keyframes ios-shake {
-
   0%,
   100% {
     transform: translateX(0);
@@ -540,7 +610,6 @@
   }
 }
 
-// ==================== 响应式适配 ====================
 @media screen and (max-width: 375px) {
   .login-header {
     padding: $spacing-32 0 $spacing-24;

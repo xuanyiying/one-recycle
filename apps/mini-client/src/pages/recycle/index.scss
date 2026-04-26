@@ -1,102 +1,115 @@
 @use '../../styles/global.scss' as *;
 
-// ==================== iOS 回收页面样式 ====================
-// 严格遵循 Apple Human Interface Guidelines
-
 .recycle-form-page {
   min-height: 100vh;
-  background-color: var(--ios-system-grouped-background);
-  @include ios-safe-area-top;
-  @include ios-safe-area-bottom;
-  padding-bottom: 120rpx; // 为底部导航留空间
+  background-color: $bg-color;
+  @include safe-area-padding(top);
+  @include safe-area-padding(bottom);
+  padding-bottom: 120rpx;
 
-  // iOS 页面头部
   .page-header {
-    background-color: var(--ios-system-background);
-    // 优化：使用 padding 包含安全区域和间距，确保背景延伸到顶部
+    background-color: $bg-secondary;
     padding-top: calc(constant(safe-area-inset-top) + #{$spacing-20});
     padding-top: calc(env(safe-area-inset-top) + #{$spacing-20});
     padding-left: $page-padding;
     padding-right: $page-padding;
     padding-bottom: $spacing-20;
     text-align: center;
-    border-bottom: 2rpx solid var(--ios-separator); // 1pt 分隔线
+    border-bottom: 2rpx solid $border-color;
     position: sticky;
     top: 0;
     z-index: 100;
-    
-    // 移除 margin-top，改用 padding 实现沉浸式效果
     margin-top: 0;
 
     .page-title {
-      @include ios-large-title; // 使用 iOS Large Title 样式 (68rpx)
+      font-family: $font-family-primary;
+      font-size: $font-size-large-title;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-tight;
+      color: $text-color;
       font-weight: $font-weight-bold;
-      margin-bottom: $spacing-8; // 8pt
-      color: var(--ios-label);
+      margin-bottom: $spacing-8;
+      color: $text-color;
     }
 
     .page-subtitle {
-      @include ios-body; // 使用 iOS Body 样式 (34rpx)
-      color: var(--ios-secondary-label);
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-color;
+      color: $text-secondary;
     }
   }
 
   .form-container {
-    padding: $spacing-20 $page-padding 0; // 为固定头部留出空间
-    margin-top: $spacing-16; // 增加与头部的间距
+    padding: $spacing-20 $page-padding 0;
+    margin-top: $spacing-16;
   }
 
-  // iOS 表单区块
   .form-section {
-    @include ios-card;
-    margin-bottom: $spacing-20; // 20pt
+    background-color: $bg-secondary;
+    border-radius: $card-radius;
+    padding: $card-padding;
+    margin-bottom: $spacing-16;
+    margin-bottom: $spacing-20;
 
-    // 京东快递特殊区块
     &.jd-express-section {
-      padding: $spacing-20; // 20pt
+      padding: $spacing-20;
 
       .jd-express-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: $spacing-16; // 16pt
+        margin-bottom: $spacing-16;
 
         .jd-express-left {
           display: flex;
           align-items: center;
 
           .section-title {
-            @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+            font-family: $font-family-primary;
+            font-size: $font-size-headline;
+            font-weight: $font-weight-semibold;
+            line-height: $line-height-normal;
+            color: $text-color;
             font-weight: $font-weight-semibold;
             margin-bottom: 0;
           }
         }
 
         .jd-logo {
-          width: 80rpx; // 40pt
-          height: 48rpx; // 24pt
+          width: 80rpx;
+          height: 48rpx;
         }
       }
 
       .jd-express-details {
-        margin-top: $spacing-16; // 16pt
-        padding: $spacing-16; // 16pt
-        background-color: rgba(255, 149, 0, 0.1); // iOS 橙色背景
-        border-radius: $border-radius-base; // 12pt
-        border-left: 8rpx solid #FF9500; // 4pt iOS 橙色边框
+        margin-top: $spacing-16;
+        padding: $spacing-16;
+        background-color: rgba(255, 149, 0, 0.1);
+        border-radius: $border-radius-base;
+        border-left: 8rpx solid #FF9500;
 
         .detail-text {
-          @include ios-body; // 使用 iOS Body 样式 (34rpx)
-          color: var(--ios-label);
+          font-family: $font-family-primary;
+          font-size: $font-size-body;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
           line-height: $line-height-relaxed;
-          margin-bottom: $spacing-8; // 8pt
+          margin-bottom: $spacing-8;
           display: block;
         }
 
         .note-text {
-          @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-          color: #FF9500; // iOS 橙色
-          margin-top: $spacing-12; // 12pt
+          font-family: $font-family-primary;
+          font-size: $font-size-footnote;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-secondary;
+          color: #FF9500;
+          margin-top: $spacing-12;
           font-weight: $font-weight-medium;
           display: block;
         }
@@ -104,64 +117,74 @@
     }
 
     .section-title {
-      @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+      font-family: $font-family-primary;
+      font-size: $font-size-headline;
       font-weight: $font-weight-semibold;
-      margin-bottom: $spacing-8; // 8pt
+      line-height: $line-height-normal;
+      color: $text-color;
+      font-weight: $font-weight-semibold;
+      margin-bottom: $spacing-8;
       display: block;
     }
 
     .section-desc {
-      @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-      color: var(--ios-secondary-label);
-      margin-bottom: $spacing-16; // 16pt
+      font-family: $font-family-primary;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-regular;
+      line-height: $line-height-normal;
+      color: $text-secondary;
+      margin-bottom: $spacing-16;
       line-height: $line-height-relaxed;
       display: block;
     }
   }
 
-  // 分类选择区域
   .category-section {
     .category-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: $spacing-12; // 12pt
+      gap: $spacing-12;
 
       .category-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: $spacing-16; // 16pt
-        background-color: var(--ios-secondary-system-background);
-        border-radius: $border-radius-base; // 12pt
-        border: 4rpx solid transparent; // 2pt 透明边框
+        padding: $spacing-16;
+        background-color: $bg-tertiary;
+        border-radius: $border-radius-base;
+        border: 4rpx solid transparent;
         transition: all 0.2s ease;
 
         &:active {
           transform: scale(0.95);
-          background-color: var(--ios-tertiary-system-background);
+          background-color: $bg-secondary;
         }
 
         &.selected {
-          border-color: var(--ios-blue);
-          background-color: rgba(0, 122, 255, 0.1);
+          border-color: $primary-color;
+          background-color: rgba($primary-color, 0.1);
         }
 
         .category-icon {
-          width: 80rpx; // 40pt
-          height: 80rpx; // 40pt
-          margin-bottom: $spacing-8; // 8pt
-          background-color: var(--ios-blue);
-          border-radius: $border-radius-base; // 12pt
+          width: 80rpx;
+          height: 80rpx;
+          margin-bottom: $spacing-8;
+          background-color: $primary-color;
+          border-radius: $border-radius-base;
           @include flex-center;
 
           image {
-            width: 48rpx; // 24pt
-            height: 48rpx; // 24pt
+            width: 48rpx;
+            height: 48rpx;
           }
         }
 
         .category-name {
-          @include ios-callout; // 使用 iOS Callout 样式 (32rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-callout;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
           text-align: center;
           font-weight: $font-weight-medium;
         }
@@ -169,43 +192,92 @@
     }
   }
 
-  // 物品详情区域
   .item-details-section {
     .form-group {
-      margin-bottom: $spacing-20; // 20pt
+      margin-bottom: $spacing-20;
 
       .form-label {
-        @include ios-headline; // 使用 iOS Headline 样式 (36rpx)
+        font-family: $font-family-primary;
+        font-size: $font-size-headline;
+        font-weight: $font-weight-semibold;
+        line-height: $line-height-normal;
+        color: $text-color;
         font-weight: $font-weight-medium;
-        margin-bottom: $spacing-8; // 8pt
+        margin-bottom: $spacing-8;
         display: block;
       }
 
       .form-input {
-        @include ios-input;
         width: 100%;
+        height: $input-height;
+        padding: 0 $spacing-16;
+        border: 2rpx solid $border-color;
+        border-radius: $input-radius;
+        background-color: $bg-secondary;
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        color: $text-color;
+        width: 100%;
+
+        &::placeholder {
+          color: $text-tertiary;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+          background-color: $bg-secondary;
+        }
+
+        &:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
       }
 
       .form-textarea {
-        @include ios-input;
         width: 100%;
-        min-height: 200rpx; // 100pt
-        padding: $spacing-12; // 12pt
+        height: $input-height;
+        padding: 0 $spacing-16;
+        border: 2rpx solid $border-color;
+        border-radius: $input-radius;
+        background-color: $bg-secondary;
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        color: $text-color;
+        width: 100%;
+        min-height: 200rpx;
+        padding: $spacing-12;
         resize: none;
+
+        &::placeholder {
+          color: $text-tertiary;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+          background-color: $bg-secondary;
+        }
+
+        &:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
       }
 
       .weight-selector {
         display: flex;
         flex-wrap: wrap;
-        gap: $spacing-8; // 8pt
+        gap: $spacing-8;
 
         .weight-option {
           flex: 1;
-          min-width: 120rpx; // 60pt
-          padding: $spacing-12 $spacing-16; // 12pt 16pt
-          background-color: var(--ios-secondary-system-background);
-          border: 4rpx solid transparent; // 2pt 透明边框
-          border-radius: $border-radius-base; // 12pt
+          min-width: 120rpx;
+          padding: $spacing-12 $spacing-16;
+          background-color: $bg-tertiary;
+          border: 4rpx solid transparent;
+          border-radius: $border-radius-base;
           text-align: center;
           transition: all 0.2s ease;
 
@@ -214,12 +286,16 @@
           }
 
           &.selected {
-            border-color: var(--ios-blue);
-            background-color: rgba(0, 122, 255, 0.1);
+            border-color: $primary-color;
+            background-color: rgba($primary-color, 0.1);
           }
 
           text {
-            @include ios-body; // 使用 iOS Body 样式 (34rpx)
+            font-family: $font-family-primary;
+            font-size: $font-size-body;
+            font-weight: $font-weight-regular;
+            line-height: $line-height-normal;
+            color: $text-color;
             font-weight: $font-weight-medium;
           }
         }
@@ -227,24 +303,23 @@
     }
   }
 
-  // 图片上传区域
   .photo-upload-section {
     .upload-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: $spacing-12; // 12pt
+      gap: $spacing-12;
 
       .upload-item {
         aspect-ratio: 1;
-        border-radius: $border-radius-base; // 12pt
+        border-radius: $border-radius-base;
         overflow: hidden;
         position: relative;
-        background-color: var(--ios-secondary-system-background);
-        border: 4rpx dashed var(--ios-separator); // 2pt 虚线边框
+        background-color: $bg-tertiary;
+        border: 4rpx dashed $border-color;
 
         &.has-image {
           border-style: solid;
-          border-color: var(--ios-blue);
+          border-color: $primary-color;
         }
 
         .upload-placeholder {
@@ -253,14 +328,17 @@
           flex-direction: column;
 
           .upload-icon {
-            font-size: 80rpx; // 40pt
-            color: var(--ios-tertiary-label);
-            margin-bottom: $spacing-8; // 8pt
+            font-size: 80rpx;
+            color: $text-tertiary;
+            margin-bottom: $spacing-8;
           }
 
           .upload-text {
-            @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
-            color: var(--ios-secondary-label);
+            font-family: $font-family-primary;
+            font-size: $font-size-caption1;
+            font-weight: $font-weight-regular;
+            line-height: $line-height-normal;
+            color: $text-secondary;
             text-align: center;
           }
         }
@@ -273,15 +351,15 @@
 
         .delete-btn {
           position: absolute;
-          top: $spacing-4; // 4pt
-          right: $spacing-4; // 4pt
-          width: 48rpx; // 24pt
-          height: 48rpx; // 24pt
+          top: $spacing-4;
+          right: $spacing-4;
+          width: 48rpx;
+          height: 48rpx;
           background-color: rgba(255, 59, 48, 0.8);
           border-radius: 50%;
           @include flex-center;
           color: white;
-          font-size: 32rpx; // 16pt
+          font-size: 32rpx;
 
           &:active {
             background-color: #FF3B30;
@@ -291,64 +369,77 @@
     }
   }
 
-  // 地址选择区域
   .address-section {
     .address-selector {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: $spacing-16; // 16pt
-      background-color: var(--ios-secondary-system-background);
-      border-radius: $border-radius-base; // 12pt
-      border: 4rpx solid var(--ios-separator); // 2pt 边框
+      padding: $spacing-16;
+      background-color: $bg-tertiary;
+      border-radius: $border-radius-base;
+      border: 4rpx solid $border-color;
       transition: all 0.2s ease;
 
       &:active {
-        background-color: var(--ios-tertiary-system-background);
-        border-color: var(--ios-blue);
+        background-color: $bg-secondary;
+        border-color: $primary-color;
       }
 
       .address-content {
         flex: 1;
 
         .address-name {
-          @include ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-body;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
           font-weight: $font-weight-medium;
-          margin-bottom: $spacing-4; // 4pt
+          margin-bottom: $spacing-4;
         }
 
         .address-detail {
-          @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-          color: var(--ios-secondary-label);
+          font-family: $font-family-primary;
+          font-size: $font-size-footnote;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-secondary;
           line-height: $line-height-relaxed;
         }
 
         .address-placeholder {
-          @include ios-body; // 使用 iOS Body 样式 (34rpx)
-          color: var(--ios-tertiary-label);
+          font-family: $font-family-primary;
+          font-size: $font-size-body;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
+          color: $text-tertiary;
         }
       }
 
       .address-arrow {
-        @include ios-body; // 使用 iOS Body 样式 (34rpx)
-        color: var(--ios-tertiary-label);
-        margin-left: $spacing-8; // 8pt
+        font-family: $font-family-primary;
+        font-size: $font-size-body;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $text-color;
+        color: $text-tertiary;
+        margin-left: $spacing-8;
       }
     }
   }
 
-  // 时间选择区域
   .time-section {
     .time-slots {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: $spacing-12; // 12pt
+      gap: $spacing-12;
 
       .time-slot {
-        padding: $spacing-16; // 16pt
-        background-color: var(--ios-secondary-system-background);
-        border: 4rpx solid transparent; // 2pt 透明边框
-        border-radius: $border-radius-base; // 12pt
+        padding: $spacing-16;
+        background-color: $bg-tertiary;
+        border: 4rpx solid transparent;
+        border-radius: $border-radius-base;
         text-align: center;
         transition: all 0.2s ease;
 
@@ -357,8 +448,8 @@
         }
 
         &.selected {
-          border-color: var(--ios-blue);
-          background-color: rgba(0, 122, 255, 0.1);
+          border-color: $primary-color;
+          background-color: rgba($primary-color, 0.1);
         }
 
         &.disabled {
@@ -367,33 +458,65 @@
         }
 
         .time-text {
-          @include ios-body; // 使用 iOS Body 样式 (34rpx)
+          font-family: $font-family-primary;
+          font-size: $font-size-body;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-color;
           font-weight: $font-weight-medium;
-          margin-bottom: $spacing-4; // 4pt
+          margin-bottom: $spacing-4;
         }
 
         .time-desc {
-          @include ios-caption1; // 使用 iOS Caption 1 样式 (24rpx)
-          color: var(--ios-secondary-label);
+          font-family: $font-family-primary;
+          font-size: $font-size-caption1;
+          font-weight: $font-weight-regular;
+          line-height: $line-height-normal;
+          color: $text-secondary;
         }
       }
     }
   }
 
-  // 提交按钮区域
   .submit-section {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: $spacing-16 $page-padding; // 16pt
-    background-color: var(--ios-system-background);
-    border-top: 2rpx solid var(--ios-separator); // 1pt 顶部边框
-    @include ios-safe-area-bottom;
+    padding: $spacing-16 $page-padding;
+    background-color: $bg-secondary;
+    border-top: 2rpx solid $border-color;
+    @include safe-area-padding(bottom);
 
     .submit-btn {
-      @include ios-button-primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: $button-height-md;
+      padding: 0 $spacing-16;
+      border-radius: $button-radius;
+      font-family: $font-family-primary;
+      font-size: $font-size-body;
+      font-weight: $font-weight-regular;
+      text-align: center;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: $touch-target-min;
+      background-color: $primary-color;
+      color: #FFFFFF;
       width: 100%;
+
+      &:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        transform: none;
+      }
 
       &.disabled {
         opacity: 0.3;
@@ -403,31 +526,37 @@
 
     .price-estimate {
       text-align: center;
-      margin-bottom: $spacing-12; // 12pt
+      margin-bottom: $spacing-12;
 
       .estimate-text {
-        @include ios-footnote; // 使用 iOS Footnote 样式 (26rpx)
-        color: var(--ios-secondary-label);
-        margin-bottom: $spacing-4; // 4pt
+        font-family: $font-family-primary;
+        font-size: $font-size-footnote;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $text-secondary;
+        margin-bottom: $spacing-4;
       }
 
       .estimate-price {
-        @include ios-title3; // 使用 iOS Title 3 样式 (40rpx)
+        font-family: $font-family-primary;
+        font-size: $font-size-headline3;
+        font-weight: $font-weight-regular;
+        line-height: $line-height-normal;
+        color: $text-color;
         font-weight: $font-weight-bold;
-        color: var(--ios-blue);
+        color: $primary-color;
       }
     }
   }
 }
 
-// ==================== 响应式适配 ====================
 @include mobile-standard {
   .recycle-form-page {
     .category-section .category-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: $spacing-8; // 8pt
+      gap: $spacing-8;
     }
-    
+
     .photo-upload-section .upload-grid {
       grid-template-columns: repeat(2, 1fr);
     }

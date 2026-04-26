@@ -621,12 +621,12 @@ export default function ProfileEdit(): JSX.Element {
             <View className='phone-bound'>
               <View className='phone-info'>
                 <View className='phone-icon'>
-                  <Icon name='phone' size='32' color='var(--ios-green)' />
+                  <Icon name='phone' size='32' color='#8E8E93' />
                 </View>
                 <View className='phone-details'>
                   <Text className='phone-number'>{formData.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}</Text>
                   <Text className='phone-status'>
-                    <Icon name='checkmark-circle' size='12' color='var(--ios-green)' />
+                    <Icon name='checkmark-circle' size='12' color='#22C55E' />
                     已绑定
                   </Text>
                 </View>
@@ -640,7 +640,7 @@ export default function ProfileEdit(): JSX.Element {
               className='bind-phone-btn'
               onClick={() => setShowPhoneBinding(true)}
             >
-              <Icon name='plus' size='16' color='var(--ios-primary)' />
+              <Icon name='plus' size='16' color='#22C55E' />
               绑定手机号
             </Button>
           )}
@@ -670,7 +670,7 @@ export default function ProfileEdit(): JSX.Element {
               <View className='modal-header'>
                 <Text className='modal-title'>绑定手机号</Text>
                 <View className='close-btn' onClick={handleClosePhoneBinding}>
-                  <Icon name='cross' size='24' color='var(--ios-tertiary-label)' />
+                  <Icon name='cross' size='24' color='#9CA3AF' />
                 </View>
               </View>
 
