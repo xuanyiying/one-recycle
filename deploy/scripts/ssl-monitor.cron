@@ -1,9 +1,0 @@
-# SSL Certificate Monitoring Cron Job
-# Add this to crontab: crontab -e
-# Or copy to /etc/cron.d/ssl-monitor
-
-# Check SSL certificate expiration daily at 2:00 AM
-0 2 * * * root /opt/one-recycle/deploy/scripts/ssl-monitor.sh >> /var/log/ssl-monitor.log 2>&1
-
-# Alternative: Check weekly on Sunday at 3:00 AM
-# 0 3 * * 0 root /opt/one-recycle/deploy/scripts/ssl-monitor.sh >> /var/log/ssl-monitor.log 2>&1

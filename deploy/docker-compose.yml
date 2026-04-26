@@ -44,6 +44,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3002
+      RUN_SEED: '1'
       DATABASE_URL: postgresql://one_recycle:${DB_PASSWORD}@postgres:5432/one_recycle
       REDIS_HOST: redis
       REDIS_PORT: 6379

@@ -249,11 +249,6 @@ git push origin main
 # SSH 登录服务器
 ssh ubuntu@<服务器IP>
 
-# 执行初始化脚本
-curl -fsSL https://raw.githubusercontent.com/your-repo/main/deploy/scripts/init-server.sh | sudo bash
-
-# 或手动执行以下步骤：
-
 # 安装 Docker
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker ubuntu
@@ -324,29 +319,7 @@ COS_BUCKET=your_bucket_name
 COS_REGION=ap-guangzhou
 ```
 
-#### 4. 配置 SSL 证书
-
-**方式 A: 使用 Let's Encrypt（推荐）**
-
-```bash
-ssh ubuntu@<服务器IP>
-sudo bash /opt/one-recycle/deploy/scripts/setup-ssl.sh
-
-# 选择选项 1: Let's Encrypt Standalone 模式
-```
-
-**方式 B: 手动上传证书**
-
-```bash
-# 本地执行
-scp your_domain.crt ubuntu@<服务器IP>:/opt/one-recycle/deploy/nginx/ssl/fullchain.pem
-scp your_domain.key ubuntu@<服务器IP>:/opt/one-recycle/deploy/nginx/ssl/privkey.pem
-
-# 服务器上设置权限
-ssh ubuntu@<服务器IP> "sudo chmod 644 /opt/one-recycle/deploy/nginx/ssl/fullchain.pem && sudo chmod 600 /opt/one-recycle/deploy/nginx/ssl/privkey.pem"
-```
-
-#### 5. 启动服务
+#### 4. 启动服务
 
 ```bash
 ssh ubuntu@<服务器IP>
@@ -389,7 +362,7 @@ sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.
 # 特定服务
 sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs -f api-gateway
 sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs -f postgres
-sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs -f nginx
+sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs -f caddy
 ```
 
 ### 重启服务
@@ -459,8 +432,8 @@ sudo docker stats --no-stream
 # 实时监控错误日志
 sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs -f | grep ERROR
 
-# 查看 Nginx 访问日志
-sudo tail -f /opt/one-recycle/logs/nginx/access.log
+# 查看 Caddy 日志
+sudo tail -f /var/log/caddy/access.log
 ```
 
 ---
@@ -484,14 +457,14 @@ free -h
 
 ### 502 Bad Gateway
 ```bash
-# 检查 Nginx 配置
-sudo docker exec one-recycle-nginx nginx -t
+# 检查 Caddy 配置
+docker exec one-recycle-caddy caddy validate --config /etc/caddy/Caddyfile
 
 # 检查后端服务是否健康
-curl http://localhost:3002/health
+curl http://localhost:3002/api/health
 
-# 查看 Nginx 错误日志
-sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs nginx
+# 查看 Caddy 错误日志
+sudo docker-compose -f /opt/one-recycle/deploy/docker/docker-compose.production.yml logs caddy
 ```
 
 ### 数据库连接失败
@@ -511,14 +484,9 @@ sudo docker exec -it one-recycle-postgres psql -U one_recycle -d one_recycle -c 
 
 ### SSL 证书问题
 ```bash
-# 检查证书有效期
-openssl x509 -in /opt/one-recycle/deploy/nginx/ssl/fullchain.pem -noout -dates
-
-# 测试 HTTPS 连接
-curl -v https://api.backbuy.cn/health
-
-# 重新申请证书
-sudo certbot renew --force-renewal
+# Caddy 自动管理 SSL 证书
+# 检查 Caddy 日志
+docker compose -f deploy/docker-compose.yml logs -f caddy
 ```
 
 ---
@@ -552,7 +520,7 @@ sudo certbot renew --force-renewal
    - 配置 HSTS 响应头
 
 6. **日志审计**
-   - 定期检查 Nginx 访问日志
+   - 定期检查 Caddy 访问日志
    - 监控异常请求模式
 
 ---
@@ -560,9 +528,8 @@ sudo certbot renew --force-renewal
 ## 相关文档
 
 - [GitHub Actions CI/CD 配置](../.github/workflows/README.md)
-- [服务器初始化脚本](../deploy/scripts/init-server.sh)
-- [SSL 证书配置脚本](../deploy/scripts/setup-ssl.sh)
 - [一键部署脚本](../scripts/deploy-to-tencent.sh)
+- [数据库初始化脚本](./init-db.sh)
 
 ---
 
@@ -571,6 +538,6 @@ sudo certbot renew --force-renewal
 如有问题，请检查：
 1. 服务器安全组是否开放必要端口
 2. 域名 DNS 解析是否正确
-3. SSL 证书是否正确配置
-4. 环境变量是否正确设置
-5. Docker 服务是否正常运行
+3. 环境变量是否正确设置
+4. Docker 服务是否正常运行
+5. 数据库是否已初始化（运行 `./deploy/scripts/init-db.sh`）

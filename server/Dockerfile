@@ -66,6 +66,7 @@ COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/package.json ./
+COPY --from=builder --chown=appuser:appgroup /app/scripts ./scripts
 
 # Set environment
 ENV NODE_ENV=production
@@ -79,13 +80,13 @@ EXPOSE 3000 3001 3002 3003 3004 3008 3009 50051
 # Health check - gRPC services use PORT+10000 for HTTP health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD if [ -n "$SERVICE_NAME" ] && [ "$SERVICE_NAME" != "api-gateway" ]; then \
-        curl -f http://localhost:$((${PORT:-50051}+10000))/api/health || exit 1; \
+    curl -f http://localhost:$((${PORT:-50051}+10000))/api/health || exit 1; \
     else \
-        curl -f http://localhost:${PORT:-3000}/api/health || exit 1; \
+    curl -f http://localhost:${PORT:-3000}/api/health || exit 1; \
     fi
 
 # Start application:
 # - If SERVICE_NAME is set -> microservice mode (dist/microservices.js)
 # - If SERVICE_NAME is not set -> monolith mode (dist/main.js)
-# Also runs prisma db push on startup to ensure schema is in sync
-CMD ["sh", "-c", "npx prisma db push --skip-generate 2>/dev/null; if [ -n \"$SERVICE_NAME\" ]; then node dist/microservices.js; else node dist/main.js; fi"]
+# - RUN_SEED=1 enables seed execution after db push (idempotent, safe to re-run)
+CMD ["sh", "-c", "npx prisma db push --skip-generate 2>/dev/null; [ \"$RUN_SEED\" = '1' ] && npx ts-node scripts/main.ts; if [ -n \"$SERVICE_NAME\" ]; then node dist/microservices.js; else node dist/main.js; fi"]

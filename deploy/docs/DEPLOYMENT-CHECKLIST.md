@@ -26,26 +26,6 @@
   CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
   ```
 
-### 2. SSL证书配置
-
-- [ ] 从腾讯云下载证书
-  - 访问 https://console.cloud.tencent.com/ssl
-  - 下载Nginx格式证书
-
-- [ ] 放置证书文件
-  ```bash
-  # 证书文件应放在：
-  deploy/ssl/backbuy.cn_bundle.crt  # 证书链
-  deploy/ssl/backbuy.cn.key          # 私钥
-  ```
-
-- [ ] 转换证书格式
-  ```bash
-  mkdir -p deploy/ssl/live/backbuy.cn
-  cp deploy/ssl/backbuy.cn_bundle.crt deploy/ssl/live/backbuy.cn/fullchain.pem
-  cp deploy/ssl/backbuy.cn.key deploy/ssl/live/backbuy.cn/privkey.pem
-  ```
-
 ### 3. 域名配置
 
 - [ ] DNS解析配置
@@ -118,8 +98,8 @@ docker compose -f docker/docker-compose.production.yml up -d
 docker compose -f docker/docker-compose.production.yml ps
 
 # 查看日志
-docker compose -f docker/docker-compose.production.yml logs -f nginx
 docker compose -f docker/docker-compose.production.yml logs -f api-gateway
+docker compose -f docker/docker-compose.production.yml logs -f caddy
 ```
 
 ---
@@ -132,8 +112,8 @@ docker compose -f docker/docker-compose.production.yml logs -f api-gateway
 # 检查API健康状态
 curl http://localhost:3002/api/health
 
-# 检查Nginx健康状态
-curl http://localhost/health
+# 检查Caddy健康状态
+curl http://localhost:2019/config/
 
 # 检查HTTPS
 curl https://api.backbuy.cn/health
@@ -189,33 +169,7 @@ docker ps -a
 docker compose -f docker/docker-compose.production.yml restart api-gateway
 ```
 
-### 问题2: SSL证书错误
-
-```bash
-# 检查证书文件
-ls -la /opt/one-recycle/deploy/ssl/live/backbuy.cn/
-
-# 验证证书
-openssl x509 -in /opt/one-recycle/deploy/ssl/live/backbuy.cn/fullchain.pem -text -noout
-
-# 重启nginx
-docker restart one-recycle-nginx
-```
-
-### 问题3: CORS错误
-
-```bash
-# 检查CORS配置
-docker exec one-recycle-nginx cat /etc/nginx/conf.d/cors.conf
-
-# 检查环境变量
-docker exec one-recycle-nginx env | grep CORS
-
-# 重新生成CORS配置
-docker restart one-recycle-nginx
-```
-
-### 问题4: 数据库连接失败
+### 问题2: 数据库连接失败
 
 ```bash
 # 检查postgres状态
@@ -232,23 +186,12 @@ docker network inspect one-recycle-network
 
 ## 📊 监控设置
 
-### 1. 设置证书监控
-
-```bash
-# 安装cron任务
-sudo cp /opt/one-recycle/deploy/scripts/ssl-monitor.cron /etc/cron.d/ssl-monitor
-sudo chmod 644 /etc/cron.d/ssl-monitor
-
-# 查看日志
-tail -f /var/log/ssl-monitor.log
-```
-
-### 2. 设置日志轮转
+### 1. 设置日志轮转
 
 ```bash
 # 创建日志轮转配置
 sudo cat > /etc/logrotate.d/one-recycle << EOF
-/var/log/ssl-monitor.log {
+/var/log/one-recycle.log {
     daily
     rotate 7
     compress
@@ -267,7 +210,6 @@ EOF
 - [ ] 检查错误日志
 
 ### 每周检查
-- [ ] 检查证书到期时间
 - [ ] 查看资源使用情况
 - [ ] 备份数据库
 
@@ -280,8 +222,8 @@ EOF
 
 ## 🎯 性能优化建议
 
-1. **启用HTTP/2**: 已在nginx配置中启用
-2. **启用Gzip压缩**: 已在nginx配置中启用
+1. **启用HTTP/2**: 已在Caddy配置中启用
+2. **启用Gzip压缩**: 已在Caddy配置中启用
 3. **配置CDN**: 建议使用腾讯云CDN
 4. **数据库优化**: 定期执行VACUUM和ANALYZE
 5. **Redis优化**: 配置合适的maxmemory策略

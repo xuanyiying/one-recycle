@@ -63,6 +63,7 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=api-gateway
+      - RUN_SEED=1
       - PORT=3002
       - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
