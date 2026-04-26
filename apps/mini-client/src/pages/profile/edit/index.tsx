@@ -1,14 +1,14 @@
-import logger from '@/utils/logger'
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { View, Text, Button, Image, Input } from '@tarojs/components'
-import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { Icon } from '@/components/Icon'
-import { useAuth } from '@/hooks/useAuth'
-import { getUserById, updateUserInfo, uploadAvatar } from '@/services/user'
-import { AuthService } from '@/services/auth'
-import { useResponsive } from '@/hooks/useResponsive'
 import AuthGuard from '@/components/AuthGuard'
-import { REGEX, LIMITS } from '@/config/constants'
+import { Icon } from '@/components/Icon'
+import { LIMITS, REGEX } from '@/config/constants'
+import { useAuth } from '@/hooks/useAuth'
+import { useResponsive } from '@/hooks/useResponsive'
+import { AuthService } from '@/services/auth'
+import { getUserById, updateUserInfo, uploadAvatar } from '@/services/user'
+import logger from '@/utils/logger'
+import { Button, Image, Input, Text, View } from '@tarojs/components'
+import Taro, { usePullDownRefresh } from '@tarojs/taro'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './index.scss'
 
 // TypeScript interfaces for component state
@@ -621,7 +621,7 @@ export default function ProfileEdit(): JSX.Element {
             <View className='phone-bound'>
               <View className='phone-info'>
                 <View className='phone-icon'>
-                  <Icon name='phone' size='32' color='#8E8E93' />
+                  <Icon name='phone' size='32' color='var(--success-color)' />
                 </View>
                 <View className='phone-details'>
                   <Text className='phone-number'>{formData.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}</Text>
@@ -670,7 +670,7 @@ export default function ProfileEdit(): JSX.Element {
               <View className='modal-header'>
                 <Text className='modal-title'>绑定手机号</Text>
                 <View className='close-btn' onClick={handleClosePhoneBinding}>
-                  <Icon name='cross' size='24' color='#9CA3AF' />
+                  <Icon name='cross' size='24' color='var(--text-tertiary)' />
                 </View>
               </View>
 

@@ -91,7 +91,7 @@
 
         .item-number {
           display: block;
-          font-size: $font-size-caption11;
+          font-size: $font-size-caption1;
           color: $text-tertiary;
           margin-bottom: 4rpx;
         }
@@ -170,13 +170,13 @@
         flex-direction: column;
 
         .detail-label {
-          font-size: $font-size-caption11;
+          font-size: $font-size-caption1;
           color: $text-tertiary;
           margin-bottom: 4rpx;
         }
 
         .detail-value {
-          font-size: $font-size-caption11;
+          font-size: $font-size-caption1;
           color: $text-secondary;
           word-break: break-all;
         }
@@ -198,7 +198,7 @@
         display: flex;
         align-items: center;
         gap: 4rpx;
-        font-size: $font-size-caption11;
+        font-size: $font-size-caption1;
         padding: $spacing-xs $spacing-sm;
         border-radius: $border-radius-base;
         transition: all 0.2s ease;

@@ -93,7 +93,7 @@
 
 .order-number-label {
   display: block;
-  font-size: $font-size-caption11;
+  font-size: $font-size-caption1;
   font-weight: $font-weight-semibold;
   color: $text-tertiary;
   text-transform: uppercase;
@@ -125,7 +125,7 @@
   color: #fff;
   border: none;
   border-radius: $border-radius-pill;
-  font-size: $font-size-caption11;
+  font-size: $font-size-caption1;
   font-weight: $font-weight-semibold;
   cursor: pointer;
   transition: all $transition-base;
@@ -176,7 +176,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: $font-size-caption11;
+  font-size: $font-size-caption1;
   font-weight: $font-weight-bold;
 }
 
@@ -194,7 +194,7 @@
 
 .step-description {
   display: block;
-  font-size: $font-size-caption11;
+  font-size: $font-size-caption1;
   color: $text-secondary;
   line-height: $line-height-normal;
 }
@@ -217,7 +217,7 @@
   }
 
   .info-text {
-    font-size: $font-size-caption11;
+    font-size: $font-size-caption1;
     color: $text-secondary;
     line-height: $line-height-normal;
     flex: 1;

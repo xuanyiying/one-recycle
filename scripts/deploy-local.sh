@@ -96,11 +96,7 @@ info "部署模式: $DEPLOY_MODE"
 
 # 检查 Docker
 if ! command -v docker &> /dev/null; then
-    error "Docker 未安装"
-fi
-
-if ! command -v docker &> /dev/null; then
-    error "Docker 未运行"
+    error "Docker 未安装或未运行"
 fi
 
 # 检查 docker buildx

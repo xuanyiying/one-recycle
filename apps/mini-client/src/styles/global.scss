@@ -3,6 +3,31 @@
 @use './variables.scss' as *;
 @use './mixins.scss' as *;
 
+:root {
+  --primary-color: #{$primary-color};
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+  --secondary-color: #{$secondary-color};
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --error-color: #{$error-color};
+  --info-color: #{$info-color};
+  --text-color: #{$text-color};
+  --text-secondary: #{$text-secondary};
+  --text-tertiary: #{$text-tertiary};
+  --text-disabled: #{$text-disabled};
+  --text-inverse: #{$text-inverse};
+  --bg-color: #{$bg-color};
+  --bg-secondary: #{$bg-secondary};
+  --border-color: #{$border-color};
+  --ios-blue: #{$ios-blue};
+  --ios-gray: #{$ios-gray};
+  --ios-separator: #{$ios-separator};
+  --ios-label: #{$ios-label};
+  --ios-secondary-label: #{$ios-secondary-label};
+  --ios-tertiary-label: #{$ios-tertiary-label};
+}
+
 page {
   font-family: $font-family-primary;
   font-size: $font-size-body;

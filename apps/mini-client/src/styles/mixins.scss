@@ -76,9 +76,11 @@
 
 @mixin responsive-page-padding {
   padding: $spacing-16;
+
   @media (max-width: 375px) {
     padding: $spacing-12;
   }
+
   @media (min-width: 430px) {
     padding: $spacing-24;
   }
@@ -100,4 +102,117 @@
   @media (min-width: 414px) {
     @content;
   }
+}
+
+// ==================== iOS Typography Mixins ====================
+
+@mixin ios-large-title {
+  font-size: $font-size-large-title;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  letter-spacing: -0.02em;
+}
+
+@mixin ios-title1 {
+  font-size: $font-size-headline1;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  letter-spacing: -0.015em;
+}
+
+@mixin ios-title2 {
+  font-size: $font-size-headline2;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  letter-spacing: -0.01em;
+}
+
+@mixin ios-title3 {
+  font-size: $font-size-headline3;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-headline {
+  font-size: $font-size-headline;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-body {
+  font-size: $font-size-body;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-relaxed;
+}
+
+@mixin ios-callout {
+  font-size: $font-size-callout;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-relaxed;
+}
+
+@mixin ios-subheadline {
+  font-size: $font-size-subheadline;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-footnote {
+  font-size: $font-size-footnote;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-caption1 {
+  font-size: $font-size-caption1;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-caption2 {
+  font-size: $font-size-caption12;
+  font-weight: $font-weight-regular;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-button-text {
+  font-size: $font-size-body;
+  font-weight: $font-weight-semibold;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-button-secondary {
+  font-size: $font-size-footnote;
+  font-weight: $font-weight-medium;
+  line-height: $line-height-normal;
+}
+
+@mixin ios-card {
+  background-color: $bg-secondary;
+  border-radius: $card-radius;
+  padding: $card-padding;
+  box-shadow: $box-shadow-sm;
+}
+
+@mixin ios-input {
+  font-size: $font-size-body;
+  line-height: $line-height-normal;
+  color: $text-color;
+}
+
+@mixin ios-navigation-bar {
+  @include safe-area-top-padding;
+  background-color: $bg-secondary;
+}
+
+@mixin ios-tab-bar {
+  @include safe-area-bottom-fixed;
+  background-color: $bg-secondary;
+}
+
+@mixin ios-safe-area {
+  padding-left: constant(safe-area-inset-left);
+  padding-left: env(safe-area-inset-left);
+  padding-right: constant(safe-area-inset-right);
+  padding-right: env(safe-area-inset-right);
 }

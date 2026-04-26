@@ -4,8 +4,9 @@
 
 BEGIN;
 
--- 清空现有数据（可选，取消注释以启用）
--- DELETE FROM "regions";
+-- 确保时间戳字段有默认值
+ALTER TABLE regions ALTER COLUMN created_at SET DEFAULT NOW();
+ALTER TABLE regions ALTER COLUMN updated_at SET DEFAULT NOW();
 
 -- 批量插入行政区划数据
 COPY "regions" (code, name, level, parent_code, pinyin, abbr) FROM STDIN WITH (FORMAT csv, DELIMITER '|', NULL 'NULL');

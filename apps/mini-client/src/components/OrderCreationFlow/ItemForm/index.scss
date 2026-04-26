@@ -88,7 +88,7 @@
 
     .form-subtitle {
       display: block;
-      font-size: $font-size-caption11;
+      font-size: $font-size-caption1;
       color: $text-secondary;
     }
   }
@@ -137,7 +137,7 @@
         align-items: center;
         
         .label {
-            font-size: $font-size-caption11;
+            font-size: $font-size-caption1;
             color: $text-secondary;
         }
         .value {
@@ -149,7 +149,7 @@
     }
 
     .modify-btn {
-        font-size: $font-size-caption11;
+        font-size: $font-size-caption1;
         color: $primary-color;
         padding: $spacing-4 $spacing-12;
         background-color: $bg-secondary;
@@ -178,7 +178,7 @@
     }
 
     .loading-categories {
-        font-size: $font-size-caption11;
+        font-size: $font-size-caption1;
         color: $text-tertiary;
         text-align: center;
         padding: $spacing-12;
@@ -187,7 +187,7 @@
     .error-message {
       display: block;
       margin-top: $spacing-8;
-      font-size: $font-size-caption11;
+      font-size: $font-size-caption1;
       color: $error-color;
       animation: slideInUp 0.2s ease-out;
     }
@@ -297,7 +297,7 @@
       padding: 48rpx;
       background-color: #fff;
       border-radius: 24rpx;
-      box-shadow: $shadow-dark;
+      box-shadow: $box-shadow-lg;
       animation: scaleIn 0.3s ease-out;
 
       .spinner-icon {

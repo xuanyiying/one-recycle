@@ -1,7 +1,10 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // 加载环境变量
 import { config } from 'dotenv';

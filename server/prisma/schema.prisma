@@ -86,38 +86,38 @@ model Category {
 
 /// 用户主表
 model User {
-  id                 BigInt              @id @default(autoincrement())
-  mobile             String?             @unique @db.VarChar(20)
-  email              String?             @unique @db.VarChar(100)
-  nickname           String?             @db.VarChar(50)
-  realName           String?             @map("real_name") @db.VarChar(50)
-  avatarUrl          String?             @map("avatar_url") @db.VarChar(255)
-  gender             String? // male, female, other
-  birthday           DateTime?
-  status             UserStatus          @default(ACTIVE)
-  level              Int                 @default(0) // 用户等级
-  points             Int                 @default(0) @map("points") // 积分
-  balance            Decimal             @default(0) @map("balance") @db.Decimal(12, 2) // 余额
-  lastLogin          DateTime?           @map("last_login")
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
-  identities         UserIdentity[]
-  addresses          Address[]
-  orders             Order[]
-  favorites          UserFavorite[]
-  feedbacks          UserFeedback[]
-  courierFeedbacks   CourierFeedback[]
-  orderFeedback      OrderFeedback[]
-  withdrawals        Withdrawal[]
-  accounts           Account[]
-  chatSessions       ChatSession[]
-  serviceTickets     ServiceTicket[]
-  pointsRecords      PointsRecord[]
-  pointsOrders       PointsOrder[]
-  signInRecords      SignInRecord[]
-  taskRecords        TaskRecord[]
-  invites            InviteRecord[]      @relation("UserInvites")
-  invitedBy          InviteRecord?       @relation("UserInvitedBy")
+  id               BigInt            @id @default(autoincrement())
+  mobile           String?           @unique @db.VarChar(20)
+  email            String?           @unique @db.VarChar(100)
+  nickname         String?           @db.VarChar(50)
+  realName         String?           @map("real_name") @db.VarChar(50)
+  avatarUrl        String?           @map("avatar_url") @db.VarChar(255)
+  gender           String? // male, female, other
+  birthday         DateTime?
+  status           UserStatus        @default(ACTIVE)
+  level            Int               @default(0) // 用户等级
+  points           Int               @default(0) @map("points") // 积分
+  balance          Decimal           @default(0) @map("balance") @db.Decimal(12, 2) // 余额
+  lastLogin        DateTime?         @map("last_login")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  identities       UserIdentity[]
+  addresses        Address[]
+  orders           Order[]
+  favorites        UserFavorite[]
+  feedbacks        UserFeedback[]
+  courierFeedbacks CourierFeedback[]
+  orderFeedback    OrderFeedback[]
+  withdrawals      Withdrawal[]
+  accounts         Account[]
+  chatSessions     ChatSession[]
+  serviceTickets   ServiceTicket[]
+  pointsRecords    PointsRecord[]
+  pointsOrders     PointsOrder[]
+  signInRecords    SignInRecord[]
+  taskRecords      TaskRecord[]
+  invites          InviteRecord[]    @relation("UserInvites")
+  invitedBy        InviteRecord?     @relation("UserInvitedBy")
 
   @@index([mobile])
   @@index([email])
@@ -1674,8 +1674,6 @@ model CustomerServiceStats {
   @@map("customer_service_stats")
 }
 
-
-
 // ============================================
 // Customer Service Enums
 // ============================================
@@ -1760,8 +1758,6 @@ enum TicketAction {
   CLOSE // 关闭
   REOPEN // 重开
 }
-
-
 
 // ============================================
 // Points Mall Module - 积分商城模块
