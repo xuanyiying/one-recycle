@@ -68,7 +68,7 @@ export default function LoginPage() {
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);
 
         // 同时设置 cookie，让中间件能识别
-        document.cookie = `auth_token=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `auth_token=${encodeURIComponent(res.accessToken)}; path=/; max-age=86400; SameSite=Lax`;
 
         if (data.rememberMe) {
           localStorage.setItem('remember_account', data.account);
@@ -77,7 +77,8 @@ export default function LoginPage() {
         }
 
         toast.success('登录成功');
-        router.push('/dashboard');
+        // 使用 replace 而不是 push 以避免浏览器历史记录问题
+        router.replace('/dashboard');
       }
     } catch (error: any) {
       console.error('Login failed:', error);

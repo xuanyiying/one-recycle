@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
         title: '积分商城',
         items: [
           {
-            href: '/points',
+            href: '/points/overview',
             icon: Gift,
             label: '积分商城',
             children: [
