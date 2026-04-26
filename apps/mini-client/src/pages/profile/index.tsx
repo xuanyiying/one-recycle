@@ -265,7 +265,7 @@ export default function Profile(): JSX.Element {
     const LoadingComponent = useMemo(() => (
         <View className='profile-page'>
             <View className='loading-container'>
-                <Icon className='loading-spinner' name='loading' size='24' color='var(--ios-blue)' />
+                <Icon className='loading-spinner' name='loading' size='24' color='var(--primary-color)' />
                 <Text className='loading-text'>加载中...</Text>
             </View>
         </View>
