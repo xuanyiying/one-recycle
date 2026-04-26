@@ -12,7 +12,6 @@ async function main() {
   const scripts = [
     'seed-tenant-staff.ts', // 基础租户和员工数据
     'seed-categories.ts',   // 分类数据
-    'transform_regions.ts', // 地区数据导入
     'seed-content-config.ts', // FAQ和回收规则
   ];
 

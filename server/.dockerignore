@@ -11,4 +11,3 @@ coverage
 *.log
 test
 *.spec.ts
-scripts
