@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { authService } from '@/services/authService';
+import { useAuth } from '@/components/AuthContext';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils/cn';
 
@@ -25,6 +26,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -62,8 +64,7 @@ export default function LoginPage() {
       });
 
       if (res.accessToken) {
-        localStorage.setItem('auth_token', res.accessToken);
-        localStorage.setItem('user_info', JSON.stringify(res.user));
+        login(res.accessToken, res.user);
         localStorage.setItem('login_mode', 'tenant');
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);
 

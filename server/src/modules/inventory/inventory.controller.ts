@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Put,
 } from '@nestjs/common';
 import { InventoryService } from './services/inventory.service';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
@@ -144,8 +145,56 @@ export class InventoryController {
     return this.inventoryService.getInventoryStats();
   }
 
+  @Get('warehouses')
+  async findAllWarehouses(): Promise<any[]> {
+    return this.inventoryService.getWarehouses();
+  }
+
   @Post('warehouses')
   async createWarehouse(@Body() createWarehouseDto: any): Promise<any> {
     return this.inventoryService.createWarehouse(createWarehouseDto);
+  }
+
+  @Get('export')
+  async exportInventory(@Query() query: any): Promise<any[]> {
+    return this.inventoryService.exportInventory(query);
+  }
+
+  @Post('batch-delete')
+  async batchDelete(@Body() body: { ids: string[] }): Promise<void> {
+    return this.inventoryService.batchDelete(body.ids);
+  }
+
+  @Post(':id/adjust')
+  async adjustInventory(
+    @Param('id') id: string,
+    @Body() data: { type: string; quantity: number; reason: string },
+  ): Promise<any> {
+    return this.inventoryService.adjustInventory(BigInt(id), data);
+  }
+
+  @Get(':id/adjustments')
+  async getAdjustments(@Param('id') id: string): Promise<any[]> {
+    return this.inventoryService.getAdjustments(BigInt(id));
+  }
+
+  @Put('alerts/:id/read')
+  async markAlertAsRead(@Param('id') id: string): Promise<void> {
+    return this.inventoryService.markAlertAsRead(BigInt(id));
+  }
+
+  @Post('alerts/batch-read')
+  async batchMarkAlertsAsRead(@Body() body: { ids: string[] }): Promise<void> {
+    return this.inventoryService.batchMarkAlertsAsRead(body.ids);
+  }
+
+  @Get('value-trend')
+  async getValueTrend(@Query('days') days?: number): Promise<any[]> {
+    return this.inventoryService.getValueTrend(days || 30);
+  }
+
+  @Get('turnover')
+  async getTurnover(): Promise<any[]> {
+    return this.inventoryService.getTurnover();
   }
 }

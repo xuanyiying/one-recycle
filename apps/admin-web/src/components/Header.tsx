@@ -6,11 +6,12 @@ import { Bell, User, LogOut, Settings, Moon, Sun } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/components/AuthContext';
 import { toast } from '@/components/ui/toast';
 
 const Header: React.FC = () => {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [isDark, setIsDark] = React.useState(false);
   const [loggingOut, setLoggingOut] = React.useState(false);
 
@@ -27,20 +28,12 @@ const Header: React.FC = () => {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
-      await authService.logout();
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_info');
-      localStorage.removeItem('login_mode');
-      localStorage.removeItem('tenant_code');
-      document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
+      logout();
       toast.success('已退出登录');
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_info');
-      localStorage.removeItem('login_mode');
-      document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
+      logout();
       router.push('/login');
     } finally {
       setLoggingOut(false);

@@ -91,6 +91,17 @@ export class OrderController {
   }
 
   /**
+   * 导出订单列表（不分页）
+   * @param filters 筛选条件
+   */
+  @Get('export')
+  @ApiOperation({ summary: '导出订单列表' })
+  @ApiResponse({ status: 200, description: '导出订单列表成功' })
+  async exportOrders(@Query() filters: OrderFilters): Promise<Order[]> {
+    return this.orderService.exportOrders(filters);
+  }
+
+  /**
    * 获取订单详情
    * @param id 订单ID
    */
@@ -296,10 +307,20 @@ export class OrderController {
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
   ): Promise<void> {
-    // 仅管理员可删除订单
     if (req.user?.role !== 'ADMIN') {
       throw new ForbiddenException('仅管理员可删除订单');
     }
     return this.orderService.remove(id);
+  }
+
+  /**
+   * 批量删除订单
+   * @param body 包含订单ID数组
+   */
+  @Post('batch-delete')
+  @ApiOperation({ summary: '批量删除订单' })
+  @ApiResponse({ status: 200, description: '批量删除订单成功' })
+  async batchDelete(@Body() body: { ids: string[] }): Promise<void> {
+    return this.orderService.batchDelete(body.ids);
   }
 }

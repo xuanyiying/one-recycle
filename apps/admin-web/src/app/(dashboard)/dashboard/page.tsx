@@ -1,11 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils/cn';
-import { dashboardApi, DashboardStats, RecentOrder, InventoryAlert } from '@/services/dashboardApi';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -15,33 +12,33 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils/cn';
+import { dashboardApi, DashboardStats, InventoryAlert, RecentOrder } from '@/services/dashboardApi';
+import { InventoryService } from '@/services/inventoryService';
 import {
-  ShoppingCart,
-  DollarSign,
-  Users,
-  Clock,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
-  RefreshCw,
-  Eye,
   BarChart3,
+  Clock,
+  DollarSign,
+  Eye,
   LineChart,
+  RefreshCw,
+  ShoppingCart,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
-import { toast } from '@/components/ui/toast';
+import React, { useEffect, useState } from 'react';
 import {
-  LineChart as RechartsLineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
   Area,
-  BarChart,
+  AreaChart,
   Bar,
-  Legend,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from 'recharts';
 
 interface TrendData {
@@ -88,6 +85,24 @@ const DashboardPage: React.FC = () => {
     return data;
   };
 
+  const fetchTrendData = async (days: number): Promise<TrendData[]> => {
+    try {
+      const response = await InventoryService.getInventoryValueTrend(days);
+      if (Array.isArray(response) && response.length > 0) {
+        return response.map((item: any) => ({
+          date: item.date,
+          orders: item.orderCount || 0,
+          revenue: item.totalValue || 0,
+          users: 0,
+        }));
+      }
+      return generateMockTrendData(days);
+    } catch (error) {
+      console.error('Failed to fetch trend data:', error);
+      return generateMockTrendData(days);
+    }
+  };
+
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -96,7 +111,8 @@ const DashboardPage: React.FC = () => {
       setStats(data.stats);
       setRecentOrders(data.recentOrders);
       setInventoryAlerts(data.inventoryAlerts);
-      setTrendData(generateMockTrendData(trendPeriod === '7d' ? 7 : 30));
+      const trend = await fetchTrendData(trendPeriod === '7d' ? 7 : 30);
+      setTrendData(trend);
     } catch (error: any) {
       console.error('Failed to load dashboard data:', error);
       setError(error.message || '加载数据失败，请检查网络连接');
@@ -110,7 +126,11 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setTrendData(generateMockTrendData(trendPeriod === '7d' ? 7 : 30));
+    const updateTrendData = async () => {
+      const trend = await fetchTrendData(trendPeriod === '7d' ? 7 : 30);
+      setTrendData(trend);
+    };
+    updateTrendData();
   }, [trendPeriod]);
 
   const getStatusBadge = (status: string) => {
@@ -287,33 +307,33 @@ const DashboardPage: React.FC = () => {
                 <AreaChart data={trendData}>
                   <defs>
                     <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     className="text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
-                  <YAxis 
+                  <YAxis
                     className="text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="orders" 
-                    stroke="hsl(var(--primary))" 
-                    fillOpacity={1} 
+                  <Area
+                    type="monotone"
+                    dataKey="orders"
+                    stroke="hsl(var(--primary))"
+                    fillOpacity={1}
                     fill="url(#colorOrders)"
                     name="订单数"
                   />
@@ -337,18 +357,18 @@ const DashboardPage: React.FC = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={trendData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     className="text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                   />
-                  <YAxis 
+                  <YAxis
                     className="text-xs"
                     tick={{ fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}k`}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
@@ -356,9 +376,9 @@ const DashboardPage: React.FC = () => {
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                     formatter={(value) => typeof value === 'number' ? [`¥${value.toLocaleString()}`, '收入'] : ['', '']}
                   />
-                  <Bar 
-                    dataKey="revenue" 
-                    fill="hsl(var(--primary))" 
+                  <Bar
+                    dataKey="revenue"
+                    fill="hsl(var(--primary))"
                     radius={[4, 4, 0, 0]}
                     name="收入"
                   />
@@ -432,7 +452,7 @@ const DashboardPage: React.FC = () => {
                 {inventoryAlerts.map((alert) => (
                   <div key={alert.id} className="flex items-center justify-between rounded-lg border p-3">
                     <div className="flex items-center space-x-3">
-                      <div className={cn("flex h-9 w-9 items-center justify-center rounded-full", 
+                      <div className={cn("flex h-9 w-9 items-center justify-center rounded-full",
                         alert.status === 'out' ? "bg-error/10 text-error" : "bg-warning/10 text-warning"
                       )}>
                         <AlertTriangle className="h-4 w-4" />

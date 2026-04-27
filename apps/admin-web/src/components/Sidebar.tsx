@@ -24,10 +24,7 @@ import {
   Wallet,
   X,
   Gift,
-  ClipboardList,
-  CheckSquare,
   FileText,
-  HelpCircle,
   Warehouse
 } from 'lucide-react';
 import { Button } from './ui/button';

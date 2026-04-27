@@ -208,7 +208,7 @@ export class ApiClient {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_info');
       document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
-      window.location.href = '/login';
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
   }
 

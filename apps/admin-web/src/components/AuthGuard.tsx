@@ -1,34 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import React from 'react';
+import { useAuth } from './AuthContext';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('auth_token');
-      const publicPaths = ['/login', '/403', '/404'];
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="font-mono text-sm text-muted-foreground">加载中...</span>
+        </div>
+      </div>
+    );
+  }
 
-      if (!token && !publicPaths.includes(pathname)) {
-        router.push('/login');
-        setAuthorized(false);
-      } else if (token && pathname === '/login') {
-        router.push('/dashboard');
-        setAuthorized(true);
-      } else {
-        setAuthorized(true);
-      }
-    };
-
-    checkAuth();
-  }, [router, pathname]);
-
-  if (!authorized) {
-    return null; // Or a loading spinner
+  if (!isAuthenticated) {
+    return null;
   }
 
   return <>{children}</>;

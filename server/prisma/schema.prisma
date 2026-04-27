@@ -92,6 +92,7 @@ model User {
   nickname         String?           @db.VarChar(50)
   realName         String?           @map("real_name") @db.VarChar(50)
   avatarUrl        String?           @map("avatar_url") @db.VarChar(255)
+  password         String?           @map("password") @db.VarChar(255)
   gender           String? // male, female, other
   birthday         DateTime?
   status           UserStatus        @default(ACTIVE)

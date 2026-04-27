@@ -11,9 +11,9 @@ import {
   CreateCategoryWarehouseRequest,
 } from '@/services/categoryWarehouseService';
 import { categoryService, Category } from '@/services/categoryService';
-import { InventoryService } from '@/services/inventoryService';
+import { warehouseService, Warehouse as WarehouseType } from '@/services/warehouseService';
 import {
-  Warehouse,
+  Warehouse as WarehouseIcon,
   Plus,
   Trash2,
   Edit,
@@ -22,18 +22,11 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-// 仓库接口
-interface WarehouseItem {
-  id: string;
-  name: string;
-  address: string;
-}
-
 export default function CategoryWarehousePage() {
   const [loading, setLoading] = useState(true);
   const [configs, setConfigs] = useState<CategoryWarehouseConfig[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [warehouses, setWarehouses] = useState<WarehouseItem[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<CategoryWarehouseConfig | null>(null);
@@ -84,15 +77,11 @@ export default function CategoryWarehousePage() {
   // 获取仓库列表
   const fetchWarehouses = useCallback(async () => {
     try {
-      // 从库存服务获取仓库列表，或者创建一个新的仓库服务
-      // 这里使用模拟数据，实际应该调用仓库API
-      const mockWarehouses: WarehouseItem[] = [
-        { id: '1', name: '书籍仓库', address: '北京市朝阳区xxx路1号' },
-        { id: '2', name: '衣服仓库', address: '上海市浦东新区xxx路2号' },
-      ];
-      setWarehouses(mockWarehouses);
+      const response = await warehouseService.getWarehouses();
+      setWarehouses(response);
     } catch (error) {
       console.error(error);
+      toast.error('获取仓库列表失败');
     }
   }, []);
 
@@ -239,7 +228,7 @@ export default function CategoryWarehousePage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <Warehouse className="w-4 h-4 text-green-500" />
+                          <WarehouseIcon className="w-4 h-4 text-green-500" />
                           <span>{config.warehouseName}</span>
                         </div>
                       </td>

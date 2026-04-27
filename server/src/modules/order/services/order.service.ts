@@ -774,6 +774,25 @@ export class OrderService implements OnModuleInit {
   }
 
   /**
+   * 导出订单（不分页，用于Excel导出）
+   * @param filters 筛选条件
+   */
+  async exportOrders(filters: OrderFilters): Promise<Order[]> {
+    const { orders } = await this.findAll(filters, undefined, undefined);
+    return orders;
+  }
+
+  /**
+   * 批量删除订单
+   * @param ids 订单ID数组
+   */
+  async batchDelete(ids: string[]): Promise<void> {
+    await this.prisma.order.deleteMany({
+      where: { id: { in: ids.map((id) => BigInt(id)) } },
+    });
+  }
+
+  /**
    * 获取订单统计信息
    */
   async getStats(): Promise<{

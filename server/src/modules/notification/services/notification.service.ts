@@ -404,6 +404,112 @@ export class NotificationService implements INotificationService, OnModuleInit {
     return notification;
   }
 
+  async updateNotification(id: string, data: any): Promise<any> {
+    const notification = await this.findNotificationById(id);
+
+    const updatedNotification = await this.prisma.notification.update({
+      where: { id: BigInt(id) },
+      data: {
+        content: data.content
+          ? JSON.stringify(data.content)
+          : notification.content,
+        priority: data.priority || notification.priority,
+        status: data.status || notification.status,
+      },
+    });
+
+    this.logger.log(`Updated notification: ${id}`);
+    return updatedNotification;
+  }
+
+  async deleteNotification(id: string): Promise<{ success: boolean }> {
+    await this.findNotificationById(id);
+
+    await this.prisma.notification.delete({
+      where: { id: BigInt(id) },
+    });
+
+    this.logger.log(`Deleted notification: ${id}`);
+    return { success: true };
+  }
+
+  async deleteBatchNotifications(ids: string[]): Promise<{ success: boolean }> {
+    await this.prisma.notification.deleteMany({
+      where: {
+        id: { in: ids.map((id) => BigInt(id)) },
+      },
+    });
+
+    this.logger.log(`Batch deleted notifications: ${ids.length} items`);
+    return { success: true };
+  }
+
+  async getNotificationHistory(id: string): Promise<any[]> {
+    const notification = await this.findNotificationById(id);
+    const history: any[] = [];
+
+    if (notification.createdAt) {
+      history.push({
+        action: 'CREATED',
+        timestamp: notification.createdAt,
+        details: 'Notification created',
+      });
+    }
+
+    if (notification.sentAt) {
+      history.push({
+        action: 'SENT',
+        timestamp: notification.sentAt,
+        details: 'Notification sent',
+      });
+    }
+
+    if (notification.deliveredAt) {
+      history.push({
+        action: 'DELIVERED',
+        timestamp: notification.deliveredAt,
+        details: 'Notification delivered',
+      });
+    }
+
+    if (notification.failedAt) {
+      history.push({
+        action: 'FAILED',
+        timestamp: notification.failedAt,
+        details: notification.result?.failureReason || 'Delivery failed',
+      });
+    }
+
+    return history;
+  }
+
+  async batchSendNotifications(data: any): Promise<any> {
+    return this.sendBatchNotifications({
+      batchName: data.batchName || `Batch-${Date.now()}`,
+      description: data.description || '',
+      notifications: data.notifications || [],
+    });
+  }
+
+  async testSendNotification(data: any): Promise<void> {
+    this.logger.log(`Sending test notification: ${JSON.stringify(data)}`);
+    const testData = {
+      type: data.type || NotificationType.EMAIL,
+      recipient: {
+        userId: data.recipient?.userId || 'test-user',
+        phoneNumber: data.recipient?.phoneNumber || '+1234567890',
+        email: data.recipient?.email || 'test@example.com',
+      },
+      content: {
+        title: data.content?.title || 'Test Notification',
+        body: data.content?.body || 'This is a test notification',
+        data: data.content?.data || {},
+      },
+      priority: NotificationPriority.HIGH,
+    };
+    await this.sendNotification(testData);
+  }
+
   async retryNotification(id: string): Promise<any> {
     const notification = await this.findNotificationById(id);
 

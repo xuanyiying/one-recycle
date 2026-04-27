@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, UserListResponse, UserRole, UserQueryParams, UserStatus } from '@/types/user';
 import { toast } from '@/components/ui/toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Plus, Search, Edit, Trash2, RotateCw, Eye, Download, UserPlus, Users, UserCheck, UserX } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, RotateCw, Eye, Download, UserCheck, UserX } from 'lucide-react';
 import UserModal from './components/UserModal';
 import UserDetailModal from './components/UserDetailModal';
 import UserStatsCards from './components/UserStatsCards';

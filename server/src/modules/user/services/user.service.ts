@@ -1,22 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import {
-  NotFoundException,
-  ValidationException,
-} from '@/common/exceptions/business.exception';
+import { NotFoundException, ValidationException } from '@/common/exceptions/business.exception';
+import { UserRole } from '@/common/types/auth.types';
 import {
   CreateUserDto,
-  UpdateUserDto,
-  UserResponseDto,
-  UserListResponseDto,
   QueryUserDto,
+  UpdateUserDto,
+  UserListResponseDto,
+  UserResponseDto,
 } from '@/modules/user/dto';
-import { UserRole } from '@/common/types/auth.types';
-import { Prisma, User, AccountType } from '@prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { AccountType, Prisma, User } from '@prisma/client';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(UserService.name);
+
+  constructor(private readonly prisma: PrismaService) { }
 
   async getStats(): Promise<{
     totalUsers: number;
@@ -307,6 +307,120 @@ export class UserService {
         unionid: identityData.unionid,
       },
     });
+  }
+
+  async getRecentUsers(limit: number = 10): Promise<UserResponseDto[]> {
+    const users = await this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return users.map((u) => this.mapToUserResponse(u));
+  }
+
+  async exportUsers(query: QueryUserDto): Promise<UserResponseDto[]> {
+    const { items } = await this.findMany({ ...query, limit: 10000, page: 1 });
+    return items;
+  }
+
+  async getUserActivities(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  async batchDelete(ids: string[]): Promise<void> {
+    await this.prisma.user.deleteMany({
+      where: { id: { in: ids.map((id) => BigInt(id)) } },
+    });
+  }
+
+  async updateStatus(id: string, status: string): Promise<UserResponseDto> {
+    return this.update(id, { status } as UpdateUserDto);
+  }
+
+  async resetPassword(userId: string): Promise<{ newPassword: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: BigInt(userId) },
+    });
+
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    const newPassword = this.generateRandomPassword(12);
+    const hashedPassword = this.hashPassword(newPassword);
+
+    await this.prisma.user.update({
+      where: { id: BigInt(userId) },
+      data: { password: hashedPassword },
+    });
+
+    this.logger.log(`Password reset for user: ${userId}`);
+    return { newPassword };
+  }
+
+  async updatePassword(
+    id: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    if (!user.password) {
+      throw new ValidationException('用户未设置密码');
+    }
+
+    const isOldPasswordValid = this.verifyPassword(oldPassword, user.password);
+    if (!isOldPasswordValid) {
+      throw new UnauthorizedException('原密码错误');
+    }
+
+    const hashedNewPassword = this.hashPassword(newPassword);
+    await this.prisma.user.update({
+      where: { id: BigInt(id) },
+      data: { password: hashedNewPassword },
+    });
+
+    this.logger.log(`Password updated for user: ${id}`);
+  }
+
+  private hashPassword(password: string): string {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    return `${salt}:${hash}`;
+  }
+
+  private verifyPassword(password: string, storedHash: string): boolean {
+    if (!storedHash.includes(':')) {
+      const legacyHash = crypto
+        .createHash('sha256')
+        .update(password)
+        .digest('hex');
+      return legacyHash === storedHash;
+    }
+
+    const [salt, hash] = storedHash.split(':');
+    if (!salt || !hash) return false;
+    try {
+      const key = crypto.scryptSync(password, salt, 64);
+      return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), key);
+    } catch {
+      return false;
+    }
+  }
+
+  private generateRandomPassword(length: number): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let password = '';
+    const randomBytes = crypto.randomBytes(length);
+    for (let i = 0; i < length; i++) {
+      password += chars[randomBytes[i] % chars.length];
+    }
+    return password;
   }
 
   private mapToUserResponse(

@@ -195,6 +195,30 @@ export class NotificationController {
     return this.notificationService.findNotificationById(id);
   }
 
+  @Put(':id')
+  async updateNotification(
+    @Param('id') id: string,
+    @Body() data: any,
+  ): Promise<NotificationEntity> {
+    this.logger.log(`Updating notification: ${id}`);
+    return this.notificationService.updateNotification(id, data);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async deleteNotification(
+    @Param('id') id: string,
+  ): Promise<{ success: boolean }> {
+    this.logger.log(`Deleting notification: ${id}`);
+    return this.notificationService.deleteNotification(id);
+  }
+
+  @Get(':id/history')
+  async getNotificationHistory(@Param('id') id: string): Promise<any[]> {
+    this.logger.log(`Getting notification history: ${id}`);
+    return this.notificationService.getNotificationHistory(id);
+  }
+
   @Post(':id/retry')
   @HttpCode(HttpStatus.OK)
   async retryNotification(
@@ -211,6 +235,60 @@ export class NotificationController {
   ): Promise<NotificationEntity> {
     this.logger.log(`Cancelling notification: ${id}`);
     return this.notificationService.cancelNotification(id);
+  }
+
+  @Post('batch-send')
+  @HttpCode(HttpStatus.CREATED)
+  async batchSendNotifications(@Body() data: any): Promise<any> {
+    this.logger.log(`Batch sending notifications`);
+    return this.notificationService.batchSendNotifications(data);
+  }
+
+  @Delete('batch')
+  @HttpCode(HttpStatus.OK)
+  async deleteBatchNotifications(
+    @Body() body: { ids: string[] },
+  ): Promise<{ success: boolean }> {
+    this.logger.log(`Batch deleting notifications: ${body.ids.length} items`);
+    return this.notificationService.deleteBatchNotifications(body.ids);
+  }
+
+  @Get('export')
+  async exportNotifications(@Query() query: any): Promise<any[]> {
+    this.logger.log(`Exporting notifications`);
+    const filters: NotificationFilters = {
+      type: query.type,
+      status: query.status,
+      priority: query.priority,
+      userId: query.userId,
+      startDate: query.startDate ? new Date(query.startDate) : undefined,
+      endDate: query.endDate ? new Date(query.endDate) : undefined,
+    };
+    return this.notificationService.findNotifications(filters);
+  }
+
+  @Post('upload-image')
+  async uploadImage(@Body() data: { file: string }): Promise<{ url: string }> {
+    this.logger.log(`Uploading notification image`);
+    return { url: '' };
+  }
+
+  @Post('preview')
+  async previewNotification(@Body() data: any): Promise<{ html: string }> {
+    this.logger.log(`Previewing notification`);
+    return { html: '' };
+  }
+
+  @Post('test-send')
+  @HttpCode(HttpStatus.OK)
+  async testSendNotification(@Body() data: any): Promise<void> {
+    this.logger.log(`Test sending notification`);
+    await this.notificationService.testSendNotification(data);
+  }
+
+  @Get('stats')
+  async getNotificationStatsSimple(): Promise<NotificationStatsEntity> {
+    return this.notificationService.getNotificationStats('7d');
   }
 
   @Post('templates')

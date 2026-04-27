@@ -1,0 +1,10 @@
+d3196434a81d5f5d2c910873363f03ea8f9c7a0b commit	refs/heads/feature/remove-mini-features
+265b3f5f438a441e3d4e0410bcb2d0327c86b3b5 commit	refs/heads/master
+866f3c571f7d843f6d91ae40c11d8d3ad670deac commit	refs/heads/prod
+25d09332d6c1ed5f8820abd06a2ca541a4cbebc3 commit	refs/heads/withoutai
+359a78615f530812a0576b8b94a58addd023b1c1 commit	refs/remotes/origin/HEAD
+cb72b981f5d060a073cecb28aec3dcf52656e369 commit	refs/remotes/origin/dependabot/npm_and_yarn/npm_and_yarn-e513d9db99
+359a78615f530812a0576b8b94a58addd023b1c1 commit	refs/remotes/origin/master
+866f3c571f7d843f6d91ae40c11d8d3ad670deac commit	refs/remotes/origin/prod
+fe1756351413179f910ba9d9e9a3cf064e1e1a5c commit	refs/remotes/origin/withoutai
+cd9c93b2aa3c196d4a255baa0284ff4be251777d commit	refs/tags/v1.0.0-micro

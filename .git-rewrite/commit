@@ -1,0 +1,12 @@
+tree e3e2688747a5fb68617508b90238e8bcf81a10a2
+parent a1e07e9653e7a0ce4078cf8e44c65fcd755f44e4
+author yiying <myid_wy@163.com> 1777224148 +0800
+committer yiying <myid_wy@163.com> 1777224148 +0800
+
+feat(styles): add CSS variables and iOS typography mixins
+
+- Add $text-inverse variable and CSS custom properties in global.scss
+- Implement iOS typography mixins for consistent styling
+- Fix font-size variable name from caption11 to caption1
+- Update icon colors to use CSS variables
+- Improve Dockerfile with retry logic for database initialization

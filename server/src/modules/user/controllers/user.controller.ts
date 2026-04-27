@@ -36,6 +36,33 @@ export class UserController {
     return this.userService.getStats();
   }
 
+  @Get('export')
+  async exportUsers(@Query() query: QueryUserDto): Promise<UserResponseDto[]> {
+    return this.userService.exportUsers(query);
+  }
+
+  @Get('activities')
+  async getUserActivities(@Query('userId') userId: string): Promise<any[]> {
+    return this.userService.getUserActivities(userId);
+  }
+
+  @Get('recent')
+  async getRecentUsers(
+    @Query('limit') limit?: number,
+  ): Promise<UserResponseDto[]> {
+    return this.userService.getRecentUsers(limit || 10);
+  }
+
+  @Post('batch-delete')
+  async batchDelete(@Body() body: { ids: string[] }): Promise<void> {
+    return this.userService.batchDelete(body.ids);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { userId: string }): Promise<{ newPassword: string }> {
+    return this.userService.resetPassword(body.userId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<UserResponseDto> {
     return this.userService.findOne(id);
@@ -47,6 +74,26 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     return this.userService.update(id, updateUserDto);
+  }
+
+  @Put(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ): Promise<UserResponseDto> {
+    return this.userService.updateStatus(id, body.status);
+  }
+
+  @Put(':id/password')
+  async updatePassword(
+    @Param('id') id: string,
+    @Body() body: { oldPassword: string; newPassword: string },
+  ): Promise<void> {
+    return this.userService.updatePassword(
+      id,
+      body.oldPassword,
+      body.newPassword,
+    );
   }
 
   @Delete(':id')

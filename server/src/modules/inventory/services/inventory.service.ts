@@ -542,6 +542,19 @@ export class InventoryService {
     return qualityCheck as unknown as QualityCheckEntity;
   }
 
+  // 获取仓库列表
+  async getWarehouses(): Promise<any[]> {
+    const warehouses = await this.prisma.warehouse.findMany({
+      where: { status: WarehouseStatus.ACTIVE },
+      orderBy: { createdAt: 'desc' },
+    });
+    return warehouses.map(w => ({
+      id: w.id.toString(),
+      name: w.name,
+      address: w.address,
+    }));
+  }
+
   // 创建仓库
   async createWarehouse(data: CreateWarehouseData): Promise<WarehouseEntity> {
     const warehouse = await this.prisma.warehouse.create({
@@ -624,5 +637,40 @@ export class InventoryService {
         client,
       );
     }
+  }
+
+  async exportInventory(query: any): Promise<any[]> {
+    return [];
+  }
+
+  async batchDelete(ids: string[]): Promise<void> {
+    // Batch delete logic
+  }
+
+  async adjustInventory(
+    id: bigint,
+    data: { type: string; quantity: number; reason: string },
+  ): Promise<any> {
+    return {};
+  }
+
+  async getAdjustments(id: bigint): Promise<any[]> {
+    return [];
+  }
+
+  async markAlertAsRead(id: bigint): Promise<void> {
+    // Mark alert as read
+  }
+
+  async batchMarkAlertsAsRead(ids: string[]): Promise<void> {
+    // Batch mark alerts as read
+  }
+
+  async getValueTrend(days: number): Promise<any[]> {
+    return [];
+  }
+
+  async getTurnover(): Promise<any[]> {
+    return [];
   }
 }
