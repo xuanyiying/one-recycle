@@ -1,25 +1,30 @@
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { UserService } from '../services/user.service';
+import { Throttle } from '@nestjs/throttler';
 import {
   CreateUserDto,
-  UpdateUserDto,
   QueryUserDto,
-  UserResponseDto,
+  UpdateUserDto,
   UserListResponseDto,
+  UserResponseDto,
 } from '../dto';
+import { UserService } from '../services/user.service';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -54,11 +59,14 @@ export class UserController {
   }
 
   @Post('batch-delete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   async batchDelete(@Body() body: { ids: string[] }): Promise<void> {
     return this.userService.batchDelete(body.ids);
   }
 
   @Post('reset-password')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async resetPassword(@Body() body: { userId: string }): Promise<{ newPassword: string }> {
     return this.userService.resetPassword(body.userId);
   }

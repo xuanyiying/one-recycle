@@ -45,39 +45,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = useCallback((): boolean => {
     if (typeof window === 'undefined') return false;
 
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('user_info');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const userStr = localStorage.getItem('user_info');
 
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setAuthState({
-          isAuthenticated: true,
-          isLoading: false,
-          user,
-          token,
-        });
-        return true;
-      } catch {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_info');
-        setAuthState({
-          isAuthenticated: false,
-          isLoading: false,
-          user: null,
-          token: null,
-        });
-        return false;
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setAuthState({
+            isAuthenticated: true,
+            isLoading: false,
+            user,
+            token,
+          });
+          return true;
+        } catch {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_info');
+          setAuthState({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            token: null,
+          });
+          return false;
+        }
       }
-    }
 
-    setAuthState({
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-      token: null,
-    });
-    return false;
+      setAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        token: null,
+      });
+      return false;
+    } catch (error) {
+      console.error('LocalStorage access failed:', error);
+      return false;
+    }
   }, []);
 
   const login = useCallback((token: string, user: User) => {
