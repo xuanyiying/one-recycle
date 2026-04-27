@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toast';
 import { cn } from '@/lib/utils/cn';
+import { AuthProvider } from '@/components/AuthContext';
 
 export const metadata: Metadata = {
   title: 'One Recycle Admin',
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <body className={cn('bg-background font-sans antialiased')}>
-        <Toaster>{children}</Toaster>
+        <AuthProvider>
+          <Toaster>{children}</Toaster>
+        </AuthProvider>
       </body>
     </html>
   );
