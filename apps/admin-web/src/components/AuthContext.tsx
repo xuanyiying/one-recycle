@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from '@/components/ui/toast';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
@@ -97,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (error) {
       console.error('Failed to save auth data:', error);
+      toast.error('登录信息保存失败，请重试');
     }
   }, []);
 
