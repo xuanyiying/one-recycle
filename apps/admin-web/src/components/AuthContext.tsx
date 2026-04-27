@@ -86,14 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback((token: string, user: User) => {
-    localStorage.setItem('auth_token', token);
-    localStorage.setItem('user_info', JSON.stringify(user));
-    setAuthState({
-      isAuthenticated: true,
-      isLoading: false,
-      user,
-      token,
-    });
+    try {
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user_info', JSON.stringify(user));
+      setAuthState({
+        isAuthenticated: true,
+        isLoading: false,
+        user,
+        token,
+      });
+    } catch (error) {
+      console.error('Failed to save auth data:', error);
+    }
   }, []);
 
   const clearAuthCookies = () => {
@@ -104,11 +108,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_info');
-    localStorage.removeItem('login_mode');
-    localStorage.removeItem('tenant_code');
-    clearAuthCookies();
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('login_mode');
+      localStorage.removeItem('tenant_code');
+      clearAuthCookies();
+    } catch (error) {
+      console.error('Failed to clear auth data:', error);
+    }
     setAuthState({
       isAuthenticated: false,
       isLoading: false,
