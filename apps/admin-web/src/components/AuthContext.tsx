@@ -1,7 +1,6 @@
 'use client';
 
 import { toast } from '@/components/ui/toast';
-import { usePathname, useRouter } from 'next/navigation';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface User {
@@ -30,12 +29,7 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const PUBLIC_PATHS = ['/login', '/403', '/404'];
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     isLoading: true,
@@ -82,6 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (error) {
       console.error('LocalStorage access failed:', error);
+      setAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        token: null,
+      });
       return false;
     }
   }, []);
@@ -134,25 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleUnauthorized = () => {
       logout();
-      router.push('/login');
+      window.location.href = '/login';
     };
 
     window.addEventListener('auth:unauthorized', handleUnauthorized);
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
-  }, [logout, router]);
-
-  useEffect(() => {
-    if (!authState.isLoading && !authState.isAuthenticated) {
-      const isPublicPath = PUBLIC_PATHS.some(path => pathname.startsWith(path));
-      if (!isPublicPath && pathname !== '/') {
-        router.push('/login');
-      }
-    } else if (!authState.isLoading && authState.isAuthenticated && pathname === '/login') {
-      router.push('/dashboard');
-    }
-  }, [authState.isLoading, authState.isAuthenticated, pathname, router]);
+  }, [logout]);
 
   const value = useMemo(() => ({
     ...authState,
@@ -175,5 +164,3 @@ export function useAuth() {
   }
   return context;
 }
-
-export { PUBLIC_PATHS };
