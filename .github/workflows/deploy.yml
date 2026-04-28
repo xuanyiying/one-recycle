@@ -406,7 +406,7 @@ jobs:
             docker logs one-recycle-caddy --tail=30 2>/dev/null || true
             echo "=== Backend logs ==="
             docker logs one-recycle-backend --tail=30 2>/dev/null || true
-ENDSSH
+          ENDSSH
             exit 1
           fi
 
@@ -662,7 +662,7 @@ ENDSSH
             docker logs one-recycle-caddy --tail=30 2>/dev/null || true
             echo "=== API Gateway logs ==="
             docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
-ENDSSH
+          ENDSSH
             exit 1
           fi
 
