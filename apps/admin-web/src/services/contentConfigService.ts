@@ -105,29 +105,24 @@ export const contentConfigService = {
     if (params?.keyword) searchParams.append('keyword', params.keyword);
     if (params?.page) searchParams.append('page', String(params.page));
     if (params?.pageSize) searchParams.append('pageSize', String(params.pageSize));
-    
-    const response = await apiClient.get(`/content-config/admin/faqs?${searchParams.toString()}`);
-    return response.data;
+
+    return await apiClient.get(`/content-config/admin/faqs?${searchParams.toString()}`);
   },
 
   async getFAQ(id: string) {
-    const response = await apiClient.get(`/content-config/admin/faqs/${id}`);
-    return response.data;
+    return await apiClient.get(`/content-config/admin/faqs/${id}`);
   },
 
   async createFAQ(data: CreateFAQDto) {
-    const response = await apiClient.post('/content-config/admin/faqs', data);
-    return response.data;
+    return await apiClient.post('/content-config/admin/faqs', data);
   },
 
   async updateFAQ(id: string, data: UpdateFAQDto) {
-    const response = await apiClient.put(`/content-config/admin/faqs/${id}`, data);
-    return response.data;
+    return await apiClient.put(`/content-config/admin/faqs/${id}`, data);
   },
 
   async deleteFAQ(id: string) {
-    const response = await apiClient.delete(`/content-config/admin/faqs/${id}`);
-    return response.data;
+    return await apiClient.delete(`/content-config/admin/faqs/${id}`);
   },
 
   // 回收规则相关
@@ -137,28 +132,23 @@ export const contentConfigService = {
     if (params?.isActive !== undefined) searchParams.append('isActive', String(params.isActive));
     if (params?.page) searchParams.append('page', String(params.page));
     if (params?.pageSize) searchParams.append('pageSize', String(params.pageSize));
-    
-    const response = await apiClient.get(`/content-config/admin/recycle-rules?${searchParams.toString()}`);
-    return response.data;
+
+    return await apiClient.get(`/content-config/admin/recycle-rules?${searchParams.toString()}`);
   },
 
   async getRecycleRule(id: string) {
-    const response = await apiClient.get(`/content-config/admin/recycle-rules/${id}`);
-    return response.data;
+    return await apiClient.get(`/content-config/admin/recycle-rules/${id}`);
   },
 
   async createRecycleRule(data: CreateRecycleRuleDto) {
-    const response = await apiClient.post('/content-config/admin/recycle-rules', data);
-    return response.data;
+    return await apiClient.post('/content-config/admin/recycle-rules', data);
   },
 
   async updateRecycleRule(id: string, data: UpdateRecycleRuleDto) {
-    const response = await apiClient.put(`/content-config/admin/recycle-rules/${id}`, data);
-    return response.data;
+    return await apiClient.put(`/content-config/admin/recycle-rules/${id}`, data);
   },
 
   async deleteRecycleRule(id: string) {
-    const response = await apiClient.delete(`/content-config/admin/recycle-rules/${id}`);
-    return response.data;
+    return await apiClient.delete(`/content-config/admin/recycle-rules/${id}`);
   },
 };

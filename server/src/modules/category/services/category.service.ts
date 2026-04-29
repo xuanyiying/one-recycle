@@ -1,17 +1,17 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
 import {
-  CreateCategoryDto,
-  UpdateCategoryDto,
-  QueryCategoryDto,
-  CategoryResponseDto,
   CategoryListResponseDto,
+  CategoryResponseDto,
   CategoryType,
+  CreateCategoryDto,
+  QueryCategoryDto,
+  UpdateCategoryDto,
 } from '../dto';
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private async resolveTenantId(explicitTenantId?: number): Promise<number> {
     if (explicitTenantId) {
@@ -358,6 +358,29 @@ export class CategoryService {
       throw new Error('存在子分类，无法删除');
     }
 
+    // 检查是否有关联的订单项
+    const orderItemsCount = await this.prisma.orderItem.count({
+      where: { categoryId: id },
+    });
+
+    if (orderItemsCount > 0) {
+      throw new Error(`该分类已被${orderItemsCount}个订单引用，无法删除`);
+    }
+
+    // 检查是否有关联的库存项
+    const inventoryItemsCount = await this.prisma.inventoryItem.count({
+      where: { categoryId: id },
+    });
+
+    if (inventoryItemsCount > 0) {
+      throw new Error(`该分类已被${inventoryItemsCount}个库存项引用，无法删除`);
+    }
+
+    // 先删除关联的计价规则
+    await this.prisma.recyclePricingRule.deleteMany({
+      where: { categoryId: id },
+    });
+
     await this.prisma.category.delete({
       where: { id },
     });
@@ -409,14 +432,14 @@ export class CategoryService {
       seo: data.seo ? JSON.parse(data.seo) : undefined,
       pricingRule: pricingRule
         ? {
-            id: Number(pricingRule.id),
-            tenantId: Number(pricingRule.tenantId),
-            basePrice: pricingRule.basePrice,
-            minWeight: pricingRule.minWeight ?? undefined,
-            maxWeight: pricingRule.maxWeight ?? undefined,
-            ruleJson: pricingRule.ruleJson ?? undefined,
-            isActive: pricingRule.isActive,
-          }
+          id: Number(pricingRule.id),
+          tenantId: Number(pricingRule.tenantId),
+          basePrice: pricingRule.basePrice,
+          minWeight: pricingRule.minWeight ?? undefined,
+          maxWeight: pricingRule.maxWeight ?? undefined,
+          ruleJson: pricingRule.ruleJson ?? undefined,
+          isActive: pricingRule.isActive,
+        }
         : undefined,
       attributes: data.attributes ? JSON.parse(data.attributes) : undefined,
       createdAt: data.createdAt,

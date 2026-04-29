@@ -40,6 +40,7 @@ import { CustomerUserModule } from './modules/customer/customer-user.module';
 import { PointsModule } from './modules/points/points.module';
 import { ContentConfigModule } from './modules/content-config/content-config.module';
 import { CategoryWarehouseModule } from './modules/category-warehouse/category-warehouse.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -98,6 +99,7 @@ import { HealthModule } from './modules/health/health.module';
     PointsModule,
     ContentConfigModule,
     CategoryWarehouseModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [

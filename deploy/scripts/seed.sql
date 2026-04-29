@@ -37,8 +37,8 @@ SELECT 'Staff admin created' AS result;
 -- 4. 创建分类
 INSERT INTO categories (id, name, description, type, price_info, seo, sort_order, level, path, created_at, updated_at)
 VALUES
-    (1, '旧书', '各类二手书籍回收', 'RECYCLE', '{"type":"fixed","unitPrice":2.2,"unit":"kg","currency":"CNY"}', '{}', 1, 1, '0', NOW(), NOW()),
-    (2, '旧衣', '各类旧衣物回收', 'RECYCLE', '{"type":"fixed","unitPrice":3.5,"unit":"kg","currency":"CNY"}', '{}', 2, 1, '0', NOW(), NOW())
+    (1, '旧书', '各类二手书籍回收', 'recycle', '{"type":"fixed","unitPrice":2.2,"unit":"kg","currency":"CNY"}', '{}', 1, 1, '0', NOW(), NOW()),
+    (2, '旧衣', '各类旧衣物回收', 'recycle', '{"type":"fixed","unitPrice":3.5,"unit":"kg","currency":"CNY"}', '{}', 2, 1, '0', NOW(), NOW())
 ON CONFLICT DO NOTHING;
 SELECT 'Categories created' AS result;
 

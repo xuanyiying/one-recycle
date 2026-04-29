@@ -46,7 +46,7 @@ async function main() {
       {
         name: '旧书',
         description: '各类二手书籍回收',
-        type: 'RECYCLE',
+        type: 'recycle',
         priceInfo: JSON.stringify({
           type: 'fixed',
           unitPrice: 2.2,
@@ -66,7 +66,7 @@ async function main() {
       {
         name: '旧衣',
         description: '各类旧衣物回收',
-        type: 'RECYCLE',
+        type: 'recycle',
         priceInfo: JSON.stringify({
           type: 'fixed',
           unitPrice: 3.5,

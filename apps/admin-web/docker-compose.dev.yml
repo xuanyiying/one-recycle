@@ -1,41 +1,5 @@
-version: '3.8'
 
 services:
-  admin-dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: builder
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:3008
-      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
-    depends_on:
-      - api-gateway
-    networks:
-      - admin-network
-
-  api-gateway:
-    image: api-gateway:latest
-    ports:
-      - "3008:3008"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/saas_db
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - admin-network
-
   postgres:
     image: postgres:15-alpine
     environment:

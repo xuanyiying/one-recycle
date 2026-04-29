@@ -1,17 +1,17 @@
-import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
-  CustomerUserQueryDto,
-  CustomerUserListResponseDto,
-  CustomerUserDetailDto,
-  CustomerPointsRecordResponseDto,
   CustomerOrderResponseDto,
+  CustomerPointsRecordResponseDto,
+  CustomerUserDetailDto,
+  CustomerUserListResponseDto,
+  CustomerUserQueryDto,
 } from './dto/customer-user.dto';
 
 @Injectable()
 export class CustomerUserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(
     query: CustomerUserQueryDto,

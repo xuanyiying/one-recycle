@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  categoryService,
-  Category,
-  CategoryType,
-  PriceType,
-} from '@/services/categoryService';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -17,26 +14,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import {
-  Plus,
-  Edit,
-  Trash2,
-  ChevronRight,
-  ChevronDown,
-  Search,
-  GripVertical,
-  Image as ImageIcon,
-  UploadCloud,
-  Calculator,
-  Scale,
-  Boxes
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils/cn';
+import {
+  Category,
+  categoryService,
+  CategoryType,
+  PriceType,
+} from '@/services/categoryService';
+import {
+  Boxes,
+  Calculator,
+  ChevronDown,
+  ChevronRight,
+  Edit,
+  GripVertical,
+  Image as ImageIcon,
+  Plus,
+  Scale,
+  Search,
+  Trash2,
+  UploadCloud
+} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -291,11 +291,11 @@ export default function CategoriesPage() {
           basePrice,
           unit: priceUnit || 'kg',
           billingMode,
-          formula: {
+          formula: priceMode === 'formula' ? {
             marketPrice: Number(marketPrice || 0),
             discount: Number(discount || 0),
             fixedFee: Number(fixedFee || 0),
-          },
+          } : undefined,
           weightTiers: normalizedTiers,
         },
       },
@@ -416,8 +416,10 @@ export default function CategoriesPage() {
       setEditingCategoryId(saved.id);
       setCategorySlug(saved.seo?.slug || slugValue);
       await loadCategories();
-    } catch (error) {
-      toast.error(editingCategoryId ? '更新失败' : '创建失败');
+    } catch (error: any) {
+      console.error('保存分类失败:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || '保存失败，请检查输入信息';
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -511,6 +513,55 @@ export default function CategoriesPage() {
           新增分类
         </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>分类列表</CardTitle>
+            <div className="flex w-full max-w-sm items-center space-x-2">
+              <Input
+                placeholder="搜索分类..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button size="icon" variant="ghost">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[300px]">名称</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>价格</TableHead>
+                <TableHead>显示</TableHead>
+                <TableHead>排序</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">
+                    加载中...
+                  </TableCell>
+                </TableRow>
+              ) : categories.length > 0 ? (
+                categories.map(category => renderCategoryRow(category))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                    暂无分类数据
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-6">
@@ -875,55 +926,6 @@ export default function CategoriesPage() {
           </Card>
         </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>分类列表</CardTitle>
-            <div className="flex w-full max-w-sm items-center space-x-2">
-              <Input
-                placeholder="搜索分类..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Button size="icon" variant="ghost">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">名称</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>价格</TableHead>
-                <TableHead>显示</TableHead>
-                <TableHead>排序</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
-                    加载中...
-                  </TableCell>
-                </TableRow>
-              ) : categories.length > 0 ? (
-                categories.map(category => renderCategoryRow(category))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                    暂无分类数据
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 }
