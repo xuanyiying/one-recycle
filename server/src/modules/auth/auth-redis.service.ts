@@ -1,36 +1,36 @@
 import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-  Logger,
-  Inject,
-  forwardRef,
-  OnModuleInit,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import {
   PersistentSnowflakeIdGenerator,
-  RedisSnowflakeStateStore,
   RedisService,
+  RedisSnowflakeStateStore,
 } from '@/common';
-import { LoginDto } from './dto/login.dto';
-import { SendCodeDto } from './dto/send-code.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { LogoutDto } from './dto/logout.dto';
-import { ThirdPartyLoginDto } from './dto/third-party-login.dto';
 import { WeChatPlatform } from '@/modules/auth/platforms';
-import { AlipayPlatform } from './platforms/alipay.platform';
-import { TikTokPlatform } from './platforms/tiktok.platform';
-import { KuaishouPlatform } from './platforms/kuaishou.platform';
-import { UserService } from '@/modules/user/services/user.service';
 import { UpdateUserDto } from '@/modules/user/dto';
-import { NotificationService } from '../notification/services/notification.service';
+import { UserService } from '@/modules/user/services/user.service';
 import {
-  NotificationType,
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import {
   NotificationPriority,
+  NotificationType,
 } from '../notification/entities/notification.entity';
+import { NotificationService } from '../notification/services/notification.service';
 import { AuthKeyUtils } from './constants/auth-keys.constant';
+import { LoginDto } from './dto/login.dto';
+import { LogoutDto } from './dto/logout.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SendCodeDto } from './dto/send-code.dto';
+import { ThirdPartyLoginDto } from './dto/third-party-login.dto';
+import { AlipayPlatform } from './platforms/alipay.platform';
+import { KuaishouPlatform } from './platforms/kuaishou.platform';
+import { TikTokPlatform } from './platforms/tiktok.platform';
 
 export interface AuthResult {
   user: {
@@ -242,7 +242,9 @@ class AuthRedisService implements OnModuleInit {
       mobile: user.mobile,
     };
 
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.accessTokenExpiresInSeconds,
+    });
     const expiresIn = this.accessTokenExpiresInSeconds;
 
     return {
@@ -426,7 +428,9 @@ class AuthRedisService implements OnModuleInit {
       mobile: user.mobile,
     };
 
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.accessTokenExpiresInSeconds,
+    });
     const refreshToken = this.idGenerator.nextId();
     const expiresIn = this.accessTokenExpiresInSeconds;
 

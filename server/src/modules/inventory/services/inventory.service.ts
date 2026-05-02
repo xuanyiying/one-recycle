@@ -548,7 +548,7 @@ export class InventoryService {
       where: { status: WarehouseStatus.ACTIVE },
       orderBy: { createdAt: 'desc' },
     });
-    return warehouses.map(w => ({
+    return warehouses.map((w) => ({
       id: w.id.toString(),
       name: w.name,
       address: w.address,

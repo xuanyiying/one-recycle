@@ -338,8 +338,7 @@ class SettingsService {
     diskUsage: number;
     cpuUsage: number;
   }> {
-    const response = await apiClient.get('/system/info');
-    return response.data;
+    return await apiClient.get('/system/info');
   }
 
   // 清理缓存

@@ -101,29 +101,25 @@ class CustomerUserService {
   private readonly baseUrl = '/admin/customers';
 
   async getCustomers(params?: CustomerUserQuery): Promise<CustomerUserListResponse> {
-    const response = await apiClient.get(this.baseUrl, params);
-    return response;
+    return await apiClient.get(this.baseUrl, params);
   }
 
   async getCustomerById(id: string): Promise<CustomerUserDetail> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`);
-    return response;
+    return await apiClient.get(`${this.baseUrl}/${id}`);
   }
 
   async getPointsRecords(
     id: string,
     params?: { page?: number; limit?: number; startDate?: string; endDate?: string }
   ): Promise<PointsRecordResponse> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}/points-records`, params);
-    return response;
+    return await apiClient.get(`${this.baseUrl}/${id}/points-records`, params);
   }
 
   async getOrders(
     id: string,
     params?: { page?: number; limit?: number; status?: string }
   ): Promise<CustomerOrderResponse> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}/orders`, params);
-    return response;
+    return await apiClient.get(`${this.baseUrl}/${id}/orders`, params);
   }
 }
 

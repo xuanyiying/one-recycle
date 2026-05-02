@@ -18,10 +18,13 @@ export class SettingsService {
       where: { isActive: true },
     });
 
-    const configMap = configs.reduce((acc, config) => {
-      acc[config.key] = config.value;
-      return acc;
-    }, {} as Record<string, string>);
+    const configMap = configs.reduce(
+      (acc, config) => {
+        acc[config.key] = config.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
 
     return {
       siteName: configMap['siteName'] || 'One Recycle',
@@ -48,17 +51,25 @@ export class SettingsService {
       emailEnabled: configMap['emailEnabled'] === 'true',
       smsEnabled: configMap['smsEnabled'] === 'true',
       backupEnabled: configMap['backupEnabled'] === 'true',
-      backupFrequency: (configMap['backupFrequency'] as 'daily' | 'weekly' | 'monthly') || 'daily',
-      logLevel: (configMap['logLevel'] as 'debug' | 'info' | 'warn' | 'error') || 'info',
+      backupFrequency:
+        (configMap['backupFrequency'] as 'daily' | 'weekly' | 'monthly') ||
+        'daily',
+      logLevel:
+        (configMap['logLevel'] as 'debug' | 'info' | 'warn' | 'error') ||
+        'info',
       sessionTimeout: parseInt(configMap['sessionTimeout'] || '30', 10),
       maxLoginAttempts: parseInt(configMap['maxLoginAttempts'] || '5', 10),
       lockoutDuration: parseInt(configMap['lockoutDuration'] || '15', 10),
     };
   }
 
-  async updateSystemSettings(data: UpdateSystemSettingsDto): Promise<SystemSettingsDto> {
+  async updateSystemSettings(
+    data: UpdateSystemSettingsDto,
+  ): Promise<SystemSettingsDto> {
     const updates = Object.entries(data).map(([key, value]) => {
-      const stringValue = Array.isArray(value) ? value.join(',') : String(value);
+      const stringValue = Array.isArray(value)
+        ? value.join(',')
+        : String(value);
       return this.prisma.systemConfig.upsert({
         where: { key },
         update: { value: stringValue },
@@ -75,10 +86,13 @@ export class SettingsService {
       where: { isActive: true },
     });
 
-    const configMap = configs.reduce((acc, config) => {
-      acc[config.key] = config.value;
-      return acc;
-    }, {} as Record<string, string>);
+    const configMap = configs.reduce(
+      (acc, config) => {
+        acc[config.key] = config.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
 
     return {
       emailNotifications: {
@@ -86,7 +100,8 @@ export class SettingsService {
         userRegistrations: configMap['email_userRegistrations'] === 'true',
         systemAlerts: configMap['email_systemAlerts'] === 'true',
         inventoryAlerts: configMap['email_inventoryAlerts'] === 'true',
-        paymentNotifications: configMap['email_paymentNotifications'] === 'true',
+        paymentNotifications:
+          configMap['email_paymentNotifications'] === 'true',
         marketingEmails: configMap['email_marketingEmails'] === 'true',
       },
       smsNotifications: {
@@ -101,7 +116,12 @@ export class SettingsService {
         systemAlerts: configMap['push_systemAlerts'] === 'true',
         promotions: configMap['push_promotions'] === 'true',
       },
-      notificationFrequency: (configMap['notificationFrequency'] as 'immediate' | 'hourly' | 'daily' | 'weekly') || 'immediate',
+      notificationFrequency:
+        (configMap['notificationFrequency'] as
+          | 'immediate'
+          | 'hourly'
+          | 'daily'
+          | 'weekly') || 'immediate',
       quietHours: {
         enabled: configMap['quietHours_enabled'] === 'true',
         startTime: configMap['quietHours_startTime'] || '22:00',
@@ -110,7 +130,9 @@ export class SettingsService {
     };
   }
 
-  async updateNotificationSettings(data: UpdateNotificationSettingsDto): Promise<NotificationSettingsDto> {
+  async updateNotificationSettings(
+    data: UpdateNotificationSettingsDto,
+  ): Promise<NotificationSettingsDto> {
     const updates: Promise<any>[] = [];
 
     if (data.emailNotifications) {
@@ -119,7 +141,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `email_${key}` },
             update: { value: String(value) },
-            create: { key: `email_${key}`, value: String(value), description: `Email notification: ${key}` },
+            create: {
+              key: `email_${key}`,
+              value: String(value),
+              description: `Email notification: ${key}`,
+            },
           }),
         );
       });
@@ -131,7 +157,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `sms_${key}` },
             update: { value: String(value) },
-            create: { key: `sms_${key}`, value: String(value), description: `SMS notification: ${key}` },
+            create: {
+              key: `sms_${key}`,
+              value: String(value),
+              description: `SMS notification: ${key}`,
+            },
           }),
         );
       });
@@ -143,7 +173,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `push_${key}` },
             update: { value: String(value) },
-            create: { key: `push_${key}`, value: String(value), description: `Push notification: ${key}` },
+            create: {
+              key: `push_${key}`,
+              value: String(value),
+              description: `Push notification: ${key}`,
+            },
           }),
         );
       });
@@ -154,7 +188,11 @@ export class SettingsService {
         this.prisma.systemConfig.upsert({
           where: { key: 'notificationFrequency' },
           update: { value: data.notificationFrequency },
-          create: { key: 'notificationFrequency', value: data.notificationFrequency, description: 'Notification frequency' },
+          create: {
+            key: 'notificationFrequency',
+            value: data.notificationFrequency,
+            description: 'Notification frequency',
+          },
         }),
       );
     }
@@ -165,7 +203,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `quietHours_${key}` },
             update: { value: String(value) },
-            create: { key: `quietHours_${key}`, value: String(value), description: `Quiet hours: ${key}` },
+            create: {
+              key: `quietHours_${key}`,
+              value: String(value),
+              description: `Quiet hours: ${key}`,
+            },
           }),
         );
       });
@@ -180,10 +222,13 @@ export class SettingsService {
       where: { isActive: true },
     });
 
-    const configMap = configs.reduce((acc, config) => {
-      acc[config.key] = config.value;
-      return acc;
-    }, {} as Record<string, string>);
+    const configMap = configs.reduce(
+      (acc, config) => {
+        acc[config.key] = config.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
 
     return {
       twoFactorEnabled: configMap['twoFactorEnabled'] === 'true',
@@ -192,27 +237,42 @@ export class SettingsService {
       lockoutDuration: parseInt(configMap['lockoutDuration'] || '15', 10),
       sessionManagement: {
         maxSessions: parseInt(configMap['session_maxSessions'] || '5', 10),
-        sessionTimeout: parseInt(configMap['session_sessionTimeout'] || '30', 10),
-        rememberMeDuration: parseInt(configMap['session_rememberMeDuration'] || '7', 10),
+        sessionTimeout: parseInt(
+          configMap['session_sessionTimeout'] || '30',
+          10,
+        ),
+        rememberMeDuration: parseInt(
+          configMap['session_rememberMeDuration'] || '7',
+          10,
+        ),
       },
       passwordPolicy: {
         minLength: parseInt(configMap['password_minLength'] || '8', 10),
         requireUppercase: configMap['password_requireUppercase'] === 'true',
         requireLowercase: configMap['password_requireLowercase'] === 'true',
         requireNumbers: configMap['password_requireNumbers'] === 'true',
-        requireSpecialChars: configMap['password_requireSpecialChars'] === 'true',
-        passwordExpiry: parseInt(configMap['password_passwordExpiry'] || '0', 10),
+        requireSpecialChars:
+          configMap['password_requireSpecialChars'] === 'true',
+        passwordExpiry: parseInt(
+          configMap['password_passwordExpiry'] || '0',
+          10,
+        ),
       },
       ipWhitelist: configMap['ipWhitelist']?.split(',').filter(Boolean) || [],
       apiRateLimit: {
         enabled: configMap['apiRateLimit_enabled'] === 'true',
-        requestsPerMinute: parseInt(configMap['apiRateLimit_requestsPerMinute'] || '100', 10),
+        requestsPerMinute: parseInt(
+          configMap['apiRateLimit_requestsPerMinute'] || '100',
+          10,
+        ),
         burstLimit: parseInt(configMap['apiRateLimit_burstLimit'] || '20', 10),
       },
     };
   }
 
-  async updateSecuritySettings(data: UpdateSecuritySettingsDto): Promise<SecuritySettingsDto> {
+  async updateSecuritySettings(
+    data: UpdateSecuritySettingsDto,
+  ): Promise<SecuritySettingsDto> {
     const updates: Promise<any>[] = [];
 
     if (data.twoFactorEnabled !== undefined) {
@@ -220,7 +280,11 @@ export class SettingsService {
         this.prisma.systemConfig.upsert({
           where: { key: 'twoFactorEnabled' },
           update: { value: String(data.twoFactorEnabled) },
-          create: { key: 'twoFactorEnabled', value: String(data.twoFactorEnabled), description: 'Two factor authentication enabled' },
+          create: {
+            key: 'twoFactorEnabled',
+            value: String(data.twoFactorEnabled),
+            description: 'Two factor authentication enabled',
+          },
         }),
       );
     }
@@ -230,7 +294,11 @@ export class SettingsService {
         this.prisma.systemConfig.upsert({
           where: { key: 'loginNotifications' },
           update: { value: String(data.loginNotifications) },
-          create: { key: 'loginNotifications', value: String(data.loginNotifications), description: 'Login notifications' },
+          create: {
+            key: 'loginNotifications',
+            value: String(data.loginNotifications),
+            description: 'Login notifications',
+          },
         }),
       );
     }
@@ -240,7 +308,11 @@ export class SettingsService {
         this.prisma.systemConfig.upsert({
           where: { key: 'maxLoginAttempts' },
           update: { value: String(data.maxLoginAttempts) },
-          create: { key: 'maxLoginAttempts', value: String(data.maxLoginAttempts), description: 'Max login attempts' },
+          create: {
+            key: 'maxLoginAttempts',
+            value: String(data.maxLoginAttempts),
+            description: 'Max login attempts',
+          },
         }),
       );
     }
@@ -250,7 +322,11 @@ export class SettingsService {
         this.prisma.systemConfig.upsert({
           where: { key: 'lockoutDuration' },
           update: { value: String(data.lockoutDuration) },
-          create: { key: 'lockoutDuration', value: String(data.lockoutDuration), description: 'Lockout duration' },
+          create: {
+            key: 'lockoutDuration',
+            value: String(data.lockoutDuration),
+            description: 'Lockout duration',
+          },
         }),
       );
     }
@@ -261,7 +337,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `session_${key}` },
             update: { value: String(value) },
-            create: { key: `session_${key}`, value: String(value), description: `Session management: ${key}` },
+            create: {
+              key: `session_${key}`,
+              value: String(value),
+              description: `Session management: ${key}`,
+            },
           }),
         );
       });
@@ -273,7 +353,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `password_${key}` },
             update: { value: String(value) },
-            create: { key: `password_${key}`, value: String(value), description: `Password policy: ${key}` },
+            create: {
+              key: `password_${key}`,
+              value: String(value),
+              description: `Password policy: ${key}`,
+            },
           }),
         );
       });
@@ -284,7 +368,11 @@ export class SettingsService {
         this.prisma.systemConfig.upsert({
           where: { key: 'ipWhitelist' },
           update: { value: data.ipWhitelist.join(',') },
-          create: { key: 'ipWhitelist', value: data.ipWhitelist.join(','), description: 'IP whitelist' },
+          create: {
+            key: 'ipWhitelist',
+            value: data.ipWhitelist.join(','),
+            description: 'IP whitelist',
+          },
         }),
       );
     }
@@ -295,7 +383,11 @@ export class SettingsService {
           this.prisma.systemConfig.upsert({
             where: { key: `apiRateLimit_${key}` },
             update: { value: String(value) },
-            create: { key: `apiRateLimit_${key}`, value: String(value), description: `API rate limit: ${key}` },
+            create: {
+              key: `apiRateLimit_${key}`,
+              value: String(value),
+              description: `API rate limit: ${key}`,
+            },
           }),
         );
       });

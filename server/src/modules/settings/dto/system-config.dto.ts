@@ -49,10 +49,16 @@ export class SystemSettingsDto {
   @ApiProperty({ description: '备份启用' })
   backupEnabled: boolean;
 
-  @ApiProperty({ description: '备份频率', enum: ['daily', 'weekly', 'monthly'] })
+  @ApiProperty({
+    description: '备份频率',
+    enum: ['daily', 'weekly', 'monthly'],
+  })
   backupFrequency: 'daily' | 'weekly' | 'monthly';
 
-  @ApiProperty({ description: '日志级别', enum: ['debug', 'info', 'warn', 'error'] })
+  @ApiProperty({
+    description: '日志级别',
+    enum: ['debug', 'info', 'warn', 'error'],
+  })
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 
   @ApiProperty({ description: '会话超时(分钟)' })
@@ -114,10 +120,16 @@ export class UpdateSystemSettingsDto {
   @ApiPropertyOptional({ description: '备份启用' })
   backupEnabled?: boolean;
 
-  @ApiPropertyOptional({ description: '备份频率', enum: ['daily', 'weekly', 'monthly'] })
+  @ApiPropertyOptional({
+    description: '备份频率',
+    enum: ['daily', 'weekly', 'monthly'],
+  })
   backupFrequency?: 'daily' | 'weekly' | 'monthly';
 
-  @ApiPropertyOptional({ description: '日志级别', enum: ['debug', 'info', 'warn', 'error'] })
+  @ApiPropertyOptional({
+    description: '日志级别',
+    enum: ['debug', 'info', 'warn', 'error'],
+  })
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
 
   @ApiPropertyOptional({ description: '会话超时(分钟)' })

@@ -17,6 +17,10 @@ import { StaffService } from '../services/staff.service';
 import { StaffLoginDto } from '../dto/staff-login.dto';
 import { Public } from '@/common/decorators/auth.decorator';
 
+class RefreshTokenDto {
+  refreshToken: string;
+}
+
 @ApiTags('租户员工认证')
 @Controller('tenant/auth')
 export class AuthController {
@@ -30,6 +34,16 @@ export class AuthController {
   @ApiResponse({ status: 401, description: '认证失败' })
   async login(@Body() loginDto: StaffLoginDto) {
     return this.staffService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '刷新访问令牌' })
+  @ApiResponse({ status: 200, description: '令牌刷新成功' })
+  @ApiResponse({ status: 401, description: '刷新令牌无效' })
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.staffService.refreshToken(refreshTokenDto.refreshToken);
   }
 
   @Get('profile')

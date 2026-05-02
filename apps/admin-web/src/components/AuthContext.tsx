@@ -22,7 +22,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (token: string, user: User) => void;
+  login: (token: string, user: User, refreshToken?: string) => void;
   logout: () => void;
   checkAuth: () => boolean;
 }
@@ -86,10 +86,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useCallback((token: string, user: User) => {
+  const login = useCallback((token: string, user: User, refreshToken?: string) => {
     try {
       localStorage.setItem('auth_token', token);
       localStorage.setItem('user_info', JSON.stringify(user));
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+      }
       setAuthState({
         isAuthenticated: true,
         isLoading: false,
@@ -112,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     try {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_info');
       localStorage.removeItem('login_mode');
       localStorage.removeItem('tenant_code');

@@ -1,3 +1,4 @@
+import { RedisService } from '@/common/redis/redis.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
   Injectable,
@@ -15,15 +16,21 @@ import { StaffLoginResultDto, StaffResponseDto } from '../dto/staff.dto';
 export class StaffService {
   private readonly logger = new Logger(StaffService.name);
   private readonly accessTokenExpiresInSeconds: number;
+  private readonly refreshTokenExpiresInSeconds: number;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {
     this.accessTokenExpiresInSeconds = this.configService.get<number>(
       'auth.accessTokenExpiresInSeconds',
       7200,
+    );
+    this.refreshTokenExpiresInSeconds = this.configService.get<number>(
+      'auth.refreshTokenExpiresInSeconds',
+      86400 * 30,
     );
   }
 
@@ -105,6 +112,37 @@ export class StaffService {
     return this.mapToStaffResponse(staff);
   }
 
+  /**
+   * 刷新访问令牌
+   */
+  async refreshToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  }> {
+    const stored = await this.redisService.get<{
+      staffId: string;
+      tenantId: string;
+    }>(`staff:refresh:${refreshToken}`);
+
+    if (!stored) {
+      throw new UnauthorizedException('刷新令牌无效或已过期');
+    }
+
+    await this.redisService.del(`staff:refresh:${refreshToken}`);
+
+    const staff = await (this.prisma as any).staff.findUnique({
+      where: { id: BigInt(stored.staffId) },
+      include: { role: true },
+    });
+
+    if (!staff || staff.status !== 'ACTIVE') {
+      throw new UnauthorizedException('员工不存在或已禁用');
+    }
+
+    return this.generateTokens(staff);
+  }
+
   // ==================== 辅助方法 ====================
 
   private hashPassword(password: string): string {
@@ -144,10 +182,20 @@ export class StaffService {
       type: 'staff',
     };
 
-    const accessToken = this.jwtService.sign(payload);
-    // 简化版，实际应存储在 Redis 并在此处生成唯一的随机串
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.accessTokenExpiresInSeconds,
+    });
     const refreshToken = crypto.randomBytes(32).toString('hex');
     const expiresIn = this.accessTokenExpiresInSeconds;
+
+    this.redisService.set(
+      `staff:refresh:${refreshToken}`,
+      {
+        staffId: staff.id.toString(),
+        tenantId: staff.tenantId.toString(),
+      },
+      this.refreshTokenExpiresInSeconds,
+    );
 
     return {
       accessToken,

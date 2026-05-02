@@ -1,4 +1,7 @@
-import { NotFoundException, ValidationException } from '@/common/exceptions/business.exception';
+import {
+  NotFoundException,
+  ValidationException,
+} from '@/common/exceptions/business.exception';
 import { UserRole } from '@/common/types/auth.types';
 import {
   CreateUserDto,
@@ -16,7 +19,7 @@ import * as crypto from 'crypto';
 export class UserService {
   private readonly logger = new Logger(UserService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getStats(): Promise<{
     totalUsers: number;

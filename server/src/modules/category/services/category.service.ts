@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private async resolveTenantId(explicitTenantId?: number): Promise<number> {
     if (explicitTenantId) {
@@ -432,14 +432,14 @@ export class CategoryService {
       seo: data.seo ? JSON.parse(data.seo) : undefined,
       pricingRule: pricingRule
         ? {
-          id: Number(pricingRule.id),
-          tenantId: Number(pricingRule.tenantId),
-          basePrice: pricingRule.basePrice,
-          minWeight: pricingRule.minWeight ?? undefined,
-          maxWeight: pricingRule.maxWeight ?? undefined,
-          ruleJson: pricingRule.ruleJson ?? undefined,
-          isActive: pricingRule.isActive,
-        }
+            id: Number(pricingRule.id),
+            tenantId: Number(pricingRule.tenantId),
+            basePrice: pricingRule.basePrice,
+            minWeight: pricingRule.minWeight ?? undefined,
+            maxWeight: pricingRule.maxWeight ?? undefined,
+            ruleJson: pricingRule.ruleJson ?? undefined,
+            isActive: pricingRule.isActive,
+          }
         : undefined,
       attributes: data.attributes ? JSON.parse(data.attributes) : undefined,
       createdAt: data.createdAt,

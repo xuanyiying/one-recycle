@@ -1,16 +1,18 @@
+import {
+  AlipayPlatform,
+  KuaishouPlatform,
+  TikTokPlatform,
+  WeChatPlatform,
+} from '@/modules/auth/platforms';
 import { Module, forwardRef } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthController } from './auth.controller';
-import AuthRedisService from './auth-redis.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { WeChatPlatform } from '@/modules/auth/platforms';
-import { AlipayPlatform } from '@/modules/auth/platforms';
-import { TikTokPlatform } from '@/modules/auth/platforms';
-import { KuaishouPlatform } from '@/modules/auth/platforms';
+import { JwtModule } from '@nestjs/jwt';
 import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
+import AuthRedisService from './auth-redis.service';
+import { AuthController } from './auth.controller';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -24,10 +26,13 @@ import { UserModule } from '../user/user.module';
           throw new Error('JWT_SECRET must be set in production environment');
         }
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN', '15m');
+        const parsedExpiresIn: number | string = /^\d+$/.test(expiresIn)
+          ? parseInt(expiresIn, 10)
+          : expiresIn;
         return {
           secret: secret || 'dev-only-secret-key',
           signOptions: {
-            expiresIn: parseInt(expiresIn),
+            expiresIn: parsedExpiresIn as any,
           },
         };
       },

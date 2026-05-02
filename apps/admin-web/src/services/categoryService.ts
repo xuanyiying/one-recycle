@@ -165,72 +165,31 @@ export interface CategoryQueryParams {
 export const categoryService = {
   // 获取分类列表
   async getCategories(params?: CategoryQueryParams): Promise<CategoryListResponse> {
-    try {
-      return await apiClient.get('/category/categories', params);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-      throw new Error('获取分类列表失败');
-    }
+    return apiClient.get('/category/categories', params);
   },
 
-  // 根据ID获取分类详情
   async getCategoryById(id: number): Promise<Category> {
-    try {
-      return await apiClient.get(`/category/categories/${id}`);
-    } catch (error) {
-      console.error('Failed to fetch category:', error);
-      throw new Error('获取分类详情失败');
-    }
+    return apiClient.get(`/category/categories/${id}`);
   },
 
-  // 创建分类
   async createCategory(data: CreateCategoryRequest): Promise<Category> {
-    try {
-      return await apiClient.post('/category/categories', data);
-    } catch (error) {
-      console.error('Failed to create category:', error);
-      throw new Error('创建分类失败');
-    }
+    return apiClient.post('/category/categories', data);
   },
 
-  // 更新分类
   async updateCategory(id: number, data: Partial<CreateCategoryRequest>): Promise<Category> {
-    try {
-      return await apiClient.put(`/category/categories/${id}`, data);
-    } catch (error) {
-      console.error('Failed to update category:', error);
-      throw new Error('更新分类失败');
-    }
+    return apiClient.put(`/category/categories/${id}`, data);
   },
 
-  // 删除分类
   async deleteCategory(id: number): Promise<void> {
-    try {
-      await apiClient.delete(`/category/categories/${id}`);
-    } catch (error) {
-      console.error('Failed to delete category:', error);
-      throw new Error('删除分类失败');
-    }
+    await apiClient.delete(`/category/categories/${id}`);
   },
 
-  // 批量操作分类
   async batchUpdateCategories(ids: number[], operation: string, data?: any): Promise<any> {
-    try {
-      return await apiClient.post('/category/categories/batch', { ids, operation, data });
-    } catch (error) {
-      console.error('Failed to batch update categories:', error);
-      throw new Error('批量操作分类失败');
-    }
+    return apiClient.post('/category/categories/batch', { ids, operation, data });
   },
 
-  // 获取分类树
   async getCategoryTree(): Promise<Category[]> {
-    try {
-      return await apiClient.get('/category/categories/tree');
-    } catch (error) {
-      console.error('Failed to fetch category tree:', error);
-      throw new Error('获取分类树失败');
-    }
+    return apiClient.get('/category/categories/tree');
   },
 
   // 上传图标

@@ -24,7 +24,7 @@ import { UserService } from '../services/user.service';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -67,7 +67,9 @@ export class UserController {
 
   @Post('reset-password')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
-  async resetPassword(@Body() body: { userId: string }): Promise<{ newPassword: string }> {
+  async resetPassword(
+    @Body() body: { userId: string },
+  ): Promise<{ newPassword: string }> {
     return this.userService.resetPassword(body.userId);
   }
 

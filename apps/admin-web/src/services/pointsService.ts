@@ -88,8 +88,7 @@ export const pointsStatsApi = {
    * 获取统计概览
    */
   async getStats(): Promise<PointsStats> {
-    const response = await apiClient.get('/admin/points/stats');
-    return response.data;
+    return await apiClient.get('/admin/points/stats');
   },
 };
 
@@ -104,40 +103,35 @@ export const pointsProductApi = {
     type?: 'VIRTUAL' | 'PHYSICAL';
     categoryId?: number;
   }) {
-    const response = await apiClient.get('/admin/points/products', params);
-    return response.data;
+    return await apiClient.get('/admin/points/products', params);
   },
 
   /**
    * 获取商品详情
    */
   async getProduct(id: number) {
-    const response = await apiClient.get(`/admin/points/products/${id}`);
-    return response.data;
+    return await apiClient.get(`/admin/points/products/${id}`);
   },
 
   /**
    * 创建商品
    */
   async createProduct(data: CreateProductDto) {
-    const response = await apiClient.post('/admin/points/products', data);
-    return response.data;
+    return await apiClient.post('/admin/points/products', data);
   },
 
   /**
    * 更新商品
    */
   async updateProduct(id: number, data: UpdateProductDto) {
-    const response = await apiClient.post(`/admin/points/products/${id}`, data);
-    return response.data;
+    return await apiClient.post(`/admin/points/products/${id}`, data);
   },
 
   /**
    * 删除商品
    */
   async deleteProduct(id: number) {
-    const response = await apiClient.post(`/admin/points/products/${id}/delete`);
-    return response.data;
+    return await apiClient.post(`/admin/points/products/${id}/delete`);
   },
 };
 
@@ -150,24 +144,21 @@ export const pointsOrderApi = {
     limit?: number;
     status?: 'PENDING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
   }) {
-    const response = await apiClient.get('/admin/points/orders', params);
-    return response.data;
+    return await apiClient.get('/admin/points/orders', params);
   },
 
   /**
    * 获取订单详情
    */
   async getOrder(id: number) {
-    const response = await apiClient.get(`/admin/points/orders/${id}`);
-    return response.data;
+    return await apiClient.get(`/admin/points/orders/${id}`);
   },
 
   /**
    * 发货
    */
   async shipOrder(id: number, data: { logisticsNo: string; logisticsCompany: string }) {
-    const response = await apiClient.post(`/admin/points/orders/${id}/ship`, data);
-    return response.data;
+    return await apiClient.post(`/admin/points/orders/${id}/ship`, data);
   },
 };
 
@@ -187,8 +178,7 @@ export const pointsTaskApi = {
    * 获取任务列表
    */
   async getTasks() {
-    const response = await apiClient.get('/admin/points/tasks');
-    return response.data;
+    return await apiClient.get('/admin/points/tasks');
   },
 
   /**
@@ -203,16 +193,14 @@ export const pointsTaskApi = {
     config?: any;
     sortOrder?: number;
   }) {
-    const response = await apiClient.post('/admin/points/tasks', data);
-    return response.data;
+    return await apiClient.post('/admin/points/tasks', data);
   },
 
   /**
    * 更新任务
    */
   async updateTask(id: number, data: UpdateTaskDto) {
-    const response = await apiClient.post(`/admin/points/tasks/${id}`, data);
-    return response.data;
+    return await apiClient.post(`/admin/points/tasks/${id}`, data);
   },
 };
 

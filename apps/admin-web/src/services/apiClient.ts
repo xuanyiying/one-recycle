@@ -67,29 +67,91 @@ export interface RequestConfig extends AxiosRequestConfig {
  */
 export class ApiClient {
   private instance: AxiosInstance;
+  private isRefreshing = false;
+  private refreshSubscribers: Array<(token: string) => void> = [];
 
-  /**
-   * 创建API客户端实例
-   * @param baseURL - API基础URL
-   * @param serviceName - 服务名称（用于日志标识）
-   */
   constructor(baseURL: string, serviceName?: string) {
     let fullBaseURL = baseURL;
     if (serviceName) {
       fullBaseURL = `${baseURL}/api`;
     }
 
-    // 创建axios实例
     this.instance = axios.create({
       baseURL: fullBaseURL,
-      timeout: 15000, // 请求超时时间15秒
+      timeout: 15000,
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // 设置请求和响应拦截器
     this.setupInterceptors(serviceName);
+  }
+
+  private onTokenRefreshed(token: string) {
+    this.refreshSubscribers.forEach((cb) => cb(token));
+    this.refreshSubscribers = [];
+  }
+
+  private addRefreshSubscriber(callback: (token: string) => void) {
+    this.refreshSubscribers.push(callback);
+  }
+
+  private async tryRefreshToken(): Promise<string | null> {
+    const refreshToken = typeof window !== 'undefined'
+      ? localStorage.getItem('refresh_token')
+      : null;
+
+    if (!refreshToken) return null;
+
+    try {
+      const response = await this.instance.post('/tenant/auth/refresh', {
+        refreshToken,
+      });
+
+      const data = response.data?.data || response.data;
+      const newAccessToken = data.accessToken;
+      const newRefreshToken = data.refreshToken;
+      const expiresIn = data.expiresIn;
+
+      if (newAccessToken && typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken);
+        }
+        const userInfo = localStorage.getItem('user_info');
+        const maxAge = expiresIn || 86400;
+        document.cookie = `auth_token=${newAccessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        if (userInfo) {
+          try {
+            const user = JSON.parse(userInfo);
+            user.tokenExpiry = Date.now() + (expiresIn || 7200) * 1000;
+            localStorage.setItem('user_info', JSON.stringify(user));
+          } catch { }
+        }
+      }
+
+      return newAccessToken;
+    } catch (error: any) {
+      const status = error?.response?.status;
+
+      if (status === 401 || status === 403) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user_info');
+          document.cookie = 'auth_token=; path=/; max-age=0';
+        }
+        console.warn('[API] Refresh token invalid or expired, clearing auth state');
+      } else if (status === 500) {
+        console.error('[API] Server error during token refresh');
+      } else if (!error?.response) {
+        console.error('[API] Network error during token refresh');
+      } else {
+        console.error('[API] Token refresh failed:', error?.message || 'Unknown error');
+      }
+
+      return null;
+    }
   }
 
   /**
@@ -117,7 +179,6 @@ export class ApiClient {
       }
     );
 
-    // 响应拦截器 - 处理响应和错误
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => {
         if (process.env.NODE_ENV === 'development') {
@@ -125,7 +186,46 @@ export class ApiClient {
         }
         return response;
       },
-      (error: AxiosError) => {
+      async (error: AxiosError) => {
+        const originalRequest = error.config as any;
+
+        if (
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest._retry
+        ) {
+          originalRequest._retry = true;
+
+          if (this.isRefreshing) {
+            return new Promise((resolve) => {
+              this.addRefreshSubscriber((newToken: string) => {
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                resolve(this.instance(originalRequest));
+              });
+            });
+          }
+
+          this.isRefreshing = true;
+
+          try {
+            const newToken = await this.tryRefreshToken();
+
+            if (newToken) {
+              this.onTokenRefreshed(newToken);
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return this.instance(originalRequest);
+            } else {
+              this.handleUnauthorized();
+              return Promise.reject(error);
+            }
+          } catch {
+            this.handleUnauthorized();
+            return Promise.reject(error);
+          } finally {
+            this.isRefreshing = false;
+          }
+        }
+
         console.error(`[${serviceName || 'API'}] Error:`, error.message);
         this.handleError(error);
         return Promise.reject(error);
@@ -164,7 +264,6 @@ export class ApiClient {
 
     switch (status) {
       case 401:
-        this.handleUnauthorized();
         break;
       case 403:
         toast.error('权限不足，无法访问该资源');
@@ -206,6 +305,7 @@ export class ApiClient {
   private handleUnauthorized() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_info');
       document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));

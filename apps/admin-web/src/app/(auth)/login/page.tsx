@@ -70,7 +70,7 @@ export default function LoginPage() {
       });
 
       if (res.accessToken) {
-        login(res.accessToken, res.user);
+        login(res.accessToken, res.user, res.refreshToken);
         localStorage.setItem('login_mode', 'tenant');
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);
 

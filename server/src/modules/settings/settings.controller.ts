@@ -1,5 +1,10 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import {
   SystemSettingsDto,
@@ -29,7 +34,9 @@ export class SettingsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '更新系统设置' })
   @ApiResponse({ status: 200, type: SystemSettingsDto })
-  async updateSystemSettings(@Body() data: UpdateSystemSettingsDto): Promise<SystemSettingsDto> {
+  async updateSystemSettings(
+    @Body() data: UpdateSystemSettingsDto,
+  ): Promise<SystemSettingsDto> {
     return this.settingsService.updateSystemSettings(data);
   }
 
@@ -45,7 +52,9 @@ export class SettingsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '更新通知设置' })
   @ApiResponse({ status: 200, type: NotificationSettingsDto })
-  async updateNotificationSettings(@Body() data: UpdateNotificationSettingsDto): Promise<NotificationSettingsDto> {
+  async updateNotificationSettings(
+    @Body() data: UpdateNotificationSettingsDto,
+  ): Promise<NotificationSettingsDto> {
     return this.settingsService.updateNotificationSettings(data);
   }
 
@@ -61,7 +70,9 @@ export class SettingsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '更新安全设置' })
   @ApiResponse({ status: 200, type: SecuritySettingsDto })
-  async updateSecuritySettings(@Body() data: UpdateSecuritySettingsDto): Promise<SecuritySettingsDto> {
+  async updateSecuritySettings(
+    @Body() data: UpdateSecuritySettingsDto,
+  ): Promise<SecuritySettingsDto> {
     return this.settingsService.updateSecuritySettings(data);
   }
 }

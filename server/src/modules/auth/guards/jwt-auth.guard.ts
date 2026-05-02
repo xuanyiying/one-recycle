@@ -1,9 +1,9 @@
 import {
-  Injectable,
   ExecutionContext,
-  UnauthorizedException,
   ForbiddenException,
+  Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,7 +17,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // 检查是否标记为公开接口
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
       context.getHandler(),
       context.getClass(),
@@ -27,8 +26,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
+    if (context.getType() === 'rpc') {
+      return true;
+    }
+
     try {
-      // 调用父类的 canActivate 方法进行基础 JWT 验证
       const result = await super.canActivate(context);
       if (!result) {
         throw new UnauthorizedException('令牌验证失败');
@@ -41,7 +43,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('用户信息不存在');
       }
 
-      // 检查用户权限
       await this.checkPermissions(context, user);
 
       this.logger.log(`用户 ${user.id} 通过认证验证`);

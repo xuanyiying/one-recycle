@@ -69,7 +69,10 @@ export class NotificationSettingsDto {
   @ApiProperty({ type: PushNotificationsDto })
   pushNotifications: PushNotificationsDto;
 
-  @ApiProperty({ description: '通知频率', enum: ['immediate', 'hourly', 'daily', 'weekly'] })
+  @ApiProperty({
+    description: '通知频率',
+    enum: ['immediate', 'hourly', 'daily', 'weekly'],
+  })
   notificationFrequency: 'immediate' | 'hourly' | 'daily' | 'weekly';
 
   @ApiProperty({ type: QuietHoursDto })
@@ -86,7 +89,10 @@ export class UpdateNotificationSettingsDto {
   @ApiPropertyOptional({ type: PushNotificationsDto })
   pushNotifications?: Partial<PushNotificationsDto>;
 
-  @ApiPropertyOptional({ description: '通知频率', enum: ['immediate', 'hourly', 'daily', 'weekly'] })
+  @ApiPropertyOptional({
+    description: '通知频率',
+    enum: ['immediate', 'hourly', 'daily', 'weekly'],
+  })
   notificationFrequency?: 'immediate' | 'hourly' | 'daily' | 'weekly';
 
   @ApiPropertyOptional({ type: QuietHoursDto })

@@ -77,6 +77,8 @@ services:
       - OSS_ENDPOINT=${OSS_ENDPOINT:-}
       - OSS_SECURE=${OSS_SECURE:-true}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
       - .env
     depends_on:
@@ -112,6 +114,8 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
       - .env
     depends_on:
@@ -152,6 +156,8 @@ services:
       - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
       - OSS_REGION=${OSS_REGION:-ap-guangzhou}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
       - .env
     depends_on:
@@ -187,6 +193,8 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
       - .env
     depends_on:
@@ -222,6 +230,8 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
       - .env
     depends_on:
@@ -257,6 +267,8 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
       - .env
     depends_on:

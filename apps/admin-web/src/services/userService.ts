@@ -34,26 +34,22 @@ export class UserService {
 
   // 获取用户列表
   async getUsers(params?: UserQueryParams): Promise<UserListResponse> {
-    const response = await apiClient.get(this.baseUrl, params);
-    return response;
+    return await apiClient.get(this.baseUrl, params);
   }
 
   // 获取用户详情
   async getUserById(id: string): Promise<User> {
-    const response = await apiClient.get(`${this.baseUrl}/${id}`);
-    return response;
+    return await apiClient.get(`${this.baseUrl}/${id}`);
   }
 
   // 创建用户
   async createUser(data: CreateUserRequest): Promise<User> {
-    const response = await apiClient.post(this.baseUrl, data);
-    return response;
+    return await apiClient.post(this.baseUrl, data);
   }
 
   // 更新用户
   async updateUser(id: string, data: UpdateUserRequest): Promise<User> {
-    const response = await apiClient.put(`${this.baseUrl}/${id}`, data);
-    return response;
+    return await apiClient.put(`${this.baseUrl}/${id}`, data);
   }
 
   // 删除用户
@@ -84,22 +80,19 @@ export class UserService {
 
   // 获取用户统计信息
   async getUserStats(): Promise<UserStats> {
-    const response = await apiClient.get(`${this.baseUrl}/stats`);
-    return response;
+    return await apiClient.get(`${this.baseUrl}/stats`);
   }
 
   // 获取用户活动日志
   async getUserActivities(params?: UserActivityQueryParams): Promise<UserActivityListResponse> {
-    const response = await apiClient.get(`${this.baseUrl}/activities`, params);
-    return response;
+    return await apiClient.get(`${this.baseUrl}/activities`, params);
   }
 
   // 导出用户数据
   async exportUsers(params?: UserQueryParams): Promise<Blob> {
-    const response = await apiClient.get(`${this.baseUrl}/export`, params, {
+    return await apiClient.get(`${this.baseUrl}/export`, params, {
       responseType: 'blob',
     });
-    return response;
   }
 
   // 发送邮件验证
@@ -124,8 +117,7 @@ export class UserService {
 
   // 获取最近注册的用户
   async getRecentUsers(limit: number = 10): Promise<User[]> {
-    const response = await apiClient.get(`${this.baseUrl}/recent`, { limit });
-    return response;
+    return await apiClient.get(`${this.baseUrl}/recent`, { limit });
   }
 }
 
