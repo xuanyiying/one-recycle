@@ -67,6 +67,7 @@ export interface RequestConfig extends AxiosRequestConfig {
  */
 export class ApiClient {
   private instance: AxiosInstance;
+  private refreshInstance: AxiosInstance;
   private isRefreshing = false;
   private refreshSubscribers: Array<(token: string) => void> = [];
 
@@ -79,6 +80,14 @@ export class ApiClient {
     this.instance = axios.create({
       baseURL: fullBaseURL,
       timeout: 15000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    this.refreshInstance = axios.create({
+      baseURL: fullBaseURL,
+      timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -101,10 +110,16 @@ export class ApiClient {
       ? localStorage.getItem('refresh_token')
       : null;
 
-    if (!refreshToken) return null;
+    console.log('[API] tryRefreshToken called, hasRefreshToken:', !!refreshToken);
+
+    if (!refreshToken) {
+      console.warn('[API] No refresh token available, cannot refresh');
+      return null;
+    }
 
     try {
-      const response = await this.instance.post('/tenant/auth/refresh', {
+      console.log('[API] Attempting token refresh via /tenant/auth/refresh');
+      const response = await this.refreshInstance.post('/tenant/auth/refresh', {
         refreshToken,
       });
 
@@ -112,6 +127,13 @@ export class ApiClient {
       const newAccessToken = data.accessToken;
       const newRefreshToken = data.refreshToken;
       const expiresIn = data.expiresIn;
+
+      console.log('[API] Token refresh response:', {
+        hasAccessToken: !!newAccessToken,
+        hasRefreshToken: !!newRefreshToken,
+        expiresIn,
+        responseStatus: response.status,
+      });
 
       if (newAccessToken && typeof window !== 'undefined') {
         localStorage.setItem('auth_token', newAccessToken);
@@ -121,6 +143,7 @@ export class ApiClient {
         const userInfo = localStorage.getItem('user_info');
         const maxAge = expiresIn || 86400;
         document.cookie = `auth_token=${newAccessToken}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        console.log('[API] Token refresh successful, updated localStorage and cookie');
         if (userInfo) {
           try {
             const user = JSON.parse(userInfo);
@@ -133,6 +156,14 @@ export class ApiClient {
       return newAccessToken;
     } catch (error: any) {
       const status = error?.response?.status;
+      const errorData = error?.response?.data;
+
+      console.error('[API] Token refresh failed:', {
+        status,
+        message: error?.message,
+        errorData,
+        url: error?.config?.url,
+      });
 
       if (status === 401 || status === 403) {
         if (typeof window !== 'undefined') {
@@ -143,9 +174,9 @@ export class ApiClient {
         }
         console.warn('[API] Refresh token invalid or expired, clearing auth state');
       } else if (status === 500) {
-        console.error('[API] Server error during token refresh');
+        console.error('[API] Server error during token refresh - this may indicate the refresh endpoint is not reachable or has a bug in microservices mode');
       } else if (!error?.response) {
-        console.error('[API] Network error during token refresh');
+        console.error('[API] Network error during token refresh - the API gateway may be unreachable');
       } else {
         console.error('[API] Token refresh failed:', error?.message || 'Unknown error');
       }
@@ -168,10 +199,14 @@ export class ApiClient {
         }
         config.headers['X-Request-ID'] = this.generateRequestId();
 
-        // 开发环境打印请求日志
         if (process.env.NODE_ENV === 'development') {
           console.log(`[${serviceName || 'API'}] Request: ${config.method?.toUpperCase()} ${config.url}`);
         }
+
+        if (!token && config.url && !config.url.includes('/auth/')) {
+          console.warn(`[API] Request without token: ${config.method?.toUpperCase()} ${config.url}`);
+        }
+
         return config;
       },
       (error) => {
@@ -188,6 +223,17 @@ export class ApiClient {
       },
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
+        const errorStatus = error.response?.status;
+        const errorUrl = originalRequest?.url;
+        const errorMethod = originalRequest?.method?.toUpperCase();
+
+        console.error(`[API] Response error: ${errorMethod} ${errorUrl} -> ${errorStatus}`, {
+          status: errorStatus,
+          url: errorUrl,
+          method: errorMethod,
+          hasRetry: !!originalRequest?._retry,
+          data: error.response?.data,
+        });
 
         if (
           error.response?.status === 401 &&
@@ -195,8 +241,10 @@ export class ApiClient {
           !originalRequest._retry
         ) {
           originalRequest._retry = true;
+          console.warn(`[API] 401 detected for ${errorMethod} ${errorUrl}, attempting token refresh...`);
 
           if (this.isRefreshing) {
+            console.log('[API] Token refresh already in progress, queuing request');
             return new Promise((resolve) => {
               this.addRefreshSubscriber((newToken: string) => {
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -211,14 +259,17 @@ export class ApiClient {
             const newToken = await this.tryRefreshToken();
 
             if (newToken) {
+              console.log('[API] Token refreshed successfully, retrying original request:', errorUrl);
               this.onTokenRefreshed(newToken);
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
               return this.instance(originalRequest);
             } else {
+              console.error('[API] Token refresh returned null, triggering handleUnauthorized');
               this.handleUnauthorized();
               return Promise.reject(error);
             }
-          } catch {
+          } catch (refreshError) {
+            console.error('[API] Token refresh threw exception, triggering handleUnauthorized:', refreshError);
             this.handleUnauthorized();
             return Promise.reject(error);
           } finally {
@@ -303,12 +354,17 @@ export class ApiClient {
    * 清除本地存储的认证信息
    */
   private handleUnauthorized() {
+    console.error('[API] handleUnauthorized called - clearing auth state and dispatching auth:unauthorized event');
     if (typeof window !== 'undefined') {
+      const hadToken = !!localStorage.getItem('auth_token');
+      const hadRefreshToken = !!localStorage.getItem('refresh_token');
+      console.log('[API] handleUnauthorized - auth state before clear:', { hadToken, hadRefreshToken });
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_info');
       document.cookie = 'auth_token=; path=/; max-age=0; SameSite=Lax';
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      console.log('[API] auth:unauthorized event dispatched - this will trigger redirect to /login');
     }
   }
 

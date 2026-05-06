@@ -54,11 +54,30 @@ export default function UsersPage() {
     setSearchInput(search);
   }, [search]);
 
+  const updateUrl = useCallback((newParams: Partial<UserQueryParams>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (newParams.page) params.set('page', newParams.page.toString());
+    if (newParams.limit) params.set('limit', newParams.limit.toString());
+
+    if (newParams.search !== undefined) {
+      if (newParams.search) params.set('search', newParams.search);
+      else params.delete('search');
+    }
+
+    if (newParams.role !== undefined) {
+      if (newParams.role) params.set('role', newParams.role);
+      else params.delete('role');
+    }
+
+    router.push(`${pathname}?${params.toString()}`);
+  }, [searchParams, pathname, router]);
+
   useEffect(() => {
     if (debouncedSearch !== search) {
       updateUrl({ search: debouncedSearch, page: 1 });
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, search, updateUrl]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -92,25 +111,6 @@ export default function UsersPage() {
     fetchUsers();
     fetchUserStats();
   }, [fetchUsers, fetchUserStats]);
-
-  const updateUrl = (newParams: Partial<UserQueryParams>) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (newParams.page) params.set('page', newParams.page.toString());
-    if (newParams.limit) params.set('limit', newParams.limit.toString());
-
-    if (newParams.search !== undefined) {
-      if (newParams.search) params.set('search', newParams.search);
-      else params.delete('search');
-    }
-
-    if (newParams.role !== undefined) {
-      if (newParams.role) params.set('role', newParams.role);
-      else params.delete('role');
-    }
-
-    router.push(`${pathname}?${params.toString()}`);
-  };
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     updateUrl({ role: e.target.value as UserRole, page: 1 });

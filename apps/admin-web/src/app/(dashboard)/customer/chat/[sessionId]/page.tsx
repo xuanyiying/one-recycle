@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
+import { customerService } from '@/services/customerService';
 import { customerSocketService, Message } from '@/services/customerSocketService';
 import { Bot, History, Image, Loader2, Send, User, X } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Session {
   id: string;
@@ -45,6 +46,41 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const fetchSession = useCallback(async () => {
+    try {
+      const data = await customerService.getSession(sessionId);
+      setSession(data);
+    } catch (error) {
+      console.error('Failed to fetch session:', error);
+    }
+  }, [sessionId]);
+
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await customerService.getSessionMessages(sessionId);
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+      toast.error('获取消息失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionId]);
+
+  const fetchQuickReplies = useCallback(async () => {
+    try {
+      const data = await customerService.getQuickReplies();
+      setQuickReplies(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to fetch quick replies:', error);
+    }
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
   useEffect(() => {
     fetchSession();
     fetchMessages();
@@ -73,7 +109,7 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
           toast.success('客服已接入');
         });
 
-        unregisterError = customerSocketService.onError((error) => {
+        unregisterError = customerSocketService.onError((error: { message?: string }) => {
           console.error('Socket error:', error);
           toast.error(error.message || '连接错误');
         });
@@ -94,55 +130,11 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
       customerSocketService.leaveSession(sessionId);
       customerSocketService.disconnect();
     };
-  }, [sessionId]);
+  }, [sessionId, fetchSession, fetchMessages, fetchQuickReplies]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  const fetchSession = async () => {
-    try {
-      const res = await fetch(`/api/customer/sessions/${sessionId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSession(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch session:', error);
-    }
-  };
-
-  const fetchMessages = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/customer/sessions/${sessionId}/messages`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(Array.isArray(data.messages) ? data.messages : []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch messages:', error);
-      toast.error('获取消息失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchQuickReplies = async () => {
-    try {
-      const res = await fetch('/api/customer/quick-replies');
-      if (res.ok) {
-        const data = await res.json();
-        setQuickReplies(Array.isArray(data) ? data : []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch quick replies:', error);
-    }
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [messages, scrollToBottom]);
 
   const sendMessage = async (content: string, messageType: 'TEXT' | 'IMAGE' = 'TEXT', mediaUrl?: string) => {
     if (!content.trim() && !mediaUrl) return;
@@ -177,21 +169,9 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/customer/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        sendMessage('', 'IMAGE', data.url);
-      } else {
-        toast.error('上传失败');
-      }
+      const data = await customerService.uploadFile(file);
+      sendMessage('', 'IMAGE', data.url);
     } catch (error) {
       toast.error('上传失败');
     }
@@ -199,16 +179,9 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
 
   const handleCloseSession = async () => {
     try {
-      const res = await fetch(`/api/customer/sessions/${sessionId}/close`, {
-        method: 'PUT',
-      });
-
-      if (res.ok) {
-        toast.success('会话已结束');
-        window.history.back();
-      } else {
-        toast.error('操作失败');
-      }
+      await customerService.closeSession(sessionId);
+      toast.success('会话已结束');
+      window.history.back();
     } catch (error) {
       toast.error('操作失败');
     }
@@ -354,7 +327,7 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
                 快捷回复
               </Button>
               <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                <Image className="h-4 w-4" />
+                <Image className="h-4 w-4" aria-label="上传图片" />
               </Button>
               <input
                 type="file"

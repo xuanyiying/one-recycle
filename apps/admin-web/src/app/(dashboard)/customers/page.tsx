@@ -48,11 +48,29 @@ export default function CustomersPage() {
     setSearchNickname(nickname);
   }, [mobile, nickname]);
 
+  const updateUrl = useCallback((newParams: Record<string, string | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
+
+    if (newParams.page === undefined && !params.has('page')) {
+      params.set('page', '1');
+    }
+
+    router.push(`${pathname}?${params.toString()}`);
+  }, [searchParams, pathname, router]);
+
   useEffect(() => {
     if (debouncedMobile !== mobile || debouncedNickname !== nickname) {
       updateUrl({ mobile: debouncedMobile, nickname: debouncedNickname, page: '1' });
     }
-  }, [debouncedMobile, debouncedNickname]);
+  }, [debouncedMobile, debouncedNickname, mobile, nickname, updateUrl]);
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -75,24 +93,6 @@ export default function CustomersPage() {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
-
-  const updateUrl = (newParams: Record<string, string | undefined>) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-    });
-
-    if (newParams.page === undefined && !params.has('page')) {
-      params.set('page', '1');
-    }
-
-    router.push(`${pathname}?${params.toString()}`);
-  };
 
   const handleViewDetail = (user: CustomerUser) => {
     router.push(`/customers/${user.id}`);

@@ -1,37 +1,42 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Body,
-  Param,
   Query,
   Request,
-  BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { SessionService } from './services/session.service';
-import { MessageService } from './services/message.service';
-import { AIReplyService } from './services/ai-reply.service';
-import { TicketService } from './services/ticket.service';
-import { KnowledgeService } from './services/knowledge.service';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
+  AssignTicketDto,
+  CreateKnowledgeDto,
+  CreateQuickReplyDto,
   CreateSessionDto,
-  UpdateSessionDto,
-  TransferToAgentDto,
-  SubmitSatisfactionDto,
-  SendMessageDto,
+  CreateTicketDto,
   GetMessagesDto,
   MarkAsReadDto,
-  CreateTicketDto,
-  UpdateTicketDto,
-  AssignTicketDto,
-  ResolveTicketDto,
-  QueryTicketDto,
-  CreateKnowledgeDto,
-  UpdateKnowledgeDto,
   QueryKnowledgeDto,
+  QueryQuickReplyDto,
+  QueryTicketDto,
+  ResolveTicketDto,
+  SendMessageDto,
+  SubmitSatisfactionDto,
+  TransferToAgentDto,
+  UpdateKnowledgeDto,
+  UpdateQuickReplyDto,
+  UpdateSessionDto,
+  UpdateTicketDto,
 } from './dto';
+import { AIReplyService } from './services/ai-reply.service';
+import { KnowledgeService } from './services/knowledge.service';
+import { MessageService } from './services/message.service';
+import { QuickReplyService } from './services/quick-reply.service';
+import { SessionService } from './services/session.service';
+import { TicketService } from './services/ticket.service';
 
 @ApiTags('customer')
 @ApiBearerAuth()
@@ -43,7 +48,8 @@ export class CustomerServiceController {
     private readonly aiReplyService: AIReplyService,
     private readonly ticketService: TicketService,
     private readonly knowledgeService: KnowledgeService,
-  ) {}
+    private readonly quickReplyService: QuickReplyService,
+  ) { }
 
   @Post('sessions')
   @ApiOperation({ summary: '创建客服会话' })
@@ -258,5 +264,50 @@ export class CustomerServiceController {
       userId,
       body.message,
     );
+  }
+
+  @Get('quick-replies')
+  @ApiOperation({ summary: '获取快捷回复列表' })
+  async getQuickReplies(@Query() dto: QueryQuickReplyDto, @Request() req: any) {
+    const agentId = req.user?.sub;
+    return this.quickReplyService.findAll(dto, agentId);
+  }
+
+  @Post('quick-replies')
+  @ApiOperation({ summary: '创建快捷回复' })
+  async createQuickReply(
+    @Body() dto: CreateQuickReplyDto,
+    @Request() req: any,
+  ) {
+    const agentId = req.user?.sub;
+    return this.quickReplyService.create(dto, agentId);
+  }
+
+  @Get('quick-replies/:id')
+  @ApiOperation({ summary: '获取快捷回复详情' })
+  async getQuickReply(@Param('id') id: string) {
+    return this.quickReplyService.findOne(id);
+  }
+
+  @Put('quick-replies/:id')
+  @ApiOperation({ summary: '更新快捷回复' })
+  async updateQuickReply(
+    @Param('id') id: string,
+    @Body() dto: UpdateQuickReplyDto,
+  ) {
+    return this.quickReplyService.update(id, dto);
+  }
+
+  @Delete('quick-replies/:id')
+  @ApiOperation({ summary: '删除快捷回复' })
+  async deleteQuickReply(@Param('id') id: string) {
+    await this.quickReplyService.delete(id);
+    return { success: true };
+  }
+
+  @Get('quick-replies/categories')
+  @ApiOperation({ summary: '获取快捷回复分类' })
+  async getQuickReplyCategories() {
+    return this.quickReplyService.getCategories();
   }
 }

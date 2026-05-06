@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -90,11 +90,7 @@ export default function TicketsPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [closingId, setClosingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTickets();
-  }, [page, pageSize, filters]);
-
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -116,7 +112,11 @@ export default function TicketsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, filters]);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
 
   const handleViewDetail = async (ticketId: string) => {
     try {

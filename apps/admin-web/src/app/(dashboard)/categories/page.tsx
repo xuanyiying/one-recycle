@@ -407,17 +407,31 @@ export default function CategoriesPage() {
       pricingRule: pricingPayload.pricingRule,
     };
 
+    console.log('[Categories] Saving category:', {
+      editingCategoryId,
+      payloadSize: JSON.stringify(payload).length,
+      hasIconUrl: !!payload.iconUrl,
+      iconUrlLength: payload.iconUrl?.length || 0,
+      apiBaseURL: process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'default',
+    });
+
     setIsSaving(true);
     try {
       const saved = editingCategoryId
         ? await categoryService.updateCategory(editingCategoryId, payload)
         : await categoryService.createCategory(payload);
+      console.log('[Categories] Category saved successfully:', saved);
       toast.success(editingCategoryId ? '分类已更新' : '分类已创建');
       setEditingCategoryId(saved.id);
       setCategorySlug(saved.seo?.slug || slugValue);
       await loadCategories();
     } catch (error: any) {
-      console.error('保存分类失败:', error);
+      console.error('[Categories] Save failed:', {
+        status: error?.response?.status,
+        message: error?.message,
+        data: error?.response?.data,
+        isAxiosError: error?.isAxiosError,
+      });
       const errorMessage = error?.response?.data?.message || error?.message || '保存失败，请检查输入信息';
       toast.error(errorMessage);
     } finally {

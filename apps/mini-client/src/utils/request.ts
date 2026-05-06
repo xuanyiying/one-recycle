@@ -1,10 +1,10 @@
 import Taro from '@tarojs/taro'
-import { requestCache } from './requestCache'
-import { performanceMonitor } from './performanceMonitor'
 import errorHandler from './errorHandler'
-import networkStatusManager from './networkStatus'
-import { Storage } from './storage'
 import logger from './logger'
+import networkStatusManager from './networkStatus'
+import { performanceMonitor } from './performanceMonitor'
+import { requestCache } from './requestCache'
+import { Storage } from './storage'
 const env: Partial<NodeJS.ProcessEnv> = typeof process !== 'undefined' ? process.env : {}
 export const API_BASE_URL = env.TARO_APP_API_BASE_URL || env.API_BASE_URL || 'https://backbuy.cn/api'
 // 请求配置接口
@@ -29,9 +29,20 @@ const generateCacheKey = (url: string, method: string, data?: any): string => {
 let refreshing = false
 let refreshPromise: Promise<string | null> | null = null
 
+const redirectToLogin = () => {
+    Storage.clearAuth()
+    Taro.showToast({ title: '登录已过期，请重新登录', icon: 'none', duration: 2000 })
+    setTimeout(() => {
+        Taro.redirectTo({ url: '/pages/login/index' })
+    }, 1500)
+}
+
 export const attemptTokenRefresh = async (): Promise<string | null> => {
     const refreshToken = Storage.getRefreshToken()
-    if (!refreshToken) return null
+    if (!refreshToken) {
+        redirectToLogin()
+        return null
+    }
 
     if (refreshing && refreshPromise) {
         return refreshPromise
@@ -49,12 +60,16 @@ export const attemptTokenRefresh = async (): Promise<string | null> => {
 
             if (response.statusCode >= 200 && response.statusCode < 300) {
                 const body = response.data || {}
-                const newToken = body.accessToken || body.token
+                const newToken = body.data?.accessToken || body.data?.token || body.accessToken || body.token
                 if (newToken) {
                     Storage.setToken(newToken)
                     return newToken
                 }
+                redirectToLogin()
                 return null
+            }
+            if (response.statusCode === 401 || response.statusCode === 403) {
+                redirectToLogin()
             }
             return null
         } catch (e) {
@@ -252,14 +267,14 @@ export const upload = async <T = any>(
     const token = Storage.getToken()
     const fullUrl = `${API_BASE_URL}${url}`
 
-    return new Promise((resolve, reject) => {
+    const doUpload = (authToken: string) => new Promise<T & { success: boolean; url?: string; message?: string }>((resolve, reject) => {
         Taro.uploadFile({
             url: fullUrl,
             filePath,
             name: 'file',
             formData,
             header: {
-                'Authorization': token ? `Bearer ${token}` : '',
+                'Authorization': authToken ? `Bearer ${authToken}` : '',
                 ...header
             },
             success: (res) => {
@@ -275,7 +290,7 @@ export const upload = async <T = any>(
                         } as any)
                     }
                 } else {
-                    reject(new Error(`上传失败: ${res.statusCode}`))
+                    reject({ statusCode: res.statusCode, data: res.data })
                 }
             },
             fail: (err) => {
@@ -283,4 +298,20 @@ export const upload = async <T = any>(
             }
         })
     })
+
+    try {
+        return await doUpload(token || '')
+    } catch (error: any) {
+        if (error && typeof error === 'object' && error.statusCode === 401) {
+            const newToken = await attemptTokenRefresh()
+            if (newToken) {
+                return await doUpload(newToken)
+            }
+            throw new Error('未授权或会话已过期')
+        }
+        if (error instanceof Error) {
+            throw error
+        }
+        throw new Error(`上传失败: ${error.statusCode || '未知错误'}`)
+    }
 }

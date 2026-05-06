@@ -1,26 +1,26 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  IsArray,
-  IsBoolean,
-  IsObject,
-  MaxLength,
-  Min,
-  Max,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import {
-  ChatSessionType,
-  ChatSessionStatus,
   ChatMessageType,
-  TicketType,
+  ChatSessionStatus,
+  ChatSessionType,
+  KnowledgeCategory,
   TicketPriority,
   TicketStatus,
-  KnowledgeCategory,
+  TicketType,
 } from '@prisma/client';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateSessionDto {
   @ApiPropertyOptional({ description: '用户ID' })
@@ -351,6 +351,86 @@ export class QueryTicketDto {
   @IsOptional()
   @IsString()
   assignedTo?: string;
+
+  @ApiPropertyOptional({ description: '页码', default: 1 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional({ description: '每页数量', default: 20 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  pageSize?: number;
+}
+
+export class CreateQuickReplyDto {
+  @ApiProperty({ description: '标题' })
+  @IsString()
+  @MaxLength(100)
+  title: string;
+
+  @ApiProperty({ description: '内容' })
+  @IsString()
+  content: string;
+
+  @ApiPropertyOptional({ description: '分类' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  category?: string;
+
+  @ApiPropertyOptional({ description: '排序' })
+  @IsOptional()
+  @IsNumber()
+  sortOrder?: number;
+
+  @ApiPropertyOptional({ description: '是否全局' })
+  @IsOptional()
+  @IsBoolean()
+  isGlobal?: boolean;
+}
+
+export class UpdateQuickReplyDto {
+  @ApiPropertyOptional({ description: '标题' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  title?: string;
+
+  @ApiPropertyOptional({ description: '内容' })
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @ApiPropertyOptional({ description: '分类' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  category?: string;
+
+  @ApiPropertyOptional({ description: '排序' })
+  @IsOptional()
+  @IsNumber()
+  sortOrder?: number;
+
+  @ApiPropertyOptional({ description: '是否全局' })
+  @IsOptional()
+  @IsBoolean()
+  isGlobal?: boolean;
+}
+
+export class QueryQuickReplyDto {
+  @ApiPropertyOptional({ description: '分类' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ description: '是否全局' })
+  @IsOptional()
+  @IsBoolean()
+  isGlobal?: boolean;
 
   @ApiPropertyOptional({ description: '页码', default: 1 })
   @IsOptional()

@@ -1,7 +1,7 @@
-import Taro from '@tarojs/taro'
-import { API_BASE_URL, post } from '../utils/request'
-import { Storage } from '../utils/storage'
 import { logger } from '@/utils/logger'
+import Taro from '@tarojs/taro'
+import { API_BASE_URL, attemptTokenRefresh, post } from '../utils/request'
+import { Storage } from '../utils/storage'
 
 export interface UploadResponse {
   success: boolean
@@ -56,14 +56,43 @@ interface AliyunPostPolicyResponse {
  */
 export const uploadImage = async (filePath: string): Promise<UploadResponse> => {
   try {
+    const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
       url: `${baseUrl}/api/upload/image`,
       filePath,
       name: 'image',
       header: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     })
+
+    if (uploadResult.statusCode === 401) {
+      const newToken = await attemptTokenRefresh()
+      if (newToken) {
+        const retryResult = await Taro.uploadFile({
+          url: `${baseUrl}/api/upload/image`,
+          filePath,
+          name: 'image',
+          header: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${newToken}`,
+          }
+        })
+        if (retryResult.statusCode === 200) {
+          const data = JSON.parse(retryResult.data)
+          return {
+            success: true,
+            data: {
+              url: data.url,
+              filename: data.filename,
+              size: data.size
+            }
+          }
+        }
+      }
+      return { success: false, message: '未授权或会话已过期' }
+    }
 
     if (uploadResult.statusCode === 200) {
       const data = JSON.parse(uploadResult.data)
@@ -97,14 +126,43 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
  */
 export const uploadAvatar = async (filePath: string): Promise<UploadResponse> => {
   try {
+    const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
       url: `${baseUrl}/api/upload/avatar`,
       filePath,
       name: 'avatar',
       header: {
-        'Content-Type': 'multipart/form-data'
+        'Content-Type': 'multipart/form-data',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     })
+
+    if (uploadResult.statusCode === 401) {
+      const newToken = await attemptTokenRefresh()
+      if (newToken) {
+        const retryResult = await Taro.uploadFile({
+          url: `${baseUrl}/api/upload/avatar`,
+          filePath,
+          name: 'avatar',
+          header: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${newToken}`,
+          }
+        })
+        if (retryResult.statusCode === 200) {
+          const data = JSON.parse(retryResult.data)
+          return {
+            success: true,
+            data: {
+              url: data.url,
+              filename: data.filename,
+              size: data.size
+            }
+          }
+        }
+      }
+      return { success: false, message: '未授权或会话已过期' }
+    }
 
     if (uploadResult.statusCode === 200) {
       const data = JSON.parse(uploadResult.data)
@@ -133,8 +191,6 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
 
 export const uploadOrderPhotos = async (filePaths: string[]): Promise<string[]> => {
   if (!filePaths || filePaths.length === 0) return []
-
-  const token = Storage.getToken() || ''
 
   const unwrapResponse = <T>(payload: any): T => {
     if (payload && typeof payload === 'object' && 'success' in payload && 'data' in payload) {
@@ -222,38 +278,59 @@ export const uploadOrderPhotos = async (filePaths: string[]): Promise<string[]> 
   }
 
   const uploadViaServer = async (filePath: string): Promise<string> => {
-    const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/storage/upload-batch`,
-      filePath,
-      name: 'files',
-      header: {
-        'Content-Type': 'multipart/form-data',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      formData: {
-        fileType: 'IMAGE',
-        category: 'ORDER_PHOTO',
-      },
-    })
+    const currentToken = Storage.getToken() || ''
 
-    if (uploadResult.statusCode < 200 || uploadResult.statusCode >= 300) {
-      throw new Error('照片上传失败')
+    const doServerUpload = async (authToken: string) => {
+      const uploadResult = await Taro.uploadFile({
+        url: `${baseUrl}/storage/upload-batch`,
+        filePath,
+        name: 'files',
+        header: {
+          'Content-Type': 'multipart/form-data',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        formData: {
+          fileType: 'IMAGE',
+          category: 'ORDER_PHOTO',
+        },
+      })
+
+      if (uploadResult.statusCode === 401) {
+        throw { statusCode: 401, isAuthError: true }
+      }
+
+      if (uploadResult.statusCode < 200 || uploadResult.statusCode >= 300) {
+        throw new Error('照片上传失败')
+      }
+
+      const raw = JSON.parse(uploadResult.data)
+      const data = unwrapResponse<StorageBatchUploadResponse>(raw)
+      const successList = data.success || []
+
+      if (!Array.isArray(successList) || successList.length === 0) {
+        const message = data.errors?.[0]?.error || '照片上传失败'
+        throw new Error(message)
+      }
+
+      const first = successList[0]
+      if (!first?.id) {
+        throw new Error('照片上传失败')
+      }
+      return first.id
     }
 
-    const raw = JSON.parse(uploadResult.data)
-    const data = unwrapResponse<StorageBatchUploadResponse>(raw)
-    const successList = data.success || []
-
-    if (!Array.isArray(successList) || successList.length === 0) {
-      const message = data.errors?.[0]?.error || '照片上传失败'
-      throw new Error(message)
+    try {
+      return await doServerUpload(currentToken)
+    } catch (error: any) {
+      if (error && error.isAuthError) {
+        const newToken = await attemptTokenRefresh()
+        if (newToken) {
+          return await doServerUpload(newToken)
+        }
+        throw new Error('未授权或会话已过期')
+      }
+      throw error
     }
-
-    const first = successList[0]
-    if (!first?.id) {
-      throw new Error('照片上传失败')
-    }
-    return first.id
   }
 
   const uploadSingle = async (filePath: string): Promise<string> => {

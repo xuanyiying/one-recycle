@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
@@ -27,11 +27,7 @@ export default function PointsProductsPage() {
 
   const debouncedKeyword = useDebounce(keyword, 300);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [page, debouncedKeyword, status, type]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params: any = { page, limit };
@@ -47,7 +43,11 @@ export default function PointsProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, debouncedKeyword, status, type]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handleCreate = () => {
     setEditingProduct(null);

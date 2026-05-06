@@ -8,7 +8,11 @@ vi.mock('@tarojs/taro', () => {
     default: {
       getStorageSync: vi.fn(),
       setStorageSync: vi.fn(),
-      request: vi.fn()
+      removeStorageSync: vi.fn(),
+      clearStorageSync: vi.fn(),
+      request: vi.fn(),
+      showToast: vi.fn(),
+      redirectTo: vi.fn()
     }
   }
 })

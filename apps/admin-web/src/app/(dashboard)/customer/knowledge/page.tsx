@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,11 +56,7 @@ export default function KnowledgePage() {
     isActive: true,
   });
 
-  useEffect(() => {
-    fetchKnowledge();
-  }, [page, pageSize, filters]);
-
-  const fetchKnowledge = async () => {
+  const fetchKnowledge = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -82,7 +78,11 @@ export default function KnowledgePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, filters]);
+
+  useEffect(() => {
+    fetchKnowledge();
+  }, [fetchKnowledge]);
 
   const handleAdd = () => {
     setEditingItem(null);

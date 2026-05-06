@@ -5,6 +5,7 @@ import { MessageService } from './services/message.service';
 import { AIReplyService } from './services/ai-reply.service';
 import { TicketService } from './services/ticket.service';
 import { KnowledgeService } from './services/knowledge.service';
+import { QuickReplyService } from './services/quick-reply.service';
 import { AICustomerService } from './services/ai-customer.service';
 import { CustomerServiceGateway } from './gateway/customer.gateway';
 import { PrismaModule } from '@/prisma/prisma.module';
@@ -22,6 +23,7 @@ import { AIModule } from '../ai/ai.module';
     AIReplyService,
     TicketService,
     KnowledgeService,
+    QuickReplyService,
     AICustomerService,
     CustomerServiceGateway,
   ],
@@ -31,6 +33,7 @@ import { AIModule } from '../ai/ai.module';
     AIReplyService,
     TicketService,
     KnowledgeService,
+    QuickReplyService,
     AICustomerService,
   ],
 })

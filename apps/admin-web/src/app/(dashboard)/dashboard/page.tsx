@@ -28,7 +28,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -85,7 +85,8 @@ const DashboardPage: React.FC = () => {
     return data;
   };
 
-  const fetchTrendData = async (days: number): Promise<TrendData[]> => {
+  const fetchTrendData = useCallback(async (): Promise<TrendData[]> => {
+    const days = trendPeriod === '7d' ? 7 : 30;
     try {
       const response = await InventoryService.getInventoryValueTrend(days);
       if (Array.isArray(response) && response.length > 0) {
@@ -101,9 +102,9 @@ const DashboardPage: React.FC = () => {
       console.error('Failed to fetch trend data:', error);
       return generateMockTrendData(days);
     }
-  };
+  }, [trendPeriod]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -111,7 +112,7 @@ const DashboardPage: React.FC = () => {
       setStats(data.stats);
       setRecentOrders(data.recentOrders);
       setInventoryAlerts(data.inventoryAlerts);
-      const trend = await fetchTrendData(trendPeriod === '7d' ? 7 : 30);
+      const trend = await fetchTrendData();
       setTrendData(trend);
     } catch (error: any) {
       console.error('Failed to load dashboard data:', error);
@@ -119,19 +120,19 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [trendPeriod, fetchTrendData]);
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
   useEffect(() => {
     const updateTrendData = async () => {
-      const trend = await fetchTrendData(trendPeriod === '7d' ? 7 : 30);
+      const trend = await fetchTrendData();
       setTrendData(trend);
     };
     updateTrendData();
-  }, [trendPeriod]);
+  }, [trendPeriod, fetchTrendData]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
