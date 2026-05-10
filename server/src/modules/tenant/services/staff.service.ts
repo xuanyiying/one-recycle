@@ -195,7 +195,9 @@ export class StaffService {
         tenantId: staff.tenantId.toString(),
       },
       this.refreshTokenExpiresInSeconds,
-    );
+    ).catch(err => {
+      this.logger.error(`Failed to store refresh token in Redis: ${err.message}`);
+    });
 
     return {
       accessToken,

@@ -160,6 +160,9 @@
       }
     },
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": [
+      "<rootDir>/../test/jest-setup.ts"
+    ]
   }
 }
