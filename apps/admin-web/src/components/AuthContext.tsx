@@ -1,12 +1,13 @@
 'use client';
 
 import { toast } from '@/components/ui/toast';
+import { clearAuthSession, readStoredAuthSession, writeAuthSession } from '@/lib/authSession';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 interface User {
   id: string;
-  account?: string;
   username?: string;
+  account?: string;
   nickname?: string;
   name?: string;
   avatar?: string;
@@ -41,30 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === 'undefined') return false;
 
     try {
-      const token = localStorage.getItem('auth_token');
-      const userStr = localStorage.getItem('user_info');
+      const session = readStoredAuthSession();
 
-      if (token && userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          setAuthState({
-            isAuthenticated: true,
-            isLoading: false,
-            user,
-            token,
-          });
-          return true;
-        } catch {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user_info');
-          setAuthState({
-            isAuthenticated: false,
-            isLoading: false,
-            user: null,
-            token: null,
-          });
-          return false;
-        }
+      if (session?.token && session.user && typeof session.user.id === 'string') {
+        setAuthState({
+          isAuthenticated: true,
+          isLoading: false,
+          user: session.user as User,
+          token: session.token,
+        });
+        return true;
       }
 
       setAuthState({
@@ -88,11 +75,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback((token: string, user: User, refreshToken?: string) => {
     try {
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('user_info', JSON.stringify(user));
-      if (refreshToken) {
-        localStorage.setItem('refresh_token', refreshToken);
-      }
+      writeAuthSession({
+        token,
+        refreshToken,
+        user,
+      });
       setAuthState({
         isAuthenticated: true,
         isLoading: false,
@@ -105,21 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const clearAuthCookies = () => {
-    const cookies = ['auth_token', 'refresh_token'];
-    cookies.forEach((cookieName) => {
-      document.cookie = `${cookieName}=; path=/; max-age=0; SameSite=Lax`;
-    });
-  };
-
   const logout = useCallback(() => {
     try {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user_info');
-      localStorage.removeItem('login_mode');
-      localStorage.removeItem('tenant_code');
-      clearAuthCookies();
+      clearAuthSession();
     } catch (error) {
       console.error('Failed to clear auth data:', error);
     }
@@ -143,9 +118,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.location.href = '/login';
     };
 
+    const handleTokenRefreshed = (event: Event) => {
+      const customEvent = event as CustomEvent<{ token: string, user: User }>;
+      console.log('[AuthContext] auth:refreshed event received, updating context state');
+      setAuthState(prev => ({
+        ...prev,
+        token: customEvent.detail.token,
+        user: customEvent.detail.user || prev.user
+      }));
+    };
+
     window.addEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener('auth:refreshed', handleTokenRefreshed);
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('auth:refreshed', handleTokenRefreshed);
     };
   }, [logout]);
 

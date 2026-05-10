@@ -4,6 +4,8 @@ import { useRef, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+import { apiClient } from '@/services/apiClient';
+
 interface SingleImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
@@ -49,25 +51,11 @@ function ImageUpload({ value, onChange, multiple = false }: ImageUploadProps) {
           formData.append('fileType', 'IMAGE');
           formData.append('category', 'product');
 
-          const token = localStorage.getItem('auth_token');
-          const headers: HeadersInit = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-
-          const response = await fetch('/api/storage/upload', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-            headers,
+          const response = await apiClient.upload<{ url: string }>('/storage/upload', formData, {
+            showError: false
           });
 
-          if (!response.ok) {
-            throw new Error('上传失败');
-          }
-
-          const data = await response.json();
-          const url = data.data?.url || data.url;
+          const url = response.url;
 
           if (multiple) {
             const currentUrls = (value as string[]) || [];

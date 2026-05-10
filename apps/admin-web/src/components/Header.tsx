@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthContext';
+import { readStoredAuthSession } from '@/lib/authSession';
+import { authService } from '@/services/authService';
 import { toast } from '@/components/ui/toast';
 
 const Header: React.FC = () => {
@@ -28,6 +30,11 @@ const Header: React.FC = () => {
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
+      const session = readStoredAuthSession();
+      await authService.logout({
+        refreshToken: session?.refreshToken || undefined,
+        allDevices: true,
+      });
       logout();
       toast.success('已退出登录');
       router.push('/login');

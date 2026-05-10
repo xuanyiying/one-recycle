@@ -79,6 +79,30 @@ class CustomerSocketService {
   }
 
   /**
+   * 重新连接（用于 token 刷新后）
+   * @param token 新的认证 token
+   */
+  reconnect(token: string): Promise<void> {
+    if (this.socket) {
+      this.socket.auth = { token };
+      this.socket.disconnect().connect();
+      return new Promise((resolve, reject) => {
+        const onConnect = () => {
+          this.socket?.off('connect_error', onError);
+          resolve();
+        };
+        const onError = (error: Error) => {
+          this.socket?.off('connect', onConnect);
+          reject(error);
+        };
+        this.socket?.once('connect', onConnect);
+        this.socket?.once('connect_error', onError);
+      });
+    }
+    return this.connect(token);
+  }
+
+  /**
    * 断开连接
    */
   disconnect(): void {

@@ -197,7 +197,7 @@ export class NotificationService {
   private async fetchNotifications(
     params: NotificationQueryParams,
   ): Promise<NotificationListResponse> {
-    return apiClient.get('/notifications', { params });
+    return apiClient.get('/notifications', params);
   }
 
   // 获取通知详情
@@ -248,7 +248,7 @@ export class NotificationService {
 
   // 获取通知模板列表
   async getTemplates(params: TemplateQueryParams = {}): Promise<TemplateListResponse> {
-    return apiClient.get('/notifications/templates', { params });
+    return apiClient.get('/notifications/templates', params);
   }
 
   // 获取通知模板详情
@@ -286,7 +286,7 @@ export class NotificationService {
 
   // 批量删除通知
   async batchDeleteNotifications(notificationIds: string[]): Promise<void> {
-    return apiClient.delete('/notifications/batch', { data: { notificationIds } });
+    return apiClient.delete('/notifications/batch', { notificationIds });
   }
 
   // 获取通知发送历史
@@ -301,12 +301,9 @@ export class NotificationService {
 
   // 导出通知数据
   async exportNotifications(params: NotificationQueryParams = {}): Promise<Blob> {
-    const response = await apiClient.get('/notifications/export', {
+    const response = await apiClient.getInstance().get('/notifications/export', {
       params,
       responseType: 'blob',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
     });
     return response.data;
   }

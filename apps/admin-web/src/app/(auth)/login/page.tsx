@@ -67,14 +67,12 @@ export default function LoginPage() {
         username: data.account,
         password: data.password,
         tenantCode: DEFAULT_TENANT_CODE,
-      });
+      }, { showError: false });
 
       if (res.accessToken) {
         login(res.accessToken, res.user, res.refreshToken);
         localStorage.setItem('login_mode', 'tenant');
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);
-
-        document.cookie = `auth_token=${res.accessToken}; path=/; max-age=${data.rememberMe ? 86400 * 7 : 86400}; SameSite=Lax`;
 
         if (data.rememberMe) {
           localStorage.setItem('remember_account', data.account);

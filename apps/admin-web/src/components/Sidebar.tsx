@@ -10,6 +10,7 @@ interface MenuItem {
   href: string;
   icon: LucideIcon;
   label: string;
+  activePrefixes?: string[];
   children?: Array<{ href: string; label: string }>;
 }
 import {
@@ -47,13 +48,25 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
           { href: '/dashboard', icon: LayoutDashboard, label: '仪表板' },
           { href: '/orders', icon: ShoppingBag, label: '订单管理' },
           { href: '/inventory', icon: Database, label: '进存销管理' },
+          {
+            href: '/customer',
+            icon: Bell,
+            label: '客服中心',
+            activePrefixes: ['/customer'],
+            children: [
+              { href: '/customer', label: '会话列表' },
+              { href: '/customer/tickets', label: '工单中心' },
+              { href: '/customer/knowledge', label: '知识库' },
+            ],
+          },
+          { href: '/customers', icon: Users, label: '客户管理' },
         ],
       },
       {
         title: '积分商城',
         items: [
           {
-            href: '/points',
+            href: '/points/overview',
             icon: Gift,
             label: '积分商城',
             children: [
@@ -68,6 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
       {
         title: '财务中心',
         items: [
+          { href: '/finance', icon: Wallet, label: '财务概览', activePrefixes: ['/finance'] },
           { href: '/finance/recharge', icon: Wallet, label: '财务充值' },
           { href: '/finance/expense', icon: Database, label: '支出管理' },
         ],
@@ -78,7 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
           { href: '/users', icon: Users, label: '用户管理' },
           { href: '/categories', icon: Tags, label: '分类管理' },
           {
-            href: '/content',
+            href: '/content/faq',
             icon: FileText,
             label: '内容配置',
             children: [
@@ -126,7 +140,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
             </h3>
             <nav className="space-y-1">
               {group.items.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const matchedByChildren = item.children?.some((child) => pathname.startsWith(child.href)) ?? false;
+                const matchedByPrefixes = item.activePrefixes?.some((prefix) => pathname.startsWith(prefix)) ?? false;
+                const isActive = matchedByChildren || matchedByPrefixes || pathname === item.href;
                 const hasChildren = item.children && item.children.length > 0;
 
                 return (
@@ -156,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
                     {hasChildren && (
                       <div className="ml-6 mt-1 space-y-1">
                         {item.children?.map((child) => {
-                          const isChildActive = pathname === child.href;
+                          const isChildActive = pathname.startsWith(child.href);
                           return (
                             <Link
                               key={child.href}

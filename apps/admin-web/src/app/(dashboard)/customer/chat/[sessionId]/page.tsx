@@ -119,11 +119,24 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
       }
     };
 
+    const handleTokenRefreshed = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ token: string }>;
+      try {
+        await customerSocketService.reconnect(customEvent.detail.token);
+        customerSocketService.joinSession(sessionId);
+      } catch (err) {
+        console.error('WebSocket reconnect failed:', err);
+      }
+    };
+
     setupWebSocket().catch((error) => {
       console.error('WebSocket setup failed:', error);
     });
 
+    window.addEventListener('auth:refreshed', handleTokenRefreshed);
+
     return () => {
+      window.removeEventListener('auth:refreshed', handleTokenRefreshed);
       if (unregisterMessage) unregisterMessage();
       if (unregisterAgentJoined) unregisterAgentJoined();
       if (unregisterError) unregisterError();

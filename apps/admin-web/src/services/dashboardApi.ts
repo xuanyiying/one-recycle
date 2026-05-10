@@ -137,8 +137,8 @@ class DashboardApiService {
 
   private async fetchInventoryAlerts(): Promise<InventoryAlert[]> {
     try {
-      const response = await apiClient.get('/inventory/alerts');
-      return response.data || [];
+      const alerts = await apiClient.get<InventoryAlert[]>('/inventory/alerts');
+      return alerts || [];
     } catch (error) {
       console.error('获取库存警报失败:', error);
       return [];

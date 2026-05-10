@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient';
+import { apiClient, RequestConfig } from './apiClient';
 // admin 认证服务接口
 export interface LoginDto {
   account: string;
@@ -57,16 +57,16 @@ class AuthService {
   /**
    * 用户登录 (平台管理员)
    */
-  async login(data: LoginDto): Promise<AuthResponse> {
-    const res = await apiClient.post<any>('/auth/login', data);
+  async login(data: LoginDto, config?: RequestConfig): Promise<AuthResponse> {
+    const res = await apiClient.post<any>('/auth/login', data, config);
     return this.normalizeAuthResponse(res);
   }
 
   /**
    * 租户员工登录
    */
-  async tenantLogin(data: StaffLoginDto): Promise<AuthResponse> {
-    const res = await apiClient.post<any>('/tenant/auth/login', data);
+  async tenantLogin(data: StaffLoginDto, config?: RequestConfig): Promise<AuthResponse> {
+    const res = await apiClient.post<any>('/tenant/auth/login', data, config);
     return this.normalizeAuthResponse(res);
   }
 

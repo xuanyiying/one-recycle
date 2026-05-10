@@ -325,8 +325,7 @@ class SettingsService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
-    const response = await apiClient.post('/upload', formData);
-    return response.data;
+    return apiClient.post('/upload', formData);
   }
 
   // 系统信息
