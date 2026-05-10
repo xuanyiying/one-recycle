@@ -12,12 +12,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy package files and pnpm config
+COPY package.json pnpm-lock.yaml .npmrc ./
 COPY prisma ./prisma/
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm install --config.strict-dep-builds=false --frozen-lockfile || pnpm install --config.strict-dep-builds=false
 
 # Builder stage
 FROM node:22-slim AS builder

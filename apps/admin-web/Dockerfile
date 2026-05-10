@@ -2,8 +2,8 @@
 FROM node:22-slim AS deps
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install -g pnpm && pnpm install
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN npm install -g pnpm && pnpm install --config.strict-dep-builds=false --frozen-lockfile
 
 # Builder stage
 FROM node:22-slim AS builder
