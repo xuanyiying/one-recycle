@@ -1,5 +1,7 @@
 import { PrismaService } from '@/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import {
   CategoryListResponseDto,
   CategoryResponseDto,
@@ -11,7 +13,20 @@ import {
 
 @Injectable()
 export class CategoryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) { }
+
+  private async clearCategoryCache(): Promise<void> {
+    const cacheKeys = [
+      '/category/categories',
+      '/category/categories/tree',
+      '/category/categories/active',
+      '/category/categories/featured',
+    ];
+    await Promise.all(cacheKeys.map((key) => this.cacheManager.del(key)));
+  }
 
   private async resolveTenantId(explicitTenantId?: number): Promise<number> {
     if (explicitTenantId) {
@@ -152,6 +167,7 @@ export class CategoryService {
       },
     });
 
+    await this.clearCategoryCache();
     return this.mapToCategoryResponse(categoryWithRule ?? category);
   }
 
@@ -337,6 +353,7 @@ export class CategoryService {
       },
     });
 
+    await this.clearCategoryCache();
     return this.mapToCategoryResponse(categoryWithRule ?? category);
   }
 
@@ -384,6 +401,8 @@ export class CategoryService {
     await this.prisma.category.delete({
       where: { id },
     });
+
+    await this.clearCategoryCache();
   }
 
   async findTree(
@@ -432,14 +451,14 @@ export class CategoryService {
       seo: data.seo ? JSON.parse(data.seo) : undefined,
       pricingRule: pricingRule
         ? {
-            id: Number(pricingRule.id),
-            tenantId: Number(pricingRule.tenantId),
-            basePrice: pricingRule.basePrice,
-            minWeight: pricingRule.minWeight ?? undefined,
-            maxWeight: pricingRule.maxWeight ?? undefined,
-            ruleJson: pricingRule.ruleJson ?? undefined,
-            isActive: pricingRule.isActive,
-          }
+          id: Number(pricingRule.id),
+          tenantId: Number(pricingRule.tenantId),
+          basePrice: pricingRule.basePrice,
+          minWeight: pricingRule.minWeight ?? undefined,
+          maxWeight: pricingRule.maxWeight ?? undefined,
+          ruleJson: pricingRule.ruleJson ?? undefined,
+          isActive: pricingRule.isActive,
+        }
         : undefined,
       attributes: data.attributes ? JSON.parse(data.attributes) : undefined,
       createdAt: data.createdAt,

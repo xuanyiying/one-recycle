@@ -4,13 +4,13 @@ import Taro from '@tarojs/taro'
 import { SearchBar, Switch } from '@nutui/nutui-react-taro'
 import { Icon } from '@/components/Icon'
 import { getActiveCategories } from "@/services/category"
-import { Category } from "@/types"
+import type { UICategory } from "@/utils/category"
 import { convertServiceToUICategories } from "@/utils/category"
 import { IconButton } from '@/components/IconButton'
 import './index.scss'
 
 const CategoryPage = () => {
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<UICategory[]>([])
   const [activeRootId, setActiveRootId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [isMultiSelect, setIsMultiSelect] = useState(false)
@@ -68,7 +68,7 @@ const CategoryPage = () => {
         }
       }
       return null
-    }).filter(Boolean) as Category[]
+    }).filter(Boolean) as UICategory[]
   }, [categories, searchText])
 
   const activeRoot = useMemo(() => {
@@ -155,7 +155,7 @@ const CategoryPage = () => {
         <ScrollView scrollY className='main-content'>
           {activeRoot ? (
             <View className='subcategory-grid'>
-              {activeRoot.subCategories?.map(sub => {
+              {activeRoot.subCategories?.map((sub: { id: number; name: string; basePrice: number }) => {
                 const isSelected = selectedIds.includes(sub.id)
                 return (
                   <View

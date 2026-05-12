@@ -196,9 +196,11 @@ export const categoryService = {
   async uploadIcon(file: File): Promise<UploadedIcon> {
     try {
       const formData = new FormData();
-      formData.append('icon', file);
+      formData.append('file', file);
+      formData.append('type', 'image');
 
-      return await apiClient.post('/category/categories/upload-icon', formData);
+      const response = await apiClient.upload<{ url: string }>('/storage/upload', formData);
+      return { url: response.url };
     } catch (error) {
       console.error('Failed to upload icon:', error);
       throw new Error('图标上传失败');

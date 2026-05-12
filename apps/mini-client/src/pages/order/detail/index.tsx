@@ -1,14 +1,15 @@
-import logger from '@/utils/logger'
-import { useState, useEffect } from 'react'
-import { View, Text, Button, Image, ScrollView } from '@tarojs/components'
-import Taro, { useRouter } from '@tarojs/taro'
-import { Step, Steps, Tag } from '@nutui/nutui-react-taro'
 import { Icon } from '@/components/Icon'
-import { getOrderDetail, cancelOrder, confirmOrder } from '@/services/order'
-import { OrderDetail, OrderStatus } from '@/types'
+import type { NormalizedOrderDetail } from '@/services/order'
+import { cancelOrder, confirmOrder, getOrderDetail, normalizeOrderDetail } from '@/services/order'
+import { OrderStatus } from '@/types'
+import logger from '@/utils/logger'
+import { Step, Steps, Tag } from '@nutui/nutui-react-taro'
+import { Button, Image, ScrollView, Text, View } from '@tarojs/components'
+import Taro, { useRouter } from '@tarojs/taro'
+import { useEffect, useState } from 'react'
 import './index.scss'
 
-const statusMap: Record<OrderStatus, { label: string; color: string; desc: string }> = {
+const statusMap: Record<string, { label: string; color: string; desc: string }> = {
   [OrderStatus.PENDING]: { label: '待接单', color: '#F28C28', desc: '等待快递员接单' },
   [OrderStatus.PENDING_PICKUP]: { label: '待上门', color: '#1E7A3E', desc: '快递员已接单，请保持电话畅通' },
   [OrderStatus.PICKED_UP]: { label: '已取件', color: '#2F7E6D', desc: '物品已取件，正在运输中' },
@@ -24,118 +25,6 @@ const statusMap: Record<OrderStatus, { label: string; color: string; desc: strin
   [OrderStatus.COMPLETED]: { label: '已完成', color: '#1E7A3E', desc: '订单已完成，积分已到账' },
   [OrderStatus.CANCELLED]: { label: '已取消', color: '#FF3D00', desc: '订单已取消' },
   [OrderStatus.REFUNDED]: { label: '已退款', color: '#FF3D00', desc: '订单已退款' }
-}
-
-const normalizeStatus = (status?: string): OrderStatus => {
-  const value = (status || '').toString().trim().toUpperCase()
-  if (Object.values(OrderStatus).includes(value as OrderStatus)) {
-    return value as OrderStatus
-  }
-  const legacyMap: Record<string, OrderStatus> = {
-    PENDING_ASSIGNMENT: OrderStatus.PENDING,
-    ASSIGNED: OrderStatus.PENDING_PICKUP,
-    CONFIRMED: OrderStatus.PENDING_PICKUP,
-    PICKED_UP: OrderStatus.PICKED_UP,
-    PICKING: OrderStatus.PICKED_UP,
-    IN_PROGRESS: OrderStatus.PICKED_UP,
-    ARRIVED: OrderStatus.PENDING_RECEIPT,
-    DELIVERED: OrderStatus.PENDING_RECEIPT,
-    RECEIVED: OrderStatus.PENDING_RECEIPT,
-    PENDING_SETTLEMENT: OrderStatus.PENDING_SETTLEMENT,
-    COMPLETED: OrderStatus.COMPLETED,
-    CANCELLED: OrderStatus.CANCELLED,
-    REFUNDED: OrderStatus.REFUNDED
-  }
-  return legacyMap[value] || OrderStatus.PENDING
-}
-
-const toNumber = (value: any): number | null => {
-  if (value === null || value === undefined) return null
-  if (typeof value === 'number' && !Number.isNaN(value)) return value
-  if (typeof value === 'string') {
-    const parsed = Number(value)
-    return Number.isNaN(parsed) ? null : parsed
-  }
-  if (typeof value === 'object') {
-    const min = toNumber((value as any).min)
-    const max = toNumber((value as any).max)
-    if (max !== null) return max
-    if (min !== null) return min
-  }
-  return null
-}
-
-const sumItemPrice = (items: any[]): number | null => {
-  if (!Array.isArray(items) || items.length === 0) return null
-  let total = 0
-  let hasValue = false
-  items.forEach((item) => {
-    const candidate = toNumber(
-      item?.estimatedAmount ??
-        item?.actualAmount ??
-        item?.totalPrice ??
-        item?.amount ??
-        item?.actualPrice ??
-        item?.estimatedPrice
-    )
-    if (candidate !== null) {
-      total += candidate
-      hasValue = true
-    }
-  })
-  return hasValue ? total : null
-}
-
-const formatDateTime = (value?: string) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate()
-  ).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(
-    date.getMinutes()
-  ).padStart(2, '0')}`
-}
-
-const formatAppointmentTime = (data: any): string => {
-  const direct =
-    data?.appointmentTime ||
-    data?.expectPickupTime ||
-    data?.pickupTime ||
-    data?.reserveTime ||
-    data?.appointmentSlotText ||
-    ''
-  if (typeof direct === 'string' && direct.trim()) {
-    return formatDateTime(direct)
-  }
-  const slot =
-    data?.timeSlot ||
-    data?.appointmentSlot ||
-    data?.pickupSlot ||
-    data?.slot
-  if (slot) {
-    const date = slot.date || slot.day || slot.appointmentDate
-    const start = slot.startTime || slot.start || slot.from
-    const end = slot.endTime || slot.end || slot.to
-    if (date && start && end) return `${date} ${start}-${end}`
-    if (date) return formatDateTime(date)
-  }
-  const date = data?.pickupDate || data?.appointmentDate
-  const start = data?.pickupStartTime || data?.appointmentStartTime
-  const end = data?.pickupEndTime || data?.appointmentEndTime
-  if (date && start && end) return `${date} ${start}-${end}`
-  if (date) return formatDateTime(date)
-  return ''
-}
-
-const normalizeTimeline = (timeline: any[]): { status: string; text: string; time: string; completed: boolean }[] => {
-  if (!Array.isArray(timeline)) return []
-  return timeline.map((item) => ({
-    status: item?.status || '',
-    text: item?.text || item?.statusText || item?.status || '',
-    time: formatDateTime(item?.time || item?.createdAt || item?.timestamp || ''),
-    completed: Boolean(item?.completed ?? item?.done ?? item?.status === 'COMPLETED'),
-  }))
 }
 
 const unwrapOrderDetail = (result: any) => {
@@ -157,72 +46,10 @@ const unwrapOrderDetail = (result: any) => {
   return null
 }
 
-const normalizeOrderDetail = (data: any): OrderDetail => {
-  const status = normalizeStatus(data.status || data.orderStatus)
-  const rawItems = Array.isArray(data.items)
-    ? data.items
-    : Array.isArray(data.itemList)
-      ? data.itemList
-      : []
-  const timeline = normalizeTimeline(
-    Array.isArray(data.timeline)
-      ? data.timeline
-      : Array.isArray(data.tracks)
-        ? data.tracks
-        : []
-  )
-  const address = typeof data.address === 'string'
-    ? { name: '', phone: '', detail: data.address }
-    : (data.address || data.addressInfo || { name: '', phone: '', detail: '' })
-  const estimatedFromItems = sumItemPrice(rawItems)
-  const estimatedPrice =
-    toNumber(data.estimatedPrice) ??
-    toNumber(data.estimatedAmount) ??
-    toNumber(data.estimatedTotal) ??
-    toNumber(data.pricing?.itemsTotal?.max) ??
-    toNumber(data.pricing?.totalEstimate?.max) ??
-    estimatedFromItems ??
-    0
-  const totalCandidate =
-    toNumber(data.totalPrice) ??
-    toNumber(data.totalAmount) ??
-    toNumber(data.amount) ??
-    toNumber(data.pricing?.totalEstimate?.max) ??
-    null
-  const totalPrice =
-    totalCandidate && totalCandidate > 0
-      ? totalCandidate
-      : estimatedFromItems && estimatedFromItems > 0
-        ? estimatedFromItems
-        : estimatedPrice
-  const settlementAmount =
-    toNumber(data.settlementAmount) ??
-    toNumber(data.actualPrice) ??
-    toNumber(data.actualAmount) ??
-    undefined
-  return {
-    id: (data.id ?? data.orderId ?? data.orderNo ?? '').toString(),
-    status,
-    statusText: data.statusText || statusMap[status]?.label || status,
-    timeline,
-    categoryName: data.categoryName || data.category || '',
-    items: rawItems,
-    address,
-    appointmentTime: formatAppointmentTime(data),
-    estimatedPrice,
-    serviceFee: data.serviceFee ?? 0,
-    totalPrice,
-    settlementAmount,
-    settlementTime: data.settlementTime ?? data.settlementAt ?? undefined,
-    courier: data.courier || data.courierInfo || undefined,
-    createTime: data.createTime || data.createdAt || '',
-  } as OrderDetail
-}
-
 export default function OrderDetailPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null)
+  const [orderDetail, setOrderDetail] = useState<NormalizedOrderDetail | null>(null)
   const { id: orderId } = router.params
 
   const handleCancel = async () => {
@@ -298,7 +125,7 @@ export default function OrderDetailPage() {
     )
   }
 
-  const statusInfo = statusMap[orderDetail.status] || statusMap[OrderStatus.PENDING]
+  const statusInfo = statusMap[orderDetail.status] ?? statusMap[OrderStatus.PENDING] ?? { label: '未知', color: '#999', desc: '' }
   const amount =
     orderDetail.settlementAmount ??
     (orderDetail.totalPrice > 0 ? orderDetail.totalPrice : undefined) ??
@@ -308,7 +135,6 @@ export default function OrderDetailPage() {
 
   return (
     <ScrollView className='order-detail-page' scrollY>
-      {/* 状态头部 */}
       <View className='status-header' style={{ backgroundColor: statusInfo.color }}>
         <View className='status-content'>
           <Text className='status-title'>{statusInfo.label}</Text>
@@ -317,8 +143,7 @@ export default function OrderDetailPage() {
         <Icon name='order' size={48} color='rgba(255,255,255,0.2)' />
       </View>
 
-      {/* 物流卡片 (仅在有物流信息时显示) */}
-      {orderDetail.courier && (
+      {Boolean(orderDetail.courier) && (
         <View className='card logistics-card'>
           <View className='card-header'>
             <View className='express-logo'>
@@ -329,17 +154,17 @@ export default function OrderDetailPage() {
               <Icon name='copy' size={12} color='#999' />
             </View>
           </View>
-          
+
           <View className='courier-info'>
-            <Image className='avatar' src={orderDetail.courier?.avatar || ''} />
+            <Image className='avatar' src={(orderDetail.courier as any)?.avatar || ''} />
             <View className='info'>
-              <Text className='name'>{orderDetail.courier?.name} 快递员</Text>
+              <Text className='name'>{(orderDetail.courier as any)?.name} 快递员</Text>
               <View className='tags'>
                 <Tag type='primary' plain>实名认证</Tag>
                 <Tag type='warning' plain>专业回收</Tag>
               </View>
             </View>
-            <Button className='call-btn' onClick={() => Taro.makePhoneCall({ phoneNumber: orderDetail.courier?.phone || '' })}>
+            <Button className='call-btn' onClick={() => Taro.makePhoneCall({ phoneNumber: (orderDetail.courier as any)?.phone || '' })}>
               <Icon name='phone' size={16} />
             </Button>
           </View>
@@ -350,23 +175,20 @@ export default function OrderDetailPage() {
           </View>
         </View>
       )}
-  
 
-      {/* 进度轴 */}
       <View className='card timeline-card'>
         <View className='card-title'>订单进度</View>
         <Steps direction='vertical' value={(orderDetail.timeline || []).filter(t => t.completed).length}>
           {(orderDetail.timeline || []).map((item, index) => (
-            <Step 
-              key={index} 
-              title={item.text} 
+            <Step
+              key={index}
+              title={item.text}
               description={item.time}
             />
           ))}
         </Steps>
       </View>
 
-      {/* 订单信息 */}
       <View className='card info-card'>
         <View className='info-row'>
           <Text className='label'>回收品类</Text>
@@ -386,16 +208,15 @@ export default function OrderDetailPage() {
         </View>
         <View className='info-row'>
           <Text className='label'>上门地址</Text>
-          <Text className='value'>{orderDetail.address?.detail || ''}</Text>
+          <Text className='value'>{(orderDetail.address as any)?.detail || ''}</Text>
         </View>
       </View>
 
-      {/* 底部操作栏 */}
       <View className='action-bar'>
         {orderDetail.status === OrderStatus.CANCELLED && (
           <Button className='action-btn cancel' onClick={handleCancel}>取消订单</Button>
         )}
-        {orderDetail.status === OrderStatus.PENDING_SETTLEMENT && ( 
+        {orderDetail.status === OrderStatus.PENDING_SETTLEMENT && (
           <Button className='action-btn confirm' onClick={handleConfirm}>确认订单</Button>
         )}
         <Button className='action-btn contact' openType='contact'>联系客服</Button>

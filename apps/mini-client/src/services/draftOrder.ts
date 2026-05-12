@@ -24,7 +24,7 @@ const MIN_DRAFT_AGE_MS = 5000 // 草稿必须存在至少5秒才被认为是有�
  * Generates a unique draft order ID
  */
 const generateDraftId = (): string => {
-  return `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return `draft_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
 }
 
 /**

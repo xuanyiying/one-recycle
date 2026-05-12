@@ -1,30 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Taro from '@tarojs/taro'
-import { useAppContext } from '@/store'
+import { useStore } from '@/store/useStore'
 import { AuthService } from '@/services/auth'
 import { User } from '@/types'
 import { Storage } from '@/utils/storage'
 import logger from '@/utils/logger'
 
 export const useAuth = () => {
-  const { state, dispatch } = useAppContext()
+  const storeUser = useStore((state) => state.user)
+  const storeToken = useStore((state) => state.token)
+  const storeLogin = useStore((state) => state.login)
+  const storeLogout = useStore((state) => state.logout)
+  const storeUpdateUser = useStore((state) => state.updateUser)
+
   const [loading, setLoading] = useState(false)
 
-  // 从全局状态获取登录状态
-  const isLoggedIn = !!state.token && !!state.user
-  const user = state.user
-  const token = state.token
+  const isLoggedIn = !!storeToken && !!storeUser
+  const user = storeUser
+  const token = storeToken
 
-  // 使用 Ref 保持 user 的最新引用，解决 updateUser 的依赖循环问题
   const userRef = useRef(user)
   useEffect(() => {
     userRef.current = user
   }, [user])
 
-  // 使用 Ref 追踪是否已初始化，避免依赖循环
   const isInitialized = useRef(false)
 
-  // 初始化时检查本地存储的登录状态（仅执行一次）
   useEffect(() => {
     if (isInitialized.current) return
 
@@ -33,18 +34,12 @@ export const useAuth = () => {
         const authStatus = AuthService.checkLoginStatus()
 
         if (authStatus.isLoggedIn && authStatus.token && authStatus.user) {
-          // 同步到全局状态
-          dispatch({
-            type: 'LOGIN',
-            payload: {
-              user: authStatus.user,
-              token: authStatus.token
-            }
-          })
+          if (!storeToken || !storeUser) {
+            storeLogin(authStatus.user, authStatus.token)
+          }
         } else {
-          // 如果全局已经有值但本地没了，才清理
-          if (state.token || state.user) {
-            dispatch({ type: 'LOGOUT' })
+          if (storeToken || storeUser) {
+            storeLogout()
           }
         }
       } catch (error) {
@@ -54,83 +49,63 @@ export const useAuth = () => {
       }
     }
 
-    // 只在全局状态为空时检查本地存储
-    if (!state.token || !state.user) {
+    if (!storeToken || !storeUser) {
       checkStoredAuth()
     } else {
-      // 如果已经有状态，标记为已初始化
       isInitialized.current = true
     }
-  }, [dispatch, state.token, state.user])
+  }, [storeLogin, storeLogout, storeToken, storeUser])
 
-  // 检查认证状态的导出函数
   const checkAuthStatus = useCallback(async () => {
     try {
       setLoading(true)
 
-      // 先尝试从本地存储获取，以防全局状态还没更新
+      if (storeToken && storeUser) {
+        return { isLoggedIn: true, user: storeUser, token: storeToken }
+      }
+
       const storedToken = Storage.getToken()
       const storedUser = Storage.getUser()
       const refreshToken = Storage.getRefreshToken()
 
-      // 1. 如果全局状态已经完整，直接返回（优化点：减少重复检查）
-      if (state.token && state.user) {
-        return { isLoggedIn: true, user: state.user, token: state.token }
-      }
-
-      // 2. 如果本地存储完整，同步到全局状态
       if (storedToken && storedUser) {
-        if (!state.token || !state.user) {
-          dispatch({
-            type: 'LOGIN',
-            payload: { user: storedUser, token: storedToken }
-          })
+        if (!storeToken || !storeUser) {
+          storeLogin(storedUser, storedToken)
         }
         return { isLoggedIn: true, user: storedUser, token: storedToken }
       }
 
-      // 3. 如果没有有效token但有refreshToken，尝试刷新
       if (!storedToken && refreshToken) {
         logger.log('检测到refreshToken，尝试自动刷新...')
         const refreshResult = await AuthService.refreshToken()
         if (refreshResult.success && refreshResult.token) {
           const currentUser = storedUser || (await AuthService.getUserInfo()).data
           if (currentUser) {
-            dispatch({
-              type: 'LOGIN',
-              payload: { user: currentUser, token: refreshResult.token }
-            })
+            storeLogin(currentUser, refreshResult.token)
             return { isLoggedIn: true, user: currentUser, token: refreshResult.token }
           }
         }
-        // 刷新失败，确保登出清理
-        dispatch({ type: 'LOGOUT' })
+        storeLogout()
         return { isLoggedIn: false }
       }
 
-      // 4. 最后尝试通过API检查登录状态（通常是Session Cookie方式，这里作为兜底）
       const loginStatus = AuthService.checkLoginStatus()
       if (loginStatus.isLoggedIn && loginStatus.token && loginStatus.user) {
-        dispatch({
-          type: 'LOGIN',
-          payload: { user: loginStatus.user, token: loginStatus.token }
-        })
+        storeLogin(loginStatus.user, loginStatus.token)
         return { isLoggedIn: true, user: loginStatus.user, token: loginStatus.token }
       } else {
-        dispatch({ type: 'LOGOUT' })
+        storeLogout()
         return { isLoggedIn: false }
       }
     } catch (error) {
       logger.error('检查认证状态失败:', error)
-      dispatch({ type: 'LOGOUT' })
+      storeLogout()
       return { isLoggedIn: false }
     } finally {
       setLoading(false)
     }
-  }, [dispatch, state.token, state.user])
+  }, [storeLogin, storeLogout, storeToken, storeUser])
 
-
-  // 登录
   const login = useCallback(async (userData: User, userToken: string, provider?: string) => {
     try {
       setLoading(true)
@@ -138,10 +113,7 @@ export const useAuth = () => {
       if (provider) {
         Storage.set('LOGIN_PROVIDER', provider)
       }
-      dispatch({
-        type: 'LOGIN',
-        payload: { user: userData, token: userToken }
-      })
+      storeLogin(userData, userToken)
       return { success: true }
     } catch (error) {
       logger.error('登录状态更新失败:', error)
@@ -149,14 +121,13 @@ export const useAuth = () => {
     } finally {
       setLoading(false)
     }
-  }, [dispatch])
+  }, [storeLogin])
 
-  // 退出登录
   const logout = useCallback(async () => {
     try {
       setLoading(true)
       await AuthService.logout()
-      dispatch({ type: 'LOGOUT' })
+      storeLogout()
       return { success: true }
     } catch (error) {
       logger.error('退出登录失败:', error)
@@ -164,9 +135,8 @@ export const useAuth = () => {
     } finally {
       setLoading(false)
     }
-  }, [dispatch])
+  }, [storeLogout])
 
-  // 更新用户信息
   const updateUser = useCallback(async (newUserData: any) => {
     try {
       const currentUser = userRef.current
@@ -174,23 +144,16 @@ export const useAuth = () => {
 
       const updatedUser = { ...currentUser, ...newUserData }
 
-      // 更新本地存储
       Storage.setUser(updatedUser)
-
-      // 更新全局状态
-      dispatch({
-        type: 'UPDATE_USER',
-        payload: updatedUser
-      })
+      storeUpdateUser(updatedUser)
 
       return { success: true, user: updatedUser }
     } catch (error) {
       logger.error('更新用户信息失败:', error)
       return { success: false, message: '更新失败' }
     }
-  }, [dispatch])
+  }, [storeUpdateUser])
 
-  // 发送验证码
   const sendSmsCode = useCallback(async (mobile: string) => {
     try {
       setLoading(true)
@@ -203,7 +166,6 @@ export const useAuth = () => {
     }
   }, [])
 
-  // 手机号登录 
   const loginWithPhone = useCallback(async (phone: string, code: string) => {
     try {
       setLoading(true)
@@ -221,20 +183,15 @@ export const useAuth = () => {
     }
   }, [login])
 
-  // 处理社交登录 (微信/支付宝)
   const handleSocialLogin = useCallback(async (provider: 'wechat' | 'alipay') => {
     try {
       setLoading(true)
       let result
 
       if (provider === 'wechat') {
-        // 微信登录流程
         const { code } = await Taro.login()
-        // 注意：getUserProfile 可能会被限制，这里作为可选信息获取
         let userInfo = { nickName: '微信用户', avatarUrl: '' }
         try {
-          // 尝试获取用户信息，如果失败则使用默认值
-          // 实际项目中通常在登录后引导用户完善信息
           const profile = await Taro.getUserProfile({ desc: '用于完善会员资料' })
           userInfo = profile.userInfo
         } catch (e) {
@@ -247,7 +204,6 @@ export const useAuth = () => {
           avatarUrl: userInfo.avatarUrl
         })
       } else if (provider === 'alipay') {
-        // 支付宝登录流程
         // @ts-ignore
         const { authCode } = await Taro.getAuthCode({ scopes: 'auth_user' })
 

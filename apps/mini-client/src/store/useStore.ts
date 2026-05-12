@@ -4,21 +4,9 @@ import { immer } from 'zustand/middleware/immer'
 import Taro from '@tarojs/taro'
 import { Storage } from '@/utils/storage'
 import logger from '@/utils/logger'
+import type { User } from '@/types'
 
-// ============= 类型定义 =============
-
-export interface User {
-  id: string | number
-  nickname: string
-  avatar?: string
-  phone?: string
-  email?: string
-  openid?: string
-  unionid?: string
-  [key: string]: any
-}
-
-export interface Order {
+export interface AppOrder {
   id: string | number
   orderNo: string
   status: string
@@ -28,52 +16,30 @@ export interface Order {
 }
 
 export interface AppState {
-  // 用户信息
   user: User | null
   token: string | null
-
-  // 订单数据
-  orders: Order[]
-
-  // UI 状态
+  orders: AppOrder[]
   loading: boolean
   error: string | null
-
-  // 性能优化：上次更新时间
   lastUpdateTime: number
 }
 
-// ============= Actions 类型定义 =============
-
 export interface AppActions {
-  // 用户相关
   setUser: (user: User | null) => void
   setToken: (token: string | null) => void
   updateUser: (updates: Partial<User>) => void
   clearUser: () => void
-
-  // 订单相关
-  setOrders: (orders: Order[]) => void
-  addOrder: (order: Order) => void
-  updateOrder: (orderId: string | number, updates: Partial<Order>) => void
+  setOrders: (orders: AppOrder[]) => void
+  addOrder: (order: AppOrder) => void
+  updateOrder: (orderId: string | number, updates: Partial<AppOrder>) => void
   removeOrder: (orderId: string | number) => void
-
-  // UI 状态
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
-
-  // 批量操作
   login: (user: User, token: string) => void
   logout: () => void
-
-  // 重置状态
   reset: () => void
-
-  // 性能优化：更新时间戳
   touchUpdate: () => void
 }
-
-// ============= 初始状态 =============
 
 const initialState: AppState = {
   user: null,
@@ -83,8 +49,6 @@ const initialState: AppState = {
   error: null,
   lastUpdateTime: Date.now()
 }
-
-// ============= Storage 配置 =============
 
 const storage = {
   getItem: (name: string): string | null => {
@@ -111,17 +75,12 @@ const storage = {
   }
 }
 
-// ============= Store 创建 =============
-
 type AppStore = AppState & AppActions
 
 export const useStore = create<AppStore>()(
   persist(
     immer((set) => ({
-      // 初始状态
       ...initialState,
-
-      // ==================== 用户相关 Actions ====================
 
       setUser: (user) => set({ user, lastUpdateTime: Date.now() }),
 
@@ -136,12 +95,10 @@ export const useStore = create<AppStore>()(
 
       clearUser: () => set({ user: null, lastUpdateTime: Date.now() }),
 
-      // ==================== 订单相关 Actions ====================
-
       setOrders: (orders) => set({ orders, lastUpdateTime: Date.now() }),
 
       addOrder: (order) => set((state) => {
-        state.orders.unshift(order) // 新订单加到前面
+        state.orders.unshift(order)
         state.lastUpdateTime = Date.now()
       }),
 
@@ -161,13 +118,9 @@ export const useStore = create<AppStore>()(
         state.lastUpdateTime = Date.now()
       }),
 
-      // ==================== UI 状态 Actions ====================
-
       setLoading: (loading) => set({ loading }),
 
       setError: (error) => set({ error }),
-
-      // ==================== 批量操作 Actions ====================
 
       login: (user, token) => set({
         user,
@@ -184,11 +137,7 @@ export const useStore = create<AppStore>()(
         lastUpdateTime: Date.now()
       }),
 
-      // ==================== 重置状态 ====================
-
       reset: () => set(initialState),
-
-      // ==================== 更新时间戳 ====================
 
       touchUpdate: () => set({ lastUpdateTime: Date.now() })
     })),
@@ -196,7 +145,6 @@ export const useStore = create<AppStore>()(
       name: 'app-storage',
       storage: createJSONStorage(() => storage),
 
-      // 只持久化用户和订单相关数据，不持久化 UI 状态
       partialize: (state) => ({
         user: state.user,
         token: state.token,
@@ -204,13 +152,16 @@ export const useStore = create<AppStore>()(
         lastUpdateTime: state.lastUpdateTime
       }),
 
-      // 版本管理：数据迁移
-      version: 1,
+      version: 2,
 
       migrate: (persistedState: any, version: number) => {
-        // 从旧版本迁移数据
         if (version === 0) {
-          // 迁移逻辑
+          return {
+            ...persistedState,
+            lastUpdateTime: Date.now()
+          }
+        }
+        if (version === 1) {
           return {
             ...persistedState,
             lastUpdateTime: Date.now()
@@ -222,48 +173,28 @@ export const useStore = create<AppStore>()(
   )
 )
 
-// ============= 便捷的 Hooks ====================
-
-/**
- * 获取登录状态
- */
 export const useIsLoggedIn = () => {
   const user = useStore((state) => state.user)
   const token = useStore((state) => state.token)
   return !!user && !!token
 }
 
-/**
- * 获取用户信息
- */
 export const useUser = () => {
   return useStore((state) => state.user)
 }
 
-/**
- * 获取订单列表
- */
 export const useOrders = () => {
   return useStore((state) => state.orders)
 }
 
-/**
- * 获取加载状态
- */
 export const useLoading = () => {
   return useStore((state) => state.loading)
 }
 
-/**
- * 获取错误信息
- */
 export const useError = () => {
   return useStore((state) => state.error)
 }
 
-/**
- * 获取 Store Actions
- */
 export const useStoreActions = () => {
   return useStore((state) => ({
     setUser: state.setUser,
@@ -282,12 +213,6 @@ export const useStoreActions = () => {
   }))
 }
 
-// ============= 工具函数 ====================
-
-/**
- * 从 Zustand store 迁移数据到新的 Zustand store
- * 用于从旧的 Context 迁移
- */
 export const migrateFromLocalStorage = (): void => {
   try {
     const oldUser = Storage.getUser()
@@ -308,7 +233,6 @@ export const migrateFromLocalStorage = (): void => {
       store.setOrders(oldOrders)
     }
 
-    // 清理旧数据
     Storage.remove('USER')
     Storage.remove('TOKEN')
     Storage.remove('ORDERS')

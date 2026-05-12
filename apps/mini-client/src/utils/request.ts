@@ -1,3 +1,4 @@
+import { AuthService } from '@/services/auth'
 import Taro from '@tarojs/taro'
 import errorHandler from './errorHandler'
 import logger from './logger'
@@ -5,9 +6,10 @@ import networkStatusManager from './networkStatus'
 import { performanceMonitor } from './performanceMonitor'
 import { requestCache } from './requestCache'
 import { Storage } from './storage'
+
 const env: Partial<NodeJS.ProcessEnv> = typeof process !== 'undefined' ? process.env : {}
 export const API_BASE_URL = env.TARO_APP_API_BASE_URL || env.API_BASE_URL || 'https://backbuy.cn/api'
-// 请求配置接口
+
 interface RequestOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
     data?: any
@@ -19,15 +21,10 @@ interface RequestOptions {
     maxRetries?: number
 }
 
-// 生成缓存键
 const generateCacheKey = (url: string, method: string, data?: any): string => {
     const dataStr = data ? JSON.stringify(data) : '';
     return `${method}:${url}:${dataStr}`;
 }
-
-// 简单的刷新逻辑（避免并发情况下重复刷新）
-let refreshing = false
-let refreshPromise: Promise<string | null> | null = null
 
 const redirectToLogin = () => {
     Storage.clearAuth()
@@ -37,53 +34,15 @@ const redirectToLogin = () => {
     }, 1500)
 }
 
-export const attemptTokenRefresh = async (): Promise<string | null> => {
-    const refreshToken = Storage.getRefreshToken()
-    if (!refreshToken) {
-        redirectToLogin()
-        return null
+const attemptTokenRefresh = async (): Promise<string | null> => {
+    const result = await AuthService.refreshToken()
+    if (result.success && result.token) {
+        return result.token
     }
-
-    if (refreshing && refreshPromise) {
-        return refreshPromise
-    }
-
-    refreshing = true
-    refreshPromise = (async () => {
-        try {
-            const response = await Taro.request({
-                url: `${API_BASE_URL}/auth/refresh`,
-                method: 'POST',
-                header: { 'Content-Type': 'application/json' },
-                data: { refreshToken }
-            })
-
-            if (response.statusCode >= 200 && response.statusCode < 300) {
-                const body = response.data || {}
-                const newToken = body.data?.accessToken || body.data?.token || body.accessToken || body.token
-                if (newToken) {
-                    Storage.setToken(newToken)
-                    return newToken
-                }
-                redirectToLogin()
-                return null
-            }
-            if (response.statusCode === 401 || response.statusCode === 403) {
-                redirectToLogin()
-            }
-            return null
-        } catch (e) {
-            return null
-        } finally {
-            refreshing = false
-            refreshPromise = null
-        }
-    })()
-
-    return refreshPromise
+    redirectToLogin()
+    return null
 }
 
-// 通用请求函数
 const request = async <T = any>(url: string, options: RequestOptions = {}): Promise<T> => {
     const token = Storage.getToken()
 
@@ -98,8 +57,7 @@ const request = async <T = any>(url: string, options: RequestOptions = {}): Prom
         }
     }
 
-    // Check cache for GET requests if caching is enabled
-    const shouldCache = options.cache !== false && defaultOptions.method === 'GET';
+    const shouldCache = options.cache === true && defaultOptions.method === 'GET';
     const cacheKey = generateCacheKey(url, defaultOptions.method, defaultOptions.data);
 
     if (shouldCache) {
@@ -115,12 +73,10 @@ const request = async <T = any>(url: string, options: RequestOptions = {}): Prom
     return executeRequest<T>(url, defaultOptions);
 }
 
-// Execute actual HTTP request
 const executeRequest = async <T = any>(url: string, options: any): Promise<T> => {
     const startTime = Date.now();
 
     try {
-        // Check network status before making request
         if (!networkStatusManager.isConnected()) {
             throw errorHandler.handle(
                 { code: 'NETWORK_OFFLINE', message: '当前无网络连接' },
@@ -136,7 +92,6 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
             ...options
         })
 
-        // Track API performance
         performanceMonitor.trackAPIRequest(
             url,
             options.method,
@@ -208,7 +163,6 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
             throw errorHandler.handle(error, { showToast: true });
         }
     } catch (error: unknown) {
-        // Track failed request
         performanceMonitor.trackAPIRequest(
             url,
             options.method,
@@ -216,7 +170,6 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
             0
         );
 
-        // Handle error with error handler
         if (typeof error === 'object' && error !== null) {
             const maybeHandled = error as { code?: unknown; timestamp?: unknown }
             if (maybeHandled.code && maybeHandled.timestamp) {
@@ -228,7 +181,6 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
     }
 }
 
-// 封装各种HTTP方法
 export function get<T = any>(url: string, params?: any, options?: { cache?: boolean; cacheTTL?: number }) {
     return request<T>(url, { method: 'GET', data: params, ...options })
 }
@@ -245,7 +197,6 @@ export function del<T = any>(url: string) {
     return request<T>(url, { method: 'DELETE' })
 }
 
-// 清除缓存工具函数
 export const clearCache = (pattern?: string | RegExp) => {
     if (pattern) {
         requestCache.invalidatePattern(pattern);
@@ -254,10 +205,8 @@ export const clearCache = (pattern?: string | RegExp) => {
     }
 }
 
-// 导出request函数供高级用法
 export { request }
 
-// 文件上传函数
 export const upload = async <T = any>(
     url: string,
     filePath: string,

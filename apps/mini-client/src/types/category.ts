@@ -85,6 +85,7 @@ export interface Category {
   parentId?: number;
   parent?: Category;
   children?: Category[];
+  subCategories?: SubCategoryDisplay[];
   level: number;          // 层级深度
   path: string;           // 层级路径，如 "1/2/3"
   
@@ -106,6 +107,12 @@ export interface Category {
   createdAt: string; // 日期字符串
   updatedAt: string; // 日期字符串
   deletedAt?: string; // 日期字符串
+}
+
+export interface SubCategoryDisplay {
+  id: number
+  name: string
+  basePrice: number
 }
 
 // 后端返回的原始分类数据（包含BigInt）

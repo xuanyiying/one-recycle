@@ -1,5 +1,5 @@
-import { logger } from './logger'
 import Taro from '@tarojs/taro';
+import { logger } from './logger';
 
 /**
  * Global Error Handler
@@ -68,6 +68,10 @@ interface ErrorHandlerOptions {
 }
 
 class ErrorHandler {
+  private lastToastTime = 0
+  private lastToastMessage = ''
+  private static readonly TOAST_DEBOUNCE_MS = 2000
+
   private readonly ERROR_MESSAGES: Record<ErrorCode, string> = {
     // Network errors
     [ErrorCode.NETWORK_ERROR]: '网络连接失败，请检查网络设置',
@@ -270,6 +274,15 @@ class ErrorHandler {
    * Show error toast to user
    */
   private showErrorToast(error: AppError): void {
+    const now = Date.now()
+    if (
+      error.message === this.lastToastMessage &&
+      now - this.lastToastTime < ErrorHandler.TOAST_DEBOUNCE_MS
+    ) {
+      return
+    }
+    this.lastToastTime = now
+    this.lastToastMessage = error.message
     Taro.showToast({
       title: error.message,
       icon: 'none',
@@ -291,7 +304,7 @@ class ErrorHandler {
     });
 
     // In production, send to error tracking service
-      this.sendToErrorTracking(error);
+    this.sendToErrorTracking(error);
   }
 
   /**

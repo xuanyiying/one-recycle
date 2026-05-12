@@ -13,6 +13,8 @@ interface WSMessage {
   data: any;
 }
 
+const MAX_QUEUE_SIZE = 50
+
 class WebSocketManager {
   private socket: Socket | null = null;
   private connected: boolean = false;
@@ -30,12 +32,11 @@ class WebSocketManager {
       this.token = token;
 
       try {
-        // 使用 Socket.IO 客户端连接
         this.socket = io(WS_URL, {
           path: '/customer',
           auth: { token },
-          transports: ['websocket'], // 优先使用 WebSocket
-          reconnection: false, // 我们手动处理重连
+          transports: ['websocket'],
+          reconnection: false,
           timeout: 10000,
         });
 
@@ -68,7 +69,6 @@ class WebSocketManager {
           logger.error('Socket.IO error:', error);
         });
 
-        // 监听所有服务器发送的事件
         this.socket.onAny((event: string, data: any) => {
           logger.log('Socket.IO message received:', event, data);
           this.handleMessage({ event, data });
@@ -83,6 +83,7 @@ class WebSocketManager {
   disconnect(): void {
     if (this.socket) {
       this.stopHeartbeat();
+      this.eventHandlers.clear()
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
@@ -96,40 +97,26 @@ class WebSocketManager {
       this.eventHandlers.set(event, new Set());
     }
     this.eventHandlers.get(event)!.add(handler);
-
-    // 如果已连接，也在 socket 上注册事件监听
-    if (this.socket) {
-      this.socket.on(event, handler);
-    }
   }
 
   off(event: string, handler: WSEventHandler): void {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
       handlers.delete(handler);
-    }
-
-    // 从 socket 上移除监听
-    if (this.socket) {
-      this.socket.off(event, handler);
+      if (handlers.size === 0) {
+        this.eventHandlers.delete(event);
+      }
     }
   }
 
-  /**
-   * Subscribe to connection status changes
-   */
   onConnectionChange(listener: (connected: boolean) => void): () => void {
     this.connectionListeners.add(listener);
-    // Immediately call with current state
     listener(this.connected);
     return () => {
       this.connectionListeners.delete(listener);
     };
   }
 
-  /**
-   * Notify all connection listeners of state change
-   */
   private notifyConnectionListeners(): void {
     this.connectionListeners.forEach(listener => {
       try {
@@ -146,6 +133,10 @@ class WebSocketManager {
       logger.log('Socket.IO message sent:', event, data);
     } else {
       logger.log('Socket.IO not connected, queuing message:', event);
+      if (this.messageQueue.length >= MAX_QUEUE_SIZE) {
+        this.messageQueue.shift()
+        logger.warn('Message queue overflow, dropping oldest message');
+      }
       this.messageQueue.push({ event, data });
     }
   }
@@ -210,9 +201,9 @@ const wsManager = new WebSocketManager();
 export function useWebSocket() {
   const [connected, setConnected] = useState(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const registeredHandlersRef = useRef<Map<string, WSEventHandler>>(new Map());
 
   useEffect(() => {
-    // Use event-driven connection status instead of polling
     unsubscribeRef.current = wsManager.onConnectionChange((isConnected) => {
       setConnected(isConnected);
     });
@@ -222,6 +213,10 @@ export function useWebSocket() {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
+      registeredHandlersRef.current.forEach((handler, event) => {
+        wsManager.off(event, handler);
+      });
+      registeredHandlersRef.current.clear();
     };
   }, []);
 
@@ -248,10 +243,12 @@ export function useWebSocket() {
 
   const on = useCallback((event: string, handler: WSEventHandler) => {
     wsManager.on(event, handler);
+    registeredHandlersRef.current.set(event, handler);
   }, []);
 
   const off = useCallback((event: string, handler: WSEventHandler) => {
     wsManager.off(event, handler);
+    registeredHandlersRef.current.delete(event);
   }, []);
 
   const emit = useCallback((event: string, data: any) => {

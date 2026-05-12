@@ -1,7 +1,8 @@
 import { logger } from '@/utils/logger'
 import Taro from '@tarojs/taro'
-import { API_BASE_URL, attemptTokenRefresh, post } from '../utils/request'
+import { API_BASE_URL, post } from '../utils/request'
 import { Storage } from '../utils/storage'
+import { AuthService } from './auth'
 
 export interface UploadResponse {
   success: boolean
@@ -68,7 +69,8 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
     })
 
     if (uploadResult.statusCode === 401) {
-      const newToken = await attemptTokenRefresh()
+      const refreshResult = await AuthService.refreshToken()
+      const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
           url: `${baseUrl}/api/upload/image`,
@@ -138,7 +140,8 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
     })
 
     if (uploadResult.statusCode === 401) {
-      const newToken = await attemptTokenRefresh()
+      const refreshResult = await AuthService.refreshToken()
+      const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
           url: `${baseUrl}/api/upload/avatar`,
@@ -323,7 +326,8 @@ export const uploadOrderPhotos = async (filePaths: string[]): Promise<string[]> 
       return await doServerUpload(currentToken)
     } catch (error: any) {
       if (error && error.isAuthError) {
-        const newToken = await attemptTokenRefresh()
+        const refreshResult = await AuthService.refreshToken()
+        const newToken = refreshResult.success ? refreshResult.token : null
         if (newToken) {
           return await doServerUpload(newToken)
         }

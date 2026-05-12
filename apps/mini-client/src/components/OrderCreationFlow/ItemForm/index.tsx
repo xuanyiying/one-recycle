@@ -305,7 +305,7 @@ export default function ItemForm({ onNext, onBack, initialItems = [], initialCat
         }
 
         const newItem: Item = {
-            id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
             categoryId: formData.categoryId,
             categoryName: formData.categoryName,
             categorySlug: formData.categorySlug,

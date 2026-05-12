@@ -43,14 +43,9 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
-  const [iconLibrary, setIconLibrary] = useState([
-    { id: 'icon-1', name: '电器', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%23E8F1FF'/><path d='M20 22h24v20H20z' fill='%234256D0'/><rect x='26' y='26' width='12' height='12' rx='2' fill='%23FFFFFF'/></svg>" },
-    { id: 'icon-2', name: '金属', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%23F3F4F6'/><path d='M20 40l12-20 12 20z' fill='%236B7280'/><circle cx='32' cy='40' r='6' fill='%239CA3AF'/></svg>" },
-    { id: 'icon-3', name: '纸品', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%23FFF7ED'/><rect x='18' y='16' width='28' height='32' rx='6' fill='%23FB923C'/><path d='M24 26h16M24 32h16M24 38h10' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round'/></svg>" },
-    { id: 'icon-4', name: '玻璃', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%23ECFEFF'/><rect x='22' y='14' width='20' height='36' rx='6' fill='%2306B6D4'/><rect x='26' y='18' width='12' height='18' rx='4' fill='%23FFFFFF' opacity='0.7'/></svg>" },
-    { id: 'icon-5', name: '塑料', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%23F0FDF4'/><path d='M24 14h16l6 12-8 22H26l-8-22z' fill='%2322C55E'/><circle cx='32' cy='26' r='5' fill='%23BBF7D0'/></svg>" },
-    { id: 'icon-6', name: '纺织', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='14' fill='%23FDF2F8'/><path d='M20 18h24v28H20z' fill='%23EC4899'/><path d='M24 22h16M24 28h16M24 34h16M24 40h10' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round'/></svg>" },
-  ]);
+  const [iconLibrary, setIconLibrary] = useState<{
+    name: string | undefined; id: string; url: string 
+}[]>([]);
   const [selectedIconId, setSelectedIconId] = useState<string | null>('icon-1');
   const [customIcon, setCustomIcon] = useState<string | null>(null);
   const [customIconName, setCustomIconName] = useState('');
@@ -113,13 +108,8 @@ export default function CategoriesPage() {
     loadCategories();
   }, []);
 
-  const getDataUrlSize = (dataUrl: string) => {
-    const base64 = dataUrl.split(',')[1] || '';
-    return Math.ceil((base64.length * 3) / 4);
-  };
-
-  const compressIcon = (file: File) => {
-    return new Promise<{ dataUrl: string; size: number }>((resolve, reject) => {
+  const compressIconToBlob = (file: File) => {
+    return new Promise<{ blob: Blob; size: number }>((resolve, reject) => {
       const reader = new FileReader();
       const img = new Image();
       reader.onload = () => {
@@ -143,17 +133,31 @@ export default function CategoriesPage() {
         const dy = (size - drawHeight) / 2;
         ctx.clearRect(0, 0, size, size);
         ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
-        let dataUrl = canvas.toDataURL('image/png');
-        let dataSize = getDataUrlSize(dataUrl);
-        if (dataSize > 50 * 1024) {
-          dataUrl = canvas.toDataURL('image/jpeg', 0.72);
-          dataSize = getDataUrlSize(dataUrl);
-        }
-        if (dataSize > 50 * 1024) {
-          dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-          dataSize = getDataUrlSize(dataUrl);
-        }
-        resolve({ dataUrl, size: dataSize });
+
+        const tryBlob = (type: string, quality?: number): Promise<Blob> => {
+          return new Promise((res, rej) => {
+            canvas.toBlob(
+              (b) => (b ? res(b) : rej(new Error('转换失败'))),
+              type,
+              quality
+            );
+          });
+        };
+
+        (async () => {
+          try {
+            let blob = await tryBlob('image/png');
+            if (blob.size > 50 * 1024) {
+              blob = await tryBlob('image/jpeg', 0.72);
+            }
+            if (blob.size > 50 * 1024) {
+              blob = await tryBlob('image/jpeg', 0.6);
+            }
+            resolve({ blob, size: blob.size });
+          } catch (e) {
+            reject(e);
+          }
+        })();
       };
       img.onerror = () => reject(new Error('图片解析失败'));
       reader.readAsDataURL(file);
@@ -168,17 +172,21 @@ export default function CategoriesPage() {
       return;
     }
     try {
-      const result = await compressIcon(file);
+      const result = await compressIconToBlob(file);
       if (result.size > 50 * 1024) {
         toast.error('压缩后仍超过50KB，请更换图片');
         return;
       }
-      setCustomIcon(result.dataUrl);
+      const compressedFile = new File([result.blob], file.name, {
+        type: result.blob.type || 'image/png',
+      });
+      const uploaded = await categoryService.uploadIcon(compressedFile);
+      setCustomIcon(uploaded.url);
       setCustomIconName(file.name);
       setSelectedIconId(null);
-      toast.success('图标已压缩至64×64');
+      toast.success('图标已上传');
     } catch (error) {
-      toast.error('图标处理失败');
+      toast.error('图标上传失败');
     }
   };
 
@@ -929,8 +937,8 @@ export default function CategoriesPage() {
                         setCustomIconName('');
                       }}
                     >
-                      <img src={icon.url} alt={icon.name} className="h-8 w-8 rounded-lg" />
-                      <span className={cn("flex-1 truncate", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground")}>{icon.name}</span>
+                      <img src={icon.url} alt={icon.name || '图标'}  className="h-8 w-8 rounded-lg" />
+                      <span className={cn("flex-1 truncate", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground")}>{icon.name || ''}</span>
                       <GripVertical className={cn("h-4 w-4", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground/50")} />
                     </div>
                   ))}

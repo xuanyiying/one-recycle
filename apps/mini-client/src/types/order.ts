@@ -1,8 +1,8 @@
 import type { Address, AddressFormData } from './address'
 import { AddressLabel } from './address'
 
-export type { Address, AddressFormData }
 export { AddressLabel }
+export type { Address, AddressFormData }
 
 /**
  * Order Creation Flow Types
@@ -141,6 +141,31 @@ export interface Order {
   createdAt: string
   updatedAt: string
   completedAt?: string
+}
+
+export interface OrderDetail {
+  id: string
+  status: OrderStatus | string
+  statusText: string
+  timeline: OrderTimelineItem[]
+  categoryName: string
+  items: any[]
+  address: any
+  appointmentTime: string
+  estimatedPrice: number
+  serviceFee: number
+  totalPrice: number
+  settlementAmount?: number
+  settlementTime?: string
+  courier?: any
+  createTime: string
+}
+
+export interface OrderTimelineItem {
+  status: string
+  text: string
+  time: string
+  completed: boolean
 }
 
 export interface OrderSubmission {

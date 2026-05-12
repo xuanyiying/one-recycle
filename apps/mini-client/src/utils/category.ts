@@ -1,23 +1,27 @@
 import { Category as ServiceCategory } from "../types/category"
-import { Category as UICategory } from "../types/index"
 
-/**
- * 将服务端Category类型转换为UI组件使用的Category类型
- * @param serviceCategory 服务端Category对象
- * @returns UI组件使用的Category对象
- */
+export interface UICategoryExtra {
+  icon?: string
+  basePrice: number
+  unitPrice: number
+  unit: string
+  isHot: boolean
+  subCategories?: Array<{ id: number; name: string; basePrice: number }>
+  priceFactors: Array<{ name: string; weight: number }>
+}
+
+export type UICategory = ServiceCategory & UICategoryExtra
+
 export const convertServiceToUICategory = (serviceCategory: ServiceCategory): UICategory => {
   return {
-    id: serviceCategory.id,
-    name: serviceCategory.name,
-    icon: serviceCategory.icon?.url || '',
+    ...serviceCategory,
+    icon: serviceCategory.icon?.url || '' as any,
     description: serviceCategory.description || '',
     basePrice: serviceCategory.priceInfo?.unitPrice || 0,
     unitPrice: serviceCategory.priceInfo?.unitPrice || 0,
     unit: serviceCategory.priceInfo?.unit || 'kg',
     isHot: serviceCategory.isFeatured || false,
     sortOrder: serviceCategory.sortOrder,
-    isActive: serviceCategory.status === 'active',
     createdAt: serviceCategory.createdAt,
     updatedAt: serviceCategory.updatedAt,
     subCategories: serviceCategory.children ? serviceCategory.children.map(child => ({
@@ -25,15 +29,10 @@ export const convertServiceToUICategory = (serviceCategory: ServiceCategory): UI
       name: child.name,
       basePrice: child.priceInfo?.unitPrice || 0
     })) : [],
-    priceFactors: []   // 根据需要填充价格因子
+    priceFactors: []
   }
 }
 
-/**
- * 批量转换Category类型
- * @param serviceCategories 服务端Category对象数组
- * @returns UI组件使用的Category对象数组
- */
 export const convertServiceToUICategories = (serviceCategories: ServiceCategory[]): UICategory[] => {
   return serviceCategories.map(convertServiceToUICategory)
 }

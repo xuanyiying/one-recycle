@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { AuthService } from '@/services/auth'
 import Taro from '@tarojs/taro'
-import { attemptTokenRefresh } from './request'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock Taro
 vi.mock('@tarojs/taro', () => {
   return {
     default: {
@@ -17,39 +16,39 @@ vi.mock('@tarojs/taro', () => {
   }
 })
 
-describe('Token Refresh Mechanism', () => {
+describe('Token Refresh Mechanism (AuthService.refreshToken)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Reset module state if possible, but since 'refreshing' is module-level, 
-    // we might need to rely on the fact that it resets after each call resolves.
-    // Ideally we would export a reset function for testing, but for now assuming
-    // tests run sequentially and wait for completion.
   })
 
-  it('should return null if no refreshToken is present', async () => {
+  it('should return failure if no refreshToken is present', async () => {
     vi.mocked(Taro.getStorageSync).mockReturnValue('')
-    
-    const result = await attemptTokenRefresh()
-    
-    expect(result).toBeNull()
+
+    const result = await AuthService.refreshToken()
+
+    expect(result.success).toBe(false)
     expect(Taro.request).not.toHaveBeenCalled()
   })
 
   it('should successfully refresh token', async () => {
     const mockRefreshToken = 'mock-refresh-token'
     const mockNewToken = 'new-access-token'
-    
-    vi.mocked(Taro.getStorageSync).mockReturnValue(mockRefreshToken)
+
+    vi.mocked(Taro.getStorageSync).mockImplementation((key: string) => {
+      if (key === 'refreshToken') return mockRefreshToken
+      return ''
+    })
     vi.mocked(Taro.request).mockResolvedValue({
       statusCode: 200,
       data: {
-        accessToken: mockNewToken
+        data: { accessToken: mockNewToken }
       }
     } as any)
 
-    const result = await attemptTokenRefresh()
+    const result = await AuthService.refreshToken()
 
-    expect(result).toBe(mockNewToken)
+    expect(result.success).toBe(true)
+    expect(result.token).toBe(mockNewToken)
     expect(Taro.request).toHaveBeenCalledWith(expect.objectContaining({
       url: expect.stringContaining('/auth/refresh'),
       method: 'POST',
@@ -59,62 +58,65 @@ describe('Token Refresh Mechanism', () => {
   })
 
   it('should handle refresh failure (non-2xx response)', async () => {
-    vi.mocked(Taro.getStorageSync).mockReturnValue('mock-refresh-token')
+    vi.mocked(Taro.getStorageSync).mockImplementation((key: string) => {
+      if (key === 'refreshToken') return 'mock-refresh-token'
+      return ''
+    })
     vi.mocked(Taro.request).mockResolvedValue({
       statusCode: 400,
       data: { message: 'Invalid token' }
     } as any)
 
-    const result = await attemptTokenRefresh()
+    const result = await AuthService.refreshToken()
 
-    expect(result).toBeNull()
-    expect(Taro.setStorageSync).not.toHaveBeenCalled()
+    expect(result.success).toBe(false)
   })
 
   it('should handle network error during refresh', async () => {
-    vi.mocked(Taro.getStorageSync).mockReturnValue('mock-refresh-token')
+    vi.mocked(Taro.getStorageSync).mockImplementation((key: string) => {
+      if (key === 'refreshToken') return 'mock-refresh-token'
+      return ''
+    })
     vi.mocked(Taro.request).mockRejectedValue(new Error('Network error'))
 
-    const result = await attemptTokenRefresh()
+    const result = await AuthService.refreshToken()
 
-    expect(result).toBeNull()
+    expect(result.success).toBe(false)
   })
 
   it('should prevent concurrent refresh requests', async () => {
     const mockRefreshToken = 'mock-refresh-token'
     const mockNewToken = 'new-access-token'
-    
-    vi.mocked(Taro.getStorageSync).mockReturnValue(mockRefreshToken)
-    
-    // Simulate a slow request
+
+    vi.mocked(Taro.getStorageSync).mockImplementation((key: string) => {
+      if (key === 'refreshToken') return mockRefreshToken
+      return ''
+    })
+
     vi.mocked(Taro.request).mockImplementation(() => {
       const p: any = new Promise(resolve => setTimeout(() => {
         resolve({
           statusCode: 200,
-          data: { accessToken: mockNewToken }
+          data: { data: { accessToken: mockNewToken } }
         })
       }, 50))
-      
+
       p.abort = vi.fn()
       p.onHeadersReceived = vi.fn()
       p.offHeadersReceived = vi.fn()
       p.onChunkReceived = vi.fn()
       p.offChunkReceived = vi.fn()
-      
+
       return p
     })
 
-    // Call twice rapidly
-    const promise1 = attemptTokenRefresh()
-    const promise2 = attemptTokenRefresh()
-
-    // Since attemptTokenRefresh is an async function, it returns a new Promise wrapper each time.
-    // We verify deduping by checking that the underlying request is only called once.
+    const promise1 = AuthService.refreshToken()
+    const promise2 = AuthService.refreshToken()
 
     const [result1, result2] = await Promise.all([promise1, promise2])
 
-    expect(result1).toBe(mockNewToken)
-    expect(result2).toBe(mockNewToken)
+    expect(result1.success).toBe(true)
+    expect(result2.success).toBe(true)
     expect(Taro.request).toHaveBeenCalledTimes(1)
   })
 })
