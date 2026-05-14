@@ -17,7 +17,7 @@ import axios, {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  '';
+  'https://backbuy.cn/api';
 
 /**
  * 通用API响应接口
