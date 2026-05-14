@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
@@ -193,9 +194,11 @@ export default function PointsTasksPage() {
                   <td>
                     <div className="flex items-center gap-2">
                       {task.icon && (
-                        <img
+                        <Image
                           src={task.icon}
                           alt={task.name}
+                          width={32}
+                          height={32}
                           className="w-8 h-8 rounded"
                         />
                       )}
@@ -213,7 +216,7 @@ export default function PointsTasksPage() {
                   <td className="text-red-500 font-medium">{task.points}</td>
                   <td>
                     {task.icon ? (
-                      <img src={task.icon} alt="" className="w-6 h-6 rounded" />
+                      <Image src={task.icon} alt="" width={24} height={24} className="w-6 h-6 rounded" />
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}

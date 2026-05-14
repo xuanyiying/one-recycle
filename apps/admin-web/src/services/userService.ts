@@ -90,9 +90,11 @@ export class UserService {
 
   // 导出用户数据
   async exportUsers(params?: UserQueryParams): Promise<Blob> {
-    return await apiClient.get(`${this.baseUrl}/export`, params, {
+    const response = await apiClient.getInstance().get(`${this.baseUrl}/export`, {
+      params,
       responseType: 'blob',
     });
+    return response.data;
   }
 
   // 发送邮件验证

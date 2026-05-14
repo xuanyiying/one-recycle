@@ -4,7 +4,7 @@ import { useStore } from '@/store/useStore'
 import { AuthService } from '@/services/auth'
 import { User } from '@/types'
 import { Storage } from '@/utils/storage'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export const useAuth = () => {
   const storeUser = useStore((state) => state.user)

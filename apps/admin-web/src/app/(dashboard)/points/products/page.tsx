@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table } from '@/components/ui/table';
@@ -11,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { pointsProductApi, PointsProduct, CreateProductDto, UpdateProductDto } from '@/services/pointsService';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from '@/components/ui/toast';
 import ProductModal from './components/ProductModal';
 
 export default function PointsProductsPage() {
@@ -66,7 +68,7 @@ export default function PointsProductsPage() {
       await fetchProducts();
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('操作失败，请重试');
+      toast.error('操作失败，请重试');
     }
   };
 
@@ -78,10 +80,10 @@ export default function PointsProductsPage() {
     try {
       await pointsProductApi.deleteProduct(Number(product.id));
       await fetchProducts();
-      alert('删除成功');
+      toast.success('删除成功');
     } catch (error) {
       console.error('Failed to delete:', error);
-      alert('删除失败，请重试');
+      toast.error('删除失败，请重试');
     }
   };
 
@@ -94,10 +96,10 @@ export default function PointsProductsPage() {
       }
       setModalOpen(false);
       await fetchProducts();
-      alert(editingProduct ? '更新成功' : '创建成功');
+      toast.success(editingProduct ? '更新成功' : '创建成功');
     } catch (error) {
       console.error('Failed to save:', error);
-      alert('操作失败，请重试');
+      toast.error('操作失败，请重试');
     }
   };
 
@@ -170,9 +172,11 @@ export default function PointsProductsPage() {
                   <td>
                     <div className="flex items-center gap-2">
                       {product.coverImage && (
-                        <img
+                        <Image
                           src={product.coverImage}
                           alt={product.name}
+                          width={40}
+                          height={40}
                           className="w-10 h-10 rounded object-cover"
                         />
                       )}

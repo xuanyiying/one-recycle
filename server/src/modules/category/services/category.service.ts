@@ -16,7 +16,7 @@ export class CategoryService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) {}
 
   private async clearCategoryCache(): Promise<void> {
     const cacheKeys = [
@@ -451,14 +451,14 @@ export class CategoryService {
       seo: data.seo ? JSON.parse(data.seo) : undefined,
       pricingRule: pricingRule
         ? {
-          id: Number(pricingRule.id),
-          tenantId: Number(pricingRule.tenantId),
-          basePrice: pricingRule.basePrice,
-          minWeight: pricingRule.minWeight ?? undefined,
-          maxWeight: pricingRule.maxWeight ?? undefined,
-          ruleJson: pricingRule.ruleJson ?? undefined,
-          isActive: pricingRule.isActive,
-        }
+            id: Number(pricingRule.id),
+            tenantId: Number(pricingRule.tenantId),
+            basePrice: pricingRule.basePrice,
+            minWeight: pricingRule.minWeight ?? undefined,
+            maxWeight: pricingRule.maxWeight ?? undefined,
+            ruleJson: pricingRule.ruleJson ?? undefined,
+            isActive: pricingRule.isActive,
+          }
         : undefined,
       attributes: data.attributes ? JSON.parse(data.attributes) : undefined,
       createdAt: data.createdAt,

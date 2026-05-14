@@ -43,7 +43,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('用户信息不存在');
       }
 
-      await this.checkPermissions(context, user);
+      this.checkPermissions(context, user);
 
       this.logger.log(`用户 ${user.id} 通过认证验证`);
       return true;

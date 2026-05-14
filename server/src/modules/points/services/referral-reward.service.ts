@@ -143,7 +143,7 @@ export class ReferralRewardService {
     const orderAmount = toNumber(
       order.settlementAmount || order.estimatedAmount,
     );
-    const rewardPoints = await this.calculateRewardPoints(orderAmount, config);
+    const rewardPoints = this.calculateRewardPoints(orderAmount, config);
 
     if (rewardPoints <= 0) {
       this.logger.log(`Reward points is zero, skipping: ${orderId}`);

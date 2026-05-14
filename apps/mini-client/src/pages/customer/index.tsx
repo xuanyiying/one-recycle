@@ -1,4 +1,4 @@
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro, { useDidShow, useReady } from '@tarojs/taro';
@@ -8,8 +8,8 @@ import { useSafeArea } from '@/hooks/useSafeArea';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useSession } from '../../hooks/useSession';
 import { useMessages } from '../../hooks/useMessages';
-import { API_BASE_URL } from '@/utils/request';
-import { Storage } from '@/utils/storage';
+import { upload } from '@/utils/request';
+import { cancelOrder } from '@/services/order';
 import { ChatMessageList, ChatInput } from '@/components/Chat';
 import QuickActions from './components/QuickActions';
 import SatisfactionModal from './components/SatisfactionModal';
@@ -163,31 +163,22 @@ const CustomerServicePage: React.FC = () => {
 
       Taro.showLoading({ title: '上传中...' });
 
-      const uploadResult = await Taro.uploadFile({
-        url: `${API_BASE_URL}/customer/upload`,
-        filePath: tempFilePath,
-        name: 'file',
-        header: {
-          Authorization: `Bearer ${Storage.getToken() || ''}`,
-        },
-      });
+      const uploadResult = await upload('/customer/upload', tempFilePath);
 
       Taro.hideLoading();
-
-      const data = JSON.parse(uploadResult.data);
 
       if (session) {
         await sendMessage({
         sessionId: session.id,
         messageType: 'IMAGE',
-        mediaUrl: data.url,
+        mediaUrl: uploadResult.url,
       });
       }
 
       emit('send_message', {
         sessionId: session.id,
         messageType: 'IMAGE',
-        mediaUrl: data.url,
+        mediaUrl: uploadResult.url,
       });
 
       scrollToBottom();
@@ -230,13 +221,7 @@ const CustomerServicePage: React.FC = () => {
     if (result.confirm) {
       try {
         Taro.showLoading({ title: '处理中...' });
-        await Taro.request({
-          url: `${API_BASE_URL}/orders/${orderId}/cancel`,
-          method: 'PUT',
-          header: {
-            Authorization: `Bearer ${Storage.getToken() || ''}`,
-          },
-        });
+        await cancelOrder(orderId);
         Taro.hideLoading();
         Taro.showToast({ title: '订单已取消', icon: 'success' });
       } catch (error) {

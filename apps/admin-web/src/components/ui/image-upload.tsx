@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -138,10 +139,13 @@ function ImageUpload({ value, onChange, multiple = false }: ImageUploadProps) {
 
       {!multiple && (value || previewUrl) && (
         <div className="relative inline-block">
-          <img
+          <Image
             src={previewUrl || (value as string)}
             alt="预览"
+            width={128}
+            height={128}
             className="w-32 h-32 object-cover rounded-lg border"
+            unoptimized
           />
           <button
             type="button"
@@ -170,10 +174,13 @@ function ImageUpload({ value, onChange, multiple = false }: ImageUploadProps) {
             <div className="grid grid-cols-4 gap-2">
               {(value as string[]).map((url, index) => (
                 <div key={index} className="relative">
-                  <img
+                  <Image
                     src={url}
                     alt={`图片 ${index + 1}`}
+                    width={80}
+                    height={80}
                     className="w-full h-20 object-cover rounded-lg border"
+                    unoptimized
                   />
                   <button
                     type="button"

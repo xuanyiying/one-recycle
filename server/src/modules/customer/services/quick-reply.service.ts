@@ -9,7 +9,7 @@ import {
 
 @Injectable()
 export class QuickReplyService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateQuickReplyDto, agentId?: string): Promise<any> {
     return this.prisma.quickReply.create({
@@ -51,7 +51,7 @@ export class QuickReplyService {
     });
   }
 
-  async findOne(id: string): Promise<any | null> {
+  async findOne(id: string): Promise<any> {
     return this.prisma.quickReply.findUnique({
       where: { id: BigInt(id) },
     });

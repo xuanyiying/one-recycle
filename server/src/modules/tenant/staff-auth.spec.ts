@@ -57,13 +57,13 @@ describe('Staff Auth Role Propagation', () => {
       providers: [
         StaffService,
         { provide: PrismaService, useValue: prismaService },
-        { 
-          provide: RedisService, 
+        {
+          provide: RedisService,
           useValue: {
             set: jest.fn().mockResolvedValue('OK'),
             get: jest.fn().mockResolvedValue(null),
             del: jest.fn().mockResolvedValue(1),
-          } 
+          },
         },
         {
           provide: JwtService,

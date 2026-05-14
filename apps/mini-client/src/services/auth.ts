@@ -130,7 +130,7 @@ export class AuthService {
             if (!this.isLoginMethodSupported(provider)) {
                 throw new Error(`当前平台不支持${provider}登录`)
             }
-            const response = await post<any>(`/auth/third-party/${provider}`, { provider })
+            const response = await post<any>(`/auth/third-party/${provider}`, {})
             const authData = response?.data ?? response
 
             if (authData && authData.tokens?.accessToken) {
@@ -391,9 +391,18 @@ export class AuthService {
      */
     static async logout(): Promise<void> {
         try {
-            Storage.clearAuth()
+            const refreshToken = Storage.getRefreshToken()
+            if (refreshToken) {
+                await post('/auth/logout', { refreshToken }).catch(() => {})
+            }
         } catch (error) {
-            logger.error('退出登录失败:', error)
+            logger.error('服务端登出失败:', error)
+        } finally {
+            try {
+                Storage.clearAuth()
+            } catch (error) {
+                logger.error('清除本地登录信息失败:', error)
+            }
         }
     }
 

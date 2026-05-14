@@ -156,45 +156,45 @@ export class InventoryController {
   }
 
   @Get('export')
-  async exportInventory(@Query() query: any): Promise<any[]> {
+  exportInventory(@Query() query: any): any[] {
     return this.inventoryService.exportInventory(query);
   }
 
   @Post('batch-delete')
-  async batchDelete(@Body() body: { ids: string[] }): Promise<void> {
-    return this.inventoryService.batchDelete(body.ids);
+  batchDelete(@Body() body: { ids: string[] }): void {
+    this.inventoryService.batchDelete(body.ids);
   }
 
   @Post(':id/adjust')
-  async adjustInventory(
+  adjustInventory(
     @Param('id') id: string,
     @Body() data: { type: string; quantity: number; reason: string },
-  ): Promise<any> {
+  ): any {
     return this.inventoryService.adjustInventory(BigInt(id), data);
   }
 
   @Get(':id/adjustments')
-  async getAdjustments(@Param('id') id: string): Promise<any[]> {
+  getAdjustments(@Param('id') id: string): any[] {
     return this.inventoryService.getAdjustments(BigInt(id));
   }
 
   @Put('alerts/:id/read')
-  async markAlertAsRead(@Param('id') id: string): Promise<void> {
-    return this.inventoryService.markAlertAsRead(BigInt(id));
+  markAlertAsRead(@Param('id') id: string): void {
+    this.inventoryService.markAlertAsRead(BigInt(id));
   }
 
   @Post('alerts/batch-read')
-  async batchMarkAlertsAsRead(@Body() body: { ids: string[] }): Promise<void> {
-    return this.inventoryService.batchMarkAlertsAsRead(body.ids);
+  batchMarkAlertsAsRead(@Body() body: { ids: string[] }): void {
+    this.inventoryService.batchMarkAlertsAsRead(body.ids);
   }
 
   @Get('value-trend')
-  async getValueTrend(@Query('days') days?: number): Promise<any[]> {
+  getValueTrend(@Query('days') days?: number): any[] {
     return this.inventoryService.getValueTrend(days || 30);
   }
 
   @Get('turnover')
-  async getTurnover(): Promise<any[]> {
+  getTurnover(): any[] {
     return this.inventoryService.getTurnover();
   }
 }

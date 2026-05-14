@@ -60,13 +60,23 @@ export default function WalletPage() {
       return
     }
 
+    if (account && parseFloat(withdrawAmount) > account.availableBalance) {
+      Taro.showToast({ title: '提现金额不能超过可用余额', icon: 'none' })
+      return
+    }
+
+    if (!user.openid) {
+      Taro.showToast({ title: '请先绑定微信账号', icon: 'none' })
+      return
+    }
+
     try {
       setLoading(true)
       await withdrawalService.createWithdrawal({
         amount: parseFloat(withdrawAmount),
         provider: WithdrawalProvider.WECHAT,
         accountInfo: {
-          openid: user.openid || 'mock_openid',
+          openid: user.openid,
           realName: user.realName || user.nickname || '用户'
         }
       })

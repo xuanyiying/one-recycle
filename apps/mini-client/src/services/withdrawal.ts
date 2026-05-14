@@ -46,7 +46,7 @@ class WithdrawalService {
       params.limit = filters.limit;
     }
 
-    return get('/api/withdrawals/me', params);
+    return get('/withdrawals/me', params);
   }
 
   /**
@@ -54,7 +54,7 @@ class WithdrawalService {
    * GET /api/withdrawals/:id
    */
   async getWithdrawal(id: string): Promise<Withdrawal> {
-    return get(`/api/withdrawals/${id}`);
+    return get(`/withdrawals/${id}`);
   }
 
   /**

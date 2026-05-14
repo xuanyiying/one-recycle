@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Deploy
 
 on:
   push:
@@ -16,10 +16,6 @@ on:
         options:
           - monolith
           - microservices
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   determine-mode:
@@ -89,95 +85,17 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
 
-  build-server:
-    name: Build Server Image
-    needs: [determine-mode, lint-and-test]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "timestamp=$(date +%Y%m%d%H%M)" >> $GITHUB_OUTPUT
-
-      - name: Build and push server image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./server
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/server:${{ github.ref_name }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/server:${{ steps.meta.outputs.sha_short }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/server:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-
-  build-admin:
-    name: Build Admin Web Image
-    needs: [determine-mode, lint-and-test]
-    runs-on: ubuntu-latest
-    env:
-      DOMAIN: ${{ secrets.DOMAIN || 'backbuy.cn' }}
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push admin-web image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./apps/admin-web
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:${{ github.ref_name }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/admin-web:latest
-          build-args: |
-            NEXT_PUBLIC_API_URL=https://${{ env.DOMAIN }}/api
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-
   deploy-monolith:
     name: Deploy (Monolith)
-    needs: [determine-mode, build-server, build-admin]
+    needs: [determine-mode, lint-and-test]
     if: needs.determine-mode.outputs.mode == 'monolith'
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
-
       - name: Validate deploy secrets
         run: |
           set -e
           missing=0
-
           require_secret() {
             local name="$1"
             local value="$2"
@@ -188,19 +106,11 @@ jobs:
               echo "${name}: configured"
             fi
           }
-
           require_secret "DOMAIN" "${{ secrets.DOMAIN || 'backbuy.cn' }}"
-          # EMAIL, TENCENT_CLOUD_SECRET_ID, TENCENT_CLOUD_SECRET_KEY are now optional for Caddy HTTP-01
-          [ -n "${{ secrets.EMAIL }}" ] && echo "EMAIL: configured" || echo "EMAIL: not set (optional for Caddy)"
-          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_ID }}" ] && echo "TENCENT_CLOUD_SECRET_ID: configured" || echo "TENCENT_CLOUD_SECRET_ID: not set (optional for Caddy)"
-          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}" ] && echo "TENCENT_CLOUD_SECRET_KEY: configured" || echo "TENCENT_CLOUD_SECRET_KEY: not set (optional for Caddy)"
-          
           require_secret "DEPLOY_HOST" "${{ secrets.DEPLOY_HOST }}"
           require_secret "DEPLOY_USER" "${{ secrets.DEPLOY_USER }}"
           require_secret "DEPLOY_KEY" "${{ secrets.DEPLOY_KEY }}"
-
           if [ "$missing" -ne 0 ]; then
-            echo "Deployment aborted because one or more required secrets are missing."
             exit 1
           fi
 
@@ -210,7 +120,6 @@ jobs:
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-          
           cat >> ~/.ssh/config << 'EOF'
           Host *
             ServerAliveInterval 30
@@ -221,85 +130,56 @@ jobs:
           EOF
           mkdir -p ~/.ssh/sockets
 
-      - name: Sync config files to server
-        run: |
-          set -e
-          REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
-          
-          max_retries=3
-          retry_delay=5
-          
-          retry_command() {
-            local cmd="$1"
-            for i in $(seq 1 $max_retries); do
-              echo "Attempt $i/$max_retries: $cmd"
-              if eval "$cmd"; then
-                return 0
-              fi
-              if [ $i -lt $max_retries ]; then
-                echo "Failed, retrying in ${retry_delay}s..."
-                sleep $retry_delay
-              fi
-            done
-            return 1
-          }
-
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/caddy ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config'"
-          
-          retry_command "rsync -avz deploy/caddy/ $REMOTE:~/one-recycle/deploy/caddy/"
-          
-          retry_command "rsync -avz deploy/docker-compose.yml $REMOTE:~/one-recycle/deploy/"
-          
-          retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
-
-          echo "Config and static files synced to server"
-
-      - name: Deploy monolith
+      - name: Deploy monolith (git pull + build on server)
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'ENDSSH'
           set -e
           PROJECT_DIR="$HOME/one-recycle"
-          echo "=== Deploying monolith ==="
-          mkdir -p "$PROJECT_DIR/deploy"
+          DEPLOY_DIR="$PROJECT_DIR/deploy"
+          echo "=== Deploying monolith (server-side build) ==="
+
+          echo "=== Pulling latest code ==="
           cd "$PROJECT_DIR"
+          git fetch origin
+          git checkout ${{ github.ref_name }}
+          git pull origin ${{ github.ref_name }}
 
-          # 创建必要目录
           echo "=== Ensuring directories exist ==="
-          mkdir -p deploy/caddy deploy/data/postgres deploy/data/redis deploy/config
+          mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-          # (Self-signed certificates handled by container entrypoint)
-
+          echo "=== Writing .env ==="
           {
-            echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
-            echo "EMAIL=${{ secrets.EMAIL }}"
-            echo "TENCENT_CLOUD_SECRET_ID=${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
-            echo "TENCENT_CLOUD_SECRET_KEY=${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
-            if [ -f deploy/config/.env.production ]; then
-              cat deploy/config/.env.production
+            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+              cat "$DEPLOY_DIR/config/.env.production"
             fi
-          } > deploy/.env
+          } > "$DEPLOY_DIR/.env"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|EMAIL|TENCENT_CLOUD_SECRET_ID|TENCENT_CLOUD_SECRET_KEY)=' deploy/.env | sed -E 's/=(.*)$/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/.env"
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env" | sed 's/=.*/=<configured>/'
 
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
-
-          echo "=== Pulling images ==="
-          docker compose -f deploy/docker-compose.yml pull 2>/dev/null || echo "Some images may not exist yet, will build if needed"
+          echo "=== Building images on server ==="
+          cd "$DEPLOY_DIR"
+          docker compose build --parallel api-gateway admin-web
 
           echo "=== Stopping old containers ==="
-          docker compose -f deploy/docker-compose.yml down || true
+          docker compose down || true
 
           echo "=== Starting monolith ==="
-          docker compose -f deploy/docker-compose.yml up -d
+          docker compose up -d
 
           echo "=== Waiting for services ==="
           sleep 15
 
-          docker compose -f deploy/docker-compose.yml ps
-          docker compose -f deploy/docker-compose.yml logs --tail=20
+          docker compose ps
+          docker compose logs --tail=20
+
+          echo "=== Cleaning up old images ==="
+          docker image prune -f
 
           echo "=== Monolith deployment completed ==="
           ENDSSH
@@ -363,13 +243,7 @@ jobs:
                   echo "::warning title=Certificate expiring soon::${host} certificate will expire in ${days_left} day(s)"
                   CERT_HEALTH_OK=0
                 fi
-              else
-                echo "::warning title=Certificate validity parse failed::Could not parse notAfter for ${host}"
-                CERT_HEALTH_OK=0
               fi
-            else
-              echo "::warning title=Certificate validity missing::Could not read notAfter for ${host}"
-              CERT_HEALTH_OK=0
             fi
           }
 
@@ -400,12 +274,12 @@ jobs:
           if [ "$APP_HEALTH_OK" -ne 1 ]; then
             echo "Application health failed, dumping container status and logs..."
             ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<'ENDSSH'
-            cd $HOME/one-recycle
-            docker compose -f deploy/docker-compose.yml ps -a
+            cd $HOME/one-recycle/deploy
+            docker compose ps -a
             echo "=== Caddy logs ==="
             docker logs one-recycle-caddy --tail=30 2>/dev/null || true
             echo "=== Backend logs ==="
-            docker logs one-recycle-backend --tail=30 2>/dev/null || true
+            docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
           ENDSSH
             exit 1
           fi
@@ -417,23 +291,19 @@ jobs:
           [ "$CERT_HEALTH_OK" -eq 1 ] && echo "cert_health=PASS" || echo "cert_health=WARN"
           if [ "$CERT_HEALTH_OK" -ne 1 ]; then
             echo "::warning title=Certificate health degraded::Application is healthy but certificate checks reported issues"
-            echo "::warning title=Certificate troubleshooting::Run 'openssl s_client -connect ${DOMAIN}:443 -servername ${DOMAIN}' and verify DNS/SAN, issuer chain, and renewal job status"
           fi
 
   deploy-microservices:
     name: Deploy (Microservices)
-    needs: [determine-mode, build-server, build-admin]
+    needs: [determine-mode, lint-and-test]
     if: needs.determine-mode.outputs.mode == 'microservices'
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
-
       - name: Validate deploy secrets
         run: |
           set -e
           missing=0
-
           require_secret() {
             local name="$1"
             local value="$2"
@@ -444,19 +314,11 @@ jobs:
               echo "${name}: configured"
             fi
           }
-
           require_secret "DOMAIN" "${{ secrets.DOMAIN || 'backbuy.cn' }}"
-          # EMAIL, TENCENT_CLOUD_SECRET_ID, TENCENT_CLOUD_SECRET_KEY are now optional for Caddy HTTP-01
-          [ -n "${{ secrets.EMAIL }}" ] && echo "EMAIL: configured" || echo "EMAIL: not set (optional for Caddy)"
-          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_ID }}" ] && echo "TENCENT_CLOUD_SECRET_ID: configured" || echo "TENCENT_CLOUD_SECRET_ID: not set (optional for Caddy)"
-          [ -n "${{ secrets.TENCENT_CLOUD_SECRET_KEY }}" ] && echo "TENCENT_CLOUD_SECRET_KEY: configured" || echo "TENCENT_CLOUD_SECRET_KEY: not set (optional for Caddy)"
-          
           require_secret "DEPLOY_HOST" "${{ secrets.DEPLOY_HOST }}"
           require_secret "DEPLOY_USER" "${{ secrets.DEPLOY_USER }}"
           require_secret "DEPLOY_KEY" "${{ secrets.DEPLOY_KEY }}"
-
           if [ "$missing" -ne 0 ]; then
-            echo "Deployment aborted because one or more required secrets are missing."
             exit 1
           fi
 
@@ -466,7 +328,6 @@ jobs:
           echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-          
           cat >> ~/.ssh/config << 'EOF'
           Host *
             ServerAliveInterval 30
@@ -477,85 +338,56 @@ jobs:
           EOF
           mkdir -p ~/.ssh/sockets
 
-      - name: Sync config files to server
-        run: |
-          set -e
-          REMOTE="${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
-          
-          max_retries=3
-          retry_delay=5
-          
-          retry_command() {
-            local cmd="$1"
-            for i in $(seq 1 $max_retries); do
-              echo "Attempt $i/$max_retries: $cmd"
-              if eval "$cmd"; then
-                return 0
-              fi
-              if [ $i -lt $max_retries ]; then
-                echo "Failed, retrying in ${retry_delay}s..."
-                sleep $retry_delay
-              fi
-            done
-            return 1
-          }
-
-          retry_command "ssh $REMOTE 'mkdir -p ~/one-recycle/deploy/docker ~/one-recycle/deploy/www/html ~/one-recycle/deploy/config ~/one-recycle/deploy/caddy'"
-          
-          retry_command "rsync -avz deploy/caddy/ $REMOTE:~/one-recycle/deploy/caddy/"
-          
-          retry_command "rsync -avz deploy/docker/docker-compose.production.yml $REMOTE:~/one-recycle/deploy/docker/"
-          
-          retry_command "rsync -avz deploy/www/html/ $REMOTE:~/one-recycle/deploy/www/html/"
-
-          echo "Config and static files synced to server"
-
-      - name: Deploy microservices
+      - name: Deploy microservices (git pull + build on server)
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'ENDSSH'
           set -e
           PROJECT_DIR="$HOME/one-recycle"
-          echo "=== Deploying microservices ==="
-          mkdir -p "$PROJECT_DIR/deploy"
+          DEPLOY_DIR="$PROJECT_DIR/deploy"
+          echo "=== Deploying microservices (server-side build) ==="
+
+          echo "=== Pulling latest code ==="
           cd "$PROJECT_DIR"
+          git fetch origin
+          git checkout ${{ github.ref_name }}
+          git pull origin ${{ github.ref_name }}
 
-          # 创建必要目录
           echo "=== Ensuring directories exist ==="
-          mkdir -p deploy/caddy deploy/data/postgres deploy/data/redis deploy/docker deploy/config
+          mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
-          # (Self-signed certificates handled by container entrypoint)
-
+          echo "=== Writing .env ==="
           {
-            echo "REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
-            echo "EMAIL=${{ secrets.EMAIL }}"
-            echo "TENCENT_CLOUD_SECRET_ID=${{ secrets.TENCENT_CLOUD_SECRET_ID }}"
-            echo "TENCENT_CLOUD_SECRET_KEY=${{ secrets.TENCENT_CLOUD_SECRET_KEY }}"
-            if [ -f deploy/config/.env.production ]; then
-              cat deploy/config/.env.production
+            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/docker/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/docker/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+              cat "$DEPLOY_DIR/config/.env.production"
             fi
-          } > deploy/docker/.env
+          } > "$DEPLOY_DIR/docker/.env"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|EMAIL|TENCENT_CLOUD_SECRET_ID|TENCENT_CLOUD_SECRET_KEY)=' deploy/docker/.env | sed -E 's/=(.*)$/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/docker/.env"
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/docker/.env" | sed 's/=.*/=<configured>/'
 
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
-
-          echo "=== Pulling images ==="
-          docker compose -f deploy/docker/docker-compose.production.yml pull 2>/dev/null || echo "Some images may not exist yet, will build if needed"
+          echo "=== Building images on server ==="
+          cd "$DEPLOY_DIR"
+          docker compose -f docker/docker-compose.production.yml build --parallel
 
           echo "=== Stopping old containers ==="
-          docker compose -f deploy/docker/docker-compose.production.yml down || true
+          docker compose -f docker/docker-compose.production.yml down || true
 
           echo "=== Starting microservices ==="
-          docker compose -f deploy/docker/docker-compose.production.yml up -d
+          docker compose -f docker/docker-compose.production.yml up -d
 
           echo "=== Waiting for services ==="
           sleep 15
 
-          docker compose -f deploy/docker/docker-compose.production.yml ps
-          docker compose -f deploy/docker/docker-compose.production.yml logs --tail=20
+          docker compose -f docker/docker-compose.production.yml ps
+          docker compose -f docker/docker-compose.production.yml logs --tail=20
+
+          echo "=== Cleaning up old images ==="
+          docker image prune -f
 
           echo "=== Microservices deployment completed ==="
           ENDSSH
@@ -619,13 +451,7 @@ jobs:
                   echo "::warning title=Certificate expiring soon::${host} certificate will expire in ${days_left} day(s)"
                   CERT_HEALTH_OK=0
                 fi
-              else
-                echo "::warning title=Certificate validity parse failed::Could not parse notAfter for ${host}"
-                CERT_HEALTH_OK=0
               fi
-            else
-              echo "::warning title=Certificate validity missing::Could not read notAfter for ${host}"
-              CERT_HEALTH_OK=0
             fi
           }
 
@@ -656,8 +482,8 @@ jobs:
           if [ "$APP_HEALTH_OK" -ne 1 ]; then
             echo "Application health failed, dumping container status and logs..."
             ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' <<'ENDSSH'
-            cd $HOME/one-recycle
-            docker compose -f deploy/docker/docker-compose.production.yml ps -a
+            cd $HOME/one-recycle/deploy
+            docker compose -f docker/docker-compose.production.yml ps -a
             echo "=== Caddy logs ==="
             docker logs one-recycle-caddy --tail=30 2>/dev/null || true
             echo "=== API Gateway logs ==="
@@ -673,5 +499,4 @@ jobs:
           [ "$CERT_HEALTH_OK" -eq 1 ] && echo "cert_health=PASS" || echo "cert_health=WARN"
           if [ "$CERT_HEALTH_OK" -ne 1 ]; then
             echo "::warning title=Certificate health degraded::Application is healthy but certificate checks reported issues"
-            echo "::warning title=Certificate troubleshooting::Run 'openssl s_client -connect ${DOMAIN}:443 -servername ${DOMAIN}' and verify DNS/SAN, issuer chain, and renewal job status"
           fi

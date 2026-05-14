@@ -1,4 +1,4 @@
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { useSafeArea } from '@/hooks/useSafeArea'
 import Icon from '@/components/Icon'

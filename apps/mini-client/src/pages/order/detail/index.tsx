@@ -2,7 +2,7 @@ import { Icon } from '@/components/Icon'
 import type { NormalizedOrderDetail } from '@/services/order'
 import { cancelOrder, confirmOrder, getOrderDetail, normalizeOrderDetail } from '@/services/order'
 import { OrderStatus } from '@/types'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { Step, Steps, Tag } from '@nutui/nutui-react-taro'
 import { Button, Image, ScrollView, Text, View } from '@tarojs/components'
 import Taro, { useRouter } from '@tarojs/taro'
@@ -156,15 +156,15 @@ export default function OrderDetailPage() {
           </View>
 
           <View className='courier-info'>
-            <Image className='avatar' src={(orderDetail.courier as any)?.avatar || ''} />
+            <Image className='avatar' src={orderDetail.courier?.avatar || ''} />
             <View className='info'>
-              <Text className='name'>{(orderDetail.courier as any)?.name} 快递员</Text>
+              <Text className='name'>{orderDetail.courier?.name} 快递员</Text>
               <View className='tags'>
                 <Tag type='primary' plain>实名认证</Tag>
                 <Tag type='warning' plain>专业回收</Tag>
               </View>
             </View>
-            <Button className='call-btn' onClick={() => Taro.makePhoneCall({ phoneNumber: (orderDetail.courier as any)?.phone || '' })}>
+            <Button className='call-btn' onClick={() => Taro.makePhoneCall({ phoneNumber: orderDetail.courier?.phone || '' })}>
               <Icon name='phone' size={16} />
             </Button>
           </View>
@@ -208,12 +208,12 @@ export default function OrderDetailPage() {
         </View>
         <View className='info-row'>
           <Text className='label'>上门地址</Text>
-          <Text className='value'>{(orderDetail.address as any)?.detail || ''}</Text>
+          <Text className='value'>{orderDetail.address?.detail || ''}</Text>
         </View>
       </View>
 
       <View className='action-bar'>
-        {orderDetail.status === OrderStatus.CANCELLED && (
+        {(orderDetail.status === OrderStatus.PENDING || orderDetail.status === OrderStatus.PENDING_PICKUP) && (
           <Button className='action-btn cancel' onClick={handleCancel}>取消订单</Button>
         )}
         {orderDetail.status === OrderStatus.PENDING_SETTLEMENT && (

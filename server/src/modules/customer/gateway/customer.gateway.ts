@@ -57,7 +57,7 @@ export class CustomerServiceGateway
     private readonly aiReplyService: AIReplyService,
   ) {}
 
-  async handleConnection(client: AuthenticatedSocket): Promise<void> {
+  handleConnection(client: AuthenticatedSocket): void {
     try {
       const token = client.handshake.auth.token || client.handshake.query.token;
       if (!token) {
@@ -76,7 +76,7 @@ export class CustomerServiceGateway
 
       if (client.isAgent) {
         this.addAgentSocket(client.userId, client.id);
-        await this.broadcastAgentStatus(client.userId, 'online');
+        this.broadcastAgentStatus(client.userId, 'online');
       } else {
         this.addUserSocket(client.userId, client.id);
       }
@@ -97,11 +97,11 @@ export class CustomerServiceGateway
     }
   }
 
-  async handleDisconnect(client: AuthenticatedSocket): Promise<void> {
+  handleDisconnect(client: AuthenticatedSocket): void {
     if (client.userId) {
       if (client.isAgent) {
         this.removeAgentSocket(client.userId, client.id);
-        await this.broadcastAgentStatus(client.userId, 'offline');
+        this.broadcastAgentStatus(client.userId, 'offline');
       } else {
         this.removeUserSocket(client.userId, client.id);
       }
@@ -125,7 +125,7 @@ export class CustomerServiceGateway
       }
 
       client.sessionId = data.sessionId;
-      client.join(`session:${data.sessionId}`);
+      void client.join(`session:${data.sessionId}`);
 
       const unreadCount = await this.messageService.markSessionAsRead(
         data.sessionId,
@@ -150,7 +150,7 @@ export class CustomerServiceGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { sessionId: string },
   ): void {
-    client.leave(`session:${data.sessionId}`);
+    void client.leave(`session:${data.sessionId}`);
     client.sessionId = undefined;
     client.emit('session_left', { sessionId: data.sessionId });
   }
@@ -182,7 +182,7 @@ export class CustomerServiceGateway
       if (!client.isAgent && message.senderType === 'USER') {
         const session = await this.sessionService.findOne(data.sessionId);
         if (session && session.type === 'AUTO') {
-          this.processAIReply(
+          void this.processAIReply(
             data.sessionId,
             client.userId,
             data.content || '',

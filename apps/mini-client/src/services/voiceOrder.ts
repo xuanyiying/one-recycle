@@ -77,20 +77,13 @@ export async function endVoiceSession(sessionId: string) {
  */
 export async function recognizeVoice(
   sessionId: string,
-  audioFile: File | string,
+  _audioFile: string,
   options?: {
     audioFormat?: string
     duration?: number
     recognizedText?: string
   }
 ): Promise<RecognizeResponse> {
-  // 如果是文件，使用 uploadFile
-  if (typeof audioFile !== 'string') {
-    // TODO: 实现文件上传识别
-    throw new Error('文件上传识别暂未实现')
-  }
-
-  // 如果是文本，直接调用识别接口
   return post<RecognizeResponse>('/voice-order/recognize', {
     sessionId,
     recognizedText: options?.recognizedText,

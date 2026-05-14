@@ -1,92 +1,202 @@
-syntax = "proto3";
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '@/prisma/prisma.service';
+import { Account, AccountType, Prisma, TransactionType } from '@prisma/client';
+import { toDecimal, toNumber } from '@/common/utils/decimal.util';
 
-package account;
+@Injectable()
+export class AccountService {
+  private readonly logger = new Logger(AccountService.name);
+  private readonly CARBON_SAVING_RATE: number;
 
-service AccountService {
-  rpc GetUser(GetUserRequest) returns (UserResponse);
-  rpc CreateUser(CreateUserRequest) returns (UserResponse);
-  rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
-  rpc CreateAddress(CreateAddressRequest) returns (AddressResponse);
-  rpc GetAddresses(GetAddressesRequest) returns (AddressListResponse);
-  rpc UpdateAddress(UpdateAddressRequest) returns (AddressResponse);
-  rpc DeleteAddress(DeleteAddressRequest) returns (Empty);
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {
+    this.CARBON_SAVING_RATE = this.configService.get<number>(
+      'CARBON_SAVING_RATE',
+      0.02,
+    );
+  }
+
+  /**
+   * 创建新账户
+   * 支持传入事务客户端以确保原子性
+   */
+  async createAccount(
+    userId: bigint,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Account> {
+    const client = tx || this.prisma;
+
+    try {
+      const account = await client.account.create({
+        data: {
+          userId,
+          accountType: AccountType.WALLET,
+          accountDetails: {},
+          availableBalance: 0,
+          frozenBalance: 0,
+          totalIncome: 0,
+          totalWithdrawal: 0,
+        },
+      });
+
+      this.logger.log(`Account created successfully for user ${userId}`);
+      return account;
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to create account for user ${userId}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  async findAccountByUserId(
+    userId: string | number | bigint,
+  ): Promise<Account> {
+    const id = BigInt(userId);
+
+    const account = await this.prisma.account.upsert({
+      where: {
+        userId_accountType: { userId: id, accountType: AccountType.WALLET },
+      },
+      update: {},
+      create: {
+        userId: id,
+        accountType: AccountType.WALLET,
+        accountDetails: {},
+        availableBalance: 0,
+        frozenBalance: 0,
+        totalIncome: 0,
+        totalWithdrawal: 0,
+      },
+    });
+
+    return account;
+  }
+
+  async getAccountStats(userId: string | number | bigint) {
+    const id = BigInt(userId);
+    const account = await this.findAccountByUserId(id);
+
+    const totalOrders = await this.prisma.order.count({
+      where: { userId: id },
+    });
+
+    const totalIncome = toNumber(account.totalIncome);
+
+    return {
+      totalOrders,
+      totalIncome,
+      savedCarbon: totalIncome * this.CARBON_SAVING_RATE,
+    };
+  }
+
+  async getTransactions(
+    userId: string | number | bigint,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+    const id = BigInt(userId);
+
+    const [data, total] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where: { account: { userId: id } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.transaction.count({
+        where: { account: { userId: id } },
+      }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async deposit(
+    userId: bigint,
+    amount: number,
+    orderId: string,
+    description: string = 'Order Settlement',
+    tx?: Prisma.TransactionClient,
+  ): Promise<Account> {
+    const amountDecimal = toDecimal(amount);
+
+    const run = async (client: Prisma.TransactionClient) => {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const account = await client.account.findUnique({
+          where: {
+            userId_accountType: {
+              userId,
+              accountType: AccountType.WALLET,
+            },
+          },
+        });
+
+        if (!account) {
+          throw new Error(`Account not found for user ${userId}`);
+        }
+
+        const balanceBefore = toDecimal(account.availableBalance);
+        const balanceAfter = balanceBefore.plus(amountDecimal);
+
+        try {
+          await client.transaction.create({
+            data: {
+              accountId: account.id,
+              type: TransactionType.ORDER_INCOME,
+              amount: amountDecimal,
+              balanceBefore,
+              balanceAfter,
+              orderId,
+              description,
+            },
+          });
+        } catch (error: any) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P2002'
+          ) {
+            return account;
+          }
+          throw error;
+        }
+
+        const updatedCount = await client.account.updateMany({
+          where: { id: account.id, version: account.version },
+          data: {
+            availableBalance: { increment: amountDecimal },
+            totalIncome: { increment: amountDecimal },
+            version: { increment: 1 },
+          },
+        });
+
+        if (updatedCount.count !== 1) {
+          continue;
+        }
+
+        return client.account.findUniqueOrThrow({
+          where: { id: account.id },
+        });
+      }
+
+      throw new Error('ACCOUNT_VERSION_CONFLICT');
+    };
+
+    if (tx) {
+      return run(tx);
+    }
+
+    return this.prisma.$transaction(async (prismaTx) => run(prismaTx));
+  }
 }
-
-message GetUserRequest {
-  int64 id = 1;
-}
-
-message CreateUserRequest {
-  string mobile = 1;
-  string nickname = 2;
-  string avatar_url = 3;
-}
-
-message UpdateUserRequest {
-  int64 id = 1;
-  string nickname = 2;
-  string avatar_url = 3;
-}
-
-message CreateAddressRequest {
-  int64 user_id = 1;
-  string name = 2;
-  string mobile = 3;
-  string province = 4;
-  string city = 5;
-  string district = 6;
-  string town = 7;
-  string street = 8;
-  string zipCode = 9;
-  string detail = 10;
-  bool is_default = 11;
-}
-
-message GetAddressesRequest {
-  int64 user_id = 1;
-}
-
-message UpdateAddressRequest {
-  int64 id = 1;
-  string name = 2;
-  string mobile = 3;
-  string province = 4;
-  string city = 5;
-  string district = 6;
-  string detail = 7;
-  bool is_default = 8;
-}
-
-message DeleteAddressRequest {
-  int64 id = 1;
-}
-
-message UserResponse {
-  int64 id = 1;
-  string mobile = 2;
-  string nickname = 3;
-  string avatar_url = 4;
-  string status = 5;
-  string created_at = 6;
-  string updated_at = 7;
-}
-
-message AddressResponse {
-  int64 id = 1;
-  int64 user_id = 2;
-  string name = 3;
-  string mobile = 4;
-  string province = 5;
-  string city = 6;
-  string district = 7;
-  string detail = 8;
-  bool is_default = 9;
-  string created_at = 10;
-  string updated_at = 11;
-}
-
-message AddressListResponse {
-  repeated AddressResponse addresses = 1;
-}
-
-message Empty {}

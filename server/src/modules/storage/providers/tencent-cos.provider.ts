@@ -401,9 +401,10 @@ export class TencentCosService implements OssService {
   async getPresignedUploadUrl(
     key: string,
     expires: number = 3600,
-    contentType?: string,
+    _contentType?: string,
   ): Promise<string> {
     try {
+      await Promise.resolve();
       const url = this.cosClient.getObjectUrl({
         Bucket: this.bucket,
         Region: this.region,
@@ -428,6 +429,7 @@ export class TencentCosService implements OssService {
     expires: number = 3600,
   ): Promise<string> {
     try {
+      await Promise.resolve();
       const url = this.cosClient.getObjectUrl({
         Bucket: this.bucket,
         Region: this.region,

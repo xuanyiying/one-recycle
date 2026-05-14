@@ -1,4 +1,4 @@
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import React from 'react'
 import Taro from '@tarojs/taro'
 import { Image } from '@tarojs/components'

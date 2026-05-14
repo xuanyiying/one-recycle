@@ -25,10 +25,6 @@ export const customerService = {
     formData.append('fileType', 'IMAGE');
     formData.append('category', 'CUSTOMER_SERVICE');
 
-    return apiClient.post('/storage/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return apiClient.upload('/storage/upload', formData);
   },
 };

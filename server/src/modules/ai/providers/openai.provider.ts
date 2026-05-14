@@ -268,11 +268,12 @@ export class OpenAIProvider implements IAIProvider {
    * 创建错误对象
    */
   private createError(code: string, message: string, rawError?: any): AIError {
-    return {
+    return new AIError(
       code,
       message,
-      provider: AIProviderType.OPENAI,
+      AIProviderType.OPENAI,
+      undefined,
       rawError,
-    };
+    );
   }
 }

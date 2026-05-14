@@ -222,7 +222,7 @@ async function runDemo() {
 
 // 如果直接运行此文件，则执行演示
 if (require.main === module) {
-  runDemo();
+  void runDemo();
 }
 
 export {

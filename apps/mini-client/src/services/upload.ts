@@ -59,7 +59,7 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
   try {
     const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/api/upload/image`,
+      url: `${baseUrl}/upload/image`,
       filePath,
       name: 'image',
       header: {
@@ -73,7 +73,7 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
       const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
-          url: `${baseUrl}/api/upload/image`,
+          url: `${baseUrl}/upload/image`,
           filePath,
           name: 'image',
           header: {
@@ -130,7 +130,7 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
   try {
     const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/api/upload/avatar`,
+      url: `${baseUrl}/upload/avatar`,
       filePath,
       name: 'avatar',
       header: {
@@ -144,7 +144,7 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
       const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
-          url: `${baseUrl}/api/upload/avatar`,
+          url: `${baseUrl}/upload/avatar`,
           filePath,
           name: 'avatar',
           header: {

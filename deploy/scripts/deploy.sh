@@ -32,9 +32,9 @@ DEPLOY_DATA_DIR=./data
 EOF
         error "Please edit $CONFIG and run again"
     fi
-    
+
     source "$CONFIG"
-    
+
     if [[ -z "$DB_PASSWORD" || -z "$REDIS_PASSWORD" ]]; then
         error "DB_PASSWORD and REDIS_PASSWORD must be set in $CONFIG"
     fi
@@ -52,36 +52,45 @@ setup_dirs() {
 start() {
     cd "$DEPLOY_DIR"
     export DOMAIN EMAIL DB_PASSWORD REDIS_PASSWORD
-    docker compose -f docker/docker-compose.production.yml up -d --build
+    docker compose up -d --build
     log "Services started"
 }
 
 stop() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker/docker-compose.production.yml down
+    docker compose down
     log "Services stopped"
 }
 
 update() {
+    cd "$ROOT"
+    log "Pulling latest code..."
+    git pull
+
     cd "$DEPLOY_DIR"
-    docker compose -f docker/docker-compose.production.yml pull
-    docker compose -f docker/docker-compose.production.yml up -d --build
+    export DOMAIN EMAIL DB_PASSWORD REDIS_PASSWORD
+    log "Building images..."
+    docker compose build --parallel api-gateway admin-web
+    log "Restarting services..."
+    docker compose up -d
+    log "Cleaning up old images..."
+    docker image prune -f
     log "Services updated"
 }
 
 logs() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker/docker-compose.production.yml logs -f "$@"
+    docker compose logs -f "$@"
 }
 
 migrate() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker/docker-compose.production.yml exec api-gateway npx prisma db push
+    docker compose exec api-gateway npx prisma db push
 }
 
 status() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker/docker-compose.production.yml ps
+    docker compose ps
 }
 
 cmd=${1:-deploy}
@@ -108,6 +117,7 @@ case $cmd in
         ;;
     update)
         load_config
+        check_deps
         update
         ;;
     logs)

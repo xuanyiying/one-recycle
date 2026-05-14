@@ -11,7 +11,7 @@ const env: Partial<NodeJS.ProcessEnv> = typeof process !== 'undefined' ? process
 export const API_BASE_URL = env.TARO_APP_API_BASE_URL || env.API_BASE_URL || 'https://backbuy.cn/api'
 
 interface RequestOptions {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+    method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
     data?: any
     header?: Record<string, string>
     timeout?: number
@@ -195,6 +195,10 @@ export function put<T = any>(url: string, data?: any) {
 
 export function del<T = any>(url: string) {
     return request<T>(url, { method: 'DELETE' })
+}
+
+export function patch<T = any>(url: string, data?: any) {
+    return request<T>(url, { method: 'PATCH', data })
 }
 
 export const clearCache = (pattern?: string | RegExp) => {

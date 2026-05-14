@@ -1,4 +1,4 @@
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import { useState, useEffect, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'

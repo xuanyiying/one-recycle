@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro'
-import logger from './logger'
+import { logger } from './logger'
 
 /**
  * Storage Key 常量定义

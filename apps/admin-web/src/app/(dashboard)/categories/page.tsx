@@ -37,6 +37,7 @@ import {
   UploadCloud
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -111,7 +112,7 @@ export default function CategoriesPage() {
   const compressIconToBlob = (file: File) => {
     return new Promise<{ blob: Blob; size: number }>((resolve, reject) => {
       const reader = new FileReader();
-      const img = new Image();
+      const img = new window.Image();
       reader.onload = () => {
         img.src = reader.result as string;
       };
@@ -415,31 +416,16 @@ export default function CategoriesPage() {
       pricingRule: pricingPayload.pricingRule,
     };
 
-    console.log('[Categories] Saving category:', {
-      editingCategoryId,
-      payloadSize: JSON.stringify(payload).length,
-      hasIconUrl: !!payload.iconUrl,
-      iconUrlLength: payload.iconUrl?.length || 0,
-      apiBaseURL: process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'default',
-    });
-
     setIsSaving(true);
     try {
       const saved = editingCategoryId
         ? await categoryService.updateCategory(editingCategoryId, payload)
         : await categoryService.createCategory(payload);
-      console.log('[Categories] Category saved successfully:', saved);
       toast.success(editingCategoryId ? '分类已更新' : '分类已创建');
       setEditingCategoryId(saved.id);
       setCategorySlug(saved.seo?.slug || slugValue);
       await loadCategories();
     } catch (error: any) {
-      console.error('[Categories] Save failed:', {
-        status: error?.response?.status,
-        message: error?.message,
-        data: error?.response?.data,
-        isAxiosError: error?.isAxiosError,
-      });
       const errorMessage = error?.response?.data?.message || error?.message || '保存失败，请检查输入信息';
       toast.error(errorMessage);
     } finally {
@@ -478,9 +464,11 @@ export default function CategoriesPage() {
                 <span className="w-6 mr-2" />
               )}
               {category.iconUrl && (
-                <img
+                <Image
                   src={category.iconUrl}
                   alt={category.name}
+                  width={24}
+                  height={24}
                   className="w-6 h-6 mr-2 rounded object-cover"
                 />
               )}
@@ -874,7 +862,7 @@ export default function CategoriesPage() {
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-secondary-100 bg-secondary-50">
                   {effectiveIcon ? (
-                    <img src={effectiveIcon} alt="分类图标" className="h-10 w-10" />
+                    <Image src={effectiveIcon} alt="分类图标" width={40} height={40} className="h-10 w-10" />
                   ) : (
                     <ImageIcon className="h-6 w-6 text-secondary-400" />
                   )}
@@ -937,7 +925,7 @@ export default function CategoriesPage() {
                         setCustomIconName('');
                       }}
                     >
-                      <img src={icon.url} alt={icon.name || '图标'}  className="h-8 w-8 rounded-lg" />
+                      <Image src={icon.url} alt={icon.name || '图标'} width={32} height={32} className="h-8 w-8 rounded-lg" />
                       <span className={cn("flex-1 truncate", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground")}>{icon.name || ''}</span>
                       <GripVertical className={cn("h-4 w-4", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground/50")} />
                     </div>

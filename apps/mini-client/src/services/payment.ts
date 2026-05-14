@@ -1,6 +1,4 @@
-import { post, get } from '../utils/request'
-
-// 支付相关类型定义
+import { get, post, put } from '../utils/request'
 
 export enum PaymentStatus {
     PENDING = 'PENDING',
@@ -35,19 +33,18 @@ export interface PaymentInfo {
     updatedAt: string;
 }
 
-// 支付相关 API 服务
-
-// 创建支付
 export const createPayment = (paymentData: CreatePaymentData) => {
-    return post<PaymentInfo>('/payment/payments', paymentData)
+    return post<PaymentInfo>('/payments', paymentData)
 }
 
-// 获取支付信息
 export const getPaymentInfo = (paymentId: string) => {
-    return get<PaymentInfo>(`/payment/payments/${paymentId}`)
+    return get<PaymentInfo>(`/payments/${paymentId}`)
 }
 
-// 更新支付状态
-export const updatePaymentStatus = (paymentId: string, status: PaymentStatus) => {
-    return post<PaymentInfo>(`/payment/payments/${paymentId}/status`, { status })
+export const updatePaymentStatus = (transactionId: string, status: PaymentStatus) => {
+    return put<PaymentInfo>(`/payments/${transactionId}/status`, { status })
+}
+
+export const getPaymentByOrderId = (orderId: string) => {
+    return get<PaymentInfo>(`/payments/order/${orderId}`)
 }

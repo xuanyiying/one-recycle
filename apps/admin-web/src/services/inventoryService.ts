@@ -227,9 +227,10 @@ export class InventoryService {
       }
     });
 
-    return apiClient.get(`/inventory/export?${queryParams.toString()}`, {
+    const response = await apiClient.getInstance().get(`/inventory/export?${queryParams.toString()}`, {
       responseType: 'blob',
     });
+    return response.data;
   }
 
   /**

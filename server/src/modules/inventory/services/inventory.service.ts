@@ -639,38 +639,38 @@ export class InventoryService {
     }
   }
 
-  async exportInventory(query: any): Promise<any[]> {
+  exportInventory(_query: any): any[] {
     return [];
   }
 
-  async batchDelete(ids: string[]): Promise<void> {
+  batchDelete(_ids: string[]): void {
     // Batch delete logic
   }
 
-  async adjustInventory(
-    id: bigint,
-    data: { type: string; quantity: number; reason: string },
-  ): Promise<any> {
+  adjustInventory(
+    _id: bigint,
+    _data: { type: string; quantity: number; reason: string },
+  ): any {
     return {};
   }
 
-  async getAdjustments(id: bigint): Promise<any[]> {
+  getAdjustments(_id: bigint): any[] {
     return [];
   }
 
-  async markAlertAsRead(id: bigint): Promise<void> {
+  markAlertAsRead(_id: bigint): void {
     // Mark alert as read
   }
 
-  async batchMarkAlertsAsRead(ids: string[]): Promise<void> {
+  batchMarkAlertsAsRead(_ids: string[]): void {
     // Batch mark alerts as read
   }
 
-  async getValueTrend(days: number): Promise<any[]> {
+  getValueTrend(_days: number): any[] {
     return [];
   }
 
-  async getTurnover(): Promise<any[]> {
+  getTurnover(): any[] {
     return [];
   }
 }

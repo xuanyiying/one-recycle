@@ -268,13 +268,13 @@ export class NotificationController {
   }
 
   @Post('upload-image')
-  async uploadImage(@Body() data: { file: string }): Promise<{ url: string }> {
+  uploadImage(@Body() _data: { file: string }): { url: string } {
     this.logger.log(`Uploading notification image`);
     return { url: '' };
   }
 
   @Post('preview')
-  async previewNotification(@Body() data: any): Promise<{ html: string }> {
+  previewNotification(@Body() _data: any): { html: string } {
     this.logger.log(`Previewing notification`);
     return { html: '' };
   }

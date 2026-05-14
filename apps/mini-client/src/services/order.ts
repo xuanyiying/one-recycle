@@ -2,7 +2,7 @@ import type { ApiResponse } from '@/types'
 import { logger } from '@/utils/logger'
 import { CreateOrderResponse, Item, OrderPricing, OrderSubmission } from '../types/order'
 import errorHandler, { RetryOptions, retryWithBackoff } from '../utils/errorHandler'
-import { get, post, put } from '../utils/request'
+import { get, patch, post, put } from '../utils/request'
 
 interface OrderListResponse {
   success: boolean
@@ -65,6 +65,24 @@ export interface NormalizedOrder {
   notes?: string
 }
 
+export interface OrderAddress {
+  name: string
+  phone: string
+  detail: string
+  province?: string
+  city?: string
+  district?: string
+  [key: string]: unknown
+}
+
+export interface OrderCourier {
+  id?: string | number
+  name: string
+  phone: string
+  avatar?: string
+  [key: string]: unknown
+}
+
 export interface NormalizedOrderDetail {
   id: string
   status: string
@@ -72,14 +90,14 @@ export interface NormalizedOrderDetail {
   timeline: { status: string; text: string; time: string; completed: boolean }[]
   categoryName: string
   items: RawOrderItem[]
-  address: unknown
+  address: OrderAddress
   appointmentTime: string
   estimatedPrice: number
   serviceFee: number
   totalPrice: number
   settlementAmount?: number
   settlementTime?: string
-  courier?: unknown
+  courier?: OrderCourier
   createTime: string
 }
 
@@ -229,7 +247,7 @@ export const getOrderDetail = async (orderId: string | number) => {
 }
 
 export const cancelOrder = (orderId: string | number) => {
-  return put<ApiResponse>(`/orders/${orderId}/cancel`)
+  return patch<ApiResponse>(`/orders/${orderId}/cancel`)
 }
 
 export const updateOrderStatus = (orderId: string | number, status: string) => {

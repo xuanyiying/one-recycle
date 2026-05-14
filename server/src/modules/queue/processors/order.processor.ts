@@ -105,7 +105,7 @@ export class OrderProcessor {
           Math.round(((totalRange.min + totalRange.max) / 2) * 100) / 100;
       } catch (pricingError) {
         this.logger.warn(
-          `Pricing service failed for order ${orderId}, fallback to estimatedPrice: ${pricingError}`,
+          `Pricing service failed for order ${orderId}, fallback to estimatedPrice: ${pricingError as Error}`,
         );
         totalAmount = items.reduce(
           (sum, item) => sum + item.estimatedPrice * item.quantity,

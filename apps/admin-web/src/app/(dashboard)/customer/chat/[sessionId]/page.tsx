@@ -11,6 +11,7 @@ import { customerService } from '@/services/customerService';
 import { customerSocketService, Message } from '@/services/customerSocketService';
 import { Bot, History, Image, Loader2, Send, User, X } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import NextImage from 'next/image';
 
 interface Session {
   id: string;
@@ -276,9 +277,11 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
                   )}
                   <div className="max-w-[70%]">
                     {msg.messageType === 'IMAGE' ? (
-                      <img
-                        src={msg.mediaUrl}
+                      <NextImage
+                        src={msg.mediaUrl || ''}
                         alt="图片"
+                        width={200}
+                        height={200}
                         className="max-w-full rounded-lg cursor-pointer"
                         onClick={() => window.open(msg.mediaUrl, '_blank')}
                       />

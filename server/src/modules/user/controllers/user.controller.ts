@@ -47,7 +47,7 @@ export class UserController {
   }
 
   @Get('activities')
-  async getUserActivities(@Query('userId') userId: string): Promise<any[]> {
+  getUserActivities(@Query('userId') userId: string): any[] {
     return this.userService.getUserActivities(userId);
   }
 

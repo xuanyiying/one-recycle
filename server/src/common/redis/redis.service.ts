@@ -59,7 +59,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       // 测试连接
       await this.client.ping();
     } catch (error) {
-      this.logger.error(`Failed to initialize Redis: ${error}`);
+      this.logger.error(`Failed to initialize Redis: ${error as Error}`);
       if (!this.isDevelopment) {
         throw error;
       }

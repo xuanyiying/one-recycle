@@ -118,7 +118,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
     data: { phone: string; template: string; params: Record<string, any> },
     config: Record<string, any>,
   ): Promise<{ messageId: string; status: string }> {
-    // 阿里云 SMS 实现
+    await Promise.resolve();
     const { accessKeyId, accessKeySecret } = config;
     if (!accessKeyId || !accessKeySecret) {
       throw new Error('Aliyun SMS credentials not configured');
@@ -145,7 +145,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
     data: { phone: string; template: string; params: Record<string, any> },
     config: Record<string, any>,
   ): Promise<{ messageId: string; status: string }> {
-    // 腾讯云 SMS 实现
+    await Promise.resolve();
     const { secretId, secretKey } = config;
     if (!secretId || !secretKey) {
       throw new Error('Tencent SMS credentials not configured');
@@ -832,7 +832,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
   }
 
   async getProviders(): Promise<NotificationProvider[]> {
-    // 从配置中读取提供商设置
+    await Promise.resolve();
     const smsProvider = this.configService.get<string>(
       'SMS_PROVIDER',
       'generic',

@@ -66,7 +66,7 @@ export class DispatchGrpcController {
 
   @GrpcMethod('DispatchService', 'ListAssignments')
   async listAssignments(
-    data: ListAssignmentsRequest,
+    _data: ListAssignmentsRequest,
   ): Promise<ListAssignmentsResponse> {
     const items = await this.dispatchService.getAllAssignments();
     return {

@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import Taro from '@tarojs/taro'
 import { Storage } from '@/utils/storage'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/logger'
 import type { User } from '@/types'
 
 export interface AppOrder {

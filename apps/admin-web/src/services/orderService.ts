@@ -304,10 +304,11 @@ class OrderService {
    * 导出订单数据
    */
   async exportOrders(params?: OrderQueryParams): Promise<Blob> {
-    return await apiClient.getInstance().get(`${this.baseUrl}/export`, {
+    const response = await apiClient.getInstance().get(`${this.baseUrl}/export`, {
       params,
       responseType: 'blob',
     });
+    return response.data;
   }
 
   /**

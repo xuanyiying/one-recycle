@@ -685,7 +685,14 @@ export default function SettingsPage() {
                             <p className="font-medium">启用自动备份</p>
                             <p className="text-sm text-muted-foreground">按计划自动创建备份</p>
                           </div>
-                          <Switch checked={true} onCheckedChange={() => {}} />
+                          <Switch
+                            checked={backupSettings?.autoBackup ?? false}
+                            onCheckedChange={(checked) => {
+                              if (backupSettings) {
+                                setBackupSettings({ ...backupSettings, autoBackup: checked });
+                              }
+                            }}
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">备份频率</label>

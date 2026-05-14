@@ -191,7 +191,7 @@ export class FinanceService {
       });
 
       this.logger.log(
-        `Tenant recharge completed: orderNo=${order.orderNo}, tenantId=${tenantId}, amount=${rechargeAmount}`,
+        `Tenant recharge completed: orderNo=${order.orderNo}, tenantId=${tenantId}, amount=${rechargeAmount.toString()}`,
       );
 
       return {
@@ -234,12 +234,12 @@ export class FinanceService {
           balanceBefore: wallet.balance,
           balanceAfter: updatedWallet.balance,
           relatedOrderNo: order.orderNo,
-          description: `平台充值 ${rechargeAmount} 元`,
+          description: `平台充值 ${rechargeAmount.toString()} 元`,
         },
       });
 
       this.logger.log(
-        `Platform recharge completed: orderNo=${order.orderNo}, amount=${rechargeAmount}`,
+        `Platform recharge completed: orderNo=${order.orderNo}, amount=${rechargeAmount.toString()}`,
       );
 
       return updatedWallet;

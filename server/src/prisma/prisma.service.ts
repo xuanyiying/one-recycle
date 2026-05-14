@@ -8,6 +8,15 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
+interface PrismaQueryEvent {
+  query: string;
+  duration: number;
+}
+
+interface PrismaErrorEvent {
+  message: string;
+}
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -16,12 +25,10 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    // Create PostgreSQL connection pool
     const connectionString = process.env.DATABASE_URL;
     const pool = new Pool({ connectionString });
     const adapter = new PrismaPg(pool);
 
-    // Initialize PrismaClient with adapter (Prisma 7 best practice)
     super({
       adapter,
       log: [
@@ -35,13 +42,15 @@ export class PrismaService
 
     const enableQueryLog = process.env.DB_LOG_QUERIES === 'true';
     if (enableQueryLog) {
-      (this as any).$on('query', (e: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      (this as any).$on('query', (e: PrismaQueryEvent) => {
         this.logger.debug(`Query: ${e.query}`);
         this.logger.debug(`Duration: ${e.duration}ms`);
       });
     }
 
-    (this as any).$on('error', (e: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    (this as any).$on('error', (e: PrismaErrorEvent) => {
       this.logger.error(`Error: ${e.message}`);
     });
   }

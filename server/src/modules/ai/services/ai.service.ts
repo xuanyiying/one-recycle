@@ -45,9 +45,9 @@ export class AIService implements OnModuleInit {
   /**
    * 模块初始化时加载所有配置的提供商
    */
-  async onModuleInit() {
+  onModuleInit() {
     this.logger.log('Initializing AI Service...');
-    await this.loadProviders();
+    this.loadProviders();
     this.logger.log(`Loaded ${this.providers.size} AI providers`);
   }
 
@@ -338,11 +338,13 @@ export class AIService implements OnModuleInit {
 
     return {
       success: false,
-      error: lastError || {
-        code: 'NO_PROVIDER_AVAILABLE',
-        message: '没有可用的 AI 提供商',
-        provider: AIProviderType.OPENAI,
-      },
+      error:
+        lastError ||
+        new AIError(
+          'NO_PROVIDER_AVAILABLE',
+          '没有可用的 AI 提供商',
+          AIProviderType.OPENAI,
+        ),
       latency,
       retryCount,
     };

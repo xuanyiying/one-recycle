@@ -1,4 +1,4 @@
-import logger from '@/utils/logger';
+import { logger } from '@/utils/logger';
 import { Storage } from '@/utils/storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';

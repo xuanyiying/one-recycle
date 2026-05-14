@@ -8,7 +8,7 @@ export interface PointsStats {
   todayOrders: number;
   todayPointsIssued: number;
   topProducts: Array<{
-    id: bigint;
+    id: string;
     name: string;
     coverImage: string | null;
     points: number;
@@ -17,7 +17,7 @@ export interface PointsStats {
 }
 
 export interface PointsProduct {
-  id: bigint;
+  id: string;
   name: string;
   description: string | null;
   coverImage: string | null;
@@ -35,18 +35,18 @@ export interface PointsProduct {
 }
 
 export interface PointsOrder {
-  id: bigint;
+  id: string;
   orderNo: string;
-  userId: bigint;
-  productId: bigint;
+  userId: string;
+  productId: string;
   productName: string;
   productImage: string | null;
   productType: 'VIRTUAL' | 'PHYSICAL';
   points: number;
   quantity: number;
   status: 'PENDING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
-  addressId: bigint | null;
-  addressSnapshot: any;
+  addressId: string | null;
+  addressSnapshot: Record<string, unknown> | null;
   logisticsNo: string | null;
   logisticsCompany: string | null;
   remark: string | null;
@@ -55,13 +55,13 @@ export interface PointsOrder {
   createdAt: string;
   updatedAt: string;
   user?: {
-    id: bigint;
+    id: string;
     nickname: string | null;
     avatarUrl: string | null;
     mobile: string | null;
   };
   product?: {
-    id: bigint;
+    id: string;
     name: string;
     coverImage: string | null;
   };
@@ -168,29 +168,23 @@ export interface UpdateTaskDto {
   type?: string;
   points?: number;
   icon?: string;
-  config?: any;
+  config?: Record<string, unknown>;
   sortOrder?: number;
   isActive?: boolean;
 }
 
 export const pointsTaskApi = {
-  /**
-   * 获取任务列表
-   */
   async getTasks() {
     return await apiClient.get('/admin/points/tasks');
   },
 
-  /**
-   * 创建任务
-   */
   async createTask(data: {
     name: string;
     description?: string;
     type: string;
     points: number;
     icon?: string;
-    config?: any;
+    config?: Record<string, unknown>;
     sortOrder?: number;
   }) {
     return await apiClient.post('/admin/points/tasks', data);

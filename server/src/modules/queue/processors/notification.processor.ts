@@ -434,7 +434,7 @@ export class NotificationProcessor {
    * 任务完成时的钩子
    */
   @OnQueueCompleted()
-  onCompleted(job: Job, result: any): void {
+  onCompleted(job: Job, _result: any): void {
     this.logger.log(`Job ${job.id} completed successfully`);
   }
 

@@ -49,7 +49,7 @@ export class CustomerServiceController {
     private readonly ticketService: TicketService,
     private readonly knowledgeService: KnowledgeService,
     private readonly quickReplyService: QuickReplyService,
-  ) { }
+  ) {}
 
   @Post('sessions')
   @ApiOperation({ summary: '创建客服会话' })

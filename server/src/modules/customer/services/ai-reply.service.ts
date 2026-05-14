@@ -150,7 +150,7 @@ export class AIReplyService {
           this.addToHistory(sessionId, { role: 'assistant', content });
 
           // 记录对话
-          await this.logConversation(sessionId, userId, message, {
+          this.logConversation(sessionId, userId, message, {
             intent: UserIntent.GENERAL_QUESTION,
             confidence: 0.9,
             entities: {},
@@ -174,7 +174,7 @@ export class AIReplyService {
     // 传统基于关键词的意图识别方法
     const intentResult = await this.detectIntent(message);
 
-    await this.logConversation(sessionId, userId, message, intentResult);
+    this.logConversation(sessionId, userId, message, intentResult);
 
     let response: AIResponse;
 
@@ -204,7 +204,7 @@ export class AIReplyService {
         response = await this.handleGeneralQuestion(message, intentResult);
         break;
       default:
-        response = await this.handleUnknownIntent(message, intentResult);
+        response = this.handleUnknownIntent(message, intentResult);
     }
 
     return response;

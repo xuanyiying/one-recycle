@@ -188,16 +188,20 @@ export class StaffService {
     const refreshToken = crypto.randomBytes(32).toString('hex');
     const expiresIn = this.accessTokenExpiresInSeconds;
 
-    this.redisService.set(
-      `staff:refresh:${refreshToken}`,
-      {
-        staffId: staff.id.toString(),
-        tenantId: staff.tenantId.toString(),
-      },
-      this.refreshTokenExpiresInSeconds,
-    ).catch(err => {
-      this.logger.error(`Failed to store refresh token in Redis: ${err.message}`);
-    });
+    this.redisService
+      .set(
+        `staff:refresh:${refreshToken}`,
+        {
+          staffId: staff.id.toString(),
+          tenantId: staff.tenantId.toString(),
+        },
+        this.refreshTokenExpiresInSeconds,
+      )
+      .catch((err) => {
+        this.logger.error(
+          `Failed to store refresh token in Redis: ${err.message}`,
+        );
+      });
 
     return {
       accessToken,

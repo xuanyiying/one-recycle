@@ -154,12 +154,26 @@ export interface AICallResult {
 /**
  * AI 错误信息
  */
-export interface AIError {
+export class AIError extends Error {
   code: string;
-  message: string;
   provider: AIProviderType;
   statusCode?: number;
   rawError?: any;
+
+  constructor(
+    code: string,
+    message: string,
+    provider: AIProviderType,
+    statusCode?: number,
+    rawError?: any,
+  ) {
+    super(message);
+    this.name = 'AIError';
+    this.code = code;
+    this.provider = provider;
+    this.statusCode = statusCode;
+    this.rawError = rawError;
+  }
 }
 
 /**

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Statistic } from '@/components/ui/statistic';
 import { Table } from '@/components/ui/table';
@@ -149,9 +150,11 @@ export default function PointsOverviewPage() {
                 <div key={product.id.toString()} className="text-center">
                   <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
                     {product.coverImage ? (
-                      <img
+                      <Image
                         src={product.coverImage}
                         alt={product.name}
+                        width={200}
+                        height={200}
                         className="w-full h-full object-cover"
                       />
                     ) : (

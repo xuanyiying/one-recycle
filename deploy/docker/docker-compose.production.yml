@@ -2,10 +2,10 @@
 # OneRecycle 生产环境 Docker Compose 配置 (微服务架构)
 # 每个微服务通过 SERVICE_NAME 环境变量启动不同模式
 # 镜像统一, 入口通过 SERVICE_NAME 区分
+# 本地构建，无需推送/拉取远程镜像仓库
 # ============================================================================
 
 services:
-  # PostgreSQL 数据库
   postgres:
     image: postgres:15-alpine
     container_name: one-recycle-postgres
@@ -31,7 +31,6 @@ services:
           cpus: '1'
           memory: 1G
 
-  # Redis 缓存
   redis:
     image: redis:7-alpine
     container_name: one-recycle-redis
@@ -55,9 +54,11 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # API Gateway - 统一 HTTP 入口
   api-gateway:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-api-gateway
     restart: always
     environment:
@@ -100,9 +101,11 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  # 账户服务 (gRPC)
   account-service:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-account-service
     restart: always
     environment:
@@ -137,9 +140,11 @@ services:
           cpus: '0.3'
           memory: 384M
 
-  # 订单服务 (gRPC)
   order-service:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-order-service
     restart: always
     environment:
@@ -179,9 +184,11 @@ services:
           cpus: '0.3'
           memory: 384M
 
-  # 通知服务 (gRPC)
   notification-service:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-notification-service
     restart: always
     environment:
@@ -216,9 +223,11 @@ services:
           cpus: '0.2'
           memory: 256M
 
-  # 库存服务 (gRPC)
   inventory-service:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-inventory-service
     restart: always
     environment:
@@ -253,9 +262,11 @@ services:
           cpus: '0.2'
           memory: 256M
 
-  # 分类服务 (gRPC)
   category-service:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-category-service
     restart: always
     environment:
@@ -290,14 +301,17 @@ services:
           cpus: '0.2'
           memory: 256M
 
-  # Admin Web
   admin-web:
-    image: ${REGISTRY:-ghcr.io/xuanyiying/one-recycle}/admin-web:${IMAGE_TAG:-latest}
+    build:
+      context: ../../apps/admin-web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
+    image: one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
     environment:
       - NODE_ENV=production
-      # API URL: uses main domain /api path for admin-web to call API gateway
       - NEXT_PUBLIC_API_URL=https://${DOMAIN:-backbuy.cn}/api
       - PORT=3000
     depends_on:
@@ -316,7 +330,6 @@ services:
           cpus: '0.3'
           memory: 384M
 
-  # Caddy 统一入口（自动 HTTPS + 反向代理）
   caddy:
     image: caddy:2-alpine
     container_name: one-recycle-caddy

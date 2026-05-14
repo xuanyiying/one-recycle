@@ -155,7 +155,9 @@ export class LogisticsProviderFactory implements ILogisticsProviderFactory {
 
       this.logger.warn('No active provider found in database');
     } catch (error) {
-      this.logger.warn(`Failed to get active provider from database: ${error}`);
+      this.logger.warn(
+        `Failed to get active provider from database: ${error as Error}`,
+      );
     }
 
     // 默认使用 JD
@@ -210,7 +212,9 @@ export class LogisticsProviderFactory implements ILogisticsProviderFactory {
 
       this.logger.debug(`No provider found in database for: ${providerCode}`);
     } catch (error) {
-      this.logger.error(`Failed to get provider from database: ${error}`);
+      this.logger.error(
+        `Failed to get provider from database: ${error as Error}`,
+      );
     }
 
     return null;

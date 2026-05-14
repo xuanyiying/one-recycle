@@ -17,7 +17,7 @@ import axios, {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://backbuy.cn/api';
+  '';
 
 /**
  * 通用API响应接口
@@ -140,16 +140,12 @@ export class ApiClient {
       ? localStorage.getItem('refresh_token')
       : null;
 
-    console.log('[API] tryRefreshToken called, hasRefreshToken:', !!refreshToken);
-
     if (!refreshToken) {
-      console.warn('[API] No refresh token available, cannot refresh');
       return null;
     }
 
     try {
       const refreshEndpoint = this.getRefreshEndpoint();
-      console.log(`[API] Attempting token refresh via ${refreshEndpoint}`);
       const response = await this.refreshInstance.post(refreshEndpoint, {
         refreshToken,
       });
@@ -158,13 +154,6 @@ export class ApiClient {
       const newAccessToken = data.accessToken;
       const newRefreshToken = data.refreshToken;
       const expiresIn = data.expiresIn;
-
-      console.log('[API] Token refresh response:', {
-        hasAccessToken: !!newAccessToken,
-        hasRefreshToken: !!newRefreshToken,
-        expiresIn,
-        responseStatus: response.status,
-      });
 
       if (newAccessToken && typeof window !== 'undefined') {
         const storedSession = readStoredAuthSession();
@@ -183,32 +172,16 @@ export class ApiClient {
             user: user || null 
           } 
         }));
-        console.log('[API] Token refresh successful, updated localStorage session');
       }
 
       return newAccessToken;
     } catch (error: any) {
       const status = error?.response?.status;
-      const errorData = error?.response?.data;
-
-      console.error('[API] Token refresh failed:', {
-        status,
-        message: error?.message,
-        errorData,
-        url: error?.config?.url,
-      });
 
       if (status === 401 || status === 403) {
         if (typeof window !== 'undefined') {
           clearAuthSession();
         }
-        console.warn('[API] Refresh token invalid or expired, clearing auth state');
-      } else if (status === 500) {
-        console.error('[API] Server error during token refresh - this may indicate the refresh endpoint is not reachable or has a bug in microservices mode');
-      } else if (!error?.response) {
-        console.error('[API] Network error during token refresh - the API gateway may be unreachable');
-      } else {
-        console.error('[API] Token refresh failed:', error?.message || 'Unknown error');
       }
 
       return null;
@@ -253,17 +226,6 @@ export class ApiClient {
       },
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
-        const errorStatus = error.response?.status;
-        const errorUrl = originalRequest?.url;
-        const errorMethod = originalRequest?.method?.toUpperCase();
-
-        console.error(`[API] Response error: ${errorMethod} ${errorUrl} -> ${errorStatus}`, {
-          status: errorStatus,
-          url: errorUrl,
-          method: errorMethod,
-          hasRetry: !!originalRequest?._retry,
-          data: error.response?.data,
-        });
 
         if (
           error.response?.status === 401 &&
@@ -271,10 +233,8 @@ export class ApiClient {
           !originalRequest._retry
         ) {
           originalRequest._retry = true;
-          console.warn(`[API] 401 detected for ${errorMethod} ${errorUrl}, attempting token refresh...`);
 
           if (this.isRefreshing) {
-            console.log('[API] Token refresh already in progress, queuing request');
             return new Promise((resolve, reject) => {
               this.addRefreshSubscriber({
                 resolve,
@@ -290,18 +250,15 @@ export class ApiClient {
             const newToken = await this.tryRefreshToken();
 
             if (newToken) {
-              console.log('[API] Token refreshed successfully, retrying original request:', errorUrl);
               this.onTokenRefreshed(newToken);
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
               return this.instance(originalRequest);
             } else {
-              console.error('[API] Token refresh returned null, triggering handleUnauthorized');
               this.rejectRefreshSubscribers(error);
               this.handleUnauthorized();
               return Promise.reject(error);
             }
           } catch (refreshError) {
-            console.error('[API] Token refresh threw exception, triggering handleUnauthorized:', refreshError);
             this.rejectRefreshSubscribers(refreshError);
             this.handleUnauthorized();
             return Promise.reject(error);
@@ -310,7 +267,6 @@ export class ApiClient {
           }
         }
 
-        console.error(`[${serviceName || 'API'}] Error:`, error.message);
         this.handleError(error);
         return Promise.reject(error);
       }
@@ -392,15 +348,9 @@ export class ApiClient {
    * 清除本地存储的认证信息
    */
   private handleUnauthorized() {
-    console.error('[API] handleUnauthorized called - clearing auth state and dispatching auth:unauthorized event');
     if (typeof window !== 'undefined') {
-      const session = readStoredAuthSession();
-      const hadToken = !!session?.token;
-      const hadRefreshToken = !!session?.refreshToken;
-      console.log('[API] handleUnauthorized - auth state before clear:', { hadToken, hadRefreshToken });
       clearAuthSession();
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-      console.log('[API] auth:unauthorized event dispatched - this will trigger redirect to /login');
     }
   }
 

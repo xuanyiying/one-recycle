@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import Taro from '@tarojs/taro';
-import { API_BASE_URL } from '@/utils/request';
-import { Storage } from '@/utils/storage';
+import { get, post, put } from '@/utils/request';
 import { logger } from '@/utils/logger';
 
 export interface ChatMessage {
@@ -56,38 +55,26 @@ export function useMessages() {
     setError(null);
 
     try {
-      const token = Storage.getToken() || '';
-      const params = new URLSearchParams();
-      if (before) params.append('before', before);
-      params.append('limit', '20');
+      const params: Record<string, string> = { limit: '20' };
+      if (before) params.before = before;
 
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/sessions/${sessionId}/messages?${params.toString()}`,
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const data = await get<{ messages: ChatMessage[]; hasMore: boolean }>(
+        `/customer/sessions/${sessionId}/messages`,
+        params
+      );
 
-      if (response.statusCode === 200) {
-        const { messages: newMessages, hasMore: more } = response.data;
-
-        if (before) {
-          setMessages((prev) => [...newMessages, ...prev]);
-        } else {
-          setMessages(newMessages);
-        }
-        setHasMore(more);
-        setIsOffline(false);
-      } else if (response.statusCode === 404) {
-        logger.warn('[CustomerMessages] API endpoint not found, using offline mode');
-        setIsOffline(true);
+      if (before) {
+        setMessages((prev) => [...(data.messages || []), ...prev]);
+      } else {
+        setMessages(data.messages || []);
       }
+      setHasMore(data.hasMore ?? false);
+      setIsOffline(false);
     } catch (err: any) {
       logger.error('[CustomerMessages] Load messages error:', err);
 
-      if (err.errMsg?.includes('request:fail') || err.message?.includes('network')) {
-        logger.warn('[CustomerMessages] Network error, using offline mode');
+      if (err.statusCode === 404 || err.errMsg?.includes('request:fail') || err.message?.includes('network')) {
+        logger.warn('[CustomerMessages] API unavailable, using offline mode');
         setIsOffline(true);
       } else {
         const errorMsg = err.message || '加载消息失败';
@@ -139,28 +126,13 @@ export function useMessages() {
     }
 
     try {
-      const token = Storage.getToken() || '';
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/messages`,
-        method: 'POST',
-        data: params,
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const sentMessage = await post<ChatMessage>('/customer/messages', params);
 
-      if (response.statusCode === 200 || response.statusCode === 201) {
-        const sentMessage = response.data as ChatMessage;
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === tempId ? sentMessage : msg))
+      );
 
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === tempId ? sentMessage : msg))
-        );
-
-        return sentMessage;
-      } else {
-        throw new Error(response.data?.message || '发送失败');
-      }
+      return sentMessage;
     } catch (err: any) {
       setMessages((prev) =>
         prev.map((msg) =>
@@ -175,16 +147,7 @@ export function useMessages() {
     if (isOffline || messageIds.length === 0) return;
 
     try {
-      const token = Storage.getToken() || '';
-      await Taro.request({
-        url: `${API_BASE_URL}/customer/messages/read`,
-        method: 'PUT',
-        data: { messageIds },
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      await put('/customer/messages/read', { messageIds });
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -224,34 +187,19 @@ export function useMessages() {
     }
 
     try {
-      const token = Storage.getToken() || '';
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/messages`,
-        method: 'POST',
-        data: {
-          sessionId: failedMessage.sessionId,
-          messageType: failedMessage.messageType,
-          content: failedMessage.content,
-          mediaUrl: failedMessage.mediaUrl,
-          extraData: failedMessage.extraData,
-        },
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+      const sentMessage = await post<ChatMessage>('/customer/messages', {
+        sessionId: failedMessage.sessionId,
+        messageType: failedMessage.messageType,
+        content: failedMessage.content,
+        mediaUrl: failedMessage.mediaUrl,
+        extraData: failedMessage.extraData,
       });
 
-      if (response.statusCode === 200 || response.statusCode === 201) {
-        const sentMessage = response.data as ChatMessage;
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === messageId ? sentMessage : msg))
+      );
 
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === messageId ? sentMessage : msg))
-        );
-
-        return sentMessage;
-      } else {
-        throw new Error(response.data?.message || '重试发送失败');
-      }
+      return sentMessage;
     } catch (err: any) {
       setMessages((prev) =>
         prev.map((msg) =>

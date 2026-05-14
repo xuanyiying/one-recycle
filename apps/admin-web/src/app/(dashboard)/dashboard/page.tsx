@@ -85,8 +85,8 @@ const DashboardPage: React.FC = () => {
     return data;
   };
 
-  const fetchTrendData = useCallback(async (): Promise<TrendData[]> => {
-    const days = trendPeriod === '7d' ? 7 : 30;
+  const fetchTrendData = useCallback(async (period: '7d' | '30d'): Promise<TrendData[]> => {
+    const days = period === '7d' ? 7 : 30;
     try {
       const response = await InventoryService.getInventoryValueTrend(days);
       if (Array.isArray(response) && response.length > 0) {
@@ -102,7 +102,7 @@ const DashboardPage: React.FC = () => {
       console.error('Failed to fetch trend data:', error);
       return generateMockTrendData(days);
     }
-  }, [trendPeriod]);
+  }, []);
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -112,7 +112,7 @@ const DashboardPage: React.FC = () => {
       setStats(data.stats);
       setRecentOrders(data.recentOrders);
       setInventoryAlerts(data.inventoryAlerts);
-      const trend = await fetchTrendData();
+      const trend = await fetchTrendData(trendPeriod);
       setTrendData(trend);
     } catch (error: any) {
       console.error('Failed to load dashboard data:', error);
@@ -120,19 +120,21 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [trendPeriod, fetchTrendData]);
+  }, [fetchTrendData, trendPeriod]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
 
   useEffect(() => {
-    const updateTrendData = async () => {
-      const trend = await fetchTrendData();
-      setTrendData(trend);
-    };
-    updateTrendData();
-  }, [trendPeriod, fetchTrendData]);
+    if (!loading) {
+      const updateTrendData = async () => {
+        const trend = await fetchTrendData(trendPeriod);
+        setTrendData(trend);
+      };
+      updateTrendData();
+    }
+  }, [trendPeriod, fetchTrendData, loading]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {

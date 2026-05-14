@@ -325,7 +325,7 @@ export class UserService {
     return items;
   }
 
-  async getUserActivities(userId: string): Promise<any[]> {
+  getUserActivities(_userId: string): any[] {
     return [];
   }
 

@@ -38,7 +38,10 @@ services:
       retries: 5
 
   api-gateway:
-    image: ${REGISTRY:-ghcr.io/xuanyiying}/one-recycle/server:${IMAGE_TAG:-latest}
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-api-gateway
     restart: always
     environment:
@@ -69,7 +72,12 @@ services:
           memory: 2G
 
   admin-web:
-    image: ${REGISTRY:-ghcr.io/xuanyiying}/one-recycle/admin-web:${IMAGE_TAG:-latest}
+    build:
+      context: ../apps/admin-web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
+    image: one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
     environment:
@@ -84,7 +92,6 @@ services:
       retries: 5
       start_period: 60s
 
-  # Caddy 统一入口（自动 HTTPS + 反向代理）
   caddy:
     image: caddy:2-alpine
     container_name: one-recycle-caddy

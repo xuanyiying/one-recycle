@@ -148,7 +148,7 @@ export class PlatformDetector {
    * 获取所有登录提供商
    */
   static getPlatformChineseName(): string {
-    switch (this.getPlatformName()) {
+    switch (this.getCurrentPlatform()) {
       case 'wechat':
         return '微信'
       case 'alipay':

@@ -44,7 +44,7 @@ class CustomerSocketService {
         return;
       }
 
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'wss://backbuy.cn';
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || '';
 
       this.socket = io(`${wsUrl}/customer`, {
         auth: { token },

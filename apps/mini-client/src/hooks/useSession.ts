@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import Taro from '@tarojs/taro';
-import { API_BASE_URL } from '@/utils/request';
+import { get, post, put } from '@/utils/request';
 import { Storage } from '@/utils/storage';
 import { logger } from '@/utils/logger';
 
@@ -49,8 +49,6 @@ export function useSession() {
     setError(null);
 
     try {
-      const token = Storage.getToken() || '';
-
       const userId = params?.userId || Storage.getUserId();
 
       if (!userId) {
@@ -66,45 +64,20 @@ export function useSession() {
         return mockSession;
       }
 
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/sessions`,
-        method: 'POST',
-        data: { ...params, userId },
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.statusCode === 200 || response.statusCode === 201) {
-        const newSession = response.data as ChatSession;
-        setSession(newSession);
-        setIsOffline(false);
-        return newSession;
-      } else if (response.statusCode === 404) {
-        logger.warn('[CustomerSession] API endpoint not found, using offline mode');
-        const mockSession = createMockSession();
-        setSession(mockSession);
-        setIsOffline(true);
-        Taro.showToast({
-          title: '使用离线模式',
-          icon: 'none',
-          duration: 2000,
-        });
-        return mockSession;
-      } else {
-        throw new Error(response.data?.message || '创建会话失败');
-      }
+      const newSession = await post<ChatSession>('/customer/sessions', { ...params, userId });
+      setSession(newSession);
+      setIsOffline(false);
+      return newSession;
     } catch (err: any) {
       logger.error('[CustomerSession] Create session error:', err);
 
-      if (err.errMsg?.includes('request:fail') || err.message?.includes('network')) {
-        logger.warn('[CustomerSession] Network error, using offline mode');
+      if (err.statusCode === 404 || err.errMsg?.includes('request:fail') || err.message?.includes('network')) {
+        logger.warn('[CustomerSession] API unavailable, using offline mode');
         const mockSession = createMockSession();
         setSession(mockSession);
         setIsOffline(true);
         Taro.showToast({
-          title: '网络异常，使用离线模式',
+          title: err.statusCode === 404 ? '使用离线模式' : '网络异常，使用离线模式',
           icon: 'none',
           duration: 2000,
         });
@@ -129,23 +102,9 @@ export function useSession() {
     setError(null);
 
     try {
-      const token = Storage.getToken() || '';
-
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/sessions/${sessionId}`,
-        method: 'GET',
-        header: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.statusCode === 200) {
-        const sessionData = response.data as ChatSession;
-        setSession(sessionData);
-        return sessionData;
-      } else {
-        throw new Error(response.data?.message || '获取会话失败');
-      }
+      const sessionData = await get<ChatSession>(`/customer/sessions/${sessionId}`);
+      setSession(sessionData);
+      return sessionData;
     } catch (err: any) {
       const errorMsg = err.message || '获取会话失败';
       setError(errorMsg);
@@ -165,22 +124,9 @@ export function useSession() {
     setError(null);
 
     try {
-      const token = Storage.getToken() || '';
-
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/sessions/${sessionId}/close`,
-        method: 'PUT',
-        header: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.statusCode === 200) {
-        setSession(null);
-        return true;
-      } else {
-        throw new Error(response.data?.message || '关闭会话失败');
-      }
+      await put(`/customer/sessions/${sessionId}/close`);
+      setSession(null);
+      return true;
     } catch (err: any) {
       const errorMsg = err.message || '关闭会话失败';
       setError(errorMsg);
@@ -204,25 +150,9 @@ export function useSession() {
     setError(null);
 
     try {
-      const token = Storage.getToken() || '';
-
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/sessions/${sessionId}/transfer`,
-        method: 'POST',
-        data: { reason },
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.statusCode === 200) {
-        const updatedSession = response.data as ChatSession;
-        setSession(updatedSession);
-        return true;
-      } else {
-        throw new Error(response.data?.message || '转接失败');
-      }
+      const updatedSession = await post<ChatSession>(`/customer/sessions/${sessionId}/transfer`, { reason });
+      setSession(updatedSession);
+      return true;
     } catch (err: any) {
       const errorMsg = err.message || '转接失败';
       setError(errorMsg);
@@ -250,23 +180,8 @@ export function useSession() {
     setError(null);
 
     try {
-      const token = Storage.getToken() || '';
-
-      const response = await Taro.request({
-        url: `${API_BASE_URL}/customer/sessions/${sessionId}/satisfaction`,
-        method: 'POST',
-        data: { satisfactionRating: rating, feedback },
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.statusCode === 200) {
-        return true;
-      } else {
-        throw new Error(response.data?.message || '提交评价失败');
-      }
+      await post(`/customer/sessions/${sessionId}/satisfaction`, { satisfactionRating: rating, feedback });
+      return true;
     } catch (err: any) {
       const errorMsg = err.message || '提交评价失败';
       setError(errorMsg);

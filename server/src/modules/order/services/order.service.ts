@@ -189,7 +189,7 @@ export class OrderService implements OnModuleInit {
 
     const order = await this.prisma.$transaction(async (prisma) => {
       // 生成订单号
-      const orderNo = await this.idGenerator.nextId();
+      const orderNo = this.idGenerator.nextId();
 
       // 创建订单
       const order = await prisma.order.create({
@@ -851,7 +851,7 @@ export class OrderService implements OnModuleInit {
   async getBatchTimeSlots(
     startDate: string,
     daysCount: number,
-    addressId?: string | number,
+    _addressId?: string | number,
   ): Promise<DayTimeSlots[]> {
     const slots: DayTimeSlots[] = [];
     const start = new Date(startDate);
@@ -1042,7 +1042,7 @@ export class OrderService implements OnModuleInit {
   private parseBigInt(value: string | number, fieldName: string): bigint {
     try {
       return BigInt(value);
-    } catch (error) {
+    } catch {
       throw new BadRequestException(`${fieldName} is invalid`);
     }
   }

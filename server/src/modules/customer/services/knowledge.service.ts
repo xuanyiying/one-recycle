@@ -60,7 +60,7 @@ export class KnowledgeService {
     });
   }
 
-  async findOne(id: string): Promise<any | null> {
+  async findOne(id: string): Promise<any> {
     return this.prisma.knowledgeBase.findUnique({
       where: { id: BigInt(id) },
     });
@@ -108,7 +108,7 @@ export class KnowledgeService {
     return { items, total };
   }
 
-  async search(query: string): Promise<any | null> {
+  async search(query: string): Promise<any> {
     const normalizedQuery = query.toLowerCase().trim();
 
     const cacheKey = `${this.CACHE_PREFIX}search:${normalizedQuery}`;
