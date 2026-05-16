@@ -52,7 +52,7 @@ setup_dirs() {
 start() {
     cd "$DEPLOY_DIR"
     export DOMAIN EMAIL DB_PASSWORD REDIS_PASSWORD
-    docker compose up -d --build
+    docker compose -f docker-compose.yml up -d --build
     log "Services started"
 }
 

@@ -148,19 +148,21 @@ jobs:
           mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
           echo "=== Writing .env ==="
+          MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
+          MONOLITH_ENV="$DEPLOY_DIR/.env.production"
           {
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
-            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
               cat "$DEPLOY_DIR/config/.env.production"
             fi
-          } > "$DEPLOY_DIR/.env.production"
+          } > "$MICROSERVICES_ENV"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/.env.production"
-          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG)=' "$MICROSERVICES_ENV"
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$MICROSERVICES_ENV" | sed 's/=.*/=<configured>/'
 
           echo "=== Building images on server ==="
           cd "$DEPLOY_DIR"
