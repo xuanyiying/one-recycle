@@ -174,7 +174,7 @@ export class AIReplyService {
     // 传统基于关键词的意图识别方法
     const intentResult = await this.detectIntent(message);
 
-    this.logConversation(sessionId, userId, message, intentResult);
+    await this.logConversation(sessionId, userId, message, intentResult);
 
     let response: AIResponse;
 

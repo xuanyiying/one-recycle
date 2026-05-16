@@ -151,16 +151,16 @@ jobs:
           {
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
-            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
               cat "$DEPLOY_DIR/config/.env.production"
             fi
-          } > "$DEPLOY_DIR/.env"
+          } > "$DEPLOY_DIR/.env.production"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/.env"
-          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env" | sed 's/=.*/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/.env.production"
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
 
           echo "=== Building images on server ==="
           cd "$DEPLOY_DIR"
@@ -359,16 +359,16 @@ jobs:
           {
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
-            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/docker/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/docker/.env" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
               cat "$DEPLOY_DIR/config/.env.production"
             fi
-          } > "$DEPLOY_DIR/docker/.env"
+          } > "$DEPLOY_DIR/.env.production"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/docker/.env"
-          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/docker/.env" | sed 's/=.*/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/.env.production"
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
 
           echo "=== Building images on server ==="
           cd "$DEPLOY_DIR"

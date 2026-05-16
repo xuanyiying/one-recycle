@@ -81,7 +81,7 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
-      - .env
+      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -120,7 +120,7 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
-      - .env
+      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
-      - .env
+      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -203,7 +203,7 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
-      - .env
+      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -242,7 +242,7 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
-      - .env
+      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -281,7 +281,7 @@ services:
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
     env_file:
-      - .env
+      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
