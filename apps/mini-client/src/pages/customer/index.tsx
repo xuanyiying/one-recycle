@@ -54,6 +54,12 @@ const CustomerServicePage: React.FC = () => {
   });
 
   useEffect(() => {
+    if (connected) {
+      setupWebSocketListeners();
+    }
+  }, [connected]);
+
+  useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -191,10 +197,24 @@ const CustomerServicePage: React.FC = () => {
 
   const handleQuickAction = useCallback((action: QuickAction) => {
     switch (action.type) {
-      case 'quick_question':
-        setInputValue(action.label);
-        handleSendMessage();
+      case 'quick_question': {
+        const messageToSend = action.label;
+        if (!session || !messageToSend.trim()) break;
+        setInputValue('');
+        setQuickActions([]);
+        sendMessage({
+          sessionId: session.id,
+          messageType: 'TEXT',
+          content: messageToSend,
+        });
+        emit('send_message', {
+          sessionId: session.id,
+          messageType: 'TEXT',
+          content: messageToSend,
+        });
+        scrollToBottom();
         break;
+      }
       case 'order_card':
         break;
       case 'cancel_order':
@@ -208,7 +228,7 @@ const CustomerServicePage: React.FC = () => {
           setInputValue(action.label);
         }
     }
-  }, []);
+  }, [session, sendMessage, emit]);
 
   const handleCancelOrder = async (orderId?: string) => {
     if (!orderId) return;

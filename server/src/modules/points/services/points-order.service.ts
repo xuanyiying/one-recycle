@@ -57,20 +57,6 @@ export class PointsOrderService {
 
     const totalPoints = product.points * dto.quantity;
 
-    // 检查用户积分是否足够
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { points: true },
-    });
-
-    if (!user) {
-      throw new NotFoundException('用户不存在');
-    }
-
-    if (user.points < totalPoints) {
-      throw new BadRequestException('积分不足');
-    }
-
     // 实物商品需要地址
     if (product.type === ProductType.PHYSICAL && !dto.addressId) {
       throw new BadRequestException('实物商品需要填写收货地址');
@@ -95,6 +81,20 @@ export class PointsOrderService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // 在事务内检查用户积分是否足够
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { points: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException('用户不存在');
+      }
+
+      if (user.points < totalPoints) {
+        throw new BadRequestException('积分不足');
+      }
+
       // 扣减库存
       const stockDecreased = await this.productService.decreaseStock(
         product.id,
@@ -112,6 +112,11 @@ export class PointsOrderService {
         data: { points: { decrement: totalPoints } },
         select: { points: true },
       });
+
+      // 验证扣减后余额不为负（防止并发竞态）
+      if (updatedUser.points < 0) {
+        throw new BadRequestException('积分不足');
+      }
 
       // 创建订单
       const order = await tx.pointsOrder.create({

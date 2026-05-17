@@ -87,6 +87,7 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
     fetchMessages();
     fetchQuickReplies();
 
+    let cancelled = false;
     let unregisterMessage: (() => void) | undefined;
     let unregisterAgentJoined: (() => void) | undefined;
     let unregisterError: (() => void) | undefined;
@@ -100,6 +101,13 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
         }
 
         await customerSocketService.connect(token);
+
+        // If component unmounted during async setup, clean up immediately
+        if (cancelled) {
+          customerSocketService.disconnect();
+          return;
+        }
+
         customerSocketService.joinSession(sessionId);
 
         unregisterMessage = customerSocketService.onMessage((data: Message) => {
@@ -115,8 +123,10 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
           toast.error(error.message || '连接错误');
         });
       } catch (error) {
-        console.error('Failed to connect WebSocket:', error);
-        toast.error('连接失败，请刷新页面重试');
+        if (!cancelled) {
+          console.error('Failed to connect WebSocket:', error);
+          toast.error('连接失败，请刷新页面重试');
+        }
       }
     };
 
@@ -130,17 +140,16 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
       }
     };
 
-    setupWebSocket().catch((error) => {
-      console.error('WebSocket setup failed:', error);
-    });
+    setupWebSocket();
 
     window.addEventListener('auth:refreshed', handleTokenRefreshed);
 
     return () => {
+      cancelled = true;
       window.removeEventListener('auth:refreshed', handleTokenRefreshed);
-      if (unregisterMessage) unregisterMessage();
-      if (unregisterAgentJoined) unregisterAgentJoined();
-      if (unregisterError) unregisterError();
+      unregisterMessage?.();
+      unregisterAgentJoined?.();
+      unregisterError?.();
       customerSocketService.leaveSession(sessionId);
       customerSocketService.disconnect();
     };

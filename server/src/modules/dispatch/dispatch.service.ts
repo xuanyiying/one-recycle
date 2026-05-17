@@ -44,36 +44,58 @@ export class DispatchService implements OnModuleInit {
   }
 
   async assignOrder(orderId: string, courierId: string) {
-    const order = await this.orderService.findById(BigInt(orderId));
-    if (!order) {
-      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
-    }
-    await this.courierService.findOne(courierId);
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: BigInt(orderId) },
+      });
+      if (!order) {
+        throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+      }
 
-    const assignment = await this.prisma.orderAssignment.create({
-      data: {
-        orderId: BigInt(orderId),
-        orderNo: order.orderNo,
+      // Check for existing active assignment to prevent duplicates
+      const existingAssignment = await tx.orderAssignment.findFirst({
+        where: {
+          orderId: BigInt(orderId),
+          status: { in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED] },
+        },
+      });
+      if (existingAssignment) {
+        throw new HttpException(
+          'Order already has an active assignment',
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      await this.courierService.findOne(courierId);
+
+      const assignment = await tx.orderAssignment.create({
+        data: {
+          orderId: BigInt(orderId),
+          orderNo: order.orderNo,
+          courierId,
+          taskId: this.idGenerator.nextId().toString(),
+          status: TaskStatus.ASSIGNED,
+          pickupLocation: (order as any).address
+            ? ({
+                address: (order as any).address?.detail,
+              } as any)
+            : undefined,
+        },
+      });
+
+      // Update order status within the same transaction
+      await tx.order.update({
+        where: { id: BigInt(orderId) },
+        data: { status: OrderStatus.PENDING_PICKUP },
+      });
+
+      return {
+        success: true,
+        orderId,
         courierId,
-        taskId: this.idGenerator.nextId().toString(),
-        status: TaskStatus.ASSIGNED,
-        pickupLocation: (order as any).address
-          ? ({
-              address: (order as any).address?.detail,
-            } as any)
-          : undefined,
-      },
+        assignmentId: assignment.id.toString(),
+      };
     });
-
-    await this.orderService.update(BigInt(orderId), {
-      status: OrderStatus.PENDING_PICKUP,
-    } as any);
-    return {
-      success: true,
-      orderId,
-      courierId,
-      assignmentId: assignment.id.toString(),
-    };
   }
 
   async getAllAssignments() {

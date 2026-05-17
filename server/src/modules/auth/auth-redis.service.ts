@@ -124,7 +124,7 @@ class AuthRedisService implements OnModuleInit {
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
     const { mobile, verificationCode } = loginDto;
-    this.logger.log(`尝试登录: mobile=${mobile}`);
+    this.logger.log('尝试登录');
 
     // 验证手机号格式
     if (!this.isValidPhoneNumber(mobile)) {
@@ -155,7 +155,7 @@ class AuthRedisService implements OnModuleInit {
     // 清除已使用的验证码
     await this.deleteVerificationCode(mobile);
 
-    this.logger.log(`登录成功: mobile=${mobile}, userId=${user.id}`);
+    this.logger.log(`登录成功: userId=${user.id}`);
 
     return {
       user: {
@@ -455,16 +455,6 @@ class AuthRedisService implements OnModuleInit {
   }
 
   private async verifyCode(phone: string, code: string): Promise<boolean> {
-    // 万能验证码：通过独立环境变量 UNIVERSAL_VERIFICATION_CODE 控制
-    // 仅在显式配置时生效，不再依赖 NODE_ENV 判断
-    const universalCode = this.configService.get<string>(
-      'UNIVERSAL_VERIFICATION_CODE',
-    );
-    if (universalCode && code === universalCode) {
-      this.logger.warn(`Universal verification code used for phone: ${phone}`);
-      return true;
-    }
-
     const codeData = await this.getVerificationCode(phone);
 
     if (!codeData) {
@@ -518,10 +508,7 @@ class AuthRedisService implements OnModuleInit {
       this.logger.log(`验证码已通过通知服务发送 (${phone})`);
     } catch (error) {
       this.logger.error('发送短信失败:', error);
-      // 在开发环境中，可以将验证码打印到控制台
-      if (this.configService.get<string>('NODE_ENV') === 'development') {
-        this.logger.log(`验证码 (${phone}): ${code}`);
-      }
+      throw new BadRequestException('验证码发送失败，请稍后重试');
     }
   }
 }

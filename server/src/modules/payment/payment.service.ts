@@ -429,8 +429,10 @@ export class PaymentService implements OnModuleInit {
 
   /**
    * 验证退款回调签名
+   * 与支付回调签名验证逻辑一致
    */
   private verifyRefundNotifySignature(notifyData: RefundNotifyData): boolean {
+    // 如果未提供签名，在开发环境跳过验证但记录警告
     if (!notifyData.sign && !notifyData.rawData) {
       const nodeEnv = this.configService.get<string>('NODE_ENV');
       if (nodeEnv === 'development' || nodeEnv === 'test') {
@@ -439,16 +441,36 @@ export class PaymentService implements OnModuleInit {
         );
         return true;
       }
+      this.logger.error('Refund notify missing signature in production');
       return false;
     }
 
     // 退款签名验证逻辑与支付回调类似
     try {
+      const provider = this.detectProviderFromTradeNo(notifyData.outRefundNo);
+
+      if (provider === PaymentProvider.WECHAT) {
+        return this.verifyWechatSignature(
+          notifyData.rawData || '',
+          notifyData.sign || '',
+        );
+      } else if (provider === PaymentProvider.ALIPAY) {
+        return this.verifyAlipaySignature(
+          notifyData.rawData || '',
+          notifyData.sign || '',
+          notifyData.signType || 'RSA2',
+        );
+      }
+
+      // 其他提供商：开发环境放行，生产环境拒绝
       const nodeEnv = this.configService.get<string>('NODE_ENV');
       if (nodeEnv === 'development' || nodeEnv === 'test') {
+        this.logger.warn(
+          `Unknown provider for refund notify, skipping verification in dev/test mode`,
+        );
         return true;
       }
-      return !!notifyData.sign;
+      return false;
     } catch (error) {
       this.logger.error(
         `Refund signature verification error: ${(error as Error).message}`,
@@ -536,24 +558,18 @@ export class PaymentService implements OnModuleInit {
       where: { status: PaymentStatus.PENDING },
     });
 
-    const totalAmountResult = await this.prisma.payment.findMany({
+    const totalAmountResult = await this.prisma.payment.aggregate({
       where: { status: PaymentStatus.SUCCESS },
-      select: { total: true },
+      _sum: { total: true },
     });
-    const totalAmount = totalAmountResult.reduce(
-      (sum, payment) => sum + toNumber(payment.total),
-      0,
-    );
+    const totalAmount = toNumber(totalAmountResult._sum.total);
 
     const totalRefunds = await this.prisma.refund.count();
-    const totalRefundAmountResult = await this.prisma.refund.findMany({
+    const totalRefundAmountResult = await this.prisma.refund.aggregate({
       where: { status: RefundStatus.SUCCESS },
-      select: { refundAmount: true },
+      _sum: { refundAmount: true },
     });
-    const totalRefundAmount = totalRefundAmountResult.reduce(
-      (sum, refund) => sum + toNumber(refund.refundAmount),
-      0,
-    );
+    const totalRefundAmount = toNumber(totalRefundAmountResult._sum.refundAmount);
 
     return {
       totalPayments,

@@ -132,8 +132,10 @@ export class AccountService {
   ): Promise<Account> {
     const amountDecimal = toDecimal(amount);
 
-    const run = async (client: Prisma.TransactionClient) => {
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+    const run = async (client: Prisma.TransactionClient, isExternalTx: boolean) => {
+      const maxAttempts = isExternalTx ? 1 : 3;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const account = await client.account.findUnique({
           where: {
             userId_accountType: {
@@ -182,6 +184,10 @@ export class AccountService {
         });
 
         if (updatedCount.count !== 1) {
+          // Within an external transaction, retrying is useless (same snapshot)
+          if (isExternalTx) {
+            throw new Error('ACCOUNT_VERSION_CONFLICT');
+          }
           continue;
         }
 
@@ -194,9 +200,10 @@ export class AccountService {
     };
 
     if (tx) {
-      return run(tx);
+      // External transaction: no retry loop, let outer transaction handle conflicts
+      return run(tx, true);
     }
 
-    return this.prisma.$transaction(async (prismaTx) => run(prismaTx));
+    return this.prisma.$transaction(async (prismaTx) => run(prismaTx, false));
   }
 }

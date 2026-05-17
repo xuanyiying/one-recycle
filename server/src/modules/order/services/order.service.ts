@@ -104,9 +104,23 @@ export class OrderService implements OnModuleInit {
         const dateStr = parts[1];
         const index = parseInt(parts[2], 10);
 
-        // 预占时间槽
+        // 预占时间槽 - 使用 Lua 脚本保证原子性（INCR + 配额检查 + 超额回滚）
         const key = `timeslot:usage:${dateStr}:${index}`;
-        const count = await this.redisService.getClient().incr(key);
+        const quota = this.defaultTimeSlots[index]?.quota || 5;
+
+        const luaScript = `
+          local current = redis.call('INCR', KEYS[1])
+          if current == 1 then
+            local ttl = tonumber(ARGV[1])
+            redis.call('EXPIRE', KEYS[1], ttl)
+          end
+          if current > tonumber(ARGV[2]) then
+            redis.call('DECR', KEYS[1])
+            return -1
+          end
+          return current
+        `;
+
         // 设置 TTL：时间槽对应日期结束后的2小时过期，防止 Redis 键泄漏
         // 最短保留 48 小时（覆盖到次日结束），最长 7 天
         const slotDate = new Date(`${dateStr}T23:59:59`);
@@ -115,12 +129,16 @@ export class OrderService implements OnModuleInit {
           Math.floor((slotDate.getTime() - Date.now()) / 1000) + 2 * 3600,
         );
         const cappedTtl = Math.min(ttlSeconds, 7 * 24 * 3600);
-        await this.redisService.getClient().expire(key, cappedTtl);
 
-        // 检查配额 (假设默认配额为5)
-        const quota = this.defaultTimeSlots[index]?.quota || 5;
-        if (count > quota) {
-          await this.redisService.getClient().decr(key);
+        const result = await this.redisService.getClient().eval(
+          luaScript,
+          1,
+          key,
+          cappedTtl.toString(),
+          quota.toString(),
+        );
+
+        if (Number(result) === -1) {
           throw new Error('Time slot is fully booked');
         }
 
@@ -298,6 +316,11 @@ export class OrderService implements OnModuleInit {
         where: { id: BigInt(orderId) },
         select: { status: true },
       });
+
+      // Validate state transition before making any changes
+      if (before) {
+        this.validateTransition(before.status, OrderStatus.PENDING_PICKUP);
+      }
 
       // 1. 创建物流单
       await prisma.logisticsOrder.create({
@@ -508,15 +531,8 @@ export class OrderService implements OnModuleInit {
       }
     }
 
-    // 如果包含状态变更，需要先查询订单并验证状态转换
+    // 如果包含状态变更，直接使用 updateStatus（在事务内验证状态转换）
     if (data.status) {
-      const order = await this.findById(id);
-      if (!order) throw new NotFoundException('Order not found');
-
-      // 使用统一的状态机验证
-      this.validateTransition(order.status, data.status);
-
-      // 使用 updateStatus 方法处理状态变更（包含时间线记录）
       return this.updateStatus(id, data, operator);
     }
 
@@ -537,14 +553,16 @@ export class OrderService implements OnModuleInit {
     if (data.remark) updateData.remark = data.remark;
     if (data.priority) updateData.priority = data.priority as unknown as number;
 
-    // 更新订单项数量
+    // Update order item quantities in parallel
     if (data.items && data.items.length > 0) {
-      for (const item of data.items) {
-        await this.prisma.orderItem.update({
-          where: { id: BigInt(item.id) },
-          data: { quantity: item.quantity },
-        });
-      }
+      await Promise.all(
+        data.items.map((item) =>
+          this.prisma.orderItem.update({
+            where: { id: BigInt(item.id) },
+            data: { quantity: item.quantity },
+          }),
+        ),
+      );
     }
 
     const order = await this.prisma.order.update({
@@ -567,33 +585,40 @@ export class OrderService implements OnModuleInit {
     data: UpdateOrderDto,
     operator?: { id: string; role: string; type: string },
   ): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-
-    if (data.status) {
-      this.validateTransition(order.status, data.status);
-    }
-    const fromStatus = order.status;
-
-    const updateData: Prisma.OrderUpdateInput = {};
-
-    if (data.status) updateData.status = data.status;
-    if (data.expectPickupTime)
-      updateData.expectPickupTime = new Date(data.expectPickupTime);
-    if (data.actualPickupTime)
-      updateData.actualPickupTime = new Date(data.actualPickupTime);
-    if (data.expectDeliveryTime)
-      updateData.expectDeliveryTime = new Date(data.expectDeliveryTime);
-    if (data.actualDeliveryTime)
-      updateData.actualDeliveryTime = new Date(data.actualDeliveryTime);
-    if (data.settlementAmount !== undefined)
-      updateData.settlementAmount = toDecimal(data.settlementAmount);
-    if (data.payAmount !== undefined)
-      updateData.payAmount = toDecimal(data.payAmount);
-    if (data.remark) updateData.remark = data.remark;
-    if (data.priority) updateData.priority = data.priority as unknown as number;
-
     return this.prisma.$transaction(async (tx) => {
+      // Read + validate inside transaction to prevent TOCTOU race condition
+      const order = await tx.order.findUnique({
+        where: { id: BigInt(id) },
+        include: {
+          items: true,
+          assignments: true,
+        },
+      });
+      if (!order) throw new NotFoundException('Order not found');
+
+      if (data.status) {
+        this.validateTransition(order.status, data.status);
+      }
+      const fromStatus = order.status;
+
+      const updateData: Prisma.OrderUpdateInput = {};
+
+      if (data.status) updateData.status = data.status;
+      if (data.expectPickupTime)
+        updateData.expectPickupTime = new Date(data.expectPickupTime);
+      if (data.actualPickupTime)
+        updateData.actualPickupTime = new Date(data.actualPickupTime);
+      if (data.expectDeliveryTime)
+        updateData.expectDeliveryTime = new Date(data.expectDeliveryTime);
+      if (data.actualDeliveryTime)
+        updateData.actualDeliveryTime = new Date(data.actualDeliveryTime);
+      if (data.settlementAmount !== undefined)
+        updateData.settlementAmount = toDecimal(data.settlementAmount);
+      if (data.payAmount !== undefined)
+        updateData.payAmount = toDecimal(data.payAmount);
+      if (data.remark) updateData.remark = data.remark;
+      if (data.priority) updateData.priority = data.priority as unknown as number;
+
       const updated = await tx.order.update({
         where: { id: BigInt(id) },
         data: updateData,
@@ -691,48 +716,49 @@ export class OrderService implements OnModuleInit {
 
       const now = new Date();
 
-      for (const reservation of order.reservations) {
-        if (
-          reservation.status === ReservationStatus.CANCELLED ||
-          reservation.status === ReservationStatus.EXPIRED
-        ) {
-          continue;
-        }
+      // Batch update all cancellable reservations
+      const cancellableReservations = order.reservations.filter(
+        (r) =>
+          r.status !== ReservationStatus.CANCELLED &&
+          r.status !== ReservationStatus.EXPIRED,
+      );
 
-        await tx.reservation.update({
-          where: { id: reservation.id },
+      if (cancellableReservations.length > 0) {
+        await tx.reservation.updateMany({
+          where: {
+            id: { in: cancellableReservations.map((r) => r.id) },
+          },
           data: {
             status: ReservationStatus.CANCELLED,
             cancelledAt: now,
           },
         });
 
-        const item = await tx.inventoryItem.findUnique({
-          where: { id: reservation.itemId },
-        });
-        if (item) {
-          await tx.inventoryItem.update({
-            where: { id: item.id },
+        // Batch process inventory items
+        const inventoryUpdates = cancellableReservations.map((r) =>
+          tx.inventoryItem.update({
+            where: { id: r.itemId },
             data: {
-              reservedQty: { decrement: reservation.quantity },
-              availableQty: { increment: reservation.quantity },
+              reservedQty: { decrement: r.quantity },
+              availableQty: { increment: r.quantity },
             },
-          });
+          }),
+        );
+        await Promise.all(inventoryUpdates);
 
-          const unitPrice = new Prisma.Decimal(item.unitPrice);
-          const qty = new Prisma.Decimal(reservation.quantity);
-          await tx.inventoryTransaction.create({
+        // Batch create inventory transactions
+        const transactions = cancellableReservations.map((r) =>
+          tx.inventoryTransaction.create({
             data: {
-              itemId: item.id,
+              itemId: r.itemId,
               type: InventoryTxnType.RELEASE,
-              quantity: reservation.quantity,
-              unitPrice,
-              totalPrice: unitPrice.mul(qty),
+              quantity: r.quantity,
               referenceId: order.id.toString(),
               notes: 'order:cancel:release',
             },
-          });
-        }
+          }),
+        );
+        await Promise.all(transactions);
       }
 
       const updated = await tx.order.update({
@@ -778,7 +804,7 @@ export class OrderService implements OnModuleInit {
    * @param filters 筛选条件
    */
   async exportOrders(filters: OrderFilters): Promise<Order[]> {
-    const { orders } = await this.findAll(filters, undefined, undefined);
+    const { orders } = await this.findAll(filters, 1, 10000);
     return orders;
   }
 
@@ -1127,26 +1153,37 @@ export class OrderService implements OnModuleInit {
       }[];
     },
   ): Promise<Order> {
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
-    this.validateTransition(order.status, OrderStatus.INSPECTED);
+    const order = await this.prisma.$transaction(async (tx) => {
+      // Re-read order inside transaction to prevent TOCTOU race condition
+      const currentOrder = await tx.order.findUnique({
+        where: { id: BigInt(id) },
+        include: { items: true },
+      });
 
-    await this.prisma.$transaction(async (tx) => {
-      // Update items if provided
+      if (!currentOrder) {
+        throw new NotFoundException('订单不存在');
+      }
+
+      // Validate transition inside transaction
+      this.validateTransition(currentOrder.status, OrderStatus.INSPECTED);
+
+      // Update items in parallel if provided
       if (result.items && result.items.length > 0) {
-        for (const item of result.items) {
-          await tx.orderItem.update({
-            where: { id: BigInt(item.id) },
-            data: {
-              actualWeight: item.actualWeight,
-              unitPrice: item.unitPrice, // Optional update
-              amount: item.unitPrice
-                ? item.actualWeight * item.unitPrice
-                : undefined,
-              condition: item.condition,
-            },
-          });
-        }
+        await Promise.all(
+          result.items.map((item) =>
+            tx.orderItem.update({
+              where: { id: BigInt(item.id) },
+              data: {
+                actualWeight: item.actualWeight,
+                unitPrice: item.unitPrice,
+                amount: item.unitPrice
+                  ? item.actualWeight * item.unitPrice
+                  : undefined,
+                condition: item.condition,
+              },
+            }),
+          ),
+        );
       }
 
       // Update order status and settlement amount
@@ -1162,7 +1199,7 @@ export class OrderService implements OnModuleInit {
         data: {
           orderId: BigInt(id),
           status: OrderStatus.INSPECTED,
-          fromStatus: order.status,
+          fromStatus: currentOrder.status,
           toStatus: OrderStatus.INSPECTED,
           message: `状态变更为 ${OrderStatus.INSPECTED}`,
           operator: 'SYSTEM',
@@ -1172,6 +1209,8 @@ export class OrderService implements OnModuleInit {
           rawSnapshot: result as any,
         },
       });
+
+      return currentOrder;
     });
 
     return this.findById(id) as Promise<Order>;
@@ -1388,59 +1427,87 @@ export class OrderService implements OnModuleInit {
       return updated as any;
     }
 
-    const order = await this.findById(id);
-    if (!order) throw new NotFoundException('Order not found');
+    // Non-balance path: transfer via external payment provider
+    // Use Redis lock to prevent double-settlement
+    const lockKey = `order:settlement:${id}`;
+    const lockResult = await this.redisService.getClient().set(
+      lockKey,
+      'PROCESSING',
+      'EX',
+      300,
+      'NX',
+    );
+    if (!lockResult) {
+      throw new BadRequestException('结算正在处理中，请勿重复操作');
+    }
+
+    // Step 1: Validate order status
+    const order = await this.prisma.order.findUnique({
+      where: { id: BigInt(id) },
+    });
+    if (!order) {
+      await this.redisService.getClient().del(lockKey);
+      throw new NotFoundException('Order not found');
+    }
     this.validateTransition(order.status, OrderStatus.COMPLETED);
 
     const settlementAmount = toNumber(order.settlementAmount);
-    if (settlementAmount > 0) {
-      if (
-        method === PaymentProvider.WECHAT ||
-        method === PaymentProvider.ALIPAY
-      ) {
-        let accountInfo = options?.accountInfo;
-        if (!accountInfo) {
-          const identity = await this.prisma.userIdentity.findFirst({
-            where: {
-              userId: BigInt(order.userId),
-              provider: method === PaymentProvider.WECHAT ? 'wechat' : 'alipay',
-            },
-          });
 
-          if (identity) {
-            accountInfo = {
-              openid: identity.openid,
-              accountNo: identity.openid,
-              realName: (
-                await this.prisma.user.findUnique({
-                  where: { id: BigInt(order.userId) },
-                })
-              )?.realName,
-            };
-          }
-        }
-
-        const hasWechat = !!accountInfo?.openid;
-        const hasAlipay = !!accountInfo?.accountNo;
+    try {
+      if (settlementAmount > 0) {
         if (
-          (method === PaymentProvider.WECHAT && !hasWechat) ||
-          (method === PaymentProvider.ALIPAY && !hasAlipay)
+          method === PaymentProvider.WECHAT ||
+          method === PaymentProvider.ALIPAY
         ) {
-          throw new Error(`Missing account info for ${method} transfer`);
+          let accountInfo = options?.accountInfo;
+          if (!accountInfo) {
+            const identity = await this.prisma.userIdentity.findFirst({
+              where: {
+                userId: BigInt(order.userId),
+                provider: method === PaymentProvider.WECHAT ? 'wechat' : 'alipay',
+              },
+            });
+
+            if (identity) {
+              accountInfo = {
+                openid: identity.openid,
+                accountNo: identity.openid,
+                realName: (
+                  await this.prisma.user.findUnique({
+                    where: { id: BigInt(order.userId) },
+                  })
+                )?.realName,
+              };
+            }
+          }
+
+          const hasWechat = !!accountInfo?.openid;
+          const hasAlipay = !!accountInfo?.accountNo;
+          if (
+            (method === PaymentProvider.WECHAT && !hasWechat) ||
+            (method === PaymentProvider.ALIPAY && !hasAlipay)
+          ) {
+            throw new Error(`Missing account info for ${method} transfer`);
+          }
+
+          await this.paymentService.transferToUser(
+            BigInt(order.userId),
+            settlementAmount,
+            method,
+            accountInfo,
+            `Recycle Order Settlement #${order.orderNo}`,
+            BigInt(order.id),
+          );
         }
-
-        await this.paymentService.transferToUser(
-          BigInt(order.userId),
-          settlementAmount,
-          method,
-          accountInfo,
-          `Recycle Order Settlement #${order.orderNo}`,
-          BigInt(order.id),
-        );
       }
-    }
 
-    return this.updateStatus(id, { status: OrderStatus.COMPLETED });
+      // Step 2: Transfer succeeded, update status to COMPLETED
+      return this.updateStatus(id, { status: OrderStatus.COMPLETED });
+    } catch (error) {
+      throw error;
+    } finally {
+      await this.redisService.getClient().del(lockKey);
+    }
   }
 
   private validateTransition(current: string, target: string): void {

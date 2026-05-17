@@ -24,10 +24,6 @@ export class CreatePaymentDto {
   @IsString()
   provider!: string;
 
-  @IsEnum(PaymentStatus)
-  @IsOptional()
-  status?: PaymentStatus;
-
   @IsString()
   @IsOptional()
   transactionId?: string;
