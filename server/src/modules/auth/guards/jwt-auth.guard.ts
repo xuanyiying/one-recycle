@@ -26,7 +26,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
-    if (context.getType() === 'rpc') {
+    // Allow internal RPC calls with service authentication
+    const isRpcInternal = this.reflector.getAllAndOverride<boolean>('isRpcInternal', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (context.getType() === 'rpc' && isRpcInternal) {
       return true;
     }
 

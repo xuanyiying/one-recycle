@@ -25,12 +25,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         if (!secret && configService.get<string>('NODE_ENV') === 'production') {
           throw new Error('JWT_SECRET must be set in production environment');
         }
+        if (!secret) {
+          console.warn('[WARN] Using fallback JWT secret - DO NOT use in production!');
+        }
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN', '15m');
         const parsedExpiresIn: number | string = /^\d+$/.test(expiresIn)
           ? parseInt(expiresIn, 10)
           : expiresIn;
         return {
-          secret: secret || 'dev-only-secret-key',
+          secret: secret || 'dev-only-secret-key-DO-NOT-USE-IN-PRODUCTION',
           signOptions: {
             expiresIn: parsedExpiresIn as any,
           },

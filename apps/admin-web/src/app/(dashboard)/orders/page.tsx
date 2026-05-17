@@ -389,7 +389,7 @@ export default function OrdersPage() {
     setInboundItems((prev) => prev.map((row) => (row.id === id ? { ...row, [key]: value } : row)));
   };
 
-  const submitInspection = () => {
+  const submitInspection = async () => {
     if (!inspectionOrder) {
       toast.error('请录入订单号');
       return;
@@ -398,10 +398,21 @@ export default function OrdersPage() {
       toast.error('请上传验货图片');
       return;
     }
-    toast.success('验货结果已提交');
+    try {
+      await orderService.updateOrderStatus(inspectionOrder, OrderStatus.INSPECTED);
+      toast.success('验货结果已提交');
+      setInspectionOrder('');
+      setInspectionImages([]);
+      setInspectionResult('PASS');
+      setInspectionReasons([]);
+      setInspectionNote('');
+    } catch (error) {
+      console.error(error);
+      toast.error('验货提交失败');
+    }
   };
 
-  const submitReceiving = () => {
+  const submitReceiving = async () => {
     if (!receivingOrder || !receivingPerson || !receivingTime) {
       toast.error('请完整填写收货信息');
       return;
@@ -410,15 +421,38 @@ export default function OrdersPage() {
       toast.error('请上传签收图片');
       return;
     }
-    toast.success('收货信息已提交');
+    try {
+      await orderService.updateOrderStatus(receivingOrder, OrderStatus.PENDING_INBOUND);
+      toast.success('收货信息已提交');
+      setReceivingOrder('');
+      setReceivingPerson('');
+      setReceivingTime('');
+      setReceivingProof(null);
+    } catch (error) {
+      console.error(error);
+      toast.error('收货确认提交失败');
+    }
   };
 
-  const submitInbound = () => {
+  const submitInbound = async () => {
     if (!inboundNo) {
       toast.error('请生成入库单号');
       return;
     }
-    toast.success('入库单已提交');
+    const hasValidItem = inboundItems.some((row) => row.sku && row.quantity);
+    if (!hasValidItem) {
+      toast.error('请至少填写一行有效的入库信息');
+      return;
+    }
+    try {
+      await orderService.updateOrderStatus(inboundNo, OrderStatus.INBOUNDED);
+      toast.success('入库单已提交');
+      setInboundNo('');
+      setInboundItems([{ id: 'row-1', sku: '', quantity: '', location: '' }]);
+    } catch (error) {
+      console.error(error);
+      toast.error('入库提交失败');
+    }
   };
 
   return (

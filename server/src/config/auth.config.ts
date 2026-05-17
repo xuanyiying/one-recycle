@@ -40,11 +40,11 @@ export default registerAs('auth', (): AuthConfig => {
 
   if (isProduction && !jwtSecret) {
     console.error('[FATAL] JWT_SECRET must be set in production environment');
-    process.exit(1);
+    throw new Error('JWT_SECRET must be set in production environment');
   }
 
   return {
-    jwtSecret: jwtSecret || 'dev-only-secret-key',
+    jwtSecret: jwtSecret || 'dev-only-secret-key-DO-NOT-USE-IN-PRODUCTION',
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
     accessTokenExpiresInSeconds: parseInt(
       process.env.ACCESS_TOKEN_EXPIRES_IN_SECONDS || '7200',
@@ -65,7 +65,7 @@ export default registerAs('auth', (): AuthConfig => {
     ),
     maxCodeAttempts: parseInt(process.env.MAX_CODE_ATTEMPTS || '3', 10),
     smsServiceUrl:
-      process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3008',
+      process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004',
     wechat: {
       appId: process.env.WECHAT_APP_ID || '',
       appSecret: process.env.WECHAT_APP_SECRET || '',

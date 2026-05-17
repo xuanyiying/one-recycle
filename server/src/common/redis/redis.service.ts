@@ -67,6 +67,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    if (this.subscriber) {
+      await this.subscriber.quit();
+      this.logger.log('Redis subscriber connection closed');
+    }
     if (this.client) {
       await this.client.quit();
       this.logger.log('Redis connection closed');
@@ -410,6 +414,24 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return await this.client.publish(channel, serialized);
   }
 
+  private subscriber: Redis | null = null;
+  private subscriptions: Map<string, Set<(...args: any[]) => void>> = new Map();
+
+  private getSubscriber(): Redis {
+    if (!this.subscriber) {
+      this.subscriber = this.client.duplicate();
+      this.subscriber.on('message', (channel: string, ...args: any[]) => {
+        const callbacks = this.subscriptions.get(channel);
+        if (callbacks) {
+          for (const cb of callbacks) {
+            cb(...args);
+          }
+        }
+      });
+    }
+    return this.subscriber;
+  }
+
   /**
    * 订阅频道
    */
@@ -417,18 +439,34 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     channel: string,
     callback: (message: any) => void,
   ): Promise<void> {
-    const subscriber = this.client.duplicate();
-    await subscriber.subscribe(channel);
-    subscriber.on('message', (ch, msg) => {
-      if (ch === channel) {
-        try {
-          const parsed = JSON.parse(msg);
-          callback(parsed);
-        } catch {
-          callback(msg);
-        }
+    const subscriber = this.getSubscriber();
+    if (!this.subscriptions.has(channel)) {
+      this.subscriptions.set(channel, new Set());
+      await subscriber.subscribe(channel);
+    }
+    this.subscriptions.get(channel)!.add(callback);
+  }
+
+  /**
+   * 取消订阅频道
+   */
+  async unsubscribe(
+    channel: string,
+    callback?: (message: any) => void,
+  ): Promise<void> {
+    const callbacks = this.subscriptions.get(channel);
+    if (!callbacks) return;
+
+    if (callback) {
+      callbacks.delete(callback);
+    }
+
+    if (!callback || callbacks.size === 0) {
+      this.subscriptions.delete(channel);
+      if (this.subscriber) {
+        await this.subscriber.unsubscribe(channel);
       }
-    });
+    }
   }
 
   /**

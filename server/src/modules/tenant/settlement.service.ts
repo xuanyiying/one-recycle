@@ -18,36 +18,47 @@ export class SettlementService implements ISettlementService {
     const oid = BigInt(orderId);
     const tid = BigInt(tenantId);
 
-    // Create initial settlement record
-    await this.prisma.settlementRecord.create({
-      data: {
-        orderId: oid,
-        tenantId: tid,
-        goodsAmount: toDecimal(0),
-        expressFee: toDecimal(estimatedExpressFee),
-        platformFee: toDecimal(0),
-        totalAmount: toDecimal(0),
-        status: SettlementStatus.PENDING,
-      },
-    });
-
-    // Freeze express fee
-    const tenant = await this.prisma.tenant.findUnique({ where: { id: tid } });
-    if (tenant) {
-      const expressFee = toDecimal(estimatedExpressFee);
-      const balanceAfter = toDecimal(tenant.balance).minus(expressFee);
-      await this.prisma.tenantTransaction.create({
+    await this.prisma.$transaction(async (tx) => {
+      // Create initial settlement record
+      await tx.settlementRecord.create({
         data: {
+          orderId: oid,
           tenantId: tid,
-          type: TenantTransactionType.EXPRESS_DEDUCTION,
-          amount: expressFee.negated(),
-          balanceAfter,
-          relatedType: 'ORDER',
-          relatedId: orderId.toString(),
-          remark: 'Frozen express fee for order',
+          goodsAmount: toDecimal(0),
+          expressFee: toDecimal(estimatedExpressFee),
+          platformFee: toDecimal(0),
+          totalAmount: toDecimal(0),
+          status: SettlementStatus.PENDING,
         },
       });
-    }
+
+      // Freeze express fee: update tenant balance and record transaction atomically
+      const tenant = await tx.tenant.findUnique({ where: { id: tid } });
+      if (tenant) {
+        const expressFee = toDecimal(estimatedExpressFee);
+        const balanceAfter = toDecimal(tenant.balance).minus(expressFee);
+
+        await tx.tenant.update({
+          where: { id: tid },
+          data: {
+            balance: { decrement: expressFee },
+            frozenBalance: { increment: expressFee },
+          },
+        });
+
+        await tx.tenantTransaction.create({
+          data: {
+            tenantId: tid,
+            type: TenantTransactionType.EXPRESS_DEDUCTION,
+            amount: expressFee.negated(),
+            balanceAfter,
+            relatedType: 'ORDER',
+            relatedId: orderId.toString(),
+            remark: 'Frozen express fee for order',
+          },
+        });
+      }
+    });
 
     this.logger.log(
       `Initialized settlement for order ${orderId} (Est Fee: ${estimatedExpressFee})`,

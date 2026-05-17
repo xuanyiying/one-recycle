@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
 import {
   AccountType,
   PaymentProvider,
@@ -176,6 +176,7 @@ class WithdrawalService implements OnModuleInit {
           });
 
           if (params.tenantId) {
+            let tenantUpdated = false;
             for (let i = 0; i < 3; i += 1) {
               const tenant = await tx.tenant.findUnique({
                 where: { id: params.tenantId },
@@ -206,7 +207,11 @@ class WithdrawalService implements OnModuleInit {
                   remark: 'Frozen payout for withdrawal request',
                 },
               });
+              tenantUpdated = true;
               break;
+            }
+            if (!tenantUpdated) {
+              throw new Error('TENANT_VERSION_CONFLICT');
             }
           }
 
@@ -227,16 +232,20 @@ class WithdrawalService implements OnModuleInit {
   }
 
   async processWithdrawal(withdrawalId: bigint) {
+    // Atomically claim the withdrawal for processing to prevent double-payout
+    const claimed = await this.prisma.withdrawal.updateMany({
+      where: { id: withdrawalId, status: WithdrawalStatus.PENDING },
+      data: { status: WithdrawalStatus.PROCESSING },
+    });
+    if (claimed.count === 0) {
+      // Already being processed or completed
+      return this.prisma.withdrawal.findUnique({ where: { id: withdrawalId } });
+    }
+
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id: withdrawalId },
     });
     if (!withdrawal) throw new Error('WITHDRAWAL_NOT_FOUND');
-    if (withdrawal.status !== WithdrawalStatus.PENDING) return withdrawal;
-
-    await this.prisma.withdrawal.update({
-      where: { id: withdrawalId },
-      data: { status: WithdrawalStatus.PROCESSING },
-    });
 
     try {
       const transferResult = await this.paymentService.transferToUser(
@@ -307,6 +316,7 @@ class WithdrawalService implements OnModuleInit {
         const tenantIdRaw = (withdrawal.accountInfo as any)?.tenantId;
         if (tenantIdRaw) {
           const tenantId = BigInt(tenantIdRaw);
+          let tenantUpdated = false;
           for (let i = 0; i < 3; i += 1) {
             const tenant = await tx.tenant.findUnique({
               where: { id: tenantId },
@@ -332,7 +342,11 @@ class WithdrawalService implements OnModuleInit {
                 remark: `Withdrawal payout #${withdrawal.outTradeNo}`,
               },
             });
+            tenantUpdated = true;
             break;
+          }
+          if (!tenantUpdated) {
+            throw new BadRequestException('提现处理失败，请重试');
           }
         }
 
@@ -404,6 +418,7 @@ class WithdrawalService implements OnModuleInit {
         const tenantIdRaw = (withdrawal.accountInfo as any)?.tenantId;
         if (tenantIdRaw) {
           const tenantId = BigInt(tenantIdRaw);
+          let tenantUpdated = false;
           for (let i = 0; i < 3; i += 1) {
             const tenant = await tx.tenant.findUnique({
               where: { id: tenantId },
@@ -429,7 +444,11 @@ class WithdrawalService implements OnModuleInit {
                 remark: `Withdrawal release #${withdrawal.outTradeNo}`,
               },
             });
+            tenantUpdated = true;
             break;
+          }
+          if (!tenantUpdated) {
+            throw new BadRequestException('提现处理失败，请重试');
           }
         }
 
@@ -509,6 +528,7 @@ class WithdrawalService implements OnModuleInit {
         const tenantIdRaw = (withdrawal.accountInfo as any)?.tenantId;
         if (tenantIdRaw) {
           const tenantId = BigInt(tenantIdRaw);
+          let tenantUpdated = false;
           for (let i = 0; i < 3; i += 1) {
             const tenant = await tx.tenant.findUnique({
               where: { id: tenantId },
@@ -534,7 +554,11 @@ class WithdrawalService implements OnModuleInit {
                 remark: `Withdrawal payout #${withdrawal.outTradeNo}`,
               },
             });
+            tenantUpdated = true;
             break;
+          }
+          if (!tenantUpdated) {
+            throw new BadRequestException('提现处理失败，请重试');
           }
         }
 
@@ -611,6 +635,7 @@ class WithdrawalService implements OnModuleInit {
       const tenantIdRaw = (withdrawal.accountInfo as any)?.tenantId;
       if (tenantIdRaw) {
         const tenantId = BigInt(tenantIdRaw);
+        let tenantUpdated = false;
         for (let i = 0; i < 3; i += 1) {
           const tenant = await tx.tenant.findUnique({
             where: { id: tenantId },
@@ -636,7 +661,11 @@ class WithdrawalService implements OnModuleInit {
               remark: `Withdrawal release #${withdrawal.outTradeNo}`,
             },
           });
+          tenantUpdated = true;
           break;
+        }
+        if (!tenantUpdated) {
+          throw new BadRequestException('提现处理失败，请重试');
         }
       }
 

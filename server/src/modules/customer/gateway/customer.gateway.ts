@@ -16,6 +16,7 @@ import { SendMessageDto } from '../dto';
 import { AIReplyService } from '../services/ai-reply.service';
 import { MessageService } from '../services/message.service';
 import { SessionService } from '../services/session.service';
+import { Interval } from '@nestjs/schedule';
 
 type AuthenticatedSocket = Socket & {
   userId: string;
@@ -38,6 +39,8 @@ type AuthenticatedSocket = Socket & {
     },
     credentials: true,
   },
+  pingInterval: 10000,
+  pingTimeout: 5000,
 })
 export class CustomerServiceGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -182,11 +185,17 @@ export class CustomerServiceGateway
       if (!client.isAgent && message.senderType === 'USER') {
         const session = await this.sessionService.findOne(data.sessionId);
         if (session && session.type === 'AUTO') {
-          void this.processAIReply(
+          this.processAIReply(
             data.sessionId,
             client.userId,
             data.content || '',
-          );
+          ).catch((error) => {
+            this.logger.error(`AI reply failed for session ${data.sessionId}:`, error);
+            client.emit('ai_reply_error', {
+              sessionId: data.sessionId,
+              message: 'AI回复失败，请稍后重试',
+            });
+          });
         }
       }
     } catch (error) {
@@ -377,5 +386,30 @@ export class CustomerServiceGateway
 
   getOnlineAgentsCount(): number {
     return this.agentSockets.size;
+  }
+
+  @Interval(300000) // every 5 minutes
+  cleanupStaleSockets() {
+    for (const [userId, sockets] of this.userSockets.entries()) {
+      for (const socketId of sockets) {
+        if (!this.server.sockets.sockets.has(socketId)) {
+          sockets.delete(socketId);
+        }
+      }
+      if (sockets.size === 0) {
+        this.userSockets.delete(userId);
+      }
+    }
+
+    for (const [agentId, sockets] of this.agentSockets.entries()) {
+      for (const socketId of sockets) {
+        if (!this.server.sockets.sockets.has(socketId)) {
+          sockets.delete(socketId);
+        }
+      }
+      if (sockets.size === 0) {
+        this.agentSockets.delete(agentId);
+      }
+    }
   }
 }

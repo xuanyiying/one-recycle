@@ -103,13 +103,15 @@ export class ApiClient {
 
   private onTokenRefreshed(token: string) {
     this.refreshSubscribers.forEach(({ resolve, request }) => {
-      resolve(this.instance({
+      // Retry the original request with the new token
+      const retryConfig: AxiosRequestConfig = {
         ...request,
         headers: {
           ...request.headers,
           Authorization: `Bearer ${token}`,
         },
-      }));
+      };
+      resolve(this.instance(retryConfig));
     });
     this.refreshSubscribers = [];
   }
@@ -239,7 +241,10 @@ export class ApiClient {
               this.addRefreshSubscriber({
                 resolve,
                 reject,
-                request: originalRequest,
+                request: {
+                  ...originalRequest,
+                  headers: { ...originalRequest.headers },
+                },
               });
             });
           }
@@ -250,9 +255,12 @@ export class ApiClient {
             const newToken = await this.tryRefreshToken();
 
             if (newToken) {
-              this.onTokenRefreshed(newToken);
+              // Retry the original request with new token
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
-              return this.instance(originalRequest);
+              const response = await this.instance(originalRequest);
+              // Resolve all queued subscribers after successful refresh
+              this.onTokenRefreshed(newToken);
+              return response;
             } else {
               this.rejectRefreshSubscribers(error);
               this.handleUnauthorized();

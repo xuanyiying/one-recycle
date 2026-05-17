@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import { ApiResponse } from '@/common/types/common.types';
@@ -30,6 +30,7 @@ export interface UserResponse {
 
 @Injectable()
 export class AccountClient {
+  private readonly logger = new Logger(AccountClient.name);
   private readonly client: AxiosInstance;
   private readonly accountServiceUrl: string;
   private readonly timeout: number;
@@ -121,7 +122,8 @@ export class AccountClient {
       }
       return response.data.data;
     } catch (error: any) {
-      throw new BadRequestException(error);
+      this.logger.error('AccountClient request failed:', error);
+      throw new BadRequestException('账号服务请求失败');
     }
   }
 
@@ -138,7 +140,8 @@ export class AccountClient {
         throw new Error(response.data.message || '绑定用户身份失败');
       }
     } catch (error: any) {
-      throw new BadRequestException(error);
+      this.logger.error('AccountClient request failed:', error);
+      throw new BadRequestException('账号服务请求失败');
     }
   }
 
@@ -156,7 +159,8 @@ export class AccountClient {
       }
       return response.data.data;
     } catch (error: any) {
-      throw new BadRequestException(error);
+      this.logger.error('AccountClient request failed:', error);
+      throw new BadRequestException('账号服务请求失败');
     }
   }
 }

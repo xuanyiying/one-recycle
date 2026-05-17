@@ -113,7 +113,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleUnauthorized = () => {
       console.error('[AuthContext] auth:unauthorized event received - logging out and redirecting to /login');
-      console.trace('[AuthContext] auth:unauthorized stack trace');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[AuthContext] auth:unauthorized');
+      }
       logout();
       window.location.href = '/login';
     };

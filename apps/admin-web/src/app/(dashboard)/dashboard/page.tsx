@@ -28,7 +28,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -68,6 +68,7 @@ const DashboardPage: React.FC = () => {
   const [trendData, setTrendData] = useState<TrendData[]>([]);
   const [trendPeriod, setTrendPeriod] = useState<'7d' | '30d'>('7d');
   const [error, setError] = useState<string | null>(null);
+  const initialLoadDone = useRef(false);
 
   const generateMockTrendData = (days: number): TrendData[] => {
     const data: TrendData[] = [];
@@ -123,11 +124,13 @@ const DashboardPage: React.FC = () => {
   }, [fetchTrendData, trendPeriod]);
 
   useEffect(() => {
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
     loadDashboardData();
   }, [loadDashboardData]);
 
   useEffect(() => {
-    if (!loading) {
+    if (initialLoadDone.current && !loading) {
       const updateTrendData = async () => {
         const trend = await fetchTrendData(trendPeriod);
         setTrendData(trend);

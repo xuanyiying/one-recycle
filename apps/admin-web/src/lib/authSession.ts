@@ -64,6 +64,8 @@ export function writeAuthSession({
 }
 
 export function readStoredAuthSession(): StoredAuthSession | null {
+  if (typeof window === 'undefined') return null;
+
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
   const userInfo = localStorage.getItem(USER_INFO_KEY);
@@ -83,6 +85,12 @@ export function readStoredAuthSession(): StoredAuthSession | null {
   try {
     const parsedUser = JSON.parse(userInfo) as unknown;
     if (!isValidAuthUser(parsedUser)) {
+      clearAuthSession();
+      return null;
+    }
+
+    // Check token expiry
+    if (parsedUser.tokenExpiry && Date.now() > parsedUser.tokenExpiry) {
       clearAuthSession();
       return null;
     }
