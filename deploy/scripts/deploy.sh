@@ -55,6 +55,8 @@ start() {
         echo "DOMAIN=$DOMAIN"
         echo "DB_PASSWORD=$DB_PASSWORD"
         echo "REDIS_PASSWORD=$REDIS_PASSWORD"
+        echo "JWT_SECRET=${JWT_SECRET:-change_me}"
+        echo "CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}"
     } > .env.production
     docker compose -f docker-compose.yml up -d --build
     log "Services started"
@@ -76,6 +78,8 @@ update() {
         echo "DOMAIN=$DOMAIN"
         echo "DB_PASSWORD=$DB_PASSWORD"
         echo "REDIS_PASSWORD=$REDIS_PASSWORD"
+        echo "JWT_SECRET=${JWT_SECRET:-change_me}"
+        echo "CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}"
     } > .env.production
     log "Building images..."
     docker compose -f docker-compose.yml build --parallel api-gateway admin-web

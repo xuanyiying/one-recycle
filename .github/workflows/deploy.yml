@@ -151,16 +151,17 @@ jobs:
           {
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
             if [ -f "$DEPLOY_DIR/.env.production" ]; then
               grep -v '^#' "$DEPLOY_DIR/.env.production" | grep -v '^$'
             fi
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
               grep -v '^#' "$DEPLOY_DIR/config/.env.production" | grep -v '^$'
             fi
-          } > "$DEPLOY_DIR/docker/.env.production"
+          } > "$DEPLOY_DIR/.env.production"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|IMAGE_TAG|DB_PASSWORD|REDIS_PASSWORD|JWT_SECRET)=' "$DEPLOY_DIR/docker/.env.production" | sed 's/=.*/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG|DB_PASSWORD|REDIS_PASSWORD|JWT_SECRET)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
 
           echo "=== Building images on server ==="
           cd "$DEPLOY_DIR"
@@ -355,20 +356,21 @@ jobs:
           echo "=== Ensuring directories exist ==="
           mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
-          echo "=== Writing .env ==="
+          echo "=== Writing .env.production for microservices ==="
           {
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
             echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
             echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-              cat "$DEPLOY_DIR/config/.env.production"
+              grep -v '^#' "$DEPLOY_DIR/config/.env.production" | grep -v '^$'
             fi
-          } > "$DEPLOY_DIR/.env.production"
+          } > "$DEPLOY_DIR/docker/.env.production"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|IMAGE_TAG)=' "$DEPLOY_DIR/.env.production"
-          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
+          grep -E '^(DOMAIN|IMAGE_TAG|JWT_SECRET)=' "$DEPLOY_DIR/docker/.env.production" | sed 's/=.*/=<configured>/'
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/docker/.env.production" | sed 's/=.*/=<configured>/'
 
           echo "=== Building images on server ==="
           cd "$DEPLOY_DIR"
