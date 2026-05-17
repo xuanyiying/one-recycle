@@ -51,14 +51,18 @@ setup_dirs() {
 
 start() {
     cd "$DEPLOY_DIR"
-    export DOMAIN EMAIL DB_PASSWORD REDIS_PASSWORD
+    {
+        echo "DOMAIN=$DOMAIN"
+        echo "DB_PASSWORD=$DB_PASSWORD"
+        echo "REDIS_PASSWORD=$REDIS_PASSWORD"
+    } > .env.production
     docker compose -f docker-compose.yml up -d --build
     log "Services started"
 }
 
 stop() {
     cd "$DEPLOY_DIR"
-    docker compose down
+    docker compose -f docker-compose.yml down
     log "Services stopped"
 }
 
@@ -68,11 +72,15 @@ update() {
     git pull
 
     cd "$DEPLOY_DIR"
-    export DOMAIN EMAIL DB_PASSWORD REDIS_PASSWORD
+    {
+        echo "DOMAIN=$DOMAIN"
+        echo "DB_PASSWORD=$DB_PASSWORD"
+        echo "REDIS_PASSWORD=$REDIS_PASSWORD"
+    } > .env.production
     log "Building images..."
-    docker compose build --parallel api-gateway admin-web
+    docker compose -f docker-compose.yml build --parallel api-gateway admin-web
     log "Restarting services..."
-    docker compose up -d
+    docker compose -f docker-compose.yml up -d
     log "Cleaning up old images..."
     docker image prune -f
     log "Services updated"
@@ -80,17 +88,17 @@ update() {
 
 logs() {
     cd "$DEPLOY_DIR"
-    docker compose logs -f "$@"
+    docker compose -f docker-compose.yml logs -f "$@"
 }
 
 migrate() {
     cd "$DEPLOY_DIR"
-    docker compose exec api-gateway npx prisma db push
+    docker compose -f docker-compose.yml exec api-gateway npx prisma db push
 }
 
 status() {
     cd "$DEPLOY_DIR"
-    docker compose ps
+    docker compose -f docker-compose.yml ps
 }
 
 cmd=${1:-deploy}

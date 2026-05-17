@@ -3,6 +3,7 @@
 # 每个微服务通过 SERVICE_NAME 环境变量启动不同模式
 # 镜像统一, 入口通过 SERVICE_NAME 区分
 # 本地构建，无需推送/拉取远程镜像仓库
+# .env 文件由 deploy workflow 覆盖为实际值，确保容器运行时获得正确配置
 # ============================================================================
 
 services:
@@ -12,7 +13,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME:-one_recycle}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       POSTGRES_DB: ${DB_NAME:-one_recycle}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -36,7 +37,7 @@ services:
     container_name: one-recycle-redis
     restart: always
     command: >
-      redis-server --requirepass "${REDIS_PASSWORD}" --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru
+      redis-server --requirepass "${REDIS_PASSWORD:?REDIS_PASSWORD is required}" --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru
     volumes:
       - redis_data:/data
     ports:
@@ -66,10 +67,10 @@ services:
       - SERVICE_NAME=api-gateway
       - RUN_SEED=1
       - PORT=3002
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
+      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
       - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
       - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
@@ -77,11 +78,9 @@ services:
       - OSS_REGION=${OSS_REGION:-ap-guangzhou}
       - OSS_ENDPOINT=${OSS_ENDPOINT:-}
       - OSS_SECURE=${OSS_SECURE:-true}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
-    env_file:
-      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -112,15 +111,13 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=account-service
       - PORT=3001
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
+      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
-    env_file:
-      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -151,20 +148,18 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=order-service
       - PORT=3003
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
+      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
       - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
       - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
       - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
       - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
-    env_file:
-      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -195,15 +190,13 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=notification-service
       - PORT=3004
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
+      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
-    env_file:
-      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -234,15 +227,13 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=inventory-service
       - PORT=3009
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
+      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
-    env_file:
-      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -273,15 +264,13 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=category-service
       - PORT=3008
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
+      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD:?DB_PASSWORD is required}@postgres:5432/${DB_NAME:-one_recycle}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
-    env_file:
-      - ../.env.production
     depends_on:
       postgres:
         condition: service_healthy
