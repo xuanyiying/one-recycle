@@ -27,13 +27,21 @@ import { JwtStrategy } from './strategies/jwt.strategy';
           throw new Error('JWT_SECRET must be set in production environment');
         }
         if (!secret) {
-          console.warn('[WARN] Using fallback JWT secret - DO NOT use in production!');
+          console.warn(
+            '[WARN] Using fallback JWT secret - DO NOT use in production!',
+          );
         }
         const expiresIn = configService.get<string>('JWT_EXPIRES_IN', '15m');
         const parsedExpiresIn: number | string = /^\d+$/.test(expiresIn)
           ? parseInt(expiresIn, 10)
           : expiresIn;
-        const devFallback = crypto.createHash('sha256').update('one-recycle-dev-' + (process.env.USER || process.env.HOME || 'default')).digest('hex');
+        const devFallback = crypto
+          .createHash('sha256')
+          .update(
+            'one-recycle-dev-' +
+              (process.env.USER || process.env.HOME || 'default'),
+          )
+          .digest('hex');
         return {
           secret: secret || devFallback,
           signOptions: {
@@ -56,4 +64,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   exports: [AuthRedisService, JwtAuthGuard, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}

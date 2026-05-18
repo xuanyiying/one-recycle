@@ -132,7 +132,10 @@ export class AccountService {
   ): Promise<Account> {
     const amountDecimal = toDecimal(amount);
 
-    const run = async (client: Prisma.TransactionClient, isExternalTx: boolean) => {
+    const run = async (
+      client: Prisma.TransactionClient,
+      isExternalTx: boolean,
+    ) => {
       const account = await client.account.findUnique({
         where: {
           userId_accountType: {
@@ -153,6 +156,10 @@ export class AccountService {
       const balanceBefore = toDecimal(account.availableBalance);
       const balanceAfter = balanceBefore.plus(amountDecimal);
 
+      let existingTransaction: {
+        balanceBefore: Prisma.Decimal;
+        balanceAfter: Prisma.Decimal;
+      } | null = null;
       try {
         await client.transaction.create({
           data: {
@@ -170,9 +177,62 @@ export class AccountService {
           error instanceof Prisma.PrismaClientKnownRequestError &&
           error.code === 'P2002'
         ) {
-          return account;
+          existingTransaction = await client.transaction.findFirst({
+            where: {
+              type: TransactionType.ORDER_INCOME,
+              orderId,
+            },
+            select: {
+              balanceBefore: true,
+              balanceAfter: true,
+            },
+          });
+          if (!existingTransaction) {
+            throw error;
+          }
+        } else {
+          throw error;
         }
-        throw error;
+      }
+
+      if (existingTransaction) {
+        const currentAccount = await client.account.findUniqueOrThrow({
+          where: { id: account.id },
+        });
+        const currentBalance = toDecimal(currentAccount.availableBalance);
+        if (currentBalance.equals(existingTransaction.balanceBefore)) {
+          if (isExternalTx) {
+            await client.account.update({
+              where: { id: account.id },
+              data: {
+                availableBalance: existingTransaction.balanceAfter,
+                totalIncome: { increment: amountDecimal },
+                version: { increment: 1 },
+              },
+            });
+            return client.account.findUniqueOrThrow({
+              where: { id: account.id },
+            });
+          }
+          const maxAttempts = 3;
+          for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+            const updatedCount = await client.account.updateMany({
+              where: { id: account.id, version: currentAccount.version },
+              data: {
+                availableBalance: existingTransaction.balanceAfter,
+                totalIncome: { increment: amountDecimal },
+                version: { increment: 1 },
+              },
+            });
+            if (updatedCount.count === 1) {
+              return client.account.findUniqueOrThrow({
+                where: { id: account.id },
+              });
+            }
+          }
+          throw new Error('ACCOUNT_VERSION_CONFLICT');
+        }
+        return currentAccount;
       }
 
       if (isExternalTx) {

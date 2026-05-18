@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ISettlementService } from './tenant.interfaces';
-import { SettlementStatus, TenantTransactionType, Prisma } from '@prisma/client';
+import {
+  SettlementStatus,
+  TenantTransactionType,
+  Prisma,
+} from '@prisma/client';
 import { toDecimal, toNumber } from '@/common/utils/decimal.util';
 
 @Injectable()
@@ -93,7 +97,9 @@ export class SettlementService implements ISettlementService {
     const totalAmount = goodsAmount.minus(platformFee).minus(expressFee);
 
     if (totalAmount.isNegative()) {
-      throw new Error(`Settlement amount is negative for order ${orderId}: ${totalAmount.toString()}`);
+      throw new Error(
+        `Settlement amount is negative for order ${orderId}: ${totalAmount.toString()}`,
+      );
     }
 
     // Update settlement record

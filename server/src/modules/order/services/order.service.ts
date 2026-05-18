@@ -130,13 +130,9 @@ export class OrderService implements OnModuleInit {
         );
         const cappedTtl = Math.min(ttlSeconds, 7 * 24 * 3600);
 
-        const result = await this.redisService.getClient().eval(
-          luaScript,
-          1,
-          key,
-          cappedTtl.toString(),
-          quota.toString(),
-        );
+        const result = await this.redisService
+          .getClient()
+          .eval(luaScript, 1, key, cappedTtl.toString(), quota.toString());
 
         if (Number(result) === -1) {
           throw new Error('Time slot is fully booked');
@@ -617,7 +613,8 @@ export class OrderService implements OnModuleInit {
       if (data.payAmount !== undefined)
         updateData.payAmount = toDecimal(data.payAmount);
       if (data.remark) updateData.remark = data.remark;
-      if (data.priority) updateData.priority = data.priority as unknown as number;
+      if (data.priority)
+        updateData.priority = data.priority as unknown as number;
 
       const updated = await tx.order.update({
         where: { id: BigInt(id) },
@@ -751,7 +748,9 @@ export class OrderService implements OnModuleInit {
           const item = await tx.inventoryItem.findUnique({
             where: { id: r.itemId },
           });
-          const unitPrice = item ? new Prisma.Decimal(item.unitPrice) : new Prisma.Decimal(0);
+          const unitPrice = item
+            ? new Prisma.Decimal(item.unitPrice)
+            : new Prisma.Decimal(0);
           const qty = new Prisma.Decimal(r.quantity);
           return tx.inventoryTransaction.create({
             data: {
@@ -1435,13 +1434,9 @@ export class OrderService implements OnModuleInit {
     // Non-balance path: transfer via external payment provider
     // Use Redis lock to prevent double-settlement
     const lockKey = `order:settlement:${id}`;
-    const lockResult = await this.redisService.getClient().set(
-      lockKey,
-      'PROCESSING',
-      'EX',
-      300,
-      'NX',
-    );
+    const lockResult = await this.redisService
+      .getClient()
+      .set(lockKey, 'PROCESSING', 'EX', 300, 'NX');
     if (!lockResult) {
       throw new BadRequestException('结算正在处理中，请勿重复操作');
     }
@@ -1469,7 +1464,8 @@ export class OrderService implements OnModuleInit {
             const identity = await this.prisma.userIdentity.findFirst({
               where: {
                 userId: BigInt(order.userId),
-                provider: method === PaymentProvider.WECHAT ? 'wechat' : 'alipay',
+                provider:
+                  method === PaymentProvider.WECHAT ? 'wechat' : 'alipay',
               },
             });
 
@@ -1506,7 +1502,9 @@ export class OrderService implements OnModuleInit {
         }
       }
 
-      const currentOrder = await this.prisma.order.findUnique({ where: { id: BigInt(id) } });
+      const currentOrder = await this.prisma.order.findUnique({
+        where: { id: BigInt(id) },
+      });
       if (currentOrder && currentOrder.status === OrderStatus.COMPLETED) {
         return currentOrder as any;
       }

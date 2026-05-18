@@ -190,7 +190,10 @@ export class CustomerServiceGateway
             client.userId,
             data.content || '',
           ).catch((error) => {
-            this.logger.error(`AI reply failed for session ${data.sessionId}:`, error);
+            this.logger.error(
+              `AI reply failed for session ${data.sessionId}:`,
+              error,
+            );
             client.emit('ai_reply_error', {
               sessionId: data.sessionId,
               message: 'AI回复失败，请稍后重试',

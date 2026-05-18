@@ -45,7 +45,15 @@ export default registerAs('auth', (): AuthConfig => {
   }
 
   return {
-    jwtSecret: jwtSecret || crypto.createHash('sha256').update('one-recycle-dev-' + (process.env.USER || process.env.HOME || 'default')).digest('hex'),
+    jwtSecret:
+      jwtSecret ||
+      crypto
+        .createHash('sha256')
+        .update(
+          'one-recycle-dev-' +
+            (process.env.USER || process.env.HOME || 'default'),
+        )
+        .digest('hex'),
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
     accessTokenExpiresInSeconds: parseInt(
       process.env.ACCESS_TOKEN_EXPIRES_IN_SECONDS || '7200',

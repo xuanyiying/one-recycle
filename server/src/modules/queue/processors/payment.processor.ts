@@ -461,7 +461,7 @@ export class PaymentProcessor {
     if (job.attemptsMade >= (job.opts.attempts || 3)) {
       await this.deadLetterQueueService.recordFailure({
         queueName: job.queue.name,
-        jobId: job.id!,
+        jobId: job.id,
         jobName: job.name,
         data: job.data,
         error: error.message,
