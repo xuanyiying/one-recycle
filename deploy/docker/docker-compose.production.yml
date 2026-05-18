@@ -11,6 +11,11 @@ services:
     image: postgres:15-alpine
     container_name: one-recycle-postgres
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_USER: ${DB_USERNAME:-one_recycle}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
@@ -36,8 +41,13 @@ services:
     image: redis:7-alpine
     container_name: one-recycle-redis
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     command: >
-      redis-server --requirepass "${REDIS_PASSWORD:?REDIS_PASSWORD is required}" --appendonly yes --maxmemory 512mb --maxmemory-policy volatile-lru
+      redis-server --requirepass "${REDIS_PASSWORD:?REDIS_PASSWORD is required}" --appendonly yes --maxmemory 192mb --maxmemory-policy volatile-lru
     volumes:
       - redis_data:/data
     ports:
@@ -45,7 +55,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "sh", "-c", 'redis-cli -a "$REDIS_PASSWORD" ping' ]
+      test: [ "CMD", "sh", "-c", "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,6 +72,11 @@ services:
     image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-api-gateway
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=api-gateway
@@ -108,6 +123,11 @@ services:
     image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-account-service
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=account-service
@@ -145,6 +165,11 @@ services:
     image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-order-service
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=order-service
@@ -187,6 +212,11 @@ services:
     image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-notification-service
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=notification-service
@@ -224,6 +254,11 @@ services:
     image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-inventory-service
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=inventory-service
@@ -261,6 +296,11 @@ services:
     image: one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-category-service
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=category-service
@@ -295,11 +335,16 @@ services:
     build:
       context: ../../apps/admin-web
       dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
+    args:
+      NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
     image: one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=https://${DOMAIN:-backbuy.cn}/api
@@ -324,6 +369,11 @@ services:
     image: caddy:2-alpine
     container_name: one-recycle-caddy
     restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "80:80"
       - "443:443"

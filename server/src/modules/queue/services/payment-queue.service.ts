@@ -149,7 +149,7 @@ export class PaymentQueueService implements OnModuleInit {
           delay: 2000,
         },
         // 使用transactionId作为jobId确保幂等性
-        jobId: `refund-${data.transactionId}-${this.idGenerator.nextId()}`,
+        jobId: `refund-${data.transactionId}`,
       };
 
       const job = await this.paymentQueue.add(
@@ -337,7 +337,7 @@ export class PaymentQueueService implements OnModuleInit {
           delay: 2000,
         },
         // 使用withdrawalId和雪花算法ID作为jobId确保幂等性
-        jobId: `withdrawal-completed-${data.withdrawalId}-${this.idGenerator.nextId()}`,
+        jobId: `withdrawal-completed-${data.withdrawalId}`,
       };
 
       const job = await this.paymentQueue.add(

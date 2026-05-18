@@ -10,8 +10,8 @@ import { toast } from '@/components/ui/toast';
 import { customerService } from '@/services/customerService';
 import { customerSocketService, Message } from '@/services/customerSocketService';
 import { Bot, History, Image, Loader2, Send, User, X } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import NextImage from 'next/image';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Session {
   id: string;
@@ -140,7 +140,9 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
       }
     };
 
-    setupWebSocket();
+    setupWebSocket().catch((err) => {
+      console.error('setupWebSocket unhandled error:', err);
+    });
 
     window.addEventListener('auth:refreshed', handleTokenRefreshed);
 

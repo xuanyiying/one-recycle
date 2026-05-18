@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 
 // 配置
 import { appConfig, databaseConfig, authConfig } from './config';
@@ -109,6 +110,7 @@ import { HealthModule } from './modules/health/health.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     // 全局启用 ThrottlerGuard，所有限流默认生效
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule {}

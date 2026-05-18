@@ -72,6 +72,15 @@ export default function RechargePage() {
       toast.error('请选择充值套餐或输入金额');
       return;
     }
+    const amount = selectedPlan ? plans.find((item) => item.id === selectedPlan)?.amount ?? 0 : Number(customAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('请输入有效的充值金额');
+      return;
+    }
+    if (amount > 100000) {
+      toast.error('单次充值金额不能超过100000');
+      return;
+    }
     if (!voucher) {
       toast.error('请上传转账截图');
       return;
@@ -79,29 +88,15 @@ export default function RechargePage() {
 
     try {
       setLoading(true);
-      const amount = selectedAmount;
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const orderNo = `RC${Date.now()}`;
-      setRecords((prev) => [
-        {
-          id: orderNo,
-          orderNo,
-          amount,
-          bonus: selectedPlan ? plans.find((item) => item.id === selectedPlan)?.bonus ?? 0 : 0,
-          status: 'PENDING',
-          paymentMethod,
-          createdAt: new Date().toLocaleString(),
-          voucher,
-        },
-        ...prev,
-      ]);
+      await financeService.createRechargeOrder(amount, paymentMethod);
       toast.success('充值订单创建成功，等待财务确认');
       setSelectedPlan(null);
       setCustomAmount('');
       setVoucher(null);
       setVoucherName('');
-    } catch (error) {
-      toast.error('创建充值订单失败');
+      loadData();
+    } catch (error: any) {
+      toast.error(error?.message || '创建充值订单失败');
     } finally {
       setLoading(false);
     }

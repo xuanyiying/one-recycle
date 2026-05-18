@@ -6,6 +6,7 @@ import { OrderService } from '@/modules/order/services/order.service';
 import { TenantService } from '@/modules/tenant/tenant.service';
 import { SettlementService } from '@/modules/tenant/settlement.service';
 import { QUEUE_NAMES, OrderStatus } from '@/common';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
 @Processor(QUEUE_NAMES.ORDER)
 export class DispatchProcessor {
@@ -16,6 +17,7 @@ export class DispatchProcessor {
     private readonly orderService: OrderService,
     private readonly tenantService: TenantService,
     private readonly settlementService: SettlementService,
+    private readonly deadLetterQueueService: DeadLetterQueueService,
   ) {}
 
   @Process('dispatch-order')
@@ -158,9 +160,21 @@ export class DispatchProcessor {
   }
 
   @OnQueueFailed()
-  onFailed(job: Job, err: Error) {
+  async onFailed(job: Job, err: Error): Promise<void> {
     this.logger.error(
       `Job ${job.id} of type ${job.name} failed with error ${err.message}`,
     );
+
+    if (job.attemptsMade >= (job.opts.attempts || 3)) {
+      await this.deadLetterQueueService.recordFailure({
+        queueName: job.queue.name,
+        jobId: job.id!,
+        jobName: job.name,
+        data: job.data,
+        error: err.message,
+        attemptsMade: job.attemptsMade,
+        failedAt: new Date(),
+      });
+    }
   }
 }

@@ -133,47 +133,64 @@ export class AccountService {
     const amountDecimal = toDecimal(amount);
 
     const run = async (client: Prisma.TransactionClient, isExternalTx: boolean) => {
-      const maxAttempts = isExternalTx ? 1 : 3;
+      const account = await client.account.findUnique({
+        where: {
+          userId_accountType: {
+            userId,
+            accountType: AccountType.WALLET,
+          },
+        },
+      });
 
-      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const account = await client.account.findUnique({
-          where: {
-            userId_accountType: {
-              userId,
-              accountType: AccountType.WALLET,
-            },
+      if (!account) {
+        throw new Error(`Account not found for user ${userId}`);
+      }
+
+      if (isExternalTx) {
+        await client.$queryRaw`SELECT * FROM "Account" WHERE id = ${account.id} FOR UPDATE`;
+      }
+
+      const balanceBefore = toDecimal(account.availableBalance);
+      const balanceAfter = balanceBefore.plus(amountDecimal);
+
+      try {
+        await client.transaction.create({
+          data: {
+            accountId: account.id,
+            type: TransactionType.ORDER_INCOME,
+            amount: amountDecimal,
+            balanceBefore,
+            balanceAfter,
+            orderId,
+            description,
           },
         });
-
-        if (!account) {
-          throw new Error(`Account not found for user ${userId}`);
+      } catch (error: any) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          return account;
         }
+        throw error;
+      }
 
-        const balanceBefore = toDecimal(account.availableBalance);
-        const balanceAfter = balanceBefore.plus(amountDecimal);
+      if (isExternalTx) {
+        await client.account.update({
+          where: { id: account.id },
+          data: {
+            availableBalance: { increment: amountDecimal },
+            totalIncome: { increment: amountDecimal },
+            version: { increment: 1 },
+          },
+        });
+        return client.account.findUniqueOrThrow({
+          where: { id: account.id },
+        });
+      }
 
-        try {
-          await client.transaction.create({
-            data: {
-              accountId: account.id,
-              type: TransactionType.ORDER_INCOME,
-              amount: amountDecimal,
-              balanceBefore,
-              balanceAfter,
-              orderId,
-              description,
-            },
-          });
-        } catch (error: any) {
-          if (
-            error instanceof Prisma.PrismaClientKnownRequestError &&
-            error.code === 'P2002'
-          ) {
-            return account;
-          }
-          throw error;
-        }
-
+      const maxAttempts = 3;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const updatedCount = await client.account.updateMany({
           where: { id: account.id, version: account.version },
           data: {
@@ -184,10 +201,6 @@ export class AccountService {
         });
 
         if (updatedCount.count !== 1) {
-          // Within an external transaction, retrying is useless (same snapshot)
-          if (isExternalTx) {
-            throw new Error('ACCOUNT_VERSION_CONFLICT');
-          }
           continue;
         }
 

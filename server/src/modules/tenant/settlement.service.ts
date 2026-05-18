@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ISettlementService } from './tenant.interfaces';
-import { SettlementStatus, TenantTransactionType } from '@prisma/client';
+import { SettlementStatus, TenantTransactionType, Prisma } from '@prisma/client';
 import { toDecimal, toNumber } from '@/common/utils/decimal.util';
 
 @Injectable()
@@ -85,11 +85,16 @@ export class SettlementService implements ISettlementService {
     );
 
     // Platform fee (5%)
-    const platformFee = goodsAmount.mul(0.05);
+    const platformFeeRate = parseFloat(process.env.PLATFORM_FEE_RATE || '0.05');
+    const platformFee = goodsAmount.mul(new Prisma.Decimal(platformFeeRate));
 
     // Total amount to be added to tenant balance
     const expressFee = toDecimal(order.settlementRecord?.expressFee);
     const totalAmount = goodsAmount.minus(platformFee).minus(expressFee);
+
+    if (totalAmount.isNegative()) {
+      throw new Error(`Settlement amount is negative for order ${orderId}: ${totalAmount.toString()}`);
+    }
 
     // Update settlement record
     await this.prisma.settlementRecord.update({
@@ -115,28 +120,34 @@ export class SettlementService implements ISettlementService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      // 1. Update tenant balance
-      const tenant = await tx.tenant.update({
+      const tenant = await tx.tenant.findUnique({
         where: { id: settlement.tenantId },
+      });
+      if (!tenant) throw new Error(`Tenant ${settlement.tenantId} not found`);
+
+      const updatedTenant = await tx.tenant.updateMany({
+        where: { id: settlement.tenantId, version: tenant.version },
         data: {
           balance: { increment: settlement.totalAmount },
+          version: { increment: 1 },
         },
       });
+      if (updatedTenant.count !== 1) {
+        throw new Error('TENANT_VERSION_CONFLICT');
+      }
 
-      // 2. Create transaction record
       await tx.tenantTransaction.create({
         data: {
           tenantId: settlement.tenantId,
           type: TenantTransactionType.ORDER_INCOME,
           amount: settlement.totalAmount,
-          balanceAfter: tenant.balance,
+          balanceAfter: toDecimal(tenant.balance).plus(settlement.totalAmount),
           relatedType: 'ORDER',
           relatedId: orderId.toString(),
           remark: `Settlement for order ${orderId}`,
         },
       });
 
-      // 3. Mark settlement as completed
       await tx.settlementRecord.update({
         where: { id: settlement.id },
         data: {

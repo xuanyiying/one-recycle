@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Order, OrderStatus, UpdateOrderRequest } from '@/services/orderService';
-import { orderStatusLabels } from '@/lib/orderStateMachine';
+import { orderStatusLabels, getNextStatuses } from '@/lib/orderStateMachine';
 import { useForm } from 'react-hook-form';
 
 interface EditableItem {
@@ -162,7 +162,8 @@ const OrderModal: React.FC<OrderModalProps> = ({
             <div className="space-y-2">
               <label className="text-sm font-medium">状态</label>
               <Select {...register('status', { required: '请选择状态' })}>
-                {Object.values(OrderStatus).map((s) => (
+                <option value={order?.status}>{orderStatusLabels[order?.status as OrderStatus] || order?.status}</option>
+                {getNextStatuses(order?.status as OrderStatus).map((s) => (
                   <option key={s} value={s}>{orderStatusLabels[s] || s}</option>
                 ))}
               </Select>

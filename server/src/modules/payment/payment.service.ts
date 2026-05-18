@@ -78,19 +78,29 @@ export class PaymentService implements OnModuleInit {
   }
 
   async create(createPaymentDto: CreatePaymentDto) {
-    // 检查是否已有支付记录
-    const existingPayment = await this.prisma.payment.findFirst({
+    const existingPayments = await this.prisma.payment.findMany({
       where: {
         orderId: BigInt(createPaymentDto.orderId),
-        status: PaymentStatus.SUCCESS,
+        status: { in: [PaymentStatus.PENDING, PaymentStatus.SUCCESS] },
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    if (existingPayment) {
+    const existingSuccess = existingPayments.find(
+      (p) => p.status === PaymentStatus.SUCCESS,
+    );
+    if (existingSuccess) {
       this.logger.warn(
         `Duplicate payment attempt for order ${createPaymentDto.orderId}`,
       );
       throw new ConflictException('订单已支付成功');
+    }
+
+    const existingPending = existingPayments.find(
+      (p) => p.status === PaymentStatus.PENDING,
+    );
+    if (existingPending) {
+      return existingPending;
     }
 
     // 生成交易号
@@ -126,6 +136,20 @@ export class PaymentService implements OnModuleInit {
     if (!payment) {
       this.logger.error(`Payment not found for update: ${transactionId}`);
       throw new NotFoundException('支付记录不存在');
+    }
+
+    const validTransitions: Record<PaymentStatus, PaymentStatus[]> = {
+      [PaymentStatus.PENDING]: [PaymentStatus.SUCCESS, PaymentStatus.FAILED],
+      [PaymentStatus.SUCCESS]: [PaymentStatus.REFUNDED],
+      [PaymentStatus.FAILED]: [],
+      [PaymentStatus.REFUNDED]: [],
+    };
+
+    const allowed = validTransitions[payment.status];
+    if (!allowed || !allowed.includes(status)) {
+      throw new ConflictException(
+        `非法的支付状态转换: ${payment.status} -> ${status}`,
+      );
     }
 
     this.logger.log(`Updating payment ${transactionId} status to ${status}`);
@@ -173,6 +197,23 @@ export class PaymentService implements OnModuleInit {
     const refundDecimal = new Prisma.Decimal(refundAmount);
     if (refundDecimal.greaterThan(payment.total)) {
       throw new ConflictException('退款金额不能超过支付金额');
+    }
+
+    const existingRefunds = await this.prisma.refund.findMany({
+      where: {
+        paymentId: paymentId,
+        status: { in: [RefundStatus.SUCCESS, RefundStatus.PROCESSING] },
+      },
+      select: { refundAmount: true },
+    });
+
+    const cumulativeRefund = existingRefunds.reduce(
+      (sum, r) => sum.plus(new Prisma.Decimal(r.refundAmount)),
+      new Prisma.Decimal(0),
+    );
+
+    if (cumulativeRefund.plus(refundDecimal).greaterThan(payment.total)) {
+      throw new ConflictException('累计退款金额不能超过支付金额');
     }
 
     const outRefundNo = `REF${this.idGenerator.nextId()}`;
@@ -410,7 +451,6 @@ export class PaymentService implements OnModuleInit {
         );
       }
 
-      // 其他提供商：开发环境放行，生产环境拒绝
       const nodeEnv = this.configService.get<string>('NODE_ENV');
       if (nodeEnv === 'development' || nodeEnv === 'test') {
         this.logger.warn(
@@ -418,6 +458,9 @@ export class PaymentService implements OnModuleInit {
         );
         return true;
       }
+      this.logger.error(
+        `Unknown provider for payment notify in production, outTradeNo: ${notifyData.outTradeNo}`,
+      );
       return false;
     } catch (error) {
       this.logger.error(
@@ -462,14 +505,9 @@ export class PaymentService implements OnModuleInit {
         );
       }
 
-      // 其他提供商：开发环境放行，生产环境拒绝
-      const nodeEnv = this.configService.get<string>('NODE_ENV');
-      if (nodeEnv === 'development' || nodeEnv === 'test') {
-        this.logger.warn(
-          `Unknown provider for refund notify, skipping verification in dev/test mode`,
-        );
-        return true;
-      }
+      this.logger.error(
+        `Unknown provider for refund notify in production, outRefundNo: ${notifyData.outRefundNo}`,
+      );
       return false;
     } catch (error) {
       this.logger.error(
@@ -482,15 +520,16 @@ export class PaymentService implements OnModuleInit {
   /**
    * 从交易号推断支付提供商
    */
-  private detectProviderFromTradeNo(outTradeNo: string): PaymentProvider {
+  private detectProviderFromTradeNo(
+    outTradeNo: string,
+  ): PaymentProvider | null {
     if (outTradeNo.startsWith('WX') || outTradeNo.startsWith('weixin')) {
       return PaymentProvider.WECHAT;
     }
     if (outTradeNo.startsWith('ALI') || outTradeNo.startsWith('alipay')) {
       return PaymentProvider.ALIPAY;
     }
-    // 默认返回微信（最常用的支付提供商）
-    return PaymentProvider.WECHAT;
+    return null;
   }
 
   /**
@@ -569,7 +608,9 @@ export class PaymentService implements OnModuleInit {
       where: { status: RefundStatus.SUCCESS },
       _sum: { refundAmount: true },
     });
-    const totalRefundAmount = toNumber(totalRefundAmountResult._sum.refundAmount);
+    const totalRefundAmount = toNumber(
+      totalRefundAmountResult._sum.refundAmount,
+    );
 
     return {
       totalPayments,

@@ -19,12 +19,16 @@ import {
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
 import { NotificationService } from '@/modules/notification/services/notification.service';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
 @Processor(QUEUE_NAMES.NOTIFICATION)
 export class NotificationProcessor {
   private readonly logger = new Logger(NotificationProcessor.name);
 
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly deadLetterQueueService: DeadLetterQueueService,
+  ) {}
 
   /**
    * 处理短信通知
@@ -442,11 +446,23 @@ export class NotificationProcessor {
    * 任务失败时的钩子
    */
   @OnQueueFailed()
-  onFailed(job: Job, error: Error): void {
+  async onFailed(job: Job, error: Error): Promise<void> {
     this.logger.error(
       `Job ${job.id} failed with error: ${error.message}`,
       error.stack,
     );
+
+    if (job.attemptsMade >= (job.opts.attempts || 3)) {
+      await this.deadLetterQueueService.recordFailure({
+        queueName: job.queue.name,
+        jobId: job.id!,
+        jobName: job.name,
+        data: job.data,
+        error: error.message,
+        attemptsMade: job.attemptsMade,
+        failedAt: new Date(),
+      });
+    }
   }
 
   /**

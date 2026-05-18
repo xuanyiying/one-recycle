@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { OrderService } from '../order/services/order.service';
 import { CourierService } from '../courier/courier.service';
 import { TaskStatus } from '@prisma/client';
 import {
@@ -24,7 +23,6 @@ export class DispatchService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
-    private readonly orderService: OrderService,
     private readonly courierService: CourierService,
   ) {
     this.idGenerator = new PersistentSnowflakeIdGenerator({

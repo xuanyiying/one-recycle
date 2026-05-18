@@ -282,6 +282,8 @@ export class AuthService {
 
                     if (newToken) {
                         Storage.setToken(newToken)
+                        const { useStore } = await import('../store/useStore');
+                        useStore.getState().setToken(newToken);
                         this.lastRefreshTime = Date.now()
                         return { success: true, token: newToken }
                     }
@@ -400,6 +402,8 @@ export class AuthService {
         } finally {
             try {
                 Storage.clearAuth()
+                const { useStore } = await import('../store/useStore');
+                useStore.getState().logout();
             } catch (error) {
                 logger.error('清除本地登录信息失败:', error)
             }

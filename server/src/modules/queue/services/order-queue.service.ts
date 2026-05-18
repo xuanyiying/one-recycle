@@ -27,9 +27,9 @@ export class OrderQueueService {
           type: 'exponential',
           delay: 2000,
         },
+        jobId: `order-created-${data.orderId}`,
       };
 
-      // 添加订单处理任务
       const job = await this.orderQueue.add('order-created', data, jobOptions);
 
       this.logger.log(
@@ -103,12 +103,13 @@ export class OrderQueueService {
   async handleOrderCompleted(data: OrderCompletedEventDto): Promise<void> {
     try {
       const jobOptions: JobOptions = {
-        priority: 10, // 高优先级，确保及时入账
+        priority: 10,
         attempts: 3,
         backoff: {
           type: 'exponential',
           delay: 2000,
         },
+        jobId: `order-completed-${data.orderId}`,
       };
 
       const job = await this.orderQueue.add(
@@ -142,6 +143,7 @@ export class OrderQueueService {
           type: 'exponential',
           delay: 2000,
         },
+        jobId: `order-cancelled-${data.orderId}`,
       };
 
       const job = await this.orderQueue.add(

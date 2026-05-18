@@ -7,6 +7,7 @@ import { OrderProcessor } from './processors/order.processor';
 import { PaymentProcessor } from './processors/payment.processor';
 import { QueueController } from './queue.controller';
 import { QueueGrpcController } from './queue.grpc.controller';
+import { DeadLetterQueueService } from './services/dead-letter-queue.service';
 import { DispatchQueueService } from './services/dispatch-queue.service';
 import { NotificationQueueService } from './services/notification-queue.service';
 import { OrderQueueService } from './services/order-queue.service';
@@ -53,6 +54,22 @@ import { TenantModule } from '../tenant/tenant.module';
     TenantModule,
     PricingModule,
     PointsModule,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+          password: configService.get<string>('REDIS_PASSWORD') || undefined,
+          db: configService.get<number>('REDIS_DB', 0),
+        },
+        defaultJobOptions: {
+          removeOnComplete: 1000,
+          removeOnFail: 5000,
+        },
+      }),
+      inject: [ConfigService],
+    }),
     BullModule.registerQueueAsync(
       { name: QUEUE_NAMES.ORDER },
       {
@@ -74,6 +91,7 @@ import { TenantModule } from '../tenant/tenant.module';
   ],
   controllers: [QueueController, QueueGrpcController],
   providers: [
+    DeadLetterQueueService,
     // Client services for processors
     OrderServiceClient,
     InventoryServiceClient,
@@ -91,6 +109,7 @@ import { TenantModule } from '../tenant/tenant.module';
     DispatchProcessor,
   ],
   exports: [
+    DeadLetterQueueService,
     OrderQueueService,
     NotificationQueueService,
     PaymentQueueService,

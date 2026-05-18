@@ -747,17 +747,24 @@ export class OrderService implements OnModuleInit {
         await Promise.all(inventoryUpdates);
 
         // Batch create inventory transactions
-        const transactions = cancellableReservations.map((r) =>
-          tx.inventoryTransaction.create({
+        const transactions = cancellableReservations.map(async (r) => {
+          const item = await tx.inventoryItem.findUnique({
+            where: { id: r.itemId },
+          });
+          const unitPrice = item ? new Prisma.Decimal(item.unitPrice) : new Prisma.Decimal(0);
+          const qty = new Prisma.Decimal(r.quantity);
+          return tx.inventoryTransaction.create({
             data: {
               itemId: r.itemId,
               type: InventoryTxnType.RELEASE,
               quantity: r.quantity,
+              unitPrice,
+              totalPrice: unitPrice.mul(qty),
               referenceId: order.id.toString(),
               notes: 'order:cancel:release',
             },
-          }),
-        );
+          });
+        });
         await Promise.all(transactions);
       }
 
@@ -1153,7 +1160,7 @@ export class OrderService implements OnModuleInit {
       }[];
     },
   ): Promise<Order> {
-    const order = await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx) => {
       // Re-read order inside transaction to prevent TOCTOU race condition
       const currentOrder = await tx.order.findUnique({
         where: { id: BigInt(id) },
@@ -1209,8 +1216,6 @@ export class OrderService implements OnModuleInit {
           rawSnapshot: result as any,
         },
       });
-
-      return currentOrder;
     });
 
     return this.findById(id) as Promise<Order>;
@@ -1501,8 +1506,35 @@ export class OrderService implements OnModuleInit {
         }
       }
 
-      // Step 2: Transfer succeeded, update status to COMPLETED
-      return this.updateStatus(id, { status: OrderStatus.COMPLETED });
+      const currentOrder = await this.prisma.order.findUnique({ where: { id: BigInt(id) } });
+      if (currentOrder && currentOrder.status === OrderStatus.COMPLETED) {
+        return currentOrder as any;
+      }
+      return this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({ where: { id: BigInt(id) } });
+        if (!order) throw new NotFoundException('Order not found');
+        if (order.status === OrderStatus.COMPLETED) return order;
+        this.validateTransition(order.status, OrderStatus.COMPLETED);
+        const updatedOrder = await tx.order.update({
+          where: { id: BigInt(id) },
+          data: { status: OrderStatus.COMPLETED },
+        });
+        await tx.orderTimeline.create({
+          data: {
+            orderId: BigInt(id),
+            status: OrderStatus.COMPLETED,
+            fromStatus: order.status,
+            toStatus: OrderStatus.COMPLETED,
+            message: `状态变更为 ${OrderStatus.COMPLETED}`,
+            operator: 'SYSTEM',
+            operatorType: 'SYSTEM',
+            operatorId: null,
+            reason: null,
+            rawSnapshot: { method, settlementAmount } as any,
+          },
+        });
+        return updatedOrder;
+      });
     } catch (error) {
       throw error;
     } finally {

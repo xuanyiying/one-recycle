@@ -20,6 +20,7 @@ import { NotificationQueueService } from '../services/notification-queue.service
 import { OrderServiceClient } from '../clients/order-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
 import { OrderStatus } from '@/common/types/business.types';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
 type PaymentCallbackStatus = 'success' | 'failed';
 
@@ -31,6 +32,7 @@ export class PaymentProcessor {
     private readonly notificationQueueService: NotificationQueueService,
     private readonly orderServiceClient: OrderServiceClient,
     private readonly paymentServiceClient: PaymentServiceClient,
+    private readonly deadLetterQueueService: DeadLetterQueueService,
   ) {}
 
   /**
@@ -450,10 +452,22 @@ export class PaymentProcessor {
    * 任务失败时的钩子
    */
   @OnQueueFailed()
-  onFailed(job: Job, error: Error): void {
+  async onFailed(job: Job, error: Error): Promise<void> {
     this.logger.error(
       `Job ${job.id} failed with error: ${error.message}`,
       error.stack,
     );
+
+    if (job.attemptsMade >= (job.opts.attempts || 3)) {
+      await this.deadLetterQueueService.recordFailure({
+        queueName: job.queue.name,
+        jobId: job.id!,
+        jobName: job.name,
+        data: job.data,
+        error: error.message,
+        attemptsMade: job.attemptsMade,
+        failedAt: new Date(),
+      });
+    }
   }
 }

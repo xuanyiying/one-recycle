@@ -258,6 +258,10 @@ model Order {
   @@index([channel])
   @@index([createdAt])
   @@index([targetWarehouseId])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([tenantId])
+  @@index([completedAt])
   @@map("orders")
 }
 
@@ -319,7 +323,6 @@ model LogisticsOrder {
   callbackLogs LogisticsCallbackLog[]
 
   @@unique([orderId])
-  @@index([orderId])
   @@map("logistics_orders")
 }
 
@@ -409,8 +412,8 @@ model OrderItem {
   id              BigInt   @id @default(autoincrement()) @map("id")
   orderId         BigInt   @map("order_id")
   categoryId      Int      @map("category_id")
-  estimatedWeight Float    @map("estimated_weight")
-  actualWeight    Float?   @map("actual_weight")
+  estimatedWeight Decimal  @map("estimated_weight") @db.Decimal(10, 2)
+  actualWeight    Decimal? @map("actual_weight") @db.Decimal(10, 2)
   unitPrice       Decimal  @map("unit_price") @db.Decimal(12, 2)
   amount          Decimal  @map("amount") @db.Decimal(12, 2)
   quantity        Int      @default(1) @map("quantity")
@@ -446,8 +449,6 @@ model Payment {
   logs          PaymentLog[]
 
   @@index([orderId])
-  @@index([transactionId])
-  @@index([outTradeNo])
   @@index([status])
   @@index([provider])
   @@map("payments")
@@ -503,7 +504,6 @@ model Refund {
   payment      Payment      @relation(fields: [paymentId], references: [id])
 
   @@index([paymentId])
-  @@index([outRefundNo])
   @@map("refunds")
 }
 
@@ -619,11 +619,11 @@ model InventoryItem {
   name             String                 @map("name")
   description      String?                @map("description")
   unit             String                 @map("unit")
-  quantity         Float                  @map("quantity")
-  reservedQty      Float                  @default(0) @map("reserved_qty")
-  availableQty     Float                  @map("available_qty")
-  unitPrice        Float                  @map("unit_price")
-  totalPrice       Float                  @map("total_price")
+  quantity         Decimal                 @map("quantity") @db.Decimal(12, 2)
+  reservedQty      Decimal                 @default(0) @map("reserved_qty") @db.Decimal(12, 2)
+  availableQty     Decimal                 @map("available_qty") @db.Decimal(12, 2)
+  unitPrice        Decimal                 @map("unit_price") @db.Decimal(12, 2)
+  totalPrice       Decimal                 @map("total_price") @db.Decimal(12, 2)
   location         String?                @map("location")
   status           InventoryStatus        @map("status")
   itemType         ItemType               @map("item_type")
@@ -662,7 +662,7 @@ model InventoryTransaction {
   id          BigInt           @id @default(autoincrement()) @map("id")
   itemId      BigInt           @map("item_id")
   type        InventoryTxnType @map("type")
-  quantity    Float            @map("quantity")
+  quantity    Decimal          @map("quantity") @db.Decimal(12, 2)
   unitPrice   Decimal          @map("unit_price") @db.Decimal(12, 2)
   totalPrice  Decimal          @map("total_price") @db.Decimal(12, 2)
   referenceId String?          @map("reference_id")
@@ -687,7 +687,7 @@ model Reservation {
   id          BigInt            @id @default(autoincrement()) @map("id")
   itemId      BigInt            @map("item_id")
   orderId     BigInt            @map("order_id")
-  quantity    Float             @map("quantity")
+  quantity    Decimal            @map("quantity") @db.Decimal(12, 2)
   status      ReservationStatus @map("status")
   reservedAt  DateTime          @map("reserved_at")
   confirmedAt DateTime?         @map("confirmed_at")
@@ -731,7 +731,7 @@ model Warehouse {
   type            WarehouseType             @map("type")
   address         String                    @map("address")
   contactPhone    String                    @map("contact_phone")
-  capacity        Float?                    @map("capacity")
+  capacity        Int?                     @map("capacity")
   status          WarehouseStatus           @map("status")
   description     String?                   @map("description")
   tenantId        BigInt?                   @map("tenant_id")
@@ -743,6 +743,7 @@ model Warehouse {
   categoryConfigs CategoryWarehouseConfig[]
   targetOrders    Order[]                   @relation("OrderTargetWarehouse")
 
+  @@index([tenantId])
   @@map("warehouses")
 }
 
@@ -965,7 +966,6 @@ model OrderFeedback {
   user      User     @relation(fields: [userId], references: [id])
   courier   Courier  @relation(fields: [courierId], references: [id])
 
-  @@index([orderId])
   @@index([userId])
   @@index([courierId])
   @@map("order_feedbacks")
@@ -1297,9 +1297,9 @@ model RecyclePricingRule {
   id         BigInt  @id @default(autoincrement()) @map("id")
   tenantId   BigInt  @map("tenant_id")
   categoryId Int     @map("category_id")
-  basePrice  Float   @map("base_price") // 基础单价
-  minWeight  Float?  @map("min_weight")
-  maxWeight  Float?  @map("max_weight")
+  basePrice  Decimal  @map("base_price") @db.Decimal(12, 2)
+  minWeight  Decimal? @map("min_weight") @db.Decimal(10, 2)
+  maxWeight  Decimal? @map("max_weight") @db.Decimal(10, 2)
   ruleJson   Json?   @map("rule_json") // 复杂计费规则
   isActive   Boolean @default(true) @map("is_active")
 
@@ -1561,6 +1561,7 @@ model ChatMessage {
   @@index([sessionId])
   @@index([createdAt])
   @@index([senderType])
+  @@index([sessionId, createdAt])
   @@map("chat_messages")
 }
 
@@ -1616,6 +1617,7 @@ model ServiceTicket {
   @@index([type])
   @@index([assignedTo])
   @@index([createdAt])
+  @@index([userId, status])
   @@map("service_tickets")
 }
 
@@ -1671,7 +1673,6 @@ model CustomerServiceStats {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  @@index([date])
   @@map("customer_service_stats")
 }
 
@@ -1883,6 +1884,7 @@ model PointsOrder {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([productId])
   @@map("points_orders")
 }
 

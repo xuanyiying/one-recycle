@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import Taro from '@tarojs/taro'
-import { useStore } from '@/store/useStore'
 import { AuthService } from '@/services/auth'
+import { useStore } from '@/store/useStore'
 import { User } from '@/types'
-import { Storage } from '@/utils/storage'
 import { logger } from '@/utils/logger'
+import { Storage } from '@/utils/storage'
+import Taro from '@tarojs/taro'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export const useAuth = () => {
   const storeUser = useStore((state) => state.user)
@@ -240,7 +240,7 @@ export const useAuth = () => {
     }
   }, [login])
 
-  return {
+  return useMemo(() => ({
     isLoggedIn,
     user,
     token,
@@ -252,5 +252,5 @@ export const useAuth = () => {
     sendSmsCode,
     loginWithPhone,
     handleSocialLogin
-  }
+  }), [isLoggedIn, user, token, loading])
 }

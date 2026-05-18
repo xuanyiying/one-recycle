@@ -1,18 +1,18 @@
-import { logger } from '@/utils/logger'
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import Taro from '@tarojs/taro';
-import { View, Text, ScrollView, Button, Image } from '@tarojs/components';
-import { Popup } from '@nutui/nutui-react-taro'
-import { useAuth } from '@/hooks/useAuth';
-import { getUserOrders, normalizeOrder } from '@/services/order';
-import type { NormalizedOrder } from '@/services/order';
+import EmptyIcon from '@/assets/images/empty-box.webp';
 import AuthGuard from '@/components/AuthGuard';
-import { RecycleCard } from '@/components/RecycleCard';
 import Icon from '@/components/Icon';
+import { RecycleCard } from '@/components/RecycleCard';
+import { useAuth } from '@/hooks/useAuth';
+import { useRecycleNavigation } from '@/hooks/useRecycleNavigation';
+import type { NormalizedOrder } from '@/services/order';
+import { getUserOrders, normalizeOrder } from '@/services/order';
 import { OrderStatus } from '@/types';
 import { getCdnUrl } from '@/utils/cdn';
-import EmptyIcon from '@/assets/images/empty-box.webp'
-import { useRecycleNavigation } from '@/hooks/useRecycleNavigation';
+import { logger } from '@/utils/logger';
+import { Popup } from '@nutui/nutui-react-taro';
+import { Button, Image, ScrollView, Text, View } from '@tarojs/components';
+import Taro from '@tarojs/taro';
+import React, { useCallback, useRef, useState } from 'react';
 import './index.scss';
 
 const formatDate = (dateString: string) => {
@@ -77,9 +77,11 @@ const OrderListPage: React.FC = () => {
   const [orderList, setOrderList] = useState<NormalizedOrder[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | OrderStatus>('all');
   const [showCategorySelect, setShowCategorySelect] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const activeTabRef = useRef<'all' | OrderStatus>('all');
 
-  const loadOrderList = useCallback(async () => {
+  const loadOrderList = useCallback(async (pageNum: number = 1) => {
     if (!user?.id) {
       setOrderList([])
       setLoading(false)
@@ -87,17 +89,28 @@ const OrderListPage: React.FC = () => {
     }
     try {
       setLoading(true);
-      const result = await getUserOrders(user.id);
+      const params: { page: number; limit: number; status?: string } = { page: pageNum, limit: PAGE_SIZE };
+      if (activeTabRef.current !== 'all') {
+        params.status = activeTabRef.current;
+      }
+      const result = await getUserOrders(user.id, params);
       if (!result?.data?.orders) {
         logger.warn('订单数据格式异常:', result);
-        setOrderList([]);
+        if (pageNum === 1) setOrderList([]);
         return;
       }
       const rawOrders = Array.isArray(result.data.orders) ? result.data.orders : []
-      setOrderList(rawOrders.map(normalizeOrder))
+      const normalized = rawOrders.map(normalizeOrder)
+      if (pageNum === 1) {
+        setOrderList(normalized);
+      } else {
+        setOrderList(prev => [...prev, ...normalized]);
+      }
+      setHasMore(rawOrders.length >= PAGE_SIZE);
+      setPage(pageNum);
     } catch (error) {
       logger.error('加载订单列表失败:', error);
-      setOrderList([]);
+      if (pageNum === 1) setOrderList([]);
       Taro.showToast({
         title: '加载失败，请重试',
         icon: 'error'
@@ -107,43 +120,33 @@ const OrderListPage: React.FC = () => {
     }
   }, [user?.id]);
 
-  useEffect(() => {
-    loadOrderList();
-  }, [loadOrderList]);
-
   Taro.useDidShow(() => {
     const targetTab = Taro.getStorageSync('ORDER_ACTIVE_TAB')
     if (targetTab) {
       setActiveTab(targetTab as any)
+      activeTabRef.current = targetTab as any
       Taro.removeStorageSync('ORDER_ACTIVE_TAB')
     }
-    loadOrderList()
+    loadOrderList(1)
   })
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadOrderList();
+    await loadOrderList(1);
     setRefreshing(false);
   };
 
-  const filteredOrders = useMemo(() => {
-    if (activeTab === 'all') return orderList
-    return orderList.filter(order => order.status === activeTab)
-  }, [orderList, activeTab])
-
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
-  }, [activeTab, orderList.length])
-
-  const handleLoadMore = useCallback(() => {
-    if (visibleCount < filteredOrders.length) {
-      setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filteredOrders.length))
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      loadOrderList(page + 1);
     }
-  }, [visibleCount, filteredOrders.length])
+  }, [loading, hasMore, page, loadOrderList]);
 
-  const visibleOrders = useMemo(() => {
-    return filteredOrders.slice(0, visibleCount)
-  }, [filteredOrders, visibleCount])
+  const handleTabChange = useCallback((tab: 'all' | OrderStatus) => {
+    setActiveTab(tab);
+    activeTabRef.current = tab;
+    loadOrderList(1);
+  }, [loadOrderList]);
 
   const handleOrderClick = useCallback((orderId: string) => {
     Taro.navigateTo({
@@ -243,7 +246,7 @@ const OrderListPage: React.FC = () => {
               <View
                 key={tab.key}
                 className={`tab-item ${activeTab === tab.key ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => handleTabChange(tab.key as any)}
               >
                 <Text className="tab-text">{tab.label}</Text>
                 {activeTab === tab.key && <View className="active-indicator" />}
@@ -258,16 +261,16 @@ const OrderListPage: React.FC = () => {
           refresherEnabled
           refresherTriggered={refreshing}
           onRefresherRefresh={handleRefresh}
-          onScrollToLower={handleLoadMore}
+          onScrollToLower={loadMore}
           lowerThreshold={60}
         >
           {loading ? (
             <View className="loading-container">
               <Text className="loading-text">加载中...</Text>
             </View>
-          ) : visibleOrders.length > 0 ? (
+          ) : orderList.length > 0 ? (
             <View className="order-list">
-              {visibleOrders.map(order => renderOrderItem(order))}
+              {orderList.map(order => renderOrderItem(order))}
             </View>
           ) : (
             <View className="empty-container">
@@ -291,7 +294,7 @@ const OrderListPage: React.FC = () => {
         </ScrollView>
 
         {
-          filteredOrders.length > 0 && (
+          orderList.length > 0 && (
             <View className="fab-container">
               <Button
                 className="fab-btn"

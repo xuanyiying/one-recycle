@@ -21,6 +21,7 @@ import { DispatchServiceClient } from '../clients/dispatch-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
 import { PricingService } from '@/modules/pricing/pricing.service';
 import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
 @Processor(QUEUE_NAMES.ORDER)
 export class OrderProcessor {
@@ -34,6 +35,7 @@ export class OrderProcessor {
     private readonly paymentServiceClient: PaymentServiceClient,
     private readonly pricingService: PricingService,
     private readonly referralRewardService: ReferralRewardService,
+    private readonly deadLetterQueueService: DeadLetterQueueService,
   ) {}
 
   /**
@@ -466,10 +468,22 @@ export class OrderProcessor {
    * 任务失败时的钩子
    */
   @OnQueueFailed()
-  onFailed(job: Job, error: Error): void {
+  async onFailed(job: Job, error: Error): Promise<void> {
     this.logger.error(
       `Job ${job.id} failed with error: ${error.message}`,
       error.stack,
     );
+
+    if (job.attemptsMade >= (job.opts.attempts || 3)) {
+      await this.deadLetterQueueService.recordFailure({
+        queueName: job.queue.name,
+        jobId: job.id!,
+        jobName: job.name,
+        data: job.data,
+        error: error.message,
+        attemptsMade: job.attemptsMade,
+        failedAt: new Date(),
+      });
+    }
   }
 }

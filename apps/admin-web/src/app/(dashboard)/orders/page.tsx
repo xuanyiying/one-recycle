@@ -1,7 +1,19 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
+import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -10,49 +22,37 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
+import { toast } from '@/components/ui/toast';
+import { useDebounce } from '@/hooks/useDebounce';
+import { orderStatusLabels, orderStatusSequence } from '@/lib/orderStateMachine';
+import { cn } from '@/lib/utils/cn';
 import {
-  orderService,
-  OrderListResponse,
-  OrderStatus,
-  OrderQueryParams,
   Order,
+  OrderListResponse,
+  OrderQueryParams,
+  orderService,
+  OrderStatus,
   UpdateOrderRequest,
 } from '@/services/orderService';
-import { Badge } from '@/components/ui/badge';
 import {
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import {
-  Search,
-  RotateCw,
-  Eye,
-  Trash2,
-  SlidersHorizontal,
-  Columns,
-  List,
-  ScanLine,
-  Truck,
-  PackageCheck,
   CalendarRange,
-  User,
   Camera,
+  Columns,
+  Eye,
+  List,
+  PackageCheck,
+  RotateCw,
+  ScanLine,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  Truck,
+  User,
 } from 'lucide-react';
-import OrderModal from './components/OrderModal';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useDebounce } from '@/hooks/useDebounce';
-import { toast } from '@/components/ui/toast';
-import { cn } from '@/lib/utils/cn';
-import { orderStatusLabels, orderStatusSequence } from '@/lib/orderStateMachine';
 import NextImage from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import React, { useCallback, useEffect, useState } from 'react';
+import OrderModal from './components/OrderModal';
 
 type PanelKey = 'list' | 'inspection' | 'receiving' | 'inbound';
 
@@ -399,16 +399,19 @@ export default function OrdersPage() {
       return;
     }
     try {
-      await orderService.updateOrderStatus(inspectionOrder, OrderStatus.INSPECTED);
-      toast.success('验货结果已提交');
+      await orderService.inspectOrder(inspectionOrder, {
+        images: inspectionImages,
+        result: inspectionResult,
+        reasons: inspectionResult === 'EXCEPTION' ? inspectionReasons : [],
+        note: inspectionNote,
+      });
       setInspectionOrder('');
       setInspectionImages([]);
       setInspectionResult('PASS');
       setInspectionReasons([]);
       setInspectionNote('');
-    } catch (error) {
-      console.error(error);
-      toast.error('验货提交失败');
+    } catch (error: any) {
+      toast.error(error?.message || '验货提交失败');
     }
   };
 
@@ -422,15 +425,17 @@ export default function OrdersPage() {
       return;
     }
     try {
-      await orderService.updateOrderStatus(receivingOrder, OrderStatus.PENDING_INBOUND);
-      toast.success('收货信息已提交');
+      await orderService.receiveOrder(receivingOrder, {
+        receivingPerson,
+        receivingTime,
+        proof: receivingProof,
+      });
       setReceivingOrder('');
       setReceivingPerson('');
       setReceivingTime('');
       setReceivingProof(null);
-    } catch (error) {
-      console.error(error);
-      toast.error('收货确认提交失败');
+    } catch (error: any) {
+      toast.error(error?.message || '收货确认提交失败');
     }
   };
 
@@ -445,13 +450,18 @@ export default function OrdersPage() {
       return;
     }
     try {
-      await orderService.updateOrderStatus(inboundNo, OrderStatus.INBOUNDED);
-      toast.success('入库单已提交');
+      await orderService.inboundOrder(inboundNo, {
+        inboundNo,
+        items: inboundItems.filter((row) => row.sku && row.quantity).map((row) => ({
+          sku: row.sku,
+          quantity: Number(row.quantity),
+          location: row.location,
+        })),
+      });
       setInboundNo('');
       setInboundItems([{ id: 'row-1', sku: '', quantity: '', location: '' }]);
-    } catch (error) {
-      console.error(error);
-      toast.error('入库提交失败');
+    } catch (error: any) {
+      toast.error(error?.message || '入库提交失败');
     }
   };
 

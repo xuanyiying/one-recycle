@@ -229,8 +229,8 @@ export function normalizeOrderDetail(raw: any): NormalizedOrderDetail {
   }
 }
 
-export const getUserOrders = async (userId: string | number) => {
-  const response = await get<OrderListResponse>(`/orders/user/${userId}`)
+export const getUserOrders = async (userId: string | number, params?: { page?: number; limit?: number; status?: string }) => {
+  const response = await get<OrderListResponse>(`/orders/user/${userId}`, params)
   if (!response.success) {
     throw new Error(response.message || '获取订单列表失败')
   }

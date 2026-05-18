@@ -1,10 +1,10 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
-import Taro from '@tarojs/taro'
-import { Storage } from '@/utils/storage'
-import { logger } from '@/utils/logger'
 import type { User } from '@/types'
+import { logger } from '@/utils/logger'
+import { Storage } from '@/utils/storage'
+import Taro from '@tarojs/taro'
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
 
 export interface AppOrder {
   id: string | number
@@ -211,23 +211,7 @@ export const useStoreActions = () => {
     logout: state.logout,
     reset: state.reset,
     touchUpdate: state.touchUpdate,
-  }), (a, b) => {
-    // Zustand actions are stable references, so shallow-equal comparison is sufficient
-    return a.setUser === b.setUser &&
-      a.setToken === b.setToken &&
-      a.updateUser === b.updateUser &&
-      a.clearUser === b.clearUser &&
-      a.setOrders === b.setOrders &&
-      a.addOrder === b.addOrder &&
-      a.updateOrder === b.updateOrder &&
-      a.removeOrder === b.removeOrder &&
-      a.setLoading === b.setLoading &&
-      a.setError === b.setError &&
-      a.login === b.login &&
-      a.logout === b.logout &&
-      a.reset === b.reset &&
-      a.touchUpdate === b.touchUpdate;
-  })
+  }))
 }
 
 export const migrateFromLocalStorage = (): void => {

@@ -317,6 +317,39 @@ class OrderService {
   async getRecentOrders(limit: number = 10): Promise<Order[]> {
     return apiClient.get<Order[]>(`${this.baseUrl}/recent`, { limit });
   }
+
+  async inspectOrder(orderId: number | string, data: {
+    images: string[];
+    result: 'PASS' | 'EXCEPTION';
+    reasons?: string[];
+    note?: string;
+  }): Promise<void> {
+    return apiClient.post<void>(`${this.baseUrl}/${orderId}/inspect`, data, {
+      showSuccess: true,
+      successMessage: '验货结果已提交',
+    });
+  }
+
+  async receiveOrder(orderId: number | string, data: {
+    receivingPerson: string;
+    receivingTime: string;
+    proof: string | null;
+  }): Promise<void> {
+    return apiClient.post<void>(`${this.baseUrl}/${orderId}/receive`, data, {
+      showSuccess: true,
+      successMessage: '收货信息已提交',
+    });
+  }
+
+  async inboundOrder(orderId: number | string, data: {
+    inboundNo: string;
+    items: Array<{ sku: string; quantity: number; location?: string }>;
+  }): Promise<void> {
+    return apiClient.post<void>(`${this.baseUrl}/${orderId}/inbound`, data, {
+      showSuccess: true,
+      successMessage: '入库信息已提交',
+    });
+  }
 }
 
 // 导出单例实例

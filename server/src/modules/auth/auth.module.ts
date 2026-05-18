@@ -7,6 +7,7 @@ import {
 import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import * as crypto from 'crypto';
 import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
 import AuthRedisService from './auth-redis.service';
@@ -32,8 +33,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         const parsedExpiresIn: number | string = /^\d+$/.test(expiresIn)
           ? parseInt(expiresIn, 10)
           : expiresIn;
+        const devFallback = crypto.createHash('sha256').update('one-recycle-dev-' + (process.env.USER || process.env.HOME || 'default')).digest('hex');
         return {
-          secret: secret || 'dev-only-secret-key-DO-NOT-USE-IN-PRODUCTION',
+          secret: secret || devFallback,
           signOptions: {
             expiresIn: parsedExpiresIn as any,
           },
@@ -54,4 +56,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   exports: [AuthRedisService, JwtAuthGuard, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }

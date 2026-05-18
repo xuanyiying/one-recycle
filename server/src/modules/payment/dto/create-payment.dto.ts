@@ -1,4 +1,4 @@
-import { IsNumber, IsEnum, IsOptional, IsString, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
