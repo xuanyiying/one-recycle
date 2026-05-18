@@ -239,7 +239,7 @@ export const uploadOrderPhotos = async (filePaths: string[]): Promise<string[]> 
         fileName,
         fileSize: fileInfo.size,
         contentType,
-        fileType: 'image',
+        fileType: 'IMAGE',
         category: 'ORDER_PHOTO',
       }
     )

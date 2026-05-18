@@ -197,7 +197,7 @@ export const categoryService = {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', 'image');
+      formData.append('fileType', 'IMAGE');
 
       const response = await apiClient.upload<{ url: string }>('/storage/upload', formData);
       return { url: response.url };
