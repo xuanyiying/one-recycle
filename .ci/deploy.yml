@@ -19,7 +19,7 @@
   services:
     - docker
   imports:
-    - ./secrets.yml
+    - https://cnb.cool/udefined.cc/secrets/-/blob/main/deploy.yml
   lock:
     key: deploy-lock
     wait: true
