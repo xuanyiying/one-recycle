@@ -83,8 +83,7 @@ prod:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git checkout -f $CNB_BRANCH
-            git pull origin $CNB_BRANCH
+            git reset --hard "origin/$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
@@ -170,8 +169,7 @@ withoutai:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git checkout -f $CNB_BRANCH
-            git pull origin $CNB_BRANCH
+            git reset --hard "origin/$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
@@ -269,7 +267,7 @@ $:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git checkout -f "$CNB_BRANCH"
+            git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
@@ -307,7 +305,7 @@ $:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git checkout -f "$CNB_BRANCH"
+            git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
@@ -358,8 +356,7 @@ $:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git checkout -f $CNB_BRANCH
-            git pull origin $CNB_BRANCH
+            git reset --hard "origin/$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
@@ -397,8 +394,7 @@ $:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git checkout -f $CNB_BRANCH
-            git pull origin $CNB_BRANCH
+            git reset --hard "origin/$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
