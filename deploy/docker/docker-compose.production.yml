@@ -335,8 +335,8 @@ services:
     build:
       context: ../../apps/admin-web
       dockerfile: Dockerfile
-    args:
-      NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
+      args:
+        NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
     image: one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
