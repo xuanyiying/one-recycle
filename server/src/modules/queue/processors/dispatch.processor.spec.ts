@@ -4,6 +4,7 @@ import { LogisticsIntegrationService } from '@/modules/logistics/logistics-integ
 import { OrderService } from '@/modules/order/services/order.service';
 import { TenantService } from '@/modules/tenant/tenant.service';
 import { SettlementService } from '@/modules/tenant/settlement.service';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 import { OrderStatus } from '@/common';
 import { Job } from 'bull';
 
@@ -51,6 +52,10 @@ describe('DispatchProcessor', () => {
     saveDispatchResult: jest.fn(),
   };
 
+  const mockDeadLetterQueueService = {
+    enqueue: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -62,6 +67,7 @@ describe('DispatchProcessor', () => {
         { provide: OrderService, useValue: mockOrderService },
         { provide: TenantService, useValue: mockTenantService },
         { provide: SettlementService, useValue: mockSettlementService },
+        { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
       ],
     }).compile();
 

@@ -3,6 +3,7 @@ import { PaymentProcessor } from './payment.processor';
 import { NotificationQueueService } from '../services/notification-queue.service';
 import { OrderServiceClient } from '../clients/order-service.client';
 import { PaymentServiceClient } from '../clients/payment-service.client';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 import { Job } from 'bull';
 import {
   PaymentCallbackEventDto,
@@ -30,6 +31,10 @@ describe('PaymentProcessor', () => {
     sendOrderStatusNotification: jest.fn(),
   };
 
+  const mockDeadLetterQueueService = {
+    enqueue: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -40,6 +45,7 @@ describe('PaymentProcessor', () => {
         },
         { provide: OrderServiceClient, useValue: mockOrderServiceClient },
         { provide: PaymentServiceClient, useValue: mockPaymentServiceClient },
+        { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
       ],
     }).compile();
 

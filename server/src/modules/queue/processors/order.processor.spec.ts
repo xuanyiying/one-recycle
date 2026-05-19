@@ -9,6 +9,7 @@ import { Job } from 'bull';
 import { OrderCreatedEventDto } from '../dto/order-events.dto';
 import { PricingService } from '@/modules/pricing/pricing.service';
 import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
 describe('OrderProcessor', () => {
   let processor: OrderProcessor;
@@ -41,6 +42,10 @@ describe('OrderProcessor', () => {
     processOrderRewards: jest.fn().mockResolvedValue({}),
   };
 
+  const mockDeadLetterQueueService = {
+    enqueue: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,6 +63,7 @@ describe('OrderProcessor', () => {
         { provide: PaymentServiceClient, useValue: mockPaymentServiceClient },
         { provide: PricingService, useValue: mockPricingService },
         { provide: ReferralRewardService, useValue: mockReferralRewardService },
+        { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
       ],
     }).compile();
 

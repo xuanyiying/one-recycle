@@ -24,6 +24,7 @@ describe('OrderService', () => {
     decr: jest.fn(),
     get: jest.fn(),
     expire: jest.fn(),
+    eval: jest.fn().mockResolvedValue(1),
   };
 
   const mockRedisService = {

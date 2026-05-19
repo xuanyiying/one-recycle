@@ -104,6 +104,7 @@ describe('PaymentService', () => {
       provider: PaymentProvider.WECHAT,
       amount: 88,
     };
+    mockPrismaService.payment.findMany.mockResolvedValue([]);
     mockPrismaService.payment.findFirst.mockResolvedValue(null);
     mockPrismaService.payment.create.mockResolvedValue({
       id: BigInt(1),
@@ -118,6 +119,9 @@ describe('PaymentService', () => {
   });
 
   it('should block duplicate payment', async () => {
+    mockPrismaService.payment.findMany.mockResolvedValue([
+      { id: BigInt(1), status: PaymentStatus.SUCCESS },
+    ]);
     mockPrismaService.payment.findFirst.mockResolvedValue({
       id: BigInt(1),
       status: PaymentStatus.SUCCESS,
@@ -135,6 +139,7 @@ describe('PaymentService', () => {
   it('should update payment status', async () => {
     mockPrismaService.payment.findFirst.mockResolvedValue({
       id: BigInt(1),
+      status: PaymentStatus.PENDING,
     });
     mockPrismaService.payment.update.mockResolvedValue({
       id: BigInt(1),
@@ -196,6 +201,7 @@ describe('PaymentService', () => {
       status: PaymentStatus.SUCCESS,
       total: 100,
     });
+    mockPrismaService.refund.findMany.mockResolvedValue([]);
     mockPrismaService.refund.create.mockResolvedValue({
       id: BigInt(20),
       status: RefundStatus.PROCESSING,
@@ -212,6 +218,7 @@ describe('PaymentService', () => {
       status: PaymentStatus.SUCCESS,
       total: 100,
     });
+    mockPrismaService.refund.findMany.mockResolvedValue([]);
 
     await expect(service.createRefund(BigInt(10), 120)).rejects.toThrow(
       ConflictException,

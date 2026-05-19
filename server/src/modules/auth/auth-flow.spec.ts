@@ -120,11 +120,16 @@ describe('AuthFlow Integration', () => {
     expect(notificationService.sendNotification).toHaveBeenCalled();
     console.log('Verification code sent successfully.');
 
+    // Retrieve the actual verification code stored in the Redis mock
+    const codeKey = `auth:code:${mockMobile}`;
+    const storedData = await redisService.get(codeKey);
+    const actualCode = storedData?.code;
+
     // 2. Login
-    console.log('Step 2: Logging in with code 123456...');
+    console.log(`Step 2: Logging in with code ${actualCode}...`);
     const loginRes = await service.login({
       mobile: mockMobile,
-      verificationCode: '123456', // Using dev/test backdoor code
+      verificationCode: actualCode,
     });
 
     // 3. Verify Response Structure
