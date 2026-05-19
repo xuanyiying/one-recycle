@@ -520,6 +520,13 @@ describe('OrderService', () => {
         Promise.resolve(
           cb({
             order: {
+              findUnique: jest.fn().mockResolvedValue({
+                ...updatedOrder,
+                id: BigInt(order.id),
+                userId: BigInt(order.userId),
+                addressId: BigInt(order.addressId),
+                settlementAmount: new Prisma.Decimal(88),
+              }),
               update: jest.fn().mockResolvedValue({
                 ...updatedOrder,
                 id: BigInt(order.id),
