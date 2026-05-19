@@ -1,0 +1,17 @@
+# 手动部署触发器
+# 对应 deploy.yml 中的 workflow_dispatch (deploy_mode 选择)
+
+branch:
+  - reg: .*
+    buttons:
+      - name: 部署
+        event: web_trigger_deploy
+        permissions:
+          roles: [master, developer]
+        inputs:
+          deploy_mode:
+            name: 部署模式
+            type: select
+            options:
+              - { name: 单体架构, value: monolith }
+              - { name: 微服务, value: microservices }
