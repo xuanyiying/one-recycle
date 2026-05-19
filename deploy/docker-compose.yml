@@ -99,7 +99,8 @@ services:
       context: ../apps/admin-web
       dockerfile: Dockerfile
     args:
-      NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
+      NEXT_PUBLIC_API_URL: /api
+      API_BACKEND_URL: http://api-gateway:3002
     image: one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
@@ -110,7 +111,8 @@ services:
         max-file: "3"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: https://${DOMAIN:-backbuy.cn}/api
+      NEXT_PUBLIC_API_URL: /api
+      API_BACKEND_URL: http://api-gateway:3002
     depends_on:
       - api-gateway
     networks:

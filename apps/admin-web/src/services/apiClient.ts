@@ -13,11 +13,11 @@ import axios, {
  * 支持请求拦截、响应处理、错误处理等功能
  */
 
-// API基础URL配置 - 从环境变量读取，默认使用主域名 /api 路径
+// API基础URL配置 - 从环境变量读取，默认使用相对路径 /api（通过 Next.js rewrites 代理到后端）
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://backbuy.cn/api';
+  '/api';
 
 /**
  * 通用API响应接口
