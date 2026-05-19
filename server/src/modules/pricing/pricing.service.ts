@@ -169,7 +169,15 @@ export class PricingService {
 
       const weightFactor = hasWeight ? this.calculateWeightFactor(weight) : 1;
       const priceInfo = this.parsePriceInfo(category?.priceInfo);
-      const isRuleApplicable = hasWeight && this.isRuleApplicable(rule, weight);
+      const isRuleApplicable = hasWeight && this.isRuleApplicable(
+        rule
+          ? {
+              minWeight: rule.minWeight !== null ? Number(rule.minWeight) : null,
+              maxWeight: rule.maxWeight !== null ? Number(rule.maxWeight) : null,
+            }
+          : undefined,
+        weight,
+      );
 
       let unitPrice = 0;
       let priceRange: PriceRange | undefined;
