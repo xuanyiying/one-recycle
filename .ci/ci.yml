@@ -1,0 +1,83 @@
+# ============================================================
+# CI 流水线
+# 对应 .github/workflows/ci.yml
+# ============================================================
+
+main:
+  push:
+    - &server-ci
+      name: server-ci
+      runner:
+        cpus: 2
+      docker:
+        image: node:22
+        volumes:
+          - server_deps:/workspace/server/node_modules:rw
+      services:
+        - docker
+      stages:
+        - name: setup-pnpm
+          script: |
+            corepack enable
+            corepack prepare pnpm@9 --activate
+        - name: install
+          script: cd server && pnpm install --frozen-lockfile
+        - name: lint
+          script: cd server && pnpm run lint
+        - name: typecheck
+          script: cd server && pnpm run typecheck
+        - name: start-services
+          script: |
+            docker run -d --name postgres \
+              -e POSTGRES_PASSWORD=postgres \
+              -e POSTGRES_DB=test_db \
+              -p 5432:5432 \
+              postgres:15
+            docker run -d --name redis \
+              -p 6379:6379 \
+              redis:7
+            for i in $(seq 1 30); do
+              docker exec postgres pg_isready -U postgres >/dev/null 2>&1 && break
+              sleep 1
+            done
+        - name: unit-tests
+          script: cd server && pnpm run test:cov:unit
+          env:
+            DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+            REDIS_URL: redis://localhost:6379
+        - name: e2e-tests
+          script: cd server && pnpm run test:cov:e2e
+          env:
+            DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+            REDIS_URL: redis://localhost:6379
+
+    - &admin-web-ci
+      name: admin-web-ci
+      runner:
+        cpus: 2
+      docker:
+        image: node:22
+        volumes:
+          - admin_deps:/workspace/apps/admin-web/node_modules:rw
+      stages:
+        - name: setup-pnpm
+          script: |
+            corepack enable
+            corepack prepare pnpm@9 --activate
+        - name: install
+          script: cd apps/admin-web && pnpm install --frozen-lockfile
+        - name: lint
+          script: cd apps/admin-web && pnpm run lint
+        - name: typecheck
+          script: cd apps/admin-web && pnpm run typecheck
+        - name: build
+          script: cd apps/admin-web && pnpm run build
+
+  pull_request:
+    - *server-ci
+    - *admin-web-ci
+
+develop:
+  push:
+    - *server-ci
+    - *admin-web-ci

@@ -1,0 +1,426 @@
+# ============================================================
+# 部署流水线
+# 对应 .github/workflows/deploy.yml
+# ============================================================
+
+# --- 共用部署配置 ---
+
+.deploy-runner: &deploy-runner
+  cpus: 2
+
+.deploy-docker: &deploy-docker
+  image: node:22
+  volumes:
+    - server_deps:/workspace/server/node_modules:rw
+
+.deploy-base: &deploy-base
+  runner: *deploy-runner
+  docker: *deploy-docker
+  services:
+    - docker
+  imports:
+    - ./secrets.yml
+  lock:
+    key: deploy-lock
+    wait: true
+
+# --- 共用部署阶段（锚点在 prod 首次定义，其他分支引用） ---
+
+prod:
+  push:
+    - name: deploy-monolith
+      <<: *deploy-base
+      stages:
+        - &deploy-setup-pnpm
+          name: setup-pnpm
+          script: |
+            corepack enable
+            corepack prepare pnpm@9 --activate
+        - &deploy-install
+          name: install
+          script: cd server && pnpm install --frozen-lockfile
+        - &deploy-lint
+          name: lint
+          script: cd server && pnpm run lint
+        - &deploy-typecheck
+          name: typecheck
+          script: cd server && pnpm run typecheck
+        - &deploy-start-services
+          name: start-services
+          script: |
+            docker run -d --name postgres \
+              -e POSTGRES_PASSWORD=postgres \
+              -e POSTGRES_DB=test_db \
+              -p 5432:5432 \
+              postgres:15
+            docker run -d --name redis \
+              -p 6379:6379 \
+              redis:7
+            for i in $(seq 1 30); do
+              docker exec postgres pg_isready -U postgres >/dev/null 2>&1 && break
+              sleep 1
+            done
+        - &deploy-unit-tests
+          name: unit-tests
+          script: cd server && pnpm run test:cov:unit
+          env:
+            DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+            REDIS_URL: redis://localhost:6379
+        - &deploy-setup-ssh
+          name: setup-ssh
+          script: |
+            mkdir -p ~/.ssh
+            echo "$DEPLOY_KEY" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+        - name: deploy
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            echo "=== Deploying monolith (server-side build) ==="
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout $CNB_BRANCH
+            git pull origin $CNB_BRANCH
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
+
+            echo "=== Writing .env ==="
+            MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
+            MONOLITH_ENV="$DEPLOY_DIR/.env.production"
+            {
+              echo "IMAGE_TAG=$CNB_BRANCH"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+                cat "$DEPLOY_DIR/config/.env.production"
+              fi
+            } > "$MICROSERVICES_ENV"
+
+            echo "=== Building images on server ==="
+            cd "$DEPLOY_DIR"
+            docker compose build --parallel api-gateway admin-web
+
+            echo "=== Stopping old containers ==="
+            docker compose down || true
+
+            echo "=== Starting monolith ==="
+            docker compose up -d
+
+            echo "=== Waiting for services ==="
+            sleep 15
+            docker compose ps
+            docker compose logs --tail=20
+
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
+            echo "=== Monolith deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+        - &health-check-monolith
+          name: health-check
+          script: |
+            sleep 30
+            DOMAIN="${DOMAIN:-backbuy.cn}"
+            for i in $(seq 1 10); do
+              echo "Health check attempt $i/10..."
+              if curl -sf --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1; then
+                echo "Application health passed: https://${DOMAIN}/api/health"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "Health check failed"
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+            cd $HOME/one-recycle/deploy
+            docker compose ps -a
+            echo "=== Caddy logs ==="
+            docker logs one-recycle-caddy --tail=30 2>/dev/null || true
+            echo "=== Backend logs ==="
+            docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
+            ENDSSH
+            exit 1
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+
+withoutai:
+  push:
+    - name: deploy-microservices
+      <<: *deploy-base
+      stages:
+        - *deploy-setup-pnpm
+        - *deploy-install
+        - *deploy-lint
+        - *deploy-typecheck
+        - *deploy-start-services
+        - *deploy-unit-tests
+        - *deploy-setup-ssh
+        - name: deploy
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            echo "=== Deploying microservices (server-side build) ==="
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout $CNB_BRANCH
+            git pull origin $CNB_BRANCH
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
+
+            echo "=== Writing .env ==="
+            {
+              echo "IMAGE_TAG=$CNB_BRANCH"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+                cat "$DEPLOY_DIR/config/.env.production"
+              fi
+            } > "$DEPLOY_DIR/.env.production"
+
+            echo "=== Building images on server ==="
+            cd "$DEPLOY_DIR"
+            docker compose -f docker/docker-compose.production.yml build --parallel
+
+            echo "=== Stopping old containers ==="
+            docker compose -f docker/docker-compose.production.yml down || true
+
+            echo "=== Starting microservices ==="
+            docker compose -f docker/docker-compose.production.yml up -d
+
+            echo "=== Waiting for services ==="
+            sleep 15
+            docker compose -f docker/docker-compose.production.yml ps
+            docker compose -f docker/docker-compose.production.yml logs --tail=20
+
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
+            echo "=== Microservices deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+        - &health-check-microservices
+          name: health-check
+          script: |
+            sleep 30
+            DOMAIN="${DOMAIN:-backbuy.cn}"
+            for i in $(seq 1 10); do
+              echo "Health check attempt $i/10..."
+              if curl -sf --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1; then
+                echo "Application health passed: https://${DOMAIN}/api/health"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "Health check failed"
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+            cd $HOME/one-recycle/deploy
+            docker compose -f docker/docker-compose.production.yml ps -a
+            echo "=== Caddy logs ==="
+            docker logs one-recycle-caddy --tail=30 2>/dev/null || true
+            echo "=== API Gateway logs ==="
+            docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
+            ENDSSH
+            exit 1
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+
+# ============================================================
+# 兜底分支：Tag 推送部署 + 手动触发部署
+# ============================================================
+
+$:
+  tag_push:
+    - name: deploy-by-tag
+      <<: *deploy-base
+      stages:
+        - name: determine-mode
+          script: |
+            if [[ "$CNB_BRANCH" == *"-micro" ]]; then
+              echo "##[set-output DEPLOY_MODE=microservices]"
+            else
+              echo "##[set-output DEPLOY_MODE=monolith]"
+            fi
+          exports:
+            DEPLOY_MODE: DEPLOY_MODE
+        - *deploy-setup-pnpm
+        - *deploy-install
+        - *deploy-lint
+        - *deploy-typecheck
+        - *deploy-start-services
+        - *deploy-unit-tests
+        - *deploy-setup-ssh
+        - name: deploy-monolith
+          if: '[ "$DEPLOY_MODE" = "monolith" ]'
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            echo "=== Deploying monolith (tag: $CNB_BRANCH) ==="
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout "$CNB_BRANCH"
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
+
+            MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
+            MONOLITH_ENV="$DEPLOY_DIR/.env.production"
+            {
+              echo "IMAGE_TAG=$CNB_BRANCH"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+                cat "$DEPLOY_DIR/config/.env.production"
+              fi
+            } > "$MICROSERVICES_ENV"
+
+            cd "$DEPLOY_DIR"
+            docker compose build --parallel api-gateway admin-web
+            docker compose down || true
+            docker compose up -d
+            sleep 15
+            docker compose ps
+            docker image prune -f
+            echo "=== Monolith deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+        - name: deploy-microservices
+          if: '[ "$DEPLOY_MODE" = "microservices" ]'
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            echo "=== Deploying microservices (tag: $CNB_BRANCH) ==="
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout "$CNB_BRANCH"
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
+
+            {
+              echo "IMAGE_TAG=$CNB_BRANCH"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+                cat "$DEPLOY_DIR/config/.env.production"
+              fi
+            } > "$DEPLOY_DIR/.env.production"
+
+            cd "$DEPLOY_DIR"
+            docker compose -f docker/docker-compose.production.yml build --parallel
+            docker compose -f docker/docker-compose.production.yml down || true
+            docker compose -f docker/docker-compose.production.yml up -d
+            sleep 15
+            docker compose -f docker/docker-compose.production.yml ps
+            docker image prune -f
+            echo "=== Microservices deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+        - *health-check-monolith
+
+  web_trigger_deploy:
+    - name: deploy-manual
+      <<: *deploy-base
+      env:
+        DEPLOY_MODE: ${DEPLOY_MODE:-monolith}
+      stages:
+        - *deploy-setup-pnpm
+        - *deploy-install
+        - *deploy-lint
+        - *deploy-typecheck
+        - *deploy-start-services
+        - *deploy-unit-tests
+        - *deploy-setup-ssh
+        - name: deploy-monolith
+          if: '[ "$DEPLOY_MODE" = "monolith" ]'
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            echo "=== Deploying monolith (manual trigger) ==="
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout $CNB_BRANCH
+            git pull origin $CNB_BRANCH
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
+
+            MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
+            MONOLITH_ENV="$DEPLOY_DIR/.env.production"
+            {
+              echo "IMAGE_TAG=$CNB_BRANCH"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+                cat "$DEPLOY_DIR/config/.env.production"
+              fi
+            } > "$MICROSERVICES_ENV"
+
+            cd "$DEPLOY_DIR"
+            docker compose build --parallel api-gateway admin-web
+            docker compose down || true
+            docker compose up -d
+            sleep 15
+            docker compose ps
+            docker image prune -f
+            echo "=== Monolith deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+        - name: deploy-microservices
+          if: '[ "$DEPLOY_MODE" = "microservices" ]'
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            echo "=== Deploying microservices (manual trigger) ==="
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git checkout $CNB_BRANCH
+            git pull origin $CNB_BRANCH
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
+
+            {
+              echo "IMAGE_TAG=$CNB_BRANCH"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
+                cat "$DEPLOY_DIR/config/.env.production"
+              fi
+            } > "$DEPLOY_DIR/.env.production"
+
+            cd "$DEPLOY_DIR"
+            docker compose -f docker/docker-compose.production.yml build --parallel
+            docker compose -f docker/docker-compose.production.yml down || true
+            docker compose -f docker/docker-compose.production.yml up -d
+            sleep 15
+            docker compose -f docker/docker-compose.production.yml ps
+            docker image prune -f
+            echo "=== Microservices deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+        - *health-check-monolith
