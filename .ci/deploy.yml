@@ -75,7 +75,7 @@ prod:
             ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
         - name: deploy
           script: |
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
@@ -83,7 +83,7 @@ prod:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git reset --hard "origin/$CNB_BRANCH"
+            git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
@@ -135,7 +135,7 @@ prod:
               sleep 10
             done
             echo "Health check failed"
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
             cd $HOME/one-recycle/deploy
             docker compose ps -a
             echo "=== Caddy logs ==="
@@ -161,7 +161,7 @@ withoutai:
         - *deploy-setup-ssh
         - name: deploy
           script: |
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
@@ -169,7 +169,7 @@ withoutai:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git reset --hard "origin/$CNB_BRANCH"
+            git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
@@ -219,7 +219,7 @@ withoutai:
               sleep 10
             done
             echo "Health check failed"
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
             cd $HOME/one-recycle/deploy
             docker compose -f docker/docker-compose.production.yml ps -a
             echo "=== Caddy logs ==="
@@ -259,7 +259,7 @@ $:
         - name: deploy-monolith
           if: '[ "$DEPLOY_MODE" = "monolith" ]'
           script: |
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
@@ -297,7 +297,7 @@ $:
         - name: deploy-microservices
           if: '[ "$DEPLOY_MODE" = "microservices" ]'
           script: |
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
@@ -348,7 +348,7 @@ $:
         - name: deploy-monolith
           if: '[ "$DEPLOY_MODE" = "monolith" ]'
           script: |
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
@@ -356,7 +356,7 @@ $:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git reset --hard "origin/$CNB_BRANCH"
+            git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
@@ -386,7 +386,7 @@ $:
         - name: deploy-microservices
           if: '[ "$DEPLOY_MODE" = "microservices" ]'
           script: |
-            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' << 'ENDSSH'
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" CNB_BRANCH="$CNB_BRANCH" DOMAIN="$DOMAIN" 'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
@@ -394,7 +394,7 @@ $:
 
             cd "$PROJECT_DIR"
             git fetch origin
-            git reset --hard "origin/$CNB_BRANCH"
+            git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
