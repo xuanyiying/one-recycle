@@ -13,6 +13,7 @@
 #   DEPLOY_KEY         - SSH 私钥
 #   DOMAIN             - 域名（默认 backbuy.cn）
 #   CNB_REGISTRY_TOKEN - CNB Registry 访问令牌（服务器拉取镜像用）
+#   JWT_SECRET         - JWT 签名密钥（首次部署自动生成）
 # ============================================================
 
 # --- 共用部署配置 ---
@@ -145,11 +146,14 @@ prod:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
+              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
             echo "=== Deploying monolith (tag: $IMAGE_TAG) ==="
 
             # 登录 CNB Registry
@@ -162,18 +166,55 @@ prod:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # 写入 .env.production
+            # === 写入持久化配置 (config/.env.production) ===
+            # 此文件在首次部署时创建，后续部署保留已有值并补充缺失项
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "=== 首次部署，创建配置文件 ==="
+              touch "$ENV_FILE"
+            fi
+
+            # 保留已有配置，仅在缺失时写入默认值
+            _set_if_missing() {
+              local key="$1" value="$2"
+              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                echo "${key}=${value}" >> "$ENV_FILE"
+              fi
+            }
+
+            _set_if_missing DB_PASSWORD 'change_me'
+            _set_if_missing REDIS_PASSWORD 'change_me'
+            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_EXPIRES_IN '7d'
+            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
+            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            # 如果 secrets 传入了 JWT_SECRET，覆盖自动生成的值
+            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
+              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+            fi
+
+            # === 写入 docker-compose 使用的 .env.production ===
+            # 此文件每次部署都会重新生成（IMAGE_TAG 会变）
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
             MONOLITH_ENV="$DEPLOY_DIR/.env.production"
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-                cat "$DEPLOY_DIR/config/.env.production"
-              fi
+              # 从持久化配置中读取 DB/Redis 密码
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              # 追加持久化配置（JWT_SECRET, CORS_ORIGINS 等）
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$MICROSERVICES_ENV"
+
+            # 检查数据库是否已初始化
+            DB_INITIALIZED=false
+            if [ -d "$DEPLOY_DIR/data/postgres" ] && [ "$(ls -A "$DEPLOY_DIR/data/postgres" 2>/dev/null)" ]; then
+              DB_INITIALIZED=true
+              echo "=== 数据库已存在，将执行迁移 ==="
+            else
+              echo "=== 首次部署，将初始化数据库（迁移 + 种子数据）==="
+            fi
 
             # 拉取预构建镜像
             cd "$DEPLOY_DIR"
@@ -198,6 +239,7 @@ prod:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
+            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-monolith
 
@@ -226,11 +268,14 @@ withoutai:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
+              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
             echo "=== Deploying microservices (tag: $IMAGE_TAG) ==="
 
             # 登录 CNB Registry
@@ -242,16 +287,45 @@ withoutai:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
-            # 写入 .env.production
+            # === 写入持久化配置 ===
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "=== 首次部署，创建配置文件 ==="
+              touch "$ENV_FILE"
+            fi
+
+            _set_if_missing() {
+              local key="$1" value="$2"
+              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                echo "${key}=${value}" >> "$ENV_FILE"
+              fi
+            }
+
+            _set_if_missing DB_PASSWORD 'change_me'
+            _set_if_missing REDIS_PASSWORD 'change_me'
+            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_EXPIRES_IN '7d'
+            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
+            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
+              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+            fi
+
+            # === 写入 docker-compose 使用的 .env.production ===
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-                cat "$DEPLOY_DIR/config/.env.production"
-              fi
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
+
+            # 检查数据库是否已初始化
+            if [ -d "$DEPLOY_DIR/data/postgres" ] && [ "$(ls -A "$DEPLOY_DIR/data/postgres" 2>/dev/null)" ]; then
+              echo "=== 数据库已存在，将执行迁移 ==="
+            else
+              echo "=== 首次部署，将初始化数据库（迁移 + 种子数据）==="
+            fi
 
             # 拉取预构建镜像
             cd "$DEPLOY_DIR"
@@ -275,6 +349,7 @@ withoutai:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
+            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-microservices
 
@@ -314,11 +389,14 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
+              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
             echo "=== Deploying monolith (tag: $CNB_BRANCH) ==="
 
             echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
@@ -329,16 +407,35 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
+            if [ ! -f "$ENV_FILE" ]; then
+              touch "$ENV_FILE"
+            fi
+
+            _set_if_missing() {
+              local key="$1" value="$2"
+              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                echo "${key}=${value}" >> "$ENV_FILE"
+              fi
+            }
+
+            _set_if_missing DB_PASSWORD 'change_me'
+            _set_if_missing REDIS_PASSWORD 'change_me'
+            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_EXPIRES_IN '7d'
+            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
+            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
+              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+            fi
+
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
-            MONOLITH_ENV="$DEPLOY_DIR/.env.production"
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-                cat "$DEPLOY_DIR/config/.env.production"
-              fi
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$MICROSERVICES_ENV"
 
             cd "$DEPLOY_DIR"
@@ -352,6 +449,7 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
+            JWT_SECRET: ${JWT_SECRET:-}
 
         - name: deploy-microservices
           if: '[ "$DEPLOY_MODE" = "microservices" ]'
@@ -360,11 +458,14 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
+              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
             echo "=== Deploying microservices (tag: $CNB_BRANCH) ==="
 
             echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
@@ -375,14 +476,34 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
+            if [ ! -f "$ENV_FILE" ]; then
+              touch "$ENV_FILE"
+            fi
+
+            _set_if_missing() {
+              local key="$1" value="$2"
+              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                echo "${key}=${value}" >> "$ENV_FILE"
+              fi
+            }
+
+            _set_if_missing DB_PASSWORD 'change_me'
+            _set_if_missing REDIS_PASSWORD 'change_me'
+            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_EXPIRES_IN '7d'
+            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
+            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
+              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+            fi
+
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-                cat "$DEPLOY_DIR/config/.env.production"
-              fi
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
@@ -396,6 +517,7 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
+            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-monolith
 
@@ -422,11 +544,14 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
+              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
             echo "=== Deploying monolith (manual trigger) ==="
 
             echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
@@ -437,16 +562,35 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
+            if [ ! -f "$ENV_FILE" ]; then
+              touch "$ENV_FILE"
+            fi
+
+            _set_if_missing() {
+              local key="$1" value="$2"
+              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                echo "${key}=${value}" >> "$ENV_FILE"
+              fi
+            }
+
+            _set_if_missing DB_PASSWORD 'change_me'
+            _set_if_missing REDIS_PASSWORD 'change_me'
+            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_EXPIRES_IN '7d'
+            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
+            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
+              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+            fi
+
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
-            MONOLITH_ENV="$DEPLOY_DIR/.env.production"
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^DB_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$MICROSERVICES_ENV" 2>/dev/null | cut -d'=' -f2- || grep '^REDIS_PASSWORD=' "$MONOLITH_ENV" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-                cat "$DEPLOY_DIR/config/.env.production"
-              fi
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$MICROSERVICES_ENV"
 
             cd "$DEPLOY_DIR"
@@ -460,6 +604,7 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
+            JWT_SECRET: ${JWT_SECRET:-}
 
         - name: deploy-microservices
           if: '[ "$DEPLOY_MODE" = "microservices" ]'
@@ -468,11 +613,14 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
+              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
             PROJECT_DIR="$HOME/one-recycle"
             DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
             echo "=== Deploying microservices (manual trigger) ==="
 
             echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
@@ -483,14 +631,34 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
+            if [ ! -f "$ENV_FILE" ]; then
+              touch "$ENV_FILE"
+            fi
+
+            _set_if_missing() {
+              local key="$1" value="$2"
+              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+                echo "${key}=${value}" >> "$ENV_FILE"
+              fi
+            }
+
+            _set_if_missing DB_PASSWORD 'change_me'
+            _set_if_missing REDIS_PASSWORD 'change_me'
+            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_EXPIRES_IN '7d'
+            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
+            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
+              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+            fi
+
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
-              if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
-                cat "$DEPLOY_DIR/config/.env.production"
-              fi
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
@@ -504,5 +672,6 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
+            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-monolith
