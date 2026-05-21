@@ -2,7 +2,9 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as path from 'path';
 import { PrismaClient, FAQCategory, RecycleRuleCategory } from '@prisma/client';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import { config } from 'dotenv';
