@@ -95,6 +95,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # Start application:
 # - If SERVICE_NAME is set -> microservice mode (dist/microservices.js)
 # - If SERVICE_NAME is not set -> monolith mode (dist/main.js)
-# - RUN_SEED=1 enables seed execution after migrate deploy (idempotent, safe to re-run)
+# - RUN_SEED=1 enables seed execution after db push (idempotent, safe to re-run)
 # Database initialization with retry logic
 CMD ["sh", "-c", "echo 'Waiting for database...'; DB_INIT_SUCCESS=0; for i in 1 2 3 4 5; do if npx prisma migrate deploy; then echo 'Database migrations applied'; DB_INIT_SUCCESS=1; break; fi; echo \"Attempt $i failed, retrying in 5s...\"; sleep 5; done; if [ \"$DB_INIT_SUCCESS\" = '0' ]; then echo 'Database initialization failed after 5 attempts'; exit 1; fi; if [ \"$RUN_SEED\" = '1' ]; then echo 'Running database seed...'; npx ts-node --esm scripts/main.ts && echo 'Seed completed' || echo 'Seed failed (non-fatal, continuing)'; fi; if [ -n \"$SERVICE_NAME\" ]; then node dist/microservices.js; else node dist/main.js; fi"]
