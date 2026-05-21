@@ -2,7 +2,7 @@
 # OneRecycle 生产环境 Docker Compose 配置 (微服务架构)
 # 每个微服务通过 SERVICE_NAME 环境变量启动不同模式
 # 镜像统一, 入口通过 SERVICE_NAME 区分
-# 本地构建，无需推送/拉取远程镜像仓库
+# 镜像由 CI 流水线构建并推送至 CNB Registry，服务器端拉取运行
 # .env 文件由 deploy workflow 覆盖为实际值，确保容器运行时获得正确配置
 # ============================================================================
 
@@ -66,10 +66,7 @@ services:
           memory: 256M
 
   api-gateway:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-    image: one-recycle/server:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-api-gateway
     restart: always
     logging:
@@ -117,10 +114,7 @@ services:
           memory: 512M
 
   account-service:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-    image: one-recycle/server:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-account-service
     restart: always
     logging:
@@ -159,10 +153,7 @@ services:
           memory: 384M
 
   order-service:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-    image: one-recycle/server:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-order-service
     restart: always
     logging:
@@ -206,10 +197,7 @@ services:
           memory: 384M
 
   notification-service:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-    image: one-recycle/server:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-notification-service
     restart: always
     logging:
@@ -248,10 +236,7 @@ services:
           memory: 256M
 
   inventory-service:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-    image: one-recycle/server:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-inventory-service
     restart: always
     logging:
@@ -290,10 +275,7 @@ services:
           memory: 256M
 
   category-service:
-    build:
-      context: ../../server
-      dockerfile: Dockerfile
-    image: one-recycle/server:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/server:${IMAGE_TAG:-latest}
     container_name: one-recycle-category-service
     restart: always
     logging:
@@ -332,13 +314,7 @@ services:
           memory: 256M
 
   admin-web:
-    build:
-      context: ../../apps/admin-web
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: /api
-        API_BACKEND_URL: http://api-gateway:3002
-    image: one-recycle/admin-web:${IMAGE_TAG:-latest}
+    image: docker.cnb.cool/udefined.cc/one-recycle/admin-web:${IMAGE_TAG:-latest}
     container_name: one-recycle-admin-web
     restart: always
     logging:
