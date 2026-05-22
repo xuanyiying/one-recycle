@@ -356,10 +356,12 @@ withoutai:
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
-            # 复制 .env.production 供 docker compose --env-file 和手动调试使用
-            # 注意：使用 -f docker/xxx.yml 时，Docker Compose 的项目目录是 docker/ 子目录，
-            # 不会从 \$DEPLOY_DIR/ 读取 .env，因此必须通过 --env-file 显式指定
+            # 复制 .env.production 到所有 Docker Compose 可能读取的位置
+            # 关键：使用 -f docker/xxx.yml 时，Docker Compose 的项目目录是 docker/ 子目录，
+            # 它只从项目目录读取 .env，不会从当前工作目录读取
+            # 因此必须同时复制到 deploy/.env 和 deploy/docker/.env
             cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env"
+            cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/docker/.env"
 
             # 检查数据库是否已初始化
             if [ -d "$DEPLOY_DIR/data/postgres" ] && [ "$(ls -A "$DEPLOY_DIR/data/postgres" 2>/dev/null)" ]; then
@@ -585,6 +587,10 @@ $:
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
+            # 复制到所有 Docker Compose 可能读取的位置
+            cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env"
+            cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/docker/.env"
+
             cd "$DEPLOY_DIR"
             docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
             docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
@@ -777,6 +783,10 @@ $:
               echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
+
+            # 复制到所有 Docker Compose 可能读取的位置
+            cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env"
+            cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/docker/.env"
 
             cd "$DEPLOY_DIR"
             docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
