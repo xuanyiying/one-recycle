@@ -320,6 +320,11 @@ withoutai:
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
+            # 同时写入 .env 供 Docker Compose 自动加载变量插值
+            # --env-file 只影响容器的 env_file 指令，不提供 ${VAR} 插值
+            # Docker Compose 自动读取工作目录下的 .env 文件用于变量插值
+            cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env"
+
             # 检查数据库是否已初始化
             if [ -d "$DEPLOY_DIR/data/postgres" ] && [ "$(ls -A "$DEPLOY_DIR/data/postgres" 2>/dev/null)" ]; then
               echo "=== 数据库已存在，将执行迁移 ==="
