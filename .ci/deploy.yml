@@ -111,7 +111,7 @@
     echo "Health check failed"
     ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
     cd $HOME/one-recycle/deploy
-    docker compose -f docker/docker-compose.production.yml ps -a
+    docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a
     echo "=== Caddy logs ==="
     docker logs one-recycle-caddy --tail=30 2>/dev/null || true
     echo "=== API Gateway logs ==="
@@ -187,6 +187,23 @@ prod:
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            # === 验证并修复配置文件中可能损坏的值 ===
+            _fix_multiline_value() {
+              local key="$1"
+              local file="$2"
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                local val
+                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
+                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
+                  echo "=== 修复损坏的 ${key}，重新生成 ==="
+                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
+                fi
+              fi
+              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
+            }
+
+            _fix_multiline_value JWT_SECRET "$ENV_FILE"
 
             # 如果 secrets 传入了 JWT_SECRET，覆盖自动生成的值
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
@@ -307,6 +324,25 @@ withoutai:
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
+            # === 验证并修复配置文件中可能损坏的值 ===
+            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
+            _fix_multiline_value() {
+              local key="$1"
+              local file="$2"
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                local val
+                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
+                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
+                  echo "=== 修复损坏的 ${key}，重新生成 ==="
+                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
+                fi
+              fi
+              # 移除不是 key=value 格式的孤立行（base64 换行残留）
+              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
+            }
+
+            _fix_multiline_value JWT_SECRET "$ENV_FILE"
+
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
               sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
@@ -320,9 +356,9 @@ withoutai:
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
-            # 同时写入 .env 供 Docker Compose 自动加载变量插值
-            # --env-file 只影响容器的 env_file 指令，不提供 ${VAR} 插值
-            # Docker Compose 自动读取工作目录下的 .env 文件用于变量插值
+            # 复制 .env.production 供 docker compose --env-file 和手动调试使用
+            # 注意：使用 -f docker/xxx.yml 时，Docker Compose 的项目目录是 docker/ 子目录，
+            # 不会从 \$DEPLOY_DIR/ 读取 .env，因此必须通过 --env-file 显式指定
             cp "$DEPLOY_DIR/.env.production" "$DEPLOY_DIR/.env"
 
             # 检查数据库是否已初始化
@@ -335,18 +371,18 @@ withoutai:
             # 拉取预构建镜像
             cd "$DEPLOY_DIR"
             echo "=== Pulling images from CNB registry ==="
-            docker compose -f docker/docker-compose.production.yml pull
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
 
             echo "=== Stopping old containers ==="
-            docker compose -f docker/docker-compose.production.yml down || true
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
 
             echo "=== Starting microservices ==="
-            docker compose -f docker/docker-compose.production.yml up -d --no-build
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d --no-build
 
             echo "=== Waiting for services ==="
             sleep 15
-            docker compose -f docker/docker-compose.production.yml ps
-            docker compose -f docker/docker-compose.production.yml logs --tail=20
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml logs --tail=20
 
             echo "=== Cleaning up old images ==="
             docker image prune -f
@@ -430,6 +466,25 @@ $:
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
+            # === 验证并修复配置文件中可能损坏的值 ===
+            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
+            _fix_multiline_value() {
+              local key="$1"
+              local file="$2"
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                local val
+                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
+                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
+                  echo "=== 修复损坏的 ${key}，重新生成 ==="
+                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
+                fi
+              fi
+              # 移除不是 key=value 格式的孤立行（base64 换行残留）
+              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
+            }
+
+            _fix_multiline_value JWT_SECRET "$ENV_FILE"
+
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
               sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
@@ -499,6 +554,25 @@ $:
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
+            # === 验证并修复配置文件中可能损坏的值 ===
+            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
+            _fix_multiline_value() {
+              local key="$1"
+              local file="$2"
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                local val
+                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
+                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
+                  echo "=== 修复损坏的 ${key}，重新生成 ==="
+                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
+                fi
+              fi
+              # 移除不是 key=value 格式的孤立行（base64 换行残留）
+              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
+            }
+
+            _fix_multiline_value JWT_SECRET "$ENV_FILE"
+
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
               sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
@@ -512,11 +586,11 @@ $:
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
-            docker compose -f docker/docker-compose.production.yml pull
-            docker compose -f docker/docker-compose.production.yml down || true
-            docker compose -f docker/docker-compose.production.yml up -d --no-build
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d --no-build
             sleep 15
-            docker compose -f docker/docker-compose.production.yml ps
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
             docker image prune -f
             echo "=== Microservices deployment completed ==="
             ENDSSH
@@ -584,6 +658,25 @@ $:
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
+
+            # === 验证并修复配置文件中可能损坏的值 ===
+            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
+            _fix_multiline_value() {
+              local key="$1"
+              local file="$2"
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                local val
+                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
+                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
+                  echo "=== 修复损坏的 ${key}，重新生成 ==="
+                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
+                fi
+              fi
+              # 移除不是 key=value 格式的孤立行（base64 换行残留）
+              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
+            }
+
+            _fix_multiline_value JWT_SECRET "$ENV_FILE"
 
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
               sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
@@ -654,6 +747,25 @@ $:
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
+            # === 验证并修复配置文件中可能损坏的值 ===
+            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
+            _fix_multiline_value() {
+              local key="$1"
+              local file="$2"
+              if grep -q "^${key}=" "$file" 2>/dev/null; then
+                local val
+                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
+                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
+                  echo "=== 修复损坏的 ${key}，重新生成 ==="
+                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
+                fi
+              fi
+              # 移除不是 key=value 格式的孤立行（base64 换行残留）
+              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
+            }
+
+            _fix_multiline_value JWT_SECRET "$ENV_FILE"
+
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
               sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
@@ -667,11 +779,11 @@ $:
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
-            docker compose -f docker/docker-compose.production.yml pull
-            docker compose -f docker/docker-compose.production.yml down || true
-            docker compose -f docker/docker-compose.production.yml up -d --no-build
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d --no-build
             sleep 15
-            docker compose -f docker/docker-compose.production.yml ps
+            docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
             docker image prune -f
             echo "=== Microservices deployment completed ==="
             ENDSSH
