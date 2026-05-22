@@ -183,14 +183,14 @@ prod:
 
             _set_if_missing DB_PASSWORD 'change_me'
             _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
             # 如果 secrets 传入了 JWT_SECRET，覆盖自动生成的值
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             # === 写入 docker-compose 使用的 .env.production ===
@@ -302,13 +302,13 @@ withoutai:
 
             _set_if_missing DB_PASSWORD 'change_me'
             _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             # === 写入 docker-compose 使用的 .env.production ===
@@ -425,13 +425,13 @@ $:
 
             _set_if_missing DB_PASSWORD 'change_me'
             _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
@@ -494,13 +494,13 @@ $:
 
             _set_if_missing DB_PASSWORD 'change_me'
             _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             {
@@ -580,13 +580,13 @@ $:
 
             _set_if_missing DB_PASSWORD 'change_me'
             _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
@@ -649,13 +649,13 @@ $:
 
             _set_if_missing DB_PASSWORD 'change_me'
             _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -base64 48)"
+            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
             _set_if_missing JWT_EXPIRES_IN '7d'
             _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
             _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
 
             if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s/^JWT_SECRET=.*/JWT_SECRET=${JWT_SECRET}/" "$ENV_FILE"
+              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             {
