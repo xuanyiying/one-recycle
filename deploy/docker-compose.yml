@@ -80,7 +80,7 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3002/api/health || exit 1" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3002/api/health" ]
       interval: 15s
       timeout: 5s
       retries: 5

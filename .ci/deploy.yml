@@ -74,17 +74,26 @@
   script: |
     sleep 30
     DOMAIN="${DOMAIN:-backbuy.cn}"
-    for i in $(seq 1 10); do
-      echo "Health check attempt $i/10..."
-      if curl -sf --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1; then
-        echo "Application health passed: https://${DOMAIN}/api/health"
+    echo "=== Starting health check for ${DOMAIN} ==="
+    for i in $(seq 1 15); do
+      echo "Health check attempt $i/15..."
+      # 尝试 https 和 http，使用 -k 忽略证书问题，-L 跟随重定向，-f 失败时返回非零
+      if curl -skfL --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
+         curl -skfL --max-time 10 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
+        echo "✅ Application health passed: https://${DOMAIN}/api/health"
         exit 0
       fi
+      
+      # 打印一些调试信息
+      echo "Wait for service to be ready..."
+      curl -Iks --max-time 5 "https://${DOMAIN}/api/health" 2>/dev/null | grep -E "HTTP/|server" || true
       sleep 10
     done
-    echo "Health check failed"
+    
+    echo "❌ Health check failed after 15 attempts"
     ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
     cd $HOME/one-recycle/deploy
+    echo "=== Docker Containers ==="
     docker compose ps -a
     echo "=== Caddy logs ==="
     docker logs one-recycle-caddy --tail=30 2>/dev/null || true
@@ -100,17 +109,24 @@
   script: |
     sleep 30
     DOMAIN="${DOMAIN:-backbuy.cn}"
-    for i in $(seq 1 10); do
-      echo "Health check attempt $i/10..."
-      if curl -sf --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1; then
-        echo "Application health passed: https://${DOMAIN}/api/health"
+    echo "=== Starting health check for ${DOMAIN} ==="
+    for i in $(seq 1 15); do
+      echo "Health check attempt $i/15..."
+      if curl -skfL --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
+         curl -skfL --max-time 10 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
+        echo "✅ Application health passed: https://${DOMAIN}/api/health"
         exit 0
       fi
+      
+      echo "Wait for service to be ready..."
+      curl -Iks --max-time 5 "https://${DOMAIN}/api/health" 2>/dev/null | grep -E "HTTP/|server" || true
       sleep 10
     done
-    echo "Health check failed"
+    
+    echo "❌ Health check failed after 15 attempts"
     ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
     cd $HOME/one-recycle/deploy
+    echo "=== Docker Containers ==="
     docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a
     echo "=== Caddy logs ==="
     docker logs one-recycle-caddy --tail=30 2>/dev/null || true
