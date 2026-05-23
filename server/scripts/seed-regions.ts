@@ -90,7 +90,7 @@ async function main() {
                             finalMap[parentCode] = existingMap[parentCode];
                         }
                     }
-                } catch (e) {
+                } catch (e : any) {
                     console.warn(`⚠️ 合并失败 (${path.basename(filePath)}), 将直接覆盖:`, e.message);
                 }
             }
