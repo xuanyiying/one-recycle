@@ -294,6 +294,9 @@ export class AuthService {
                 // 清理工作由 errorHandler.redirectToLogin() 统一处理
                 if (response.statusCode === 401 || response.statusCode === 403) {
                     Storage.clearAuth()
+                    import('../store/useStore').then(m => {
+                        m.useStore.getState().logout()
+                    }).catch(err => logger.error('[Auth] Clear store failed:', err))
                 }
 
                 return { success: false }
