@@ -35,7 +35,8 @@ async function main() {
 
     try {
       // 使用 ts-node 执行脚本，继承当前 stdio 以显示输出
-      execSync(`npx ts-node --esm ${scriptPath}`, {
+      const tsConfigPath = path.join(scriptsDir, 'tsconfig.json');
+      execSync(`npx ts-node --esm --project ${tsConfigPath} ${scriptPath}`, {
         cwd: projectRoot, // 在 server 根目录下执行，确保 .env 读取正确
         stdio: 'inherit',
         env: { ...process.env, FORCE_COLOR: '1' } // 保留颜色输出
