@@ -13,6 +13,7 @@ import { authService } from '@/services/authService';
 import { useAuth } from '@/components/AuthContext';
 import { toast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils/cn';
+import { hasAdminPermission } from '@/constants/auth';
 
 const DEFAULT_TENANT_CODE = 'DEFAULT';
 
@@ -26,15 +27,15 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (!isLoading && isAuthenticated && user && hasAdminPermission(user)) {
       router.replace('/dashboard');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, user, router]);
 
   const {
     register,
@@ -70,6 +71,12 @@ export default function LoginPage() {
       }, { showError: false });
 
       if (res.accessToken) {
+        // 检查权限
+        if (res.user && !hasAdminPermission(res.user)) {
+          toast.error('您的账号没有管理后台的访问权限');
+          return;
+        }
+
         login(res.accessToken, res.user, res.refreshToken);
         localStorage.setItem('login_mode', 'tenant');
         localStorage.setItem('tenant_code', DEFAULT_TENANT_CODE);

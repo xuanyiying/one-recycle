@@ -3,11 +3,10 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthContext';
-
-const ALLOWED_ROLES = ['ADMIN', 'SUPER_ADMIN'];
+import { hasAdminPermission } from '@/constants/auth';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,8 +29,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated) {
     return null;
   }
-
-  if (user && user.role && !ALLOWED_ROLES.includes(user.role)) {
+  
+  if (user && !hasAdminPermission(user)) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -44,7 +43,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           <p className="text-sm text-muted-foreground">您的账号没有管理后台的访问权限</p>
           <button
             className="mt-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-            onClick={() => router.replace('/login')}
+            onClick={() => {
+              logout();
+              router.replace('/login');
+            }}
           >
             返回登录
           </button>
