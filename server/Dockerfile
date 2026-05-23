@@ -66,6 +66,7 @@ COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
 COPY --from=builder --chown=appuser:appgroup /app/prisma ./prisma
 COPY --from=builder --chown=appuser:appgroup /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=appuser:appgroup /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=appuser:appgroup /app/package.json ./
 COPY --from=builder --chown=appuser:appgroup /app/scripts ./scripts
 
@@ -97,4 +98,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # - If SERVICE_NAME is not set -> monolith mode (dist/main.js)
 # - RUN_SEED=1 enables seed execution after db push (idempotent, safe to re-run)
 # Database initialization with retry logic
-CMD ["sh", "-c", "echo 'Waiting for database...'; DB_INIT_SUCCESS=0; for i in 1 2 3 4 5; do if npx prisma db push --skip-generate; then echo 'Database schema synchronized'; DB_INIT_SUCCESS=1; break; fi; echo \"Attempt $i failed, retrying in 5s...\"; sleep 5; done; if [ \"$DB_INIT_SUCCESS\" = '0' ]; then echo 'Database initialization failed after 5 attempts'; exit 1; fi; [ \"$RUN_SEED\" = '1' ] && npx ts-node scripts/main.ts; if [ -n \"$SERVICE_NAME\" ]; then node dist/microservices.js; else node dist/main.js; fi"]
+CMD ["sh", "-c", "echo 'Waiting for database...'; DB_INIT_SUCCESS=0; for i in 1 2 3 4 5; do if npx prisma db push --skip-generate; then echo 'Database schema synchronized'; DB_INIT_SUCCESS=1; break; fi; echo \"Attempt $i failed, retrying in 5s...\"; sleep 5; done; if [ \"$DB_INIT_SUCCESS\" = '0' ]; then echo 'Database initialization failed after 5 attempts'; exit 1; fi; [ \"$RUN_SEED\" = '1' ] && npx ts-node --esm scripts/main.ts; if [ -n \"$SERVICE_NAME\" ]; then node dist/microservices.js; else node dist/main.js; fi"]
