@@ -149,7 +149,7 @@ curl -I -H "Origin: https://backbuy.cn" \
 docker exec -it one-recycle-api-gateway sh
 
 # 测试数据库连接
-npx prisma db push --skip-generate
+npx prisma db push --accept-data-loss
 ```
 
 ---

@@ -46,7 +46,7 @@ log "数据库: $DB_NAME @ $DB_HOST:$DB_PORT"
 
 # 1. 建表
 log "步骤1: 执行 prisma db push (建表)..."
-docker exec "$CONTAINER_NAME" sh -c 'npx prisma db push --skip-generate --accept-data-loss' 2>/dev/null || true
+docker exec "$CONTAINER_NAME" sh -c 'npx prisma db push --accept-data-loss' 2>/dev/null || true
 log "✅ 表结构同步完成"
 
 # 2. 基础种子数据 (租户、角色、员工、分类、FAQ)
