@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const scriptsDir = path.join(__dirname, '../scripts');
 const scriptPath = path.join(scriptsDir, 'main.ts');
 
-execSync(`npx ts-node ${scriptPath}`, {
+execSync(`npx ts-node --esm ${scriptPath}`, {
   cwd: path.join(__dirname, '..'),
   stdio: 'inherit',
   env: { ...process.env, FORCE_COLOR: '1' },
