@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
@@ -9,13 +9,26 @@ export interface WeChatUserInfo {
 }
 
 @Injectable()
-export class WeChatPlatform {
+export class WeChatPlatform implements OnModuleInit {
   private readonly appId: string;
   private readonly appSecret: string;
 
   constructor(private readonly configService: ConfigService) {
     this.appId = this.configService.get<string>('WECHAT_APP_ID') || '';
     this.appSecret = this.configService.get<string>('WECHAT_APP_SECRET') || '';
+  }
+
+  onModuleInit() {
+    if (!this.appId) {
+      throw new Error(
+        '[FATAL] WECHAT_APP_ID 环境变量未配置，请检查 server/.env 文件或生产环境变量是否正确设置',
+      );
+    }
+    if (!this.appSecret) {
+      throw new Error(
+        '[FATAL] WECHAT_APP_SECRET 环境变量未配置，请检查 server/.env 文件或生产环境变量是否正确设置',
+      );
+    }
   }
 
   async code2Session(code: string): Promise<WeChatUserInfo> {
