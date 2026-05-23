@@ -15,6 +15,7 @@ async function main() {
   
   // 定义要执行的脚本列表（按顺序）
   const scripts = [
+    'seed-regions.ts',      // 行政区域数据
     'seed-tenant-staff.ts', // 基础租户和员工数据
     'seed-categories.ts',   // 分类数据
     'seed-content-config.ts', // FAQ和回收规则
