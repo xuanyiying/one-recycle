@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://backbuy.cn/api';
+const BACKEND_URL = process.env.API_BACKEND_URL || 'http://api-gateway:3002';
+const API_BASE_URL = BACKEND_URL.endsWith('/api') ? BACKEND_URL : `${BACKEND_URL}/api`;
 
 export async function POST(request: NextRequest) {
   try {
