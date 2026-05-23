@@ -146,7 +146,6 @@ prod:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
-              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
@@ -166,48 +165,11 @@ prod:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 写入持久化配置 (config/.env.production) ===
-            # 此文件在首次部署时创建，后续部署保留已有值并补充缺失项
+            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
-              echo "=== 首次部署，创建配置文件 ==="
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
-            fi
-
-            # 保留已有配置，仅在缺失时写入默认值
-            _set_if_missing() {
-              local key="$1" value="$2"
-              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-                echo "${key}=${value}" >> "$ENV_FILE"
-              fi
-            }
-
-            _set_if_missing DB_PASSWORD 'change_me'
-            _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
-            _set_if_missing JWT_EXPIRES_IN '7d'
-            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
-            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
-
-            # === 验证并修复配置文件中可能损坏的值 ===
-            _fix_multiline_value() {
-              local key="$1"
-              local file="$2"
-              if grep -q "^${key}=" "$file" 2>/dev/null; then
-                local val
-                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
-                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
-                  echo "=== 修复损坏的 ${key}，重新生成 ==="
-                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
-                fi
-              fi
-              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
-            }
-
-            _fix_multiline_value JWT_SECRET "$ENV_FILE"
-
-            # 如果 secrets 传入了 JWT_SECRET，覆盖自动生成的值
-            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             # === 写入 docker-compose 使用的 .env.production ===
@@ -222,7 +184,7 @@ prod:
               echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               # 追加持久化配置（JWT_SECRET, CORS_ORIGINS 等）
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
-            } > "$MICROSERVICES_ENV"
+            } > "$MONOLITH_ENV"
 
             # 检查数据库是否已初始化
             DB_INITIALIZED=false
@@ -256,7 +218,6 @@ prod:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
-            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-monolith
 
@@ -285,7 +246,6 @@ withoutai:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
-              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
@@ -304,47 +264,11 @@ withoutai:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
-            # === 写入持久化配置 ===
+            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
-              echo "=== 首次部署，创建配置文件 ==="
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
-            fi
-
-            _set_if_missing() {
-              local key="$1" value="$2"
-              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-                echo "${key}=${value}" >> "$ENV_FILE"
-              fi
-            }
-
-            _set_if_missing DB_PASSWORD 'change_me'
-            _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
-            _set_if_missing JWT_EXPIRES_IN '7d'
-            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
-            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
-
-            # === 验证并修复配置文件中可能损坏的值 ===
-            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
-            _fix_multiline_value() {
-              local key="$1"
-              local file="$2"
-              if grep -q "^${key}=" "$file" 2>/dev/null; then
-                local val
-                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
-                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
-                  echo "=== 修复损坏的 ${key}，重新生成 ==="
-                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
-                fi
-              fi
-              # 移除不是 key=value 格式的孤立行（base64 换行残留）
-              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
-            }
-
-            _fix_multiline_value JWT_SECRET "$ENV_FILE"
-
-            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             # === 写入 docker-compose 使用的 .env.production ===
@@ -392,7 +316,6 @@ withoutai:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
-            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-microservices
 
@@ -432,7 +355,6 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
-              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
@@ -450,45 +372,11 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
+            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
-            fi
-
-            _set_if_missing() {
-              local key="$1" value="$2"
-              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-                echo "${key}=${value}" >> "$ENV_FILE"
-              fi
-            }
-
-            _set_if_missing DB_PASSWORD 'change_me'
-            _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
-            _set_if_missing JWT_EXPIRES_IN '7d'
-            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
-            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
-
-            # === 验证并修复配置文件中可能损坏的值 ===
-            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
-            _fix_multiline_value() {
-              local key="$1"
-              local file="$2"
-              if grep -q "^${key}=" "$file" 2>/dev/null; then
-                local val
-                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
-                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
-                  echo "=== 修复损坏的 ${key}，重新生成 ==="
-                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
-                fi
-              fi
-              # 移除不是 key=value 格式的孤立行（base64 换行残留）
-              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
-            }
-
-            _fix_multiline_value JWT_SECRET "$ENV_FILE"
-
-            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
@@ -498,7 +386,7 @@ $:
               echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
-            } > "$MICROSERVICES_ENV"
+            } > "$MONOLITH_ENV"
 
             cd "$DEPLOY_DIR"
             docker compose pull api-gateway admin-web
@@ -511,7 +399,6 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
-            JWT_SECRET: ${JWT_SECRET:-}
 
         - name: deploy-microservices
           if: '[ "$DEPLOY_MODE" = "microservices" ]'
@@ -520,7 +407,6 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
-              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
@@ -538,45 +424,11 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
+            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
-            fi
-
-            _set_if_missing() {
-              local key="$1" value="$2"
-              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-                echo "${key}=${value}" >> "$ENV_FILE"
-              fi
-            }
-
-            _set_if_missing DB_PASSWORD 'change_me'
-            _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
-            _set_if_missing JWT_EXPIRES_IN '7d'
-            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
-            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
-
-            # === 验证并修复配置文件中可能损坏的值 ===
-            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
-            _fix_multiline_value() {
-              local key="$1"
-              local file="$2"
-              if grep -q "^${key}=" "$file" 2>/dev/null; then
-                local val
-                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
-                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
-                  echo "=== 修复损坏的 ${key}，重新生成 ==="
-                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
-                fi
-              fi
-              # 移除不是 key=value 格式的孤立行（base64 换行残留）
-              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
-            }
-
-            _fix_multiline_value JWT_SECRET "$ENV_FILE"
-
-            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             {
@@ -602,7 +454,6 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
-            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-monolith
 
@@ -629,7 +480,6 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
-              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
@@ -647,45 +497,11 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
+            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
-            fi
-
-            _set_if_missing() {
-              local key="$1" value="$2"
-              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-                echo "${key}=${value}" >> "$ENV_FILE"
-              fi
-            }
-
-            _set_if_missing DB_PASSWORD 'change_me'
-            _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
-            _set_if_missing JWT_EXPIRES_IN '7d'
-            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
-            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
-
-            # === 验证并修复配置文件中可能损坏的值 ===
-            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
-            _fix_multiline_value() {
-              local key="$1"
-              local file="$2"
-              if grep -q "^${key}=" "$file" 2>/dev/null; then
-                local val
-                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
-                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
-                  echo "=== 修复损坏的 ${key}，重新生成 ==="
-                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
-                fi
-              fi
-              # 移除不是 key=value 格式的孤立行（base64 换行残留）
-              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
-            }
-
-            _fix_multiline_value JWT_SECRET "$ENV_FILE"
-
-            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             MICROSERVICES_ENV="$DEPLOY_DIR/docker/.env.production"
@@ -695,7 +511,7 @@ $:
               echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
-            } > "$MICROSERVICES_ENV"
+            } > "$MONOLITH_ENV"
 
             cd "$DEPLOY_DIR"
             docker compose pull api-gateway admin-web
@@ -708,7 +524,6 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
-            JWT_SECRET: ${JWT_SECRET:-}
 
         - name: deploy-microservices
           if: '[ "$DEPLOY_MODE" = "microservices" ]'
@@ -717,7 +532,6 @@ $:
               CNB_BRANCH="$CNB_BRANCH" \
               IMAGE_TAG="$IMAGE_TAG" \
               DOMAIN="$DOMAIN" \
-              JWT_SECRET="$JWT_SECRET" \
               CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
               'bash -s' << 'ENDSSH'
             set -e
@@ -735,45 +549,11 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
 
+            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
-            fi
-
-            _set_if_missing() {
-              local key="$1" value="$2"
-              if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-                echo "${key}=${value}" >> "$ENV_FILE"
-              fi
-            }
-
-            _set_if_missing DB_PASSWORD 'change_me'
-            _set_if_missing REDIS_PASSWORD 'change_me'
-            _set_if_missing JWT_SECRET "$(openssl rand -hex 32)"
-            _set_if_missing JWT_EXPIRES_IN '7d'
-            _set_if_missing ACCESS_TOKEN_EXPIRES_IN_SECONDS '7200'
-            _set_if_missing CORS_ORIGINS "https://${DOMAIN},https://www.${DOMAIN},https://admin.${DOMAIN},https://api.${DOMAIN}"
-
-            # === 验证并修复配置文件中可能损坏的值 ===
-            # 清除 base64 换行残留（openssl rand -base64 可能产生多行值）
-            _fix_multiline_value() {
-              local key="$1"
-              local file="$2"
-              if grep -q "^${key}=" "$file" 2>/dev/null; then
-                local val
-                val=$(grep "^${key}=" "$file" | head -1 | cut -d'=' -f2-)
-                if [ -z "$val" ] || echo "$val" | grep -q '[[:space:]]'; then
-                  echo "=== 修复损坏的 ${key}，重新生成 ==="
-                  sed -i "s|^${key}=.*|${key}=$(openssl rand -hex 32)|" "$file"
-                fi
-              fi
-              # 移除不是 key=value 格式的孤立行（base64 换行残留）
-              sed -i '/^[^#]/!b;/^[A-Z_]*=/!d' "$file" 2>/dev/null || true
-            }
-
-            _fix_multiline_value JWT_SECRET "$ENV_FILE"
-
-            if [ -n "$JWT_SECRET" ] && [ "$JWT_SECRET" != 'change_me' ]; then
-              sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" "$ENV_FILE"
             fi
 
             {
@@ -799,6 +579,5 @@ $:
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
-            JWT_SECRET: ${JWT_SECRET:-}
 
         - *health-check-monolith

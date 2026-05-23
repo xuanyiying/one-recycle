@@ -10,7 +10,7 @@ services:
         max-file: "3"
     environment:
       POSTGRES_USER: one_recycle
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: one_recycle
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
@@ -68,7 +68,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS}
     env_file:
       - .env.production
