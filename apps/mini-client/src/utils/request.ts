@@ -26,20 +26,12 @@ const generateCacheKey = (url: string, method: string, data?: any): string => {
     return `${method}:${url}:${dataStr}`;
 }
 
-const redirectToLogin = () => {
-    Storage.clearAuth()
-    Taro.showToast({ title: '登录已过期，请重新登录', icon: 'none', duration: 2000 })
-    setTimeout(() => {
-        Taro.redirectTo({ url: '/pages/login/index' })
-    }, 1500)
-}
-
 const attemptTokenRefresh = async (): Promise<string | null> => {
     const result = await AuthService.refreshToken()
     if (result.success && result.token) {
         return result.token
     }
-    redirectToLogin()
+    errorHandler.redirectToLogin()
     return null
 }
 
@@ -111,6 +103,14 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
                         code: body?.error?.code || body?.code,
                         message: body?.error?.message || body?.message || '请求失败'
                     }
+
+                    // 处理未授权错误，即使状态码是 200
+                    const errorCode = (error.code || '').toUpperCase()
+                    if (errorCode === 'UNAUTHORIZED' || errorCode === 'TOKEN_EXPIRED' || errorCode === 'INVALID_TOKEN') {
+                        errorHandler.redirectToLogin()
+                        return new Promise<T>(() => { })
+                    }
+
                     throw errorHandler.handle(error, { showToast: true })
                 }
                 return body as T
@@ -144,14 +144,12 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
                     return retryResp.data as T
                 }
             }
-            const body = response.data as any
-            const error = {
-                statusCode: response.statusCode,
-                data: response.data,
-                code: body?.error?.code || body?.code || 'UNAUTHORIZED',
-                message: body?.error?.message || body?.message || '未授权或会话已过期'
-            }
-            throw errorHandler.handle(error, { showToast: true })
+            // 如果尝试刷新后依然失败，或者刷新本身失败
+            // attemptTokenRefresh 内部已经调用了 redirectToLogin，无需再次调用
+            // 不再抛出错误给页面，避免页面显示"加载失败"等错误状态
+            // 返回一个永远不会 resolve 的 Promise，阻止页面继续处理错误
+            // 页面会保持当前状态直到 redirectToLogin 完成跳转
+            return new Promise<T>(() => { })
         } else {
             const body = response.data as any
             const error = {
@@ -260,7 +258,9 @@ export const upload = async <T = any>(
             if (newToken) {
                 return await doUpload(newToken)
             }
-            throw new Error('未授权或会话已过期')
+            // attemptTokenRefresh 内部已经调用了 redirectToLogin
+            // 不再抛出错误，避免页面显示错误状态
+            return new Promise<never>(() => { })
         }
         if (error instanceof Error) {
             throw error

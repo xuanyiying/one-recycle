@@ -1,10 +1,13 @@
 import Taro from '@tarojs/taro';
 import { logger } from './logger';
+import { Storage } from './storage';
 
 /**
  * Global Error Handler
  * Provides centralized error handling with user-friendly messages and retry logic
  */
+
+let isRedirecting = false;
 
 export enum ErrorCode {
   // Network errors
@@ -271,9 +274,84 @@ class ErrorHandler {
   }
 
   /**
+   * 跳转到登录页
+   * @param redirectUrl - 登录成功后需要回跳的地址
+   */
+  public redirectToLogin(redirectUrl?: string): void {
+    if (isRedirecting) return;
+
+    // 强制隐藏可能存在的加载框，避免遮挡 Toast 或让用户觉得卡死
+    Taro.hideLoading();
+
+    // 检查当前是否已经在登录页
+    const pages = Taro.getCurrentPages();
+    let currentPath = redirectUrl;
+
+    if (pages.length > 0) {
+      const currentPage = pages[pages.length - 1];
+      const route = currentPage.route || '';
+
+      if (route.includes('pages/login/index')) {
+        return;
+      }
+
+      if (!currentPath) {
+        currentPath = `/${route}`;
+        // 尝试获取参数
+        const options = (currentPage as any).options || {};
+        const queryString = Object.keys(options)
+          .map(key => `${key}=${options[key]}`)
+          .join('&');
+        if (queryString) {
+          currentPath += `?${queryString}`;
+        }
+      }
+    }
+
+    isRedirecting = true;
+
+    // 清除认证信息
+    Storage.clearAuth();
+
+    // 异步清除 store
+    import('../store/useStore').then(m => {
+      m.useStore.getState().logout();
+    }).catch(err => logger.error('[Error Handler] Clear store failed:', err));
+
+    Taro.showToast({
+      title: '登录已过期，请重新登录',
+      icon: 'none',
+      duration: 1500,
+    });
+
+    const loginUrl = currentPath
+      ? `/pages/login/index?redirect=${encodeURIComponent(currentPath)}`
+      : '/pages/login/index';
+
+    setTimeout(() => {
+      Taro.reLaunch({
+        url: loginUrl,
+        complete: () => {
+          isRedirecting = false;
+        }
+      });
+    }, 500);
+  }
+
+  /**
    * Show error toast to user
    */
   private showErrorToast(error: AppError): void {
+    // 处理未授权错误
+    if (
+      error.code === ErrorCode.UNAUTHORIZED ||
+      error.code === ErrorCode.TOKEN_EXPIRED ||
+      error.code === ErrorCode.INVALID_TOKEN
+    ) {
+      this.redirectToLogin();
+      return;
+    }
+
     const now = Date.now()
     if (
       error.message === this.lastToastMessage &&

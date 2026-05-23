@@ -289,9 +289,11 @@ export class AuthService {
                     }
                 }
 
-                // 如果刷新失败（如401/403），说明refreshToken也过期了，需要清除
+                // 如果刷新失败（如401/403），说明refreshToken也过期了
+                // 不调用 this.logout()，避免触发额外的网络请求导致循环
+                // 清理工作由 errorHandler.redirectToLogin() 统一处理
                 if (response.statusCode === 401 || response.statusCode === 403) {
-                    await this.logout()
+                    Storage.clearAuth()
                 }
 
                 return { success: false }
@@ -395,7 +397,13 @@ export class AuthService {
         try {
             const refreshToken = Storage.getRefreshToken()
             if (refreshToken) {
-                await post('/auth/logout', { refreshToken }).catch(() => {})
+                // 使用 Taro.request 直接请求，避免经过 request.ts 的 401 拦截器导致循环
+                await Taro.request({
+                    url: `${API_BASE_URL}/auth/logout`,
+                    method: 'POST',
+                    header: { 'Content-Type': 'application/json' },
+                    data: { refreshToken }
+                }).catch(() => { })
             }
         } catch (error) {
             logger.error('服务端登出失败:', error)
