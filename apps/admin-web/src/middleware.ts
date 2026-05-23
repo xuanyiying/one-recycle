@@ -14,14 +14,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('token')?.value;
-
-  if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
+  // NOTE: Authentication is handled client-side by AuthGuard/AuthContext
+  // as per core memory [03g3l7riuf2jjjtbc4bbz4xs3].
+  // No cookie-based redirection here to avoid 307 status codes for pages.
   return NextResponse.next();
 }
 
