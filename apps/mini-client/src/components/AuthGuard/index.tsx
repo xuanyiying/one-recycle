@@ -113,7 +113,7 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
       const restoredToken = Storage.getToken()
       const restoredUser = Storage.getUser()
       if (restoredToken && restoredUser) {
-        login(restoredUser, restoredToken)
+        await login(restoredUser, restoredToken)
         setStatus('authorized')
         return
       }
@@ -143,7 +143,7 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
       setStatus('error')
       setErrorMsg(err instanceof Error ? err.message : '鉴权服务异常')
     }
-  }, [isLoggedIn, checkAuthStatus, timeout])
+  }, [isLoggedIn, checkAuthStatus, timeout, login])
 
   // 初始触发
   useEffect(() => {
