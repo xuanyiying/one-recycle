@@ -26,6 +26,15 @@ const generateCacheKey = (url: string, method: string, data?: any): string => {
     return `${method}:${url}:${dataStr}`;
 }
 
+const tryGetStoreToken = async (): Promise<string | null> => {
+    try {
+        const { useStore } = await import('../store/useStore')
+        return useStore.getState().token || null
+    } catch {
+        return null
+    }
+}
+
 const attemptTokenRefresh = async (): Promise<string | null> => {
     const result = await AuthService.refreshToken()
     if (result.success && result.token) {
@@ -36,7 +45,15 @@ const attemptTokenRefresh = async (): Promise<string | null> => {
 }
 
 const request = async <T = any>(url: string, options: RequestOptions = {}): Promise<T> => {
-    const token = Storage.getToken()
+    let token = Storage.getToken()
+
+    if (!token) {
+        const storeToken = await tryGetStoreToken()
+        if (storeToken) {
+            token = storeToken
+            Storage.setToken(storeToken)
+        }
+    }
 
     const defaultOptions = {
         timeout: options.timeout || 10000,
@@ -119,6 +136,7 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
         } else if (response.statusCode === 401) {
             const newToken = await attemptTokenRefresh()
             if (newToken) {
+                Storage.setToken(newToken)
                 const retryOptions = {
                     ...options,
                     header: {
@@ -144,12 +162,11 @@ const executeRequest = async <T = any>(url: string, options: any): Promise<T> =>
                     return retryResp.data as T
                 }
             }
-            // 如果尝试刷新后依然失败，或者刷新本身失败
-            // attemptTokenRefresh 内部已经调用了 redirectToLogin，无需再次调用
-            // 不再抛出错误给页面，避免页面显示"加载失败"等错误状态
-            // 返回一个永远不会 resolve 的 Promise，阻止页面继续处理错误
-            // 页面会保持当前状态直到 redirectToLogin 完成跳转
-            return new Promise<T>(() => { })
+            errorHandler.redirectToLogin()
+            throw errorHandler.handle(
+                { statusCode: 401, message: '登录已过期，请重新登录' },
+                { showToast: false }
+            )
         } else {
             const body = response.data as any
             const error = {

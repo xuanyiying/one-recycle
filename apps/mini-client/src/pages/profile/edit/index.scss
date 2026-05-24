@@ -1,4 +1,5 @@
 @use '../../../styles/global.scss' as *;
+@use 'sass:color';
 
 // ==================== 个人资料编辑页面样式 ====================
 
@@ -98,11 +99,11 @@
 
     .avatar-edit {
       position: relative;
-      width: 160rpx;
-      height: 160rpx;
+      width: 180rpx;
+      height: 180rpx;
       margin: 0 auto;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:active {
         transform: scale(0.95);
@@ -113,8 +114,11 @@
         height: 100%;
         border-radius: 50%;
         object-fit: cover;
-        border: 4rpx solid $border-color;
-        background: linear-gradient(135deg, $primary-light 0%, $primary-color 100%);
+        border: 6rpx solid transparent;
+        background: linear-gradient($bg-secondary, $bg-secondary) padding-box,
+          linear-gradient(135deg, $primary-color 0%, $success-color 50%, $primary-light 100%) border-box;
+        box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.2),
+          inset 0 2rpx 8rpx rgba(255, 255, 255, 0.5);
       }
 
       .avatar-overlay {
@@ -123,13 +127,15 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(4rpx);
+        -webkit-backdrop-filter: blur(4rpx);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         opacity: 0;
-        transition: opacity 0.2s ease;
+        transition: opacity 0.25s ease;
       }
 
       &:active .avatar-overlay {
@@ -140,7 +146,8 @@
     .avatar-hint {
       @include ios-caption1;
       color: $text-tertiary;
-      margin-top: $spacing-16;
+      margin-top: $spacing-20;
+      font-weight: $font-weight-medium;
     }
   }
 
@@ -253,21 +260,42 @@
   // ==================== 绑定手机号按钮 - 未绑定 ====================
   .bind-phone-btn {
     width: 100%;
-    height: 80rpx;
+    height: 96rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: $spacing-8;
-    background: transparent;
+    gap: $spacing-12;
+    background: linear-gradient(135deg, rgba($primary-color, 0.06) 0%, rgba($primary-color, 0.12) 100%);
     color: $primary-color;
     font-size: $font-size-body;
-    font-weight: $font-weight-medium;
-    border: 1rpx dashed $primary-color;
-    border-radius: $border-radius-md;
-    transition: all 0.2s ease;
+    font-weight: $font-weight-semibold;
+    border: 2rpx solid rgba($primary-color, 0.3);
+    border-radius: $border-radius-lg;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba($primary-color, 0.15) 0%, transparent 70%);
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 0.5s ease-out;
+      border-radius: 50%;
+    }
 
     &:active {
-      background: rgba($primary-color, 0.05);
+      background: linear-gradient(135deg, rgba($primary-color, 0.12) 0%, rgba($primary-color, 0.18) 100%);
+      border-color: rgba($primary-color, 0.5);
+      transform: scale(0.98);
+
+      &::before {
+        transform: translate(-50%, -50%) scale(1);
+      }
     }
 
     &::after {
@@ -346,49 +374,72 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8rpx);
+      -webkit-backdrop-filter: blur(8rpx);
     }
 
     .modal-content {
       position: relative;
       width: 100%;
-      max-height: 80vh;
+      max-height: 85vh;
       background: $bg-secondary;
       border-radius: $border-radius-xl $border-radius-xl 0 0;
       overflow: hidden;
-      animation: modal-slide-up 0.3s ease-out;
+      animation: modal-slide-up 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 -12rpx 60rpx rgba(0, 0, 0, 0.15);
+
+      // 顶部拖拽指示条
+      &::before {
+        content: '';
+        position: absolute;
+        top: 16rpx;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80rpx;
+        height: 6rpx;
+        background: $border-color;
+        border-radius: 3rpx;
+        z-index: 10;
+      }
     }
 
     .modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: $spacing-24 $spacing-32;
+      padding: 40rpx $spacing-32 24rpx;
       border-bottom: 1rpx solid $border-light;
+      position: relative;
 
       .modal-title {
         @include ios-headline;
-        font-weight: $font-weight-semibold;
+        font-weight: $font-weight-bold;
         color: $text-color;
+        text-align: center;
+        flex: 1;
+        margin-left: 56rpx;
       }
 
       .close-btn {
-        width: 56rpx;
-        height: 56rpx;
+        width: 64rpx;
+        height: 64rpx;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         border-radius: 50%;
+        transition: all 0.2s ease;
 
         &:active {
           background: $bg-tertiary;
+          transform: scale(0.9);
         }
       }
     }
 
     .modal-body {
-      padding: $spacing-24 $spacing-32;
+      padding: $spacing-32 $spacing-32 $spacing-24;
 
       .form-item {
         margin-bottom: $spacing-24;
@@ -401,19 +452,20 @@
           @include ios-footnote;
           color: $text-secondary;
           display: block;
-          margin-bottom: $spacing-8;
+          margin-bottom: $spacing-12;
+          font-weight: $font-weight-medium;
         }
 
         .form-input {
           width: 100%;
-          height: 80rpx;
-          padding: 0 $spacing-20;
+          height: 96rpx;
+          padding: 0 $spacing-24;
           font-size: $font-size-body;
           color: $text-color;
           background: $bg-tertiary;
-          border: 1rpx solid $border-color;
-          border-radius: $border-radius-md;
-          transition: all 0.2s ease;
+          border: 2rpx solid $border-color;
+          border-radius: $border-radius-lg;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
           &::placeholder {
             color: $text-tertiary;
@@ -422,18 +474,23 @@
           &:focus {
             outline: none;
             border-color: $primary-color;
+            box-shadow: 0 0 0 4rpx rgba($primary-color, 0.1);
           }
 
           &.error {
             border-color: $error-color;
-            background: rgba($error-color, 0.02);
+            background: rgba($error-color, 0.03);
+
+            &:focus {
+              box-shadow: 0 0 0 4rpx rgba($error-color, 0.1);
+            }
           }
         }
 
         .sms-input-wrapper {
           display: flex;
           align-items: center;
-          gap: $spacing-12;
+          gap: $spacing-16;
 
           .sms-input {
             flex: 1;
@@ -441,32 +498,36 @@
 
           .send-sms-btn {
             flex-shrink: 0;
-            height: 80rpx;
+            height: 96rpx;
             padding: 0 $spacing-24;
-            background: $primary-color;
+            background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
             color: #fff;
             font-size: $font-size-footnote;
-            font-weight: $font-weight-medium;
-            border-radius: $border-radius-md;
+            font-weight: $font-weight-semibold;
+            border-radius: $border-radius-lg;
             border: none;
             white-space: nowrap;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4rpx 16rpx rgba($primary-color, 0.25);
 
             &::after {
               border: none;
             }
 
             &:active:not(:disabled) {
-              opacity: 0.8;
+              opacity: 0.9;
+              transform: scale(0.97);
+              box-shadow: 0 2rpx 8rpx rgba($primary-color, 0.2);
             }
 
             &:disabled {
               opacity: 0.5;
               background: $text-disabled;
+              box-shadow: none;
             }
 
             &.counting {
-              background: $text-disabled;
+              background: linear-gradient(135deg, $text-disabled 0%, color.adjust($text-disabled, $lightness: -5%) 100%);
             }
           }
         }
@@ -474,45 +535,50 @@
     }
 
     .modal-footer {
-      padding: $spacing-16 $spacing-32 $spacing-32;
+      padding: $spacing-16 $spacing-32 calc(#{$spacing-32} + env(safe-area-inset-bottom));
 
       .confirm-btn {
         width: 100%;
-        height: 88rpx;
+        height: 96rpx;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: $primary-color;
+        background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
         color: #fff;
         font-size: $font-size-body;
-        font-weight: $font-weight-semibold;
+        font-weight: $font-weight-bold;
         border-radius: $border-radius-lg;
         border: none;
-        transition: all 0.2s ease;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.3);
+        letter-spacing: 2rpx;
 
         &::after {
           border: none;
         }
 
         &:active:not(:disabled) {
-          opacity: 0.9;
+          opacity: 0.92;
+          transform: scale(0.98);
+          box-shadow: 0 4rpx 12rpx rgba($primary-color, 0.25);
         }
 
         &:disabled {
-          opacity: 0.5;
+          opacity: 0.45;
           background: $text-disabled;
+          box-shadow: none;
         }
 
         .btn-loading {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: $spacing-8;
+          gap: $spacing-12;
 
           .loading-dot {
-            width: 20rpx;
-            height: 20rpx;
-            border: 2rpx solid rgba(255, 255, 255, 0.3);
+            width: 24rpx;
+            height: 24rpx;
+            border: 3rpx solid rgba(255, 255, 255, 0.3);
             border-top-color: #fff;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;

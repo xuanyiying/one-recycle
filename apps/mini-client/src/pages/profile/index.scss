@@ -1,4 +1,5 @@
 @use '../../styles/global.scss' as *;
+@use 'sass:color';
 
 // ==================== 现代化个人中心样式 - 玻璃拟态风格 ====================
 
@@ -70,33 +71,35 @@
                 margin-right: 24rpx;
 
                 .avatar-ring {
-                    width: 120rpx;
-                    height: 120rpx;
-                    padding: 4rpx;
-                    background: linear-gradient(135deg, $primary-color 0%, $success-color 100%);
+                    width: 128rpx;
+                    height: 128rpx;
+                    padding: 5rpx;
+                    background: linear-gradient(135deg, $primary-color 0%, $success-color 50%, $primary-light 100%);
                     border-radius: 50%;
-                    box-shadow: 0 4rpx 16rpx rgba($primary-color, 0.2);
+                    box-shadow: 0 6rpx 20rpx rgba($primary-color, 0.25),
+                                0 2rpx 8rpx rgba($primary-color, 0.15);
 
                     .user-avatar {
                         width: 100%;
                         height: 100%;
                         border-radius: 50%;
                         object-fit: cover;
-                        border: 4rpx solid $bg-secondary;
+                        border: 5rpx solid $bg-secondary;
+                        background: linear-gradient(135deg, rgba($primary-light, 0.3) 0%, rgba($primary-color, 0.15) 100%);
                     }
                 }
 
                 // 在线状态指示
                 .online-indicator {
                     position: absolute;
-                    bottom: 8rpx;
-                    right: 8rpx;
-                    width: 20rpx;
-                    height: 20rpx;
-                    background: $success-color;
-                    border: 3rpx solid $bg-secondary;
+                    bottom: 10rpx;
+                    right: 10rpx;
+                    width: 22rpx;
+                    height: 22rpx;
+                    background: linear-gradient(135deg, $success-color 0%, color.adjust($success-color, $lightness: -10%) 100%);
+                    border: 4rpx solid $bg-secondary;
                     border-radius: 50%;
-                    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 2rpx 8rpx rgba($success-color, 0.4);
                 }
             }
 

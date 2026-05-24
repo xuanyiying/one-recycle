@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/useAuth'
 import { logger } from '@/utils/logger'
+import { Storage } from '@/utils/storage'
 import { Text, View } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
@@ -28,7 +29,7 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
   redirectTo = '/pages/login/index',
   timeout = 3000
 }) => {
-  const { isLoggedIn, loading, checkAuthStatus } = useAuth()
+  const { isLoggedIn, loading, checkAuthStatus, login } = useAuth()
 
   // 内部状态
   const [status, setStatus] = useState<'idle' | 'checking' | 'authorized' | 'unauthorized' | 'timeout' | 'error'>('idle')
@@ -101,10 +102,21 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
     setErrorMsg(null)
     startTime.current = Date.now()
 
-    // 快速路径：如果已经登录，直接通过
-    if (isLoggedIn) {
+    // 快速路径：如果已经登录且 Storage 中有 token，直接通过
+    if (isLoggedIn && Storage.getToken()) {
       setStatus('authorized')
       return
+    }
+
+    // 次级路径：内存中无 token 但 Storage 中有，恢复它
+    if (!isLoggedIn && Storage.getToken() && Storage.getUser()) {
+      const restoredToken = Storage.getToken()
+      const restoredUser = Storage.getUser()
+      if (restoredToken && restoredUser) {
+        login(restoredUser, restoredToken)
+        setStatus('authorized')
+        return
+      }
     }
 
     try {

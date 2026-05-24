@@ -6,6 +6,7 @@ import AuthGuard from '@/components/AuthGuard';
 import Icon from '@/components/Icon';
 import { useSafeArea } from '@/hooks/useSafeArea';
 import { getInviteStats, getInviteList, InviteStats, InviteRecord } from '@/services/referral';
+import defaultAvatar from '@/assets/icons/default-avatar.png'
 import './index.scss';
 
 const ReferralPage: React.FC = () => {
@@ -122,7 +123,7 @@ const ReferralPage: React.FC = () => {
     <View key={item.id} className="invite-item">
       <Image
         className="invitee-avatar"
-        src={item.invitee.avatarUrl || '/assets/images/default-avatar.png'}
+        src={item.invitee.avatarUrl || defaultAvatar}
         mode="aspectFill"
       />
       <View className="invitee-info">

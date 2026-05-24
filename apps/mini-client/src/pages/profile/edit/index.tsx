@@ -3,12 +3,14 @@ import { Icon } from '@/components/Icon'
 import { LIMITS, REGEX } from '@/config/constants'
 import { useAuth } from '@/hooks/useAuth'
 import { useResponsive } from '@/hooks/useResponsive'
+import { useSafeArea } from '@/hooks/useSafeArea'
 import { AuthService } from '@/services/auth'
 import { getUserById, updateUserInfo, uploadAvatar } from '@/services/user'
 import { logger } from '@/utils/logger'
 import { Button, Image, Input, Text, View } from '@tarojs/components'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import defaultAvatar from '@/assets/icons/default-avatar.png'
 import './index.scss'
 
 // TypeScript interfaces for component state
@@ -63,6 +65,7 @@ function useDebounce<T extends (...args: any[]) => void>(callback: T, delay: num
 export default function ProfileEdit(): JSX.Element {
   const { user, updateUser } = useAuth()
   const screenSize = useResponsive()
+  const { top: safeAreaTop } = useSafeArea()
 
   const [loadingState, setLoadingState] = useState<LoadingState>({
     isLoading: true,
@@ -575,11 +578,11 @@ export default function ProfileEdit(): JSX.Element {
     <AuthGuard>
       <View className={`profile-edit-page ${screenSize.screenType}`}>
         {/* 头像编辑 */}
-        <View className='edit-section avatar-section'>
+        <View className='edit-section avatar-section' style={{ paddingTop: safeAreaTop ? `${safeAreaTop + 16}px` : undefined }}>
           <View className='avatar-edit' onClick={handleChooseAvatar}>
             <Image
               className='avatar-preview'
-              src={formData.avatarUrl || '/assets/icons/default-avatar.png'}
+              src={formData.avatarUrl || defaultAvatar}
               mode='aspectFill'
               lazyLoad
             />
@@ -640,7 +643,7 @@ export default function ProfileEdit(): JSX.Element {
               className='bind-phone-btn'
               onClick={() => setShowPhoneBinding(true)}
             >
-              <Icon name='plus' size='16' color='var(--success-color)' />
+              <Icon name='phone' size='20' color='var(--primary-color)' />
               绑定手机号
             </Button>
           )}

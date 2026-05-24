@@ -310,7 +310,7 @@ export default function Profile(): JSX.Element {
                                 <View className='avatar-ring'>
                                     <Avatar
                                         className='user-avatar'
-                                        src={user?.avatarUrl}
+                                        src={user?.avatarUrl || ''}
                                         shape='round'
                                     />
                                 </View>
