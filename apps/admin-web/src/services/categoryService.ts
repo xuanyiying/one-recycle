@@ -44,6 +44,7 @@ export interface PricingRule {
 
 export interface UploadedIcon {
   url: string;
+  id?: string;
 }
 
 // 分类SEO信息接口
@@ -199,8 +200,17 @@ export const categoryService = {
       formData.append('file', file);
       formData.append('fileType', 'IMAGE');
 
-      const response = await apiClient.upload<{ url: string }>('/storage/upload', formData);
-      return { url: response.url };
+      // API 返回 { id, filename, fileUrl, ... }，需要提取 fileUrl 字段
+      const response = await apiClient.upload<{
+        id: string;
+        fileUrl: string;
+        filename: string;
+      }>('/storage/upload', formData);
+
+      return {
+        url: response.fileUrl || '',
+        id: response.id
+      };
     } catch (error) {
       console.error('Failed to upload icon:', error);
       throw new Error('图标上传失败');

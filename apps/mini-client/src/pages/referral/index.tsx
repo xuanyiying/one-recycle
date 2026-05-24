@@ -1,21 +1,25 @@
-import { logger } from '@/utils/logger'
-import { useState, useEffect, useCallback } from 'react';
-import Taro, { usePullDownRefresh } from '@tarojs/taro';
-import { View, Text, Image, Button } from '@tarojs/components';
+import defaultAvatar from '@/assets/icons/default-avatar.png';
 import AuthGuard from '@/components/AuthGuard';
 import Icon from '@/components/Icon';
+import InvitePoster from '@/components/InvitePoster';
+import { useAuth } from '@/hooks/useAuth';
 import { useSafeArea } from '@/hooks/useSafeArea';
-import { getInviteStats, getInviteList, InviteStats, InviteRecord } from '@/services/referral';
-import defaultAvatar from '@/assets/icons/default-avatar.png'
+import { getInviteList, getInviteStats, InviteRecord, InviteStats } from '@/services/referral';
+import { logger } from '@/utils/logger';
+import { Button, Image, Text, View } from '@tarojs/components';
+import Taro, { usePullDownRefresh } from '@tarojs/taro';
+import { useCallback, useEffect, useState } from 'react';
 import './index.scss';
 
 const ReferralPage: React.FC = () => {
   const { top: safeAreaTop } = useSafeArea();
+  const { user } = useAuth();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [inviteList, setInviteList] = useState<InviteRecord[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showPoster, setShowPoster] = useState(false);
 
   const loadData = useCallback(async (isRefresh = false) => {
     try {
@@ -112,6 +116,10 @@ const ReferralPage: React.FC = () => {
 
   const renderShareSection = () => (
     <View className="share-section">
+      <Button className="share-btn poster-btn" onClick={() => setShowPoster(true)}>
+        <Icon name="poster" size={40} color="#2E7D32" />
+        <Text className="share-text">生成邀请海报</Text>
+      </Button>
       <Button className="share-btn" open-type="share">
         <Icon name="share" size={40} color="#2E7D32" />
         <Text className="share-text">分享给好友</Text>
@@ -172,7 +180,7 @@ const ReferralPage: React.FC = () => {
   );
 
   return (
-    <AuthGuard showLoginPrompt>
+    <AuthGuard>
       <View className="referral-page">
         <View className="header-section" style={{ paddingTop: `${safeAreaTop + 40}rpx` }}>
           <Text className="title">邀请好友</Text>
@@ -182,6 +190,14 @@ const ReferralPage: React.FC = () => {
         {renderStatsCard()}
         {renderShareSection()}
         {renderInviteList()}
+
+        <InvitePoster
+          visible={showPoster}
+          onClose={() => setShowPoster(false)}
+          inviteCode={stats?.inviteCode || ''}
+          nickname={user?.nickname || ''}
+          avatarUrl={user?.avatarUrl || ''}
+        />
       </View>
     </AuthGuard>
   );

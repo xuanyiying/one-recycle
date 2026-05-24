@@ -15,7 +15,7 @@ export type UICategory = ServiceCategory & UICategoryExtra
 export const convertServiceToUICategory = (serviceCategory: ServiceCategory): UICategory => {
   return {
     ...serviceCategory,
-    icon: serviceCategory.icon?.url || '' as any,
+    icon: serviceCategory.iconUrl || '',
     description: serviceCategory.description || '',
     basePrice: serviceCategory.priceInfo?.unitPrice || 0,
     unitPrice: serviceCategory.priceInfo?.unitPrice || 0,

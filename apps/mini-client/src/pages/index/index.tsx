@@ -154,10 +154,10 @@ export default function Index() {
                   hoverClass='category-tab-hover'
                   hoverStayTime={100}
                 >
-                  {category.icon?.url ? (
+                  {category.iconUrl ? (
                     <Image
                       className='category-tab-icon'
-                      src={category.icon.url}
+                      src={category.iconUrl}
                       mode='aspectFit'
                     />
                   ) : (

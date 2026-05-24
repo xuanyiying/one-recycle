@@ -19,16 +19,7 @@ export enum PriceType {
   NEGOTIABLE = 'negotiable' // 面议
 }
 
-// 分类图标信息接口
-export interface CategoryIcon {
-  url: string;
-  filename: string;
-  size?: number;
-  mimeType?: string;
-  uploadedAt: string; // 日期字符串
-}
-
-// 分类价格信息接口
+// 价格信息接口
 export interface CategoryPrice {
   type: PriceType;
   unitPrice?: number;
@@ -38,6 +29,7 @@ export interface CategoryPrice {
   currency: string;       // 货币类型
 }
 
+// 计价规则接口
 export interface CategoryPricingRule {
   id?: number;
   tenantId?: number;
@@ -48,7 +40,7 @@ export interface CategoryPricingRule {
   isActive?: boolean;
 }
 
-// 分类SEO信息接口
+// SEO信息接口
 export interface CategorySeo {
   metaTitle?: string;
   metaDescription?: string;
@@ -56,7 +48,7 @@ export interface CategorySeo {
   slug: string;           // URL友好的标识符
 }
 
-// 分类统计信息接口
+// 统计信息接口
 export interface CategoryStats {
   totalItems: number;     // 该分类下的物品总数
   totalOrders: number;    // 该分类的订单总数
@@ -72,14 +64,14 @@ export interface Category {
   description?: string;
   type: CategoryType;
   status: CategoryStatus;
-  
+
   // 价格信息
   priceInfo: CategoryPrice;
 
   pricingRule?: CategoryPricingRule;
-  
-  // 图标信息
-  icon?: CategoryIcon;
+
+  // 图标信息（URL字符串）
+  iconUrl?: string;
   
   // 层级关系
   parentId?: number;
@@ -122,34 +114,34 @@ export interface CategoryRaw {
   description?: string;
   type: CategoryType;
   status: CategoryStatus;
-  
+
   // 价格信息
   priceInfo: CategoryPrice;
 
   pricingRule?: CategoryPricingRule;
-  
-  // 图标信息
-  icon?: CategoryIcon;
-  
+
+  // 图标信息（URL字符串）
+  iconUrl?: string;
+
   // 层级关系
   parentId?: number;
   level: number;
   path: string;
-  
+
   // 排序和显示
   sortOrder: number;
   isVisible: boolean;
   isFeatured: boolean;
-  
+
   // SEO信息
   seo: CategorySeo;
-  
+
   // 统计信息
   stats?: CategoryStats;
-  
+
   // 扩展属性
   attributes?: Record<string, any>;
-  
+
   // 时间戳
   createdAt: string;
   updatedAt: string;
@@ -166,7 +158,7 @@ export const transformCategory = (raw: CategoryRaw): Category => {
     status: raw.status,
     priceInfo: raw.priceInfo,
     pricingRule: raw.pricingRule,
-    icon: raw.icon,
+    iconUrl: raw.iconUrl,
     parentId: raw.parentId,
     level: raw.level,
     path: raw.path,

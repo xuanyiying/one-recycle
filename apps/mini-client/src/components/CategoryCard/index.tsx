@@ -116,10 +116,10 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onClick, c
           立即预约
         </View>
       </View>
-      {category.icon?.url ? (
+      {category.iconUrl ? (
         <Image
           className='card-bg-img'
-          src={category.icon.url}
+          src={category.iconUrl}
           mode='aspectFit'
         />
       ) : (
