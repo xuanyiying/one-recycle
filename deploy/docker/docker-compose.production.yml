@@ -94,6 +94,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
       - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+      - WECHAT_APP_ID=${WECHAT_APP_ID}
+      - WECHAT_APP_SECRET=${WECHAT_APP_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
