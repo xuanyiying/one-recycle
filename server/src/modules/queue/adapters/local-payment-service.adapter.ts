@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AccountService } from '@/modules/account/account.service';
+import { PaymentService } from '@/modules/payment/payment.service';
 import { toNumber } from '@/common/utils/decimal.util';
 import {
   IPaymentService,
@@ -16,7 +17,10 @@ import {
 export class LocalPaymentServiceAdapter implements IPaymentService {
   private readonly logger = new Logger(LocalPaymentServiceAdapter.name);
 
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   async increaseBalance(
     request: IncreaseBalanceRequest,
@@ -114,9 +118,13 @@ export class LocalPaymentServiceAdapter implements IPaymentService {
       `Checking if transaction ${transactionId} is already processed`,
     );
 
-    // In monolithic mode, idempotency is handled by the Payment module
-    // Default to false to allow processing
-    return false;
+    try {
+      const payment = await this.paymentService.isTransactionProcessed(BigInt(transactionId));
+      return !!payment;
+    } catch (error) {
+      this.logger.error(`Failed to check idempotency for transaction ${transactionId}:`, error);
+      return false; // Fallback to false to allow processing if check fails
+    }
   }
 
   private async findLatestTransaction(accountId: bigint) {

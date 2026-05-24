@@ -36,6 +36,7 @@ message RejectAssignmentRequest {
 message ListAssignmentsRequest {
   int32 page = 1;
   int32 limit = 2;
+  optional int64 orderId = 3;
 }
 
 message AssignOrderResponse {

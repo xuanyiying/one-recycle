@@ -34,6 +34,7 @@ import { AccountService } from '@/modules/account/account.service';
 import { DispatchService } from '@/modules/dispatch/dispatch.service';
 import { InventoryService } from '@/modules/inventory/services/inventory.service';
 import { OrderService } from '@/modules/order/services/order.service';
+import { PaymentService } from '@/modules/payment/payment.service';
 
 // Module imports for processors
 import { QUEUE_NAMES, RedisModule } from '@/common';
@@ -131,6 +132,7 @@ import { TenantModule } from '../tenant/tenant.module';
       provide: 'IPaymentService',
       useFactory: (
         accountService: AccountService,
+        paymentService: PaymentService,
         configService: ConfigService,
       ) => {
         const serviceMode = configService.get<string>(
@@ -141,9 +143,9 @@ import { TenantModule } from '../tenant/tenant.module';
         if (serviceMode === 'microservices') {
           return new PaymentServiceGrpcClient(configService);
         }
-        return new LocalPaymentServiceAdapter(accountService);
+        return new LocalPaymentServiceAdapter(accountService, paymentService);
       },
-      inject: [AccountService, ConfigService],
+      inject: [AccountService, PaymentService, ConfigService],
     },
 
     {
