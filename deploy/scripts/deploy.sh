@@ -65,21 +65,24 @@ start() {
     fi
     cd "$DEPLOY_DIR"
     {
+        # 先保留已有的完整配置
+        if [ -f .env.production ]; then
+            grep -v '^#' .env.production | grep -v '^$'
+        fi
+        # 再用当前值覆盖
         echo "DOMAIN=$DOMAIN"
         echo "DB_PASSWORD=$DB_PASSWORD"
         echo "REDIS_PASSWORD=$REDIS_PASSWORD"
         echo "JWT_SECRET=$JWT_SECRET"
         echo "CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}"
-        echo "WECHAT_APP_ID=${WECHAT_APP_ID:-}"
-        echo "WECHAT_APP_SECRET=${WECHAT_APP_SECRET:-}"
     } > .env.production
-    docker compose -f docker-compose.yml up -d --build
+    docker compose --env-file .env.production -f docker-compose.yml up -d --build
     log "Services started"
 }
 
 stop() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker-compose.yml down
+    docker compose --env-file .env.production -f docker-compose.yml down
     log "Services stopped"
 }
 
@@ -94,18 +97,21 @@ update() {
 
     cd "$DEPLOY_DIR"
     {
+        # 先保留已有的完整配置
+        if [ -f .env.production ]; then
+            grep -v '^#' .env.production | grep -v '^$'
+        fi
+        # 再用当前值覆盖
         echo "DOMAIN=$DOMAIN"
         echo "DB_PASSWORD=$DB_PASSWORD"
         echo "REDIS_PASSWORD=$REDIS_PASSWORD"
         echo "JWT_SECRET=$JWT_SECRET"
         echo "CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}"
-        echo "WECHAT_APP_ID=${WECHAT_APP_ID:-}"
-        echo "WECHAT_APP_SECRET=${WECHAT_APP_SECRET:-}"
     } > .env.production
     log "Building images..."
-    docker compose -f docker-compose.yml build --parallel api-gateway admin-web
+    docker compose --env-file .env.production -f docker-compose.yml build --parallel api-gateway admin-web
     log "Restarting services..."
-    docker compose -f docker-compose.yml up -d
+    docker compose --env-file .env.production -f docker-compose.yml up -d
     log "Cleaning up old images..."
     docker image prune -f
     log "Services updated"
@@ -113,17 +119,17 @@ update() {
 
 logs() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker-compose.yml logs -f "$@"
+    docker compose --env-file .env.production -f docker-compose.yml logs -f "$@"
 }
 
 migrate() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker-compose.yml exec api-gateway npx prisma db push
+    docker compose --env-file .env.production -f docker-compose.yml exec api-gateway npx prisma db push
 }
 
 status() {
     cd "$DEPLOY_DIR"
-    docker compose -f docker-compose.yml ps
+    docker compose --env-file .env.production -f docker-compose.yml ps
 }
 
 cmd=${1:-deploy}

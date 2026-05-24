@@ -78,21 +78,8 @@ services:
       - SERVICE_NAME=api-gateway
       - RUN_SEED=1
       - PORT=3002
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
-      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
-      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
-      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
-      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - OSS_ENDPOINT=${OSS_ENDPOINT:-}
-      - OSS_SECURE=${OSS_SECURE:-true}
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -127,13 +114,8 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=account-service
       - PORT=3001
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -169,18 +151,8 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=order-service
       - PORT=3003
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - OSS_TYPE=${OSS_TYPE:-TENCENT_COS}
-      - OSS_ACCESS_KEY=${OSS_ACCESS_KEY:-}
-      - OSS_SECRET_KEY=${OSS_SECRET_KEY:-}
-      - OSS_BUCKET=${OSS_BUCKET:-one-recycle}
-      - OSS_REGION=${OSS_REGION:-ap-guangzhou}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -216,13 +188,8 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=notification-service
       - PORT=3004
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -257,13 +224,8 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=inventory-service
       - PORT=3009
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -299,13 +261,8 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=category-service
       - PORT=3008
-      - DATABASE_URL=postgresql://${DB_USERNAME:-one_recycle}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-one_recycle}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
-      - ACCESS_TOKEN_EXPIRES_IN_SECONDS=${ACCESS_TOKEN_EXPIRES_IN_SECONDS:-7200}
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
