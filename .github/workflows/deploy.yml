@@ -354,15 +354,15 @@ jobs:
           git pull origin ${{ github.ref_name }}
 
           echo "=== Ensuring directories exist ==="
-          mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},docker,config}
+          mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-          echo "=== Writing .env.production for microservices ==="
+          echo "=== Updating .env.production ==="
           {
-            # 先写入完整的生产配置（作为基础）
+            # 先保留已有的完整配置
             if [ -f "$DEPLOY_DIR/.env.production" ]; then
               grep -v '^#' "$DEPLOY_DIR/.env.production" | grep -v '^$'
             fi
-            # 再用 CI 变量和动态值覆盖
+            # 再用 CI 变量覆盖
             echo "IMAGE_TAG=${{ github.ref_name }}"
             echo "DOMAIN=${{ secrets.DOMAIN || 'backbuy.cn' }}"
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
@@ -373,28 +373,28 @@ jobs:
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
               grep -v '^#' "$DEPLOY_DIR/config/.env.production" | grep -v '^$'
             fi
-          } > "$DEPLOY_DIR/docker/.env.production"
+          } > "$DEPLOY_DIR/.env.production"
 
           echo "=== Deploy environment summary ==="
-          grep -E '^(DOMAIN|IMAGE_TAG|JWT_SECRET)=' "$DEPLOY_DIR/docker/.env.production" | sed 's/=.*/=<configured>/'
-          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/docker/.env.production" | sed 's/=.*/=<configured>/'
-          grep -E '^(WECHAT_APP_ID)=' "$DEPLOY_DIR/docker/.env.production" | sed 's/=.*/=<configured>/' || echo "WECHAT_APP_ID=<not set>"
+          grep -E '^(DOMAIN|IMAGE_TAG|JWT_SECRET)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
+          grep -E '^(DB_PASSWORD|REDIS_PASSWORD)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/'
+          grep -E '^(WECHAT_APP_ID)=' "$DEPLOY_DIR/.env.production" | sed 's/=.*/=<configured>/' || echo "WECHAT_APP_ID=<not set>"
 
           echo "=== Building images on server ==="
           cd "$DEPLOY_DIR"
-          docker compose --env-file docker/.env.production -f docker/docker-compose.production.yml build --parallel
+          docker compose --env-file .env.production -f docker/docker-compose.production.yml build --parallel
 
           echo "=== Stopping old containers ==="
-          docker compose --env-file docker/.env.production -f docker/docker-compose.production.yml down || true
+          docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
 
           echo "=== Starting microservices ==="
-          docker compose --env-file docker/.env.production -f docker/docker-compose.production.yml up -d
+          docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d
 
           echo "=== Waiting for services ==="
           sleep 15
 
-          docker compose --env-file docker/.env.production -f docker/docker-compose.production.yml ps
-          docker compose --env-file docker/.env.production -f docker/docker-compose.production.yml logs --tail=20
+          docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
+          docker compose --env-file .env.production -f docker/docker-compose.production.yml logs --tail=20
 
           echo "=== Cleaning up old images ==="
           docker image prune -f
