@@ -6,13 +6,36 @@
  * Properties: Property 2 (Price Recalculation on Item Modification)
  */
 
-import { useState, useEffect } from 'react'
-import { View, Text, ScrollView } from '@tarojs/components'
-import { Item, OrderPricing } from '../../../types/order'
-import { calculateOrderPricing, formatPriceRange, formatPrice } from '../../../utils/priceCalculation'
-import { estimateItemPrices } from '../../../services/pricing'
 import { logger } from '@/utils/logger'
+import { ScrollView, Text, View } from '@tarojs/components'
+import { useEffect, useState } from 'react'
+import { estimateItemPrices } from '../../../services/pricing'
+import { Item, OrderPricing } from '../../../types/order'
+import { calculateOrderPricing, formatPrice, formatPriceRange } from '../../../utils/priceCalculation'
 import './index.scss'
+
+// ============================================================================
+// Billing Formula Configuration
+// ============================================================================
+
+interface BillingFormula {
+    name: string
+    formula: string
+    description: string
+}
+
+const BILLING_FORMULAS: BillingFormula[] = [
+    {
+        name: '按重量计费',
+        formula: '单价 × 重量 = 小计',
+        description: '适用于金属、塑料等按重量回收的物品',
+    },
+    {
+        name: '按件计费',
+        formula: '单价 × 数量 = 小计',
+        description: '适用于家电、电子产品等按件回收的物品',
+    },
+]
 
 // ============================================================================
 // Types
@@ -152,6 +175,26 @@ export default function PriceEstimate({
                     <Text className='price-label'>预估总价：</Text>
                     <Text className='price-value-total'>{formatPriceRange(pricing.totalEstimate)}</Text>
                 </View>
+            </View>
+
+            {/* Billing Formula Display */}
+            <View className='pricing-formula'>
+                <Text className='formula-title'>计费规则</Text>
+                <View className='formula-content'>
+                    {BILLING_FORMULAS.map((formula, index) => (
+                        <View key={index} className='formula-item'>
+                            <View className='formula-bullet' />
+                            <View className='formula-text'>
+                                <Text>{formula.name}：</Text>
+                                <Text className='formula-highlight'>{formula.formula}</Text>
+                                <Text>（{formula.description}）</Text>
+                            </View>
+                        </View>
+                    ))}
+                </View>
+                <Text className='formula-note'>
+                    * 当前订单为回收类型，免收上门服务费
+                </Text>
             </View>
 
             {/* Price Breakdown */}

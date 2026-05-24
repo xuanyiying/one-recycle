@@ -1,3 +1,6 @@
+@use '../../../styles/variables' as *;
+@use 'sass:color';
+
 .price-estimate {
   width: 100%;
   padding: 24rpx 0;
@@ -10,6 +13,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -20,6 +24,7 @@
       opacity: 0;
       transform: translateY(20rpx);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -31,6 +36,7 @@
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -38,9 +44,12 @@
   }
 
   @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
     }
+
     50% {
       opacity: 0.8;
     }
@@ -55,14 +64,14 @@
     align-items: center;
     justify-content: center;
     min-height: 120rpx;
-    background: #f5f5f5;
-    border-radius: 12rpx;
-    margin: 0 24rpx;
+    background: $bg-tertiary;
+    border-radius: $border-radius-base;
+    margin: 0 $spacing-base;
     animation: fadeIn 0.3s ease-out;
 
     .empty-text {
-      font-size: 26rpx;
-      color: #999;
+      font-size: $font-size-caption1;
+      color: $text-tertiary;
     }
   }
 
@@ -75,15 +84,15 @@
     align-items: center;
     justify-content: center;
     min-height: 120rpx;
-    background: #f5f5f5;
-    border-radius: 12rpx;
-    margin: 0 24rpx;
+    background: $bg-tertiary;
+    border-radius: $border-radius-base;
+    margin: 0 $spacing-base;
     animation: fadeIn 0.3s ease-out;
 
     .loading-text {
-      font-size: 26rpx;
-      color: #667eea;
-      font-weight: 500;
+      font-size: $font-size-caption1;
+      color: $primary-color;
+      font-weight: $font-weight-medium;
       animation: pulse 1.5s ease-in-out infinite;
     }
   }
@@ -93,35 +102,35 @@
   // ============================================================================
 
   .price-error {
-    background: #f8d7da;
-    border: 1rpx solid #f5c6cb;
-    border-radius: 12rpx;
-    padding: 16rpx 20rpx;
-    margin: 0 24rpx 16rpx;
+    background: rgba($error-color, 0.1);
+    border: 1rpx solid rgba($error-color, 0.2);
+    border-radius: $border-radius-base;
+    padding: $spacing-sm $spacing-base;
+    margin: 0 $spacing-base $spacing-md;
     animation: slideInUp 0.3s ease-out;
 
     .error-text {
-      font-size: 24rpx;
-      color: #721c24;
-      line-height: 1.4;
+      font-size: $font-size-caption12;
+      color: $error-color;
+      line-height: $line-height-normal;
     }
   }
 
   // ============================================================================
-  // Price Summary Card
+  // Price Summary Card - 绿色主题
   // ============================================================================
 
   .price-summary-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16rpx;
-    padding: 32rpx 24rpx;
-    margin: 0 24rpx;
-    box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.2);
+    background: linear-gradient(135deg, $primary-color 0%, $primary-dark 100%);
+    border-radius: $border-radius-lg;
+    padding: $spacing-base $spacing-lg;
+    margin: 0 $spacing-base;
+    box-shadow: 0 8rpx 24rpx rgba($primary-color, 0.25);
     animation: slideInUp 0.4s ease-out;
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 6rpx 16rpx rgba(102, 126, 234, 0.3);
+      box-shadow: 0 12rpx 32rpx rgba($primary-color, 0.35);
       transform: translateY(-2rpx);
     }
 
@@ -129,7 +138,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16rpx;
+      margin-bottom: $spacing-sm;
       animation: fadeIn 0.4s ease-out;
 
       &.total {
@@ -137,30 +146,106 @@
       }
 
       .price-label {
-        font-size: 26rpx;
-        color: rgba(255, 255, 255, 0.8);
-        font-weight: 500;
+        font-size: $font-size-caption1;
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: $font-weight-medium;
       }
 
       .price-value {
-        font-size: 28rpx;
+        font-size: $font-size-footnote;
         color: #fff;
-        font-weight: 600;
+        font-weight: $font-weight-semibold;
         animation: scaleIn 0.5s ease-out;
       }
 
       .price-value-total {
-        font-size: 32rpx;
+        font-size: $font-size-headline3;
         color: #fff;
-        font-weight: bold;
+        font-weight: $font-weight-bold;
         animation: scaleIn 0.5s ease-out 0.1s both;
       }
     }
 
     .price-divider {
       height: 1rpx;
-      background: rgba(255, 255, 255, 0.3);
-      margin: 16rpx 0;
+      background: rgba(255, 255, 255, 0.25);
+      margin: $spacing-sm 0;
+    }
+  }
+
+  // ============================================================================
+  // 计费公式展示区域
+  // ============================================================================
+
+  .pricing-formula {
+    background: rgba($primary-color, 0.06);
+    border: 1rpx solid rgba($primary-color, 0.15);
+    border-radius: $border-radius-base;
+    padding: $spacing-sm $spacing-base;
+    margin: $spacing-md $spacing-base;
+
+    .formula-title {
+      font-size: $font-size-caption1;
+      font-weight: $font-weight-semibold;
+      color: $primary-dark;
+      margin-bottom: $spacing-8;
+      display: flex;
+      align-items: center;
+      gap: $spacing-4;
+
+      &::before {
+        content: '📐';
+        font-size: 24rpx;
+      }
+    }
+
+    .formula-content {
+      background: $bg-secondary;
+      border-radius: $border-radius-sm;
+      padding: $spacing-sm $spacing-8;
+
+      .formula-item {
+        display: flex;
+        align-items: flex-start;
+        gap: $spacing-4;
+        font-size: $font-size-caption12;
+        color: $text-secondary;
+        line-height: $line-height-relaxed;
+        margin-bottom: $spacing-4;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .formula-bullet {
+          width: 6rpx;
+          height: 6rpx;
+          background: $primary-color;
+          border-radius: 50%;
+          margin-top: 10rpx;
+          flex-shrink: 0;
+        }
+
+        .formula-text {
+          flex: 1;
+
+          .formula-highlight {
+            color: $primary-dark;
+            font-weight: $font-weight-semibold;
+            font-family: $font-family-number;
+            background: rgba($primary-color, 0.08);
+            padding: 2rpx 6rpx;
+            border-radius: 4rpx;
+          }
+        }
+      }
+    }
+
+    .formula-note {
+      font-size: $font-size-caption12;
+      color: $text-tertiary;
+      margin-top: $spacing-8;
+      line-height: $line-height-normal;
     }
   }
 
@@ -169,40 +254,40 @@
   // ============================================================================
 
   .price-breakdown {
-    margin-top: 24rpx;
-    padding: 0 24rpx;
+    margin-top: $spacing-md;
+    padding: 0 $spacing-base;
     animation: slideInUp 0.4s ease-out 0.1s both;
 
     .breakdown-title {
-      font-size: 28rpx;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 16rpx;
+      font-size: $font-size-footnote;
+      font-weight: $font-weight-semibold;
+      color: $text-primary;
+      margin-bottom: $spacing-sm;
       display: block;
     }
 
     .breakdown-list {
       display: flex;
-      gap: 12rpx;
+      gap: $spacing-sm;
       overflow-x: auto;
-      padding-bottom: 8rpx;
+      padding-bottom: $spacing-8;
 
       &::-webkit-scrollbar {
         height: 4rpx;
       }
 
       &::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: $bg-tertiary;
         border-radius: 2rpx;
       }
 
       &::-webkit-scrollbar-thumb {
-        background: #ccc;
+        background: $border-color;
         border-radius: 2rpx;
         transition: background 0.2s ease;
 
         &:hover {
-          background: #999;
+          background: $text-disabled;
         }
       }
     }
@@ -210,43 +295,43 @@
     .breakdown-item {
       display: flex;
       flex-direction: column;
-      background: #f9f9f9;
-      border: 1rpx solid #e8e8e8;
-      border-radius: 12rpx;
-      padding: 16rpx;
+      background: $bg-secondary;
+      border: 1rpx solid $border-light;
+      border-radius: $border-radius-base;
+      padding: $spacing-sm;
       min-width: 200rpx;
       flex-shrink: 0;
       animation: slideInUp 0.3s ease-out;
       transition: all 0.3s ease;
 
       &:hover {
-        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-        border-color: #d8d8d8;
+        box-shadow: $box-shadow-sm;
+        border-color: $border-color;
         transform: translateY(-2rpx);
       }
 
       .item-info {
-        margin-bottom: 12rpx;
+        margin-bottom: $spacing-sm;
 
         .item-name {
           display: block;
-          font-size: 26rpx;
-          font-weight: 600;
-          color: #333;
-          margin-bottom: 4rpx;
+          font-size: $font-size-caption1;
+          font-weight: $font-weight-semibold;
+          color: $text-primary;
+          margin-bottom: $spacing-4;
         }
 
         .item-details {
           display: block;
-          font-size: 22rpx;
-          color: #999;
+          font-size: $font-size-caption12;
+          color: $text-tertiary;
         }
       }
 
       .item-price {
-        font-size: 26rpx;
-        font-weight: 600;
-        color: #667eea;
+        font-size: $font-size-caption1;
+        font-weight: $font-weight-semibold;
+        color: $primary-color;
         animation: scaleIn 0.4s ease-out;
       }
     }
@@ -259,30 +344,30 @@
   .price-disclaimer {
     display: flex;
     align-items: flex-start;
-    gap: 12rpx;
-    background: #fff3cd;
-    border: 1rpx solid #ffc107;
-    border-radius: 12rpx;
-    padding: 16rpx 20rpx;
-    margin: 24rpx 24rpx 0;
+    gap: $spacing-sm;
+    background: rgba($warning-color, 0.08);
+    border: 1rpx solid rgba($warning-color, 0.2);
+    border-radius: $border-radius-base;
+    padding: $spacing-sm $spacing-base;
+    margin: $spacing-md $spacing-base 0;
     animation: slideInUp 0.4s ease-out 0.2s both;
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 2rpx 8rpx rgba(255, 193, 7, 0.2);
+      box-shadow: 0 2rpx 8rpx rgba($warning-color, 0.15);
     }
 
     .disclaimer-icon {
-      font-size: 24rpx;
+      font-size: $font-size-caption1;
       flex-shrink: 0;
-      line-height: 1.4;
+      line-height: $line-height-normal;
       animation: pulse 2s ease-in-out infinite;
     }
 
     .disclaimer-text {
-      font-size: 24rpx;
-      color: #856404;
-      line-height: 1.4;
+      font-size: $font-size-caption12;
+      color: color.adjust($warning-color, $lightness: -15%);
+      line-height: $line-height-normal;
     }
   }
 }

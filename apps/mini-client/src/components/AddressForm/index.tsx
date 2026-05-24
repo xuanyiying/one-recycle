@@ -130,7 +130,7 @@ export default function AddressForm({
             city: address.city || prev.city,
             district: address.district || prev.district,
             street: address.street || prev.street || '',
-            detail: address.detail || prev.detail,
+            detail: address.detail !== undefined ? address.detail : prev.detail,
         }))
         if (address.coordinates) {
             setCoordinates(address.coordinates)
