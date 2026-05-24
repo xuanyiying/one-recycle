@@ -5,7 +5,7 @@ import {
   OnQueueCompleted,
   OnQueueFailed,
 } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { Job } from 'bull';
 import { QUEUE_NAMES } from '../queue.constants';
 import {
@@ -17,8 +17,8 @@ import {
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
 import { NotificationQueueService } from '../services/notification-queue.service';
-import { OrderServiceClient } from '../clients/order-service.client';
-import { PaymentServiceClient } from '../clients/payment-service.client';
+import { IOrderService } from '../interfaces/order-service.interface';
+import { IPaymentService } from '../interfaces/payment-service.interface';
 import { OrderStatus } from '@/common/types/business.types';
 import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
@@ -30,8 +30,8 @@ export class PaymentProcessor {
 
   constructor(
     private readonly notificationQueueService: NotificationQueueService,
-    private readonly orderServiceClient: OrderServiceClient,
-    private readonly paymentServiceClient: PaymentServiceClient,
+    @Inject('IOrderService') private readonly orderService: IOrderService,
+    @Inject('IPaymentService') private readonly paymentService: IPaymentService,
     private readonly deadLetterQueueService: DeadLetterQueueService,
   ) {}
 
@@ -51,7 +51,7 @@ export class PaymentProcessor {
     try {
       // 1. 幂等性检查 - 使用数据库
       const isProcessed =
-        await this.paymentServiceClient.isTransactionProcessed(transactionId);
+        await this.paymentService.isTransactionProcessed(transactionId);
       if (isProcessed) {
         this.logger.warn(
           `Transaction ${transactionId} already processed, skipping`,
@@ -65,7 +65,7 @@ export class PaymentProcessor {
 
       // 2. 获取订单信息
       this.logger.log(`Fetching order details for: ${orderId}`);
-      const order = await this.orderServiceClient.getOrder(orderId);
+      const order = await this.orderService.getOrder(orderId);
 
       // 3. 验证金额
       this.logger.log(`Verifying payment amount for order: ${orderId}`);
@@ -86,7 +86,7 @@ export class PaymentProcessor {
         this.logger.log(`Payment successful for order: ${orderId}`);
 
         // 更新订单状态为待取件
-        await this.orderServiceClient.updateOrderStatus(
+        await this.orderService.updateOrderStatus(
           orderId,
           OrderStatus.PENDING_PICKUP,
           {
@@ -105,7 +105,7 @@ export class PaymentProcessor {
         this.logger.warn(`Payment failed for order: ${orderId}`);
 
         // 支付失败，取消订单
-        await this.orderServiceClient.updateOrderStatus(
+        await this.orderService.updateOrderStatus(
           orderId,
           OrderStatus.CANCELLED,
           {
@@ -123,7 +123,7 @@ export class PaymentProcessor {
       }
 
       // 5. 记录支付日志到数据库
-      await this.paymentServiceClient.createPaymentLog({
+      await this.paymentService.createPaymentLog({
         orderId,
         transactionId,
         status: normalizedStatus,
@@ -164,13 +164,13 @@ export class PaymentProcessor {
 
     try {
       // 1. 获取订单信息
-      const order = await this.orderServiceClient.getOrder(orderId);
+      const order = await this.orderService.getOrder(orderId);
 
       // 2. 更新订单状态
       this.logger.log(
         `Updating order status to ${OrderStatus.PENDING_PICKUP}: ${orderId}`,
       );
-      await this.orderServiceClient.updateOrderStatus(
+      await this.orderService.updateOrderStatus(
         orderId,
         OrderStatus.PENDING_PICKUP,
         {
@@ -181,7 +181,7 @@ export class PaymentProcessor {
 
       // 3. 记录支付成功日志
       this.logger.log(`Recording payment success: ${transactionId}`);
-      await this.paymentServiceClient.createPaymentLog({
+      await this.paymentService.createPaymentLog({
         orderId,
         transactionId,
         status: 'SUCCESS',
@@ -229,13 +229,13 @@ export class PaymentProcessor {
 
     try {
       // 1. 获取订单信息
-      const order = await this.orderServiceClient.getOrder(orderId);
+      const order = await this.orderService.getOrder(orderId);
 
       // 2. 更新订单状态
       this.logger.log(
         `Updating order status to ${OrderStatus.CANCELLED}: ${orderId}`,
       );
-      await this.orderServiceClient.updateOrderStatus(
+      await this.orderService.updateOrderStatus(
         orderId,
         OrderStatus.CANCELLED,
         {
@@ -246,7 +246,7 @@ export class PaymentProcessor {
 
       // 3. 记录支付失败日志
       this.logger.log(`Recording payment failure: ${transactionId}`);
-      await this.paymentServiceClient.createPaymentLog({
+      await this.paymentService.createPaymentLog({
         orderId,
         transactionId,
         status: 'FAILED',
@@ -294,11 +294,11 @@ export class PaymentProcessor {
 
     try {
       // 1. 获取订单信息
-      const order = await this.orderServiceClient.getOrder(orderId);
+      const order = await this.orderService.getOrder(orderId);
 
       // 2. 调用支付服务发起退款
       this.logger.log(`Initiating refund for transaction: ${transactionId}`);
-      const refundResult = await this.paymentServiceClient.initiateRefund({
+      const refundResult = await this.paymentService.initiateRefund({
         orderId,
         transactionId,
         amount,
@@ -308,7 +308,7 @@ export class PaymentProcessor {
 
       // 3. 更新订单退款状态
       this.logger.log(`Updating refund status for order: ${orderId}`);
-      await this.orderServiceClient.updateOrderStatus(
+      await this.orderService.updateOrderStatus(
         orderId,
         OrderStatus.REFUNDED,
         {
@@ -320,7 +320,7 @@ export class PaymentProcessor {
 
       // 4. 记录退款日志
       this.logger.log(`Recording refund: ${refundResult.refundId}`);
-      await this.paymentServiceClient.createPaymentLog({
+      await this.paymentService.createPaymentLog({
         orderId,
         transactionId: refundResult.refundId,
         status: 'refunded',

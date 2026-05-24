@@ -1,27 +1,27 @@
+import { OrderStatus, QUEUE_NAMES } from '@/common';
+import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
+import { PricingService } from '@/modules/pricing/pricing.service';
 import {
-  Processor,
-  Process,
   OnQueueActive,
   OnQueueCompleted,
   OnQueueFailed,
+  Process,
+  Processor,
 } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { Job } from 'bull';
-import { QUEUE_NAMES, OrderStatus } from '@/common';
 import {
-  OrderCreatedEventDto,
-  OrderStatusChangedEventDto,
   OrderCanceledEventDto,
   OrderCompletedEventDto,
+  OrderCreatedEventDto,
+  OrderStatusChangedEventDto,
 } from '../dto/order-events.dto';
-import { NotificationQueueService } from '../services/notification-queue.service';
-import { OrderServiceClient } from '../clients/order-service.client';
-import { InventoryServiceClient } from '../clients/inventory-service.client';
-import { DispatchServiceClient } from '../clients/dispatch-service.client';
-import { PaymentServiceClient } from '../clients/payment-service.client';
-import { PricingService } from '@/modules/pricing/pricing.service';
-import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
+import { IDispatchService } from '../interfaces/dispatch-service.interface';
+import { IInventoryService } from '../interfaces/inventory-service.interface';
+import { IOrderService } from '../interfaces/order-service.interface';
+import { IPaymentService } from '../interfaces/payment-service.interface';
 import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
+import { NotificationQueueService } from '../services/notification-queue.service';
 
 @Processor(QUEUE_NAMES.ORDER)
 export class OrderProcessor {
@@ -29,19 +29,15 @@ export class OrderProcessor {
 
   constructor(
     private readonly notificationQueueService: NotificationQueueService,
-    private readonly orderServiceClient: OrderServiceClient,
-    private readonly inventoryServiceClient: InventoryServiceClient,
-    private readonly dispatchServiceClient: DispatchServiceClient,
-    private readonly paymentServiceClient: PaymentServiceClient,
+    @Inject('IOrderService') private readonly orderService: IOrderService,
+    @Inject('IInventoryService') private readonly inventoryService: IInventoryService,
+    @Inject('IDispatchService') private readonly dispatchService: IDispatchService,
+    @Inject('IPaymentService') private readonly paymentService: IPaymentService,
     private readonly pricingService: PricingService,
     private readonly referralRewardService: ReferralRewardService,
     private readonly deadLetterQueueService: DeadLetterQueueService,
-  ) {}
+  ) { }
 
-  /**
-   * @description 回收物品订单不需要检查库存，锁定库存
-   * 处理订单创建事件
-   */
   @Process({ name: 'order-created', concurrency: 5 })
   async handleOrderCreated(job: Job<OrderCreatedEventDto>): Promise<any> {
     const { orderId, userId, items, orderType } = job.data;
@@ -51,33 +47,28 @@ export class OrderProcessor {
     );
 
     try {
-      // 默认是 RECYCLE
       const isRecycleOrder = !orderType || orderType === 'RECYCLE';
 
       if (!isRecycleOrder) {
-        // 1. 检查库存是否充足
         this.logger.log(`Checking inventory for order: ${orderId}`);
-        const inventoryCheck = await this.inventoryServiceClient.checkInventory(
-          {
-            items: items.map((item) => ({
-              categoryId: item.categoryId,
-              quantity: item.quantity,
-            })),
-          },
-        );
+        const inventoryCheck = await this.inventoryService.checkInventory({
+          items: items.map((item) => ({
+            categoryId: item.categoryId,
+            quantity: item.quantity,
+          })),
+        });
 
         if (!inventoryCheck.available) {
           this.logger.warn(`Insufficient inventory for order: ${orderId}`);
-          await this.orderServiceClient.updateOrderStatus(
+          await this.orderService.updateOrderStatus(
             orderId,
             OrderStatus.INSPECTION_EXCEPTION,
           );
           throw new Error('Insufficient inventory');
         }
 
-        // 2. 锁定库存
         this.logger.log(`Locking inventory for order: ${orderId}`);
-        await this.inventoryServiceClient.lockInventory({
+        await this.inventoryService.lockInventory({
           orderId,
           items: items.map((item) => ({
             categoryId: item.categoryId,
@@ -90,7 +81,6 @@ export class OrderProcessor {
         );
       }
 
-      // 3. 计算订单总价
       this.logger.log(`Calculating price for order: ${orderId}`);
       let totalAmount = 0;
       try {
@@ -115,16 +105,13 @@ export class OrderProcessor {
         );
       }
 
-      // 4. 更新订单总价
-      await this.orderServiceClient.updateOrderAmount(orderId, totalAmount);
+      await this.orderService.updateOrderAmount(orderId, totalAmount);
 
-      // 5. 更新订单状态为待取件
-      await this.orderServiceClient.updateOrderStatus(
+      await this.orderService.updateOrderStatus(
         orderId,
         OrderStatus.PENDING_PICKUP,
       );
 
-      // 6. 发送订单确认通知
       this.logger.log(
         `Sending order confirmation notification for: ${orderId}`,
       );
@@ -150,9 +137,8 @@ export class OrderProcessor {
         (error as Error).stack,
       );
 
-      // 释放已锁定的库存
       try {
-        await this.inventoryServiceClient.releaseInventory(orderId);
+        await this.inventoryService.releaseInventory(orderId);
       } catch (releaseError) {
         this.logger.error(
           `Failed to release inventory for order ${orderId}`,
@@ -164,9 +150,6 @@ export class OrderProcessor {
     }
   }
 
-  /**
-   * 处理订单状态变更事件
-   */
   @Process({ name: 'order-status-changed', concurrency: 5 })
   async handleOrderStatusChanged(
     job: Job<OrderStatusChangedEventDto>,
@@ -178,10 +161,8 @@ export class OrderProcessor {
     );
 
     try {
-      // 1. 更新订单状态（实际应调用order-service）
       this.logger.log(`Updating order status in database: ${orderId}`);
 
-      // 2. 根据新状态触发不同的业务逻辑
       switch (newStatus) {
         case OrderStatus.PENDING_PICKUP:
           this.logger.log(`Order confirmed: ${orderId}`);
@@ -197,7 +178,6 @@ export class OrderProcessor {
           break;
       }
 
-      // 3. 发送状态变更通知
       this.logger.log(
         `Sending order status notification for: ${orderId} (${newStatus})`,
       );
@@ -223,9 +203,6 @@ export class OrderProcessor {
     }
   }
 
-  /**
-   * 处理订单完成事件（积分入账）
-   */
   @Process({ name: 'order-completed', concurrency: 5 })
   async handleOrderCompleted(job: Job<OrderCompletedEventDto>): Promise<any> {
     const { orderId, userId, settlementAmount } = job.data;
@@ -235,26 +212,23 @@ export class OrderProcessor {
     );
 
     try {
-      // 1. 调用payment-service增加用户余额
       this.logger.log(
         `Calling payment service to increase balance for user ${userId}`,
       );
-      const transaction = await this.paymentServiceClient.increaseBalance({
+      const transaction = await this.paymentService.increaseBalance({
         userId,
         amount: settlementAmount,
         orderId,
         description: `订单收入 - ${orderId}`,
       });
-      // 扣减商家账户
 
       this.logger.log(
         `Balance increased successfully for user ${userId}. ` +
-          `Transaction ID: ${transaction.id}, ` +
-          `Balance before: ${transaction.balanceBefore}, ` +
-          `Balance after: ${transaction.balanceAfter}`,
+        `Transaction ID: ${transaction.id}, ` +
+        `Balance before: ${transaction.balanceBefore}, ` +
+        `Balance after: ${transaction.balanceAfter}`,
       );
 
-      // 2. 处理推广返佣
       try {
         this.logger.log(`Processing referral reward for order: ${orderId}`);
         await this.referralRewardService.processOrderReward(BigInt(orderId));
@@ -266,7 +240,6 @@ export class OrderProcessor {
         );
       }
 
-      // 3. 发送积分入账通知
       this.logger.log(`Sending balance update notification to user ${userId}`);
       await this.notificationQueueService.sendOrderStatusNotification(
         userId,
@@ -274,17 +247,10 @@ export class OrderProcessor {
         '已完成',
       );
 
-      // 可以发送专门的积分入账通知
-      // await this.notificationQueueService.sendBalanceUpdateNotification(
-      //   userId,
-      //   settlementAmount,
-      //   transaction.balanceAfter,
-      // );
-
       this.logger.log(
         `Order ${orderId} completed successfully. ` +
-          `User ${userId} received ${settlementAmount} points. ` +
-          `New balance: ${transaction.balanceAfter}`,
+        `User ${userId} received ${settlementAmount} points. ` +
+        `New balance: ${transaction.balanceAfter}`,
       );
 
       return {
@@ -299,11 +265,10 @@ export class OrderProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to process order completed: ${orderId}. ` +
-          `User: ${userId}, Amount: ${settlementAmount}`,
+        `User: ${userId}, Amount: ${settlementAmount}`,
         (error as Error).stack,
       );
 
-      // 如果是幂等性错误（订单已入账），不抛出异常
       if (
         (error as any).response?.data?.message?.includes('already credited') ||
         (error as any).response?.data?.message?.includes('已入账')
@@ -322,9 +287,6 @@ export class OrderProcessor {
     }
   }
 
-  /**
-   * 处理订单取消事件
-   */
   @Process({ name: 'order-cancelled', concurrency: 5 })
   async handleOrderCancelled(job: Job<OrderCanceledEventDto>): Promise<any> {
     const { orderId, userId, reason } = job.data;
@@ -334,13 +296,11 @@ export class OrderProcessor {
     );
 
     try {
-      // 1. 获取订单详情
-      const order = await this.orderServiceClient.getOrder(orderId);
+      const order = await this.orderService.getOrder(orderId);
 
-      // 2. 释放已锁定的库存
       this.logger.log(`Releasing inventory for order: ${orderId}`);
       try {
-        await this.inventoryServiceClient.releaseInventory(orderId);
+        await this.inventoryService.releaseInventory(orderId);
       } catch (inventoryError) {
         this.logger.error(
           `Failed to release inventory: ${orderId}`,
@@ -348,11 +308,10 @@ export class OrderProcessor {
         );
       }
 
-      // 3. 如果已派单，取消京东快递订单
       if (order.waybillNo) {
         this.logger.log(`Cancelling dispatch for order: ${orderId}`);
         try {
-          await this.dispatchServiceClient.cancelDispatch(orderId, reason);
+          await this.dispatchService.cancelDispatch(orderId, reason);
         } catch (dispatchError) {
           this.logger.error(
             `Failed to cancel dispatch: ${orderId}`,
@@ -361,15 +320,12 @@ export class OrderProcessor {
         }
       }
 
-      // 4. 如果订单已完成（已入账），触发退款流程
-      // 检查是否存在ORDER_INCOME类型的交易记录
       this.logger.log(`Checking if order ${orderId} has been credited`);
       let refundInitiated = false;
 
       try {
-        // 尝试退款（如果订单已入账）
-        const refundResult = await this.paymentServiceClient.refundBalance({
-          userId: Number(userId),
+        const refundResult = await this.paymentService.refundBalance({
+          userId,
           amount: order.totalAmount,
           orderId,
           description: `订单取消退款 - ${reason}`,
@@ -377,12 +333,11 @@ export class OrderProcessor {
 
         this.logger.log(
           `Refund processed successfully for order ${orderId}, ` +
-            `Amount: ${refundResult.amount}, ` +
-            `New balance: ${refundResult.balanceAfter}`,
+          `Amount: ${refundResult.amount}, ` +
+          `New balance: ${refundResult.balanceAfter}`,
         );
         refundInitiated = true;
       } catch (refundError) {
-        // 如果订单未入账，退款会失败，这是正常的
         if (
           (refundError as any).response?.data?.message?.includes(
             'has not been credited',
@@ -406,13 +361,11 @@ export class OrderProcessor {
         }
       }
 
-      // 5. 更新订单状态为已取消
-      await this.orderServiceClient.updateOrderStatus(
+      await this.orderService.updateOrderStatus(
         orderId,
         OrderStatus.CANCELLED,
       );
 
-      // 6. 通知用户订单已取消
       this.logger.log(
         `Notifying user ${userId} about cancellation: ${orderId}`,
       );
@@ -422,10 +375,8 @@ export class OrderProcessor {
         '已取消',
       );
 
-      // 7. 如果已分配快递员，通知快递员
       if (order.courierId) {
         this.logger.log(`Notifying courier about cancellation: ${orderId}`);
-        // 可以通过通知服务发送给快递员
       }
 
       this.logger.log(`Order ${orderId} cancelled successfully`);
@@ -446,17 +397,11 @@ export class OrderProcessor {
     }
   }
 
-  /**
-   * 任务开始处理时的钩子
-   */
   @OnQueueActive()
   onActive(job: Job): void {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
   }
 
-  /**
-   * 任务完成时的钩子
-   */
   @OnQueueCompleted()
   onCompleted(job: Job, result: any): void {
     this.logger.log(
@@ -464,9 +409,6 @@ export class OrderProcessor {
     );
   }
 
-  /**
-   * 任务失败时的钩子
-   */
   @OnQueueFailed()
   async onFailed(job: Job, error: Error): Promise<void> {
     this.logger.error(

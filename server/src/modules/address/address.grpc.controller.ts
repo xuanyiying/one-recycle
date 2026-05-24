@@ -10,13 +10,13 @@ import {
   AddressResponse,
   AddressListResponse,
   Empty,
-} from '@/proto/account.pb';
+} from '@/proto/address.pb';
 
 @Controller()
 export class AddressGrpcController {
   constructor(private readonly addressService: AddressService) {}
 
-  @GrpcMethod('AccountService', 'CreateAddress')
+  @GrpcMethod('AddressService', 'CreateAddress')
   async createAddress(data: CreateAddressRequest): Promise<AddressResponse> {
     const address = await this.addressService.create({
       userId: String(data.userId),
@@ -34,7 +34,7 @@ export class AddressGrpcController {
     return this.mapToAddressResponse(address);
   }
 
-  @GrpcMethod('AccountService', 'GetAddresses')
+  @GrpcMethod('AddressService', 'GetAddresses')
   async getAddresses(data: GetAddressesRequest): Promise<AddressListResponse> {
     const addresses = await this.addressService.findAllByUserId(data.userId);
     return {
@@ -44,7 +44,7 @@ export class AddressGrpcController {
     };
   }
 
-  @GrpcMethod('AccountService', 'UpdateAddress')
+  @GrpcMethod('AddressService', 'UpdateAddress')
   async updateAddress(data: UpdateAddressRequest): Promise<AddressResponse> {
     const address = await this.addressService.update(data.id, {
       name: data.name,
@@ -58,7 +58,7 @@ export class AddressGrpcController {
     return this.mapToAddressResponse(address);
   }
 
-  @GrpcMethod('AccountService', 'DeleteAddress')
+  @GrpcMethod('AddressService', 'DeleteAddress')
   async deleteAddress(data: DeleteAddressRequest): Promise<Empty> {
     await this.addressService.remove(data.id);
     return {};

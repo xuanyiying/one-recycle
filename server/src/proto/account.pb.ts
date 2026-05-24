@@ -17,47 +17,14 @@ export interface GetUserRequest {
 
 export interface CreateUserRequest {
   mobile: string;
-  nickname: string;
-  avatarUrl: string;
+  nickname?: string | undefined;
+  avatarUrl?: string | undefined;
 }
 
 export interface UpdateUserRequest {
   id: string;
-  nickname: string;
-  avatarUrl: string;
-}
-
-export interface CreateAddressRequest {
-  userId: string;
-  name: string;
-  mobile: string;
-  province: string;
-  city: string;
-  district: string;
-  town: string;
-  street: string;
-  zipCode: string;
-  detail: string;
-  isDefault: boolean;
-}
-
-export interface GetAddressesRequest {
-  userId: string;
-}
-
-export interface UpdateAddressRequest {
-  id: string;
-  name: string;
-  mobile: string;
-  province: string;
-  city: string;
-  district: string;
-  detail: string;
-  isDefault: boolean;
-}
-
-export interface DeleteAddressRequest {
-  id: string;
+  nickname?: string | undefined;
+  avatarUrl?: string | undefined;
 }
 
 export interface UserResponse {
@@ -68,24 +35,6 @@ export interface UserResponse {
   status: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface AddressResponse {
-  id: string;
-  userId: string;
-  name: string;
-  mobile: string;
-  province: string;
-  city: string;
-  district: string;
-  detail: string;
-  isDefault: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AddressListResponse {
-  addresses: AddressResponse[];
 }
 
 export interface Empty {
@@ -99,14 +48,6 @@ export interface AccountServiceClient {
   createUser(request: CreateUserRequest, metadata?: Metadata): Observable<UserResponse>;
 
   updateUser(request: UpdateUserRequest, metadata?: Metadata): Observable<UserResponse>;
-
-  createAddress(request: CreateAddressRequest, metadata?: Metadata): Observable<AddressResponse>;
-
-  getAddresses(request: GetAddressesRequest, metadata?: Metadata): Observable<AddressListResponse>;
-
-  updateAddress(request: UpdateAddressRequest, metadata?: Metadata): Observable<AddressResponse>;
-
-  deleteAddress(request: DeleteAddressRequest, metadata?: Metadata): Observable<Empty>;
 }
 
 export interface AccountServiceController {
@@ -124,36 +65,11 @@ export interface AccountServiceController {
     request: UpdateUserRequest,
     metadata?: Metadata,
   ): Promise<UserResponse> | Observable<UserResponse> | UserResponse;
-
-  createAddress(
-    request: CreateAddressRequest,
-    metadata?: Metadata,
-  ): Promise<AddressResponse> | Observable<AddressResponse> | AddressResponse;
-
-  getAddresses(
-    request: GetAddressesRequest,
-    metadata?: Metadata,
-  ): Promise<AddressListResponse> | Observable<AddressListResponse> | AddressListResponse;
-
-  updateAddress(
-    request: UpdateAddressRequest,
-    metadata?: Metadata,
-  ): Promise<AddressResponse> | Observable<AddressResponse> | AddressResponse;
-
-  deleteAddress(request: DeleteAddressRequest, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 }
 
 export function AccountServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = [
-      "getUser",
-      "createUser",
-      "updateUser",
-      "createAddress",
-      "getAddresses",
-      "updateAddress",
-      "deleteAddress",
-    ];
+    const grpcMethods: string[] = ["getUser", "createUser", "updateUser"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("AccountService", method)(constructor.prototype[method], method, descriptor);

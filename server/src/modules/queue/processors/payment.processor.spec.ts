@@ -1,28 +1,25 @@
+import { OrderStatus } from '@/common/types/business.types';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentProcessor } from './payment.processor';
-import { NotificationQueueService } from '../services/notification-queue.service';
-import { OrderServiceClient } from '../clients/order-service.client';
-import { PaymentServiceClient } from '../clients/payment-service.client';
-import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 import { Job } from 'bull';
 import {
   PaymentCallbackEventDto,
   PaymentFailedEventDto,
   PaymentSuccessEventDto,
 } from '../dto/payment-events.dto';
-import { OrderStatus } from '@/common/types/business.types';
+import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
+import { NotificationQueueService } from '../services/notification-queue.service';
+import { PaymentProcessor } from './payment.processor';
 
 describe('PaymentProcessor', () => {
   let processor: PaymentProcessor;
-  let orderServiceClient: OrderServiceClient;
   let notificationQueueService: NotificationQueueService;
 
-  const mockOrderServiceClient = {
+  const mockOrderService = {
     getOrder: jest.fn(),
     updateOrderStatus: jest.fn(),
   };
 
-  const mockPaymentServiceClient = {
+  const mockPaymentService = {
     isTransactionProcessed: jest.fn(),
     createPaymentLog: jest.fn(),
   };
@@ -43,14 +40,13 @@ describe('PaymentProcessor', () => {
           provide: NotificationQueueService,
           useValue: mockNotificationQueueService,
         },
-        { provide: OrderServiceClient, useValue: mockOrderServiceClient },
-        { provide: PaymentServiceClient, useValue: mockPaymentServiceClient },
+        { provide: 'IOrderService', useValue: mockOrderService },
+        { provide: 'IPaymentService', useValue: mockPaymentService },
         { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
       ],
     }).compile();
 
     processor = module.get<PaymentProcessor>(PaymentProcessor);
-    orderServiceClient = module.get<OrderServiceClient>(OrderServiceClient);
     notificationQueueService = module.get<NotificationQueueService>(
       NotificationQueueService,
     );
@@ -59,7 +55,7 @@ describe('PaymentProcessor', () => {
   });
 
   it('should skip duplicate payment callback', async () => {
-    mockPaymentServiceClient.isTransactionProcessed.mockResolvedValue(true);
+    mockPaymentService.isTransactionProcessed.mockResolvedValue(true);
     const job = {
       data: {
         transactionId: 'tx1',
@@ -73,12 +69,12 @@ describe('PaymentProcessor', () => {
     const result = await processor.handlePaymentCallback(job);
 
     expect(result.duplicate).toBe(true);
-    expect(orderServiceClient.getOrder).not.toHaveBeenCalled();
+    expect(mockOrderService.getOrder).not.toHaveBeenCalled();
   });
 
   it('should reject amount mismatch', async () => {
-    mockPaymentServiceClient.isTransactionProcessed.mockResolvedValue(false);
-    mockOrderServiceClient.getOrder.mockResolvedValue({
+    mockPaymentService.isTransactionProcessed.mockResolvedValue(false);
+    mockOrderService.getOrder.mockResolvedValue({
       totalAmount: 20,
     });
     const job = {
@@ -97,8 +93,8 @@ describe('PaymentProcessor', () => {
   });
 
   it('should reject unsupported status', async () => {
-    mockPaymentServiceClient.isTransactionProcessed.mockResolvedValue(false);
-    mockOrderServiceClient.getOrder.mockResolvedValue({
+    mockPaymentService.isTransactionProcessed.mockResolvedValue(false);
+    mockOrderService.getOrder.mockResolvedValue({
       totalAmount: 10,
     });
     const job = {
@@ -117,8 +113,8 @@ describe('PaymentProcessor', () => {
   });
 
   it('should process payment success callback', async () => {
-    mockPaymentServiceClient.isTransactionProcessed.mockResolvedValue(false);
-    mockOrderServiceClient.getOrder.mockResolvedValue({
+    mockPaymentService.isTransactionProcessed.mockResolvedValue(false);
+    mockOrderService.getOrder.mockResolvedValue({
       totalAmount: 10,
       userId: 'u1',
     });
@@ -135,7 +131,7 @@ describe('PaymentProcessor', () => {
     const result = await processor.handlePaymentCallback(job);
 
     expect(result.success).toBe(true);
-    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+    expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(
       'o1',
       OrderStatus.PENDING_PICKUP,
       expect.any(Object),
@@ -146,8 +142,8 @@ describe('PaymentProcessor', () => {
   });
 
   it('should process payment failed callback', async () => {
-    mockPaymentServiceClient.isTransactionProcessed.mockResolvedValue(false);
-    mockOrderServiceClient.getOrder.mockResolvedValue({
+    mockPaymentService.isTransactionProcessed.mockResolvedValue(false);
+    mockOrderService.getOrder.mockResolvedValue({
       totalAmount: 10,
       userId: 'u1',
     });
@@ -164,7 +160,7 @@ describe('PaymentProcessor', () => {
     const result = await processor.handlePaymentCallback(job);
 
     expect(result.success).toBe(true);
-    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+    expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(
       'o1',
       OrderStatus.CANCELLED,
       expect.any(Object),
@@ -175,7 +171,7 @@ describe('PaymentProcessor', () => {
   });
 
   it('should handle payment success event', async () => {
-    mockOrderServiceClient.getOrder.mockResolvedValue({
+    mockOrderService.getOrder.mockResolvedValue({
       userId: 'u1',
     });
     const job = {
@@ -190,7 +186,7 @@ describe('PaymentProcessor', () => {
     const result = await processor.handlePaymentSuccess(job);
 
     expect(result.success).toBe(true);
-    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+    expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(
       'o1',
       OrderStatus.PENDING_PICKUP,
       expect.any(Object),
@@ -198,7 +194,7 @@ describe('PaymentProcessor', () => {
   });
 
   it('should handle payment failed event', async () => {
-    mockOrderServiceClient.getOrder.mockResolvedValue({
+    mockOrderService.getOrder.mockResolvedValue({
       userId: 'u1',
     });
     const job = {
@@ -213,7 +209,7 @@ describe('PaymentProcessor', () => {
     const result = await processor.handlePaymentFailed(job);
 
     expect(result.success).toBe(true);
-    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+    expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(
       'o1',
       OrderStatus.CANCELLED,
       expect.any(Object),

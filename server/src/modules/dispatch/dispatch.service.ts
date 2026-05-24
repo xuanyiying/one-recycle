@@ -130,4 +130,16 @@ export class DispatchService implements OnModuleInit {
       data: { status: TaskStatus.REJECTED },
     });
   }
+
+  async cancelDispatch(orderId: string): Promise<{ cancelled: boolean; count: number }> {
+    const result = await this.prisma.orderAssignment.updateMany({
+      where: {
+        orderId: BigInt(orderId),
+        status: { in: [TaskStatus.ASSIGNED, TaskStatus.ACCEPTED] },
+      },
+      data: { status: TaskStatus.CANCELLED },
+    });
+
+    return { cancelled: result.count > 0, count: result.count };
+  }
 }

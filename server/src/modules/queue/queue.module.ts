@@ -13,14 +13,33 @@ import { NotificationQueueService } from './services/notification-queue.service'
 import { OrderQueueService } from './services/order-queue.service';
 import { PaymentQueueService } from './services/payment-queue.service';
 
-// Client services for processors
-import { DispatchServiceClient } from './clients/dispatch-service.client';
-import { InventoryServiceClient } from './clients/inventory-service.client';
-import { OrderServiceClient } from './clients/order-service.client';
-import { PaymentServiceClient } from './clients/payment-service.client';
+// Local adapters (Monolithic mode - development)
+import {
+  LocalDispatchServiceAdapter,
+  LocalInventoryServiceAdapter,
+  LocalOrderServiceAdapter,
+  LocalPaymentServiceAdapter,
+} from './adapters';
+
+// gRPC clients (Microservices mode - production)
+import {
+  DispatchServiceGrpcClient,
+  InventoryServiceGrpcClient,
+  OrderServiceGrpcClient,
+  PaymentServiceGrpcClient,
+} from './clients';
+
+// Local services (for monolithic mode)
+import { AccountService } from '@/modules/account/account.service';
+import { DispatchService } from '@/modules/dispatch/dispatch.service';
+import { InventoryService } from '@/modules/inventory/services/inventory.service';
+import { OrderService } from '@/modules/order/services/order.service';
 
 // Module imports for processors
 import { QUEUE_NAMES, RedisModule } from '@/common';
+import { AccountModule } from '../account/account.module';
+import { DispatchModule } from '../dispatch/dispatch.module';
+import { InventoryModule } from '../inventory/inventory.module';
 import { LogisticsModule } from '../logistics/logistics.module';
 import { NotificationModule } from '../notification/notification.module';
 import { OrderModule } from '../order/order.module';
@@ -29,19 +48,6 @@ import { PointsModule } from '../points/points.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantModule } from '../tenant/tenant.module';
 
-/**
- * 队列处理模块
- *
- * 基于Bull队列的任务处理系统，支持：
- * - 订单队列处理（状态流转、超时处理）
- * - 通知队列处理（短信、邮件、推送）
- * - 支付队列处理（支付回调、退款）
- * - 调度队列处理（快递员分配、路线优化）
- *
- * 使用Redis作为消息队列后端，支持分布式部署
- *
- * @module QueueModule
- */
 @Module({
   imports: [
     ConfigModule,
@@ -54,6 +60,10 @@ import { TenantModule } from '../tenant/tenant.module';
     TenantModule,
     PricingModule,
     PointsModule,
+    // Required for local adapters (monolithic mode)
+    InventoryModule,
+    DispatchModule,
+    AccountModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -92,16 +102,98 @@ import { TenantModule } from '../tenant/tenant.module';
   controllers: [QueueController, QueueGrpcController],
   providers: [
     DeadLetterQueueService,
-    // Client services for processors
-    OrderServiceClient,
-    InventoryServiceClient,
-    DispatchServiceClient,
-    PaymentServiceClient,
+
+    // === Service Abstraction Layer ===
+    // Three-tier strategy:
+    //   1. Monolithic (dev):  → Local Adapter → direct service call
+    //   2. Microservice (prod):→ gRPC Client → proto-defined RPC
+
+    {
+      provide: 'IOrderService',
+      useFactory: (
+        orderService: OrderService,
+        configService: ConfigService,
+      ) => {
+        const serviceMode = configService.get<string>(
+          'SERVICE_MODE',
+          'monolithic',
+        );
+
+        if (serviceMode === 'microservices') {
+          return new OrderServiceGrpcClient(configService);
+        }
+        return new LocalOrderServiceAdapter(orderService);
+      },
+      inject: [OrderService, ConfigService],
+    },
+
+    {
+      provide: 'IPaymentService',
+      useFactory: (
+        accountService: AccountService,
+        configService: ConfigService,
+      ) => {
+        const serviceMode = configService.get<string>(
+          'SERVICE_MODE',
+          'monolithic',
+        );
+
+        if (serviceMode === 'microservices') {
+          return new PaymentServiceGrpcClient(configService);
+        }
+        return new LocalPaymentServiceAdapter(accountService);
+      },
+      inject: [AccountService, ConfigService],
+    },
+
+    {
+      provide: 'IInventoryService',
+      useFactory: (
+        inventoryService: InventoryService,
+        configService: ConfigService,
+      ) => {
+        const serviceMode = configService.get<string>(
+          'SERVICE_MODE',
+          'monolithic',
+        );
+
+        if (serviceMode === 'microservices') {
+          return new InventoryServiceGrpcClient(configService);
+        }
+        return new LocalInventoryServiceAdapter(inventoryService);
+      },
+      inject: [InventoryService, ConfigService],
+    },
+
+    {
+      provide: 'IDispatchService',
+      useFactory: (
+        dispatchService: DispatchService,
+        configService: ConfigService,
+      ) => {
+        const serviceMode = configService.get<string>(
+          'SERVICE_MODE',
+          'monolithic',
+        );
+
+        if (serviceMode === 'microservices') {
+          return new DispatchServiceGrpcClient(configService);
+        }
+        return new LocalDispatchServiceAdapter(dispatchService);
+      },
+      inject: [DispatchService, ConfigService],
+    },
+
+    // gRPC clients are NOT registered as direct providers to avoid
+    // connection attempts in monolithic mode. They are only instantiated
+    // inside the factory providers when SERVICE_MODE=microservices.
+
     // Queue Services (Producers)
     OrderQueueService,
     NotificationQueueService,
     PaymentQueueService,
     DispatchQueueService,
+
     // Processors (Consumers)
     OrderProcessor,
     NotificationProcessor,
@@ -116,4 +208,4 @@ import { TenantModule } from '../tenant/tenant.module';
     DispatchQueueService,
   ],
 })
-export class QueueModule {}
+export class QueueModule { }

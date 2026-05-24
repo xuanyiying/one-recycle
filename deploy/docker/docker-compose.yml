@@ -1,9 +1,14 @@
 # ============================================================================
 # OneRecycle 本地构建 Docker Compose 配置 (微服务架构)
 # 基于 docker-compose.production.yml 修改，增加 build 声明支持本地构建
+# 支持 HTTP REST + gRPC 双协议通信
 # ============================================================================
 
 services:
+  # ──────────────────────────────────────────────────────────────
+  # 基础设施: 数据库 & 缓存
+  # ──────────────────────────────────────────────────────────────
+
   postgres:
     image: postgres:15-alpine
     container_name: one-recycle-postgres
@@ -62,6 +67,10 @@ services:
           cpus: '0.5'
           memory: 256M
 
+  # ──────────────────────────────────────────────────────────────
+  # API 网关服务 (HTTP 入口)
+  # ──────────────────────────────────────────────────────────────
+
   api-gateway:
     build:
       context: ../..
@@ -78,6 +87,7 @@ services:
       - SERVICE_NAME=api-gateway
       - RUN_SEED=1
       - PORT=3002
+      - SERVICE_MODE=microservices
     env_file:
       - ../.env.production
     depends_on:
@@ -99,6 +109,10 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  # ──────────────────────────────────────────────────────────────
+  # 核心业务微服务 (HTTP + gRPC 双协议)
+  # ──────────────────────────────────────────────────────────────
+
   account-service:
     build:
       context: ../..
@@ -114,6 +128,7 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=account-service
       - PORT=3001
+      - SERVICE_MODE=microservices
     env_file:
       - ../.env.production
     depends_on:
@@ -151,6 +166,7 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=order-service
       - PORT=3003
+      - SERVICE_MODE=microservices
     env_file:
       - ../.env.production
     depends_on:
@@ -162,6 +178,80 @@ services:
       - one-recycle-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:3003/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 384M
+
+  payment-service:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    container_name: one-recycle-payment-service
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=payment-service
+      - PORT=3005
+      - SERVICE_MODE=microservices
+    env_file:
+      - ../.env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - one-recycle-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3005/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 384M
+
+  dispatch-service:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    container_name: one-recycle-dispatch-service
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=dispatch-service
+      - PORT=3006
+      - SERVICE_MODE=microservices
+    env_file:
+      - ../.env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - one-recycle-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3006/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -188,6 +278,7 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=notification-service
       - PORT=3004
+      - SERVICE_MODE=microservices
     env_file:
       - ../.env.production
     depends_on:
@@ -224,6 +315,7 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=inventory-service
       - PORT=3009
+      - SERVICE_MODE=microservices
     env_file:
       - ../.env.production
     depends_on:
@@ -261,6 +353,7 @@ services:
       - NODE_ENV=production
       - SERVICE_NAME=category-service
       - PORT=3008
+      - SERVICE_MODE=microservices
     env_file:
       - ../.env.production
     depends_on:
@@ -281,6 +374,59 @@ services:
         limits:
           cpus: '0.2'
           memory: 256M
+
+  # ──────────────────────────────────────────────────────────────
+  # 队列处理服务 (消费 Bull Queue，通过 gRPC 调用其他微服务)
+  # ──────────────────────────────────────────────────────────────
+
+  queue-service:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    container_name: one-recycle-queue-service
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=queue-service
+      - PORT=3007
+      - SERVICE_MODE=microservices
+      # gRPC 服务地址 (Docker 内部网络使用容器名)
+      - ORDER_SERVICE_GRPC_URL=order-service:50051
+      - PAYMENT_SERVICE_GRPC_URL=payment-service:50051
+      - INVENTORY_SERVICE_GRPC_URL=inventory-service:50051
+      - DISPATCH_SERVICE_GRPC_URL=dispatch-service:50051
+      - NOTIFICATION_SERVICE_GRPC_URL=notification-service:50051
+    env_file:
+      - ../.env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      dispatch-service:
+        condition: service_healthy
+    networks:
+      - one-recycle-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 768M
+
+  # ──────────────────────────────────────────────────────────────
+  # 前端应用
+  # ──────────────────────────────────────────────────────────────
 
   admin-web:
     build:
@@ -316,6 +462,10 @@ services:
         limits:
           cpus: '0.3'
           memory: 384M
+
+  # ──────────────────────────────────────────────────────────────
+  # 反向代理 (Caddy)
+  # ──────────────────────────────────────────────────────────────
 
   caddy:
     image: caddy:2-alpine

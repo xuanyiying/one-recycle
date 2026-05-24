@@ -1,38 +1,34 @@
+import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
+import { PricingService } from '@/modules/pricing/pricing.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderProcessor } from './order.processor';
-import { NotificationQueueService } from '../services/notification-queue.service';
-import { OrderServiceClient } from '../clients/order-service.client';
-import { InventoryServiceClient } from '../clients/inventory-service.client';
-import { DispatchServiceClient } from '../clients/dispatch-service.client';
-import { PaymentServiceClient } from '../clients/payment-service.client';
 import { Job } from 'bull';
 import { OrderCreatedEventDto } from '../dto/order-events.dto';
-import { PricingService } from '@/modules/pricing/pricing.service';
-import { ReferralRewardService } from '@/modules/points/services/referral-reward.service';
+import { IDispatchService } from '../interfaces/dispatch-service.interface';
+import { IPaymentService } from '../interfaces/payment-service.interface';
 import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
+import { NotificationQueueService } from '../services/notification-queue.service';
+import { OrderProcessor } from './order.processor';
 
 describe('OrderProcessor', () => {
   let processor: OrderProcessor;
-  let inventoryServiceClient: InventoryServiceClient;
-  let orderServiceClient: OrderServiceClient;
 
   const mockNotificationQueueService = {
     sendOrderStatusNotification: jest.fn(),
   };
 
-  const mockOrderServiceClient = {
+  const mockOrderService = {
     updateOrderAmount: jest.fn(),
     updateOrderStatus: jest.fn(),
   };
 
-  const mockInventoryServiceClient = {
+  const mockInventoryService = {
     checkInventory: jest.fn(),
     lockInventory: jest.fn(),
     releaseInventory: jest.fn(),
   };
 
-  const mockDispatchServiceClient = {};
-  const mockPaymentServiceClient = {};
+  const mockDispatchService: Partial<IDispatchService> = {};
+  const mockPaymentService: Partial<IPaymentService> = {};
   const mockPricingService = {
     estimatePricing: jest.fn().mockResolvedValue({
       pricing: { totalEstimate: { min: 10, max: 20 } },
@@ -54,13 +50,10 @@ describe('OrderProcessor', () => {
           provide: NotificationQueueService,
           useValue: mockNotificationQueueService,
         },
-        { provide: OrderServiceClient, useValue: mockOrderServiceClient },
-        {
-          provide: InventoryServiceClient,
-          useValue: mockInventoryServiceClient,
-        },
-        { provide: DispatchServiceClient, useValue: mockDispatchServiceClient },
-        { provide: PaymentServiceClient, useValue: mockPaymentServiceClient },
+        { provide: 'IOrderService', useValue: mockOrderService },
+        { provide: 'IInventoryService', useValue: mockInventoryService },
+        { provide: 'IDispatchService', useValue: mockDispatchService },
+        { provide: 'IPaymentService', useValue: mockPaymentService },
         { provide: PricingService, useValue: mockPricingService },
         { provide: ReferralRewardService, useValue: mockReferralRewardService },
         { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
@@ -68,10 +61,6 @@ describe('OrderProcessor', () => {
     }).compile();
 
     processor = module.get<OrderProcessor>(OrderProcessor);
-    inventoryServiceClient = module.get<InventoryServiceClient>(
-      InventoryServiceClient,
-    );
-    orderServiceClient = module.get<OrderServiceClient>(OrderServiceClient);
 
     jest.clearAllMocks();
   });
@@ -92,9 +81,9 @@ describe('OrderProcessor', () => {
 
     await processor.handleOrderCreated(job);
 
-    expect(inventoryServiceClient.checkInventory).not.toHaveBeenCalled();
-    expect(inventoryServiceClient.lockInventory).not.toHaveBeenCalled();
-    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+    expect(mockInventoryService.checkInventory).not.toHaveBeenCalled();
+    expect(mockInventoryService.lockInventory).not.toHaveBeenCalled();
+    expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(
       '123',
       'PENDING_PICKUP',
     );
@@ -107,8 +96,8 @@ describe('OrderProcessor', () => {
 
     await processor.handleOrderCreated(job);
 
-    expect(inventoryServiceClient.checkInventory).not.toHaveBeenCalled();
-    expect(inventoryServiceClient.lockInventory).not.toHaveBeenCalled();
+    expect(mockInventoryService.checkInventory).not.toHaveBeenCalled();
+    expect(mockInventoryService.lockInventory).not.toHaveBeenCalled();
   });
 
   it('should perform inventory check for SALE order', async () => {
@@ -116,14 +105,14 @@ describe('OrderProcessor', () => {
       data: { ...mockJobData, orderType: 'SALE' },
     } as Job<OrderCreatedEventDto>;
 
-    mockInventoryServiceClient.checkInventory.mockResolvedValue({
+    mockInventoryService.checkInventory.mockResolvedValue({
       available: true,
     });
 
     await processor.handleOrderCreated(job);
 
-    expect(inventoryServiceClient.checkInventory).toHaveBeenCalled();
-    expect(inventoryServiceClient.lockInventory).toHaveBeenCalled();
+    expect(mockInventoryService.checkInventory).toHaveBeenCalled();
+    expect(mockInventoryService.lockInventory).toHaveBeenCalled();
   });
 
   it('should cancel and release when inventory insufficient', async () => {
@@ -131,7 +120,7 @@ describe('OrderProcessor', () => {
       data: { ...mockJobData, orderType: 'SALE' },
     } as Job<OrderCreatedEventDto>;
 
-    mockInventoryServiceClient.checkInventory.mockResolvedValue({
+    mockInventoryService.checkInventory.mockResolvedValue({
       available: false,
     });
 
@@ -139,10 +128,10 @@ describe('OrderProcessor', () => {
       'Insufficient inventory',
     );
 
-    expect(orderServiceClient.updateOrderStatus).toHaveBeenCalledWith(
+    expect(mockOrderService.updateOrderStatus).toHaveBeenCalledWith(
       '123',
       'INSPECTION_EXCEPTION',
     );
-    expect(inventoryServiceClient.releaseInventory).toHaveBeenCalledWith('123');
+    expect(mockInventoryService.releaseInventory).toHaveBeenCalledWith('123');
   });
 });

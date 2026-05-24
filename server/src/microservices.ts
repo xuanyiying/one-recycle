@@ -3,11 +3,12 @@
  *
  * 支持的服务:
  * - api-gateway: API 网关 (HTTP), 路由请求到各微服务
- * - account-service: 账户服务 (gRPC), 用户/地址/账户
+ * - account-service: 账户服务 (gRPC), 用户/账户
  * - order-service: 订单服务 (gRPC), 订单/支付/物流
  * - notification-service: 通知服务 (gRPC), 短信/邮件/推送
  * - inventory-service: 库存服务 (gRPC), 库存/仓储
  * - category-service: 分类服务 (gRPC), 分类/定价
+ * - address-service: 地址服务 (gRPC), 用户地址管理
  *
  * 默认(不设置 SERVICE_NAME): 单体模式, 启动所有模块
  */
@@ -92,6 +93,12 @@ const SERVICE_REGISTRY: Record<string, ServiceConfig> = {
     transport: 'grpc',
     grpcPackage: 'queue',
     protoPath: 'proto/queue.proto',
+  },
+  'address-service': {
+    module: AppModule,
+    transport: 'grpc',
+    grpcPackage: 'address',
+    protoPath: 'proto/address.proto',
   },
 };
 

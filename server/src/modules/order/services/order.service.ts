@@ -653,6 +653,25 @@ export class OrderService implements OnModuleInit {
     return this.updateStatus(id, { status: OrderStatus.PENDING_PICKUP });
   }
 
+  async updateOrderAmount(
+    id: number | bigint,
+    totalAmount: number,
+  ): Promise<Order> {
+    const order = await this.prisma.order.update({
+      where: { id: BigInt(id) },
+      data: { estimatedAmount: totalAmount },
+      include: {
+        items: true,
+        assignments: true,
+      },
+    });
+
+    const photoIds = this.extractPhotoIds([order]);
+    const storageMap = await this.getStorageMap(photoIds);
+
+    return this.mapToOrder(order, storageMap);
+  }
+
   async updateLogisticsStatus(
     orderId: number,
     logisticsStatus: string,
