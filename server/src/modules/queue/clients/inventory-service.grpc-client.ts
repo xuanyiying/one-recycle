@@ -25,7 +25,7 @@ export class InventoryServiceGrpcClient implements IInventoryService {
       transport: Transport.GRPC,
       options: {
         package: 'inventory',
-        protoPath: join(__dirname, '../../../../proto/inventory.proto'),
+        protoPath: join(__dirname, '../../../proto/inventory.proto'),
         url,
       },
     });

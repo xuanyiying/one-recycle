@@ -20,7 +20,7 @@ export class DispatchServiceGrpcClient implements IDispatchService {
       transport: Transport.GRPC,
       options: {
         package: 'dispatch',
-        protoPath: join(__dirname, '../../../../proto/dispatch.proto'),
+        protoPath: join(__dirname, '../../../proto/dispatch.proto'),
         url,
       },
     });

@@ -21,7 +21,7 @@ export class OrderServiceGrpcClient implements IOrderService {
       transport: Transport.GRPC,
       options: {
         package: 'order',
-        protoPath: join(__dirname, '../../../../proto/order.proto'),
+        protoPath: join(__dirname, '../../../proto/order.proto'),
         url,
       },
     });

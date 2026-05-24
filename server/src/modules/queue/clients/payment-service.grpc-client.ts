@@ -29,7 +29,7 @@ export class PaymentServiceGrpcClient implements IPaymentService {
       transport: Transport.GRPC,
       options: {
         package: 'payment',
-        protoPath: join(__dirname, '../../../../proto/payment.proto'),
+        protoPath: join(__dirname, '../../../proto/payment.proto'),
         url,
       },
     });

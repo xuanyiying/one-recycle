@@ -9,7 +9,7 @@
     "schema": "prisma/schema.prisma"
   },
   "scripts": {
-    "build": "rm -f tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && nest build && tsc-alias",
+    "build": "rm -f tsconfig.tsbuildinfo tsconfig.build.tsbuildinfo && nest build && tsc-alias && mkdir -p dist/proto && cp src/proto/*.proto dist/proto/",
     "dev": "npm run start:dev",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
