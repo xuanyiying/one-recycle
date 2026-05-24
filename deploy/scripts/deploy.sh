@@ -75,6 +75,8 @@ start() {
         echo "REDIS_PASSWORD=$REDIS_PASSWORD"
         echo "JWT_SECRET=$JWT_SECRET"
         echo "CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}"
+        echo "WECHAT_APP_ID=$(grep '^WECHAT_APP_ID=' .env.production 2>/dev/null | cut -d'=' -f2- || echo '')"
+        echo "WECHAT_APP_SECRET=$(grep '^WECHAT_APP_SECRET=' .env.production 2>/dev/null | cut -d'=' -f2- || echo '')"
     } > .env.production
     docker compose --env-file .env.production -f docker-compose.yml up -d --build
     log "Services started"
@@ -107,6 +109,8 @@ update() {
         echo "REDIS_PASSWORD=$REDIS_PASSWORD"
         echo "JWT_SECRET=$JWT_SECRET"
         echo "CORS_ORIGINS=${CORS_ORIGINS:-https://backbuy.cn,https://www.backbuy.cn,https://admin.backbuy.cn,https://api.backbuy.cn}"
+        echo "WECHAT_APP_ID=$(grep '^WECHAT_APP_ID=' .env.production 2>/dev/null | cut -d'=' -f2- || echo '')"
+        echo "WECHAT_APP_SECRET=$(grep '^WECHAT_APP_SECRET=' .env.production 2>/dev/null | cut -d'=' -f2- || echo '')"
     } > .env.production
     log "Building images..."
     docker compose --env-file .env.production -f docker-compose.yml build --parallel api-gateway admin-web

@@ -368,6 +368,8 @@ jobs:
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
             echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
             echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo 'change_me')"
+            echo "WECHAT_APP_ID=$(grep '^WECHAT_APP_ID=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo '')"
+            echo "WECHAT_APP_SECRET=$(grep '^WECHAT_APP_SECRET=' "$DEPLOY_DIR/.env.production" 2>/dev/null | cut -d'=' -f2- || echo '')"
             if [ -f "$DEPLOY_DIR/config/.env.production" ]; then
               grep -v '^#' "$DEPLOY_DIR/config/.env.production" | grep -v '^$'
             fi
