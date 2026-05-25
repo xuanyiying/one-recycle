@@ -196,7 +196,7 @@ export default function ChatPage({ params }: { params: Promise<{ sessionId: stri
 
     try {
       const data = await customerService.uploadFile(file);
-      sendMessage('', 'IMAGE', data.url);
+      sendMessage('', 'IMAGE', data.fileUrl);
     } catch (error) {
       toast.error('上传失败');
     }

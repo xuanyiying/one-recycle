@@ -199,6 +199,7 @@ export const categoryService = {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('fileType', 'IMAGE');
+      formData.append('category', 'CATEGORY_ICON');
 
       // API 返回 { id, filename, fileUrl, ... }，需要提取 fileUrl 字段
       const response = await apiClient.upload<{

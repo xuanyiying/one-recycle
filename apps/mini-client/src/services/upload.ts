@@ -59,11 +59,11 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
   try {
     const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/upload/image`,
+      url: `${baseUrl}/storage/upload`,
       filePath,
-      name: 'image',
+      name: 'file',
+      formData: { fileType: 'IMAGE', category: 'USER_UPLOAD' },
       header: {
-        'Content-Type': 'multipart/form-data',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     })
@@ -73,22 +73,23 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
       const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
-          url: `${baseUrl}/upload/image`,
+          url: `${baseUrl}/storage/upload`,
           filePath,
-          name: 'image',
+          name: 'file',
+          formData: { fileType: 'IMAGE', category: 'USER_UPLOAD' },
           header: {
-            'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${newToken}`,
           }
         })
         if (retryResult.statusCode === 200) {
-          const data = JSON.parse(retryResult.data)
+          const parsed = JSON.parse(retryResult.data)
+          const data = parsed.data || parsed;
           return {
             success: true,
             data: {
-              url: data.url,
+              url: data.fileUrl || data.url,
               filename: data.filename,
-              size: data.size
+              size: data.fileSize || data.size
             }
           }
         }
@@ -97,13 +98,14 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
     }
 
     if (uploadResult.statusCode === 200) {
-      const data = JSON.parse(uploadResult.data)
+      const parsed = JSON.parse(uploadResult.data)
+      const data = parsed.data || parsed;
       return {
         success: true,
         data: {
-          url: data.url,
+          url: data.fileUrl || data.url,
           filename: data.filename,
-          size: data.size
+          size: data.fileSize || data.size
         }
       }
     } else {
@@ -130,11 +132,11 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
   try {
     const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/upload/avatar`,
+      url: `${baseUrl}/storage/upload`,
       filePath,
-      name: 'avatar',
+      name: 'file',
+      formData: { fileType: 'IMAGE', category: 'AVATAR' },
       header: {
-        'Content-Type': 'multipart/form-data',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     })
@@ -144,22 +146,23 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
       const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
-          url: `${baseUrl}/upload/avatar`,
+          url: `${baseUrl}/storage/upload`,
           filePath,
-          name: 'avatar',
+          name: 'file',
+          formData: { fileType: 'IMAGE', category: 'AVATAR' },
           header: {
-            'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${newToken}`,
           }
         })
         if (retryResult.statusCode === 200) {
-          const data = JSON.parse(retryResult.data)
+          const parsed = JSON.parse(retryResult.data)
+          const data = parsed.data || parsed;
           return {
             success: true,
             data: {
-              url: data.url,
+              url: data.fileUrl || data.url,
               filename: data.filename,
-              size: data.size
+              size: data.fileSize || data.size
             }
           }
         }
@@ -168,13 +171,14 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
     }
 
     if (uploadResult.statusCode === 200) {
-      const data = JSON.parse(uploadResult.data)
+      const parsed = JSON.parse(uploadResult.data)
+      const data = parsed.data || parsed;
       return {
         success: true,
         data: {
-          url: data.url,
+          url: data.fileUrl || data.url,
           filename: data.filename,
-          size: data.size
+          size: data.fileSize || data.size
         }
       }
     } else {
@@ -289,7 +293,6 @@ export const uploadOrderPhotos = async (filePaths: string[]): Promise<string[]> 
         filePath,
         name: 'files',
         header: {
-          'Content-Type': 'multipart/form-data',
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
         formData: {

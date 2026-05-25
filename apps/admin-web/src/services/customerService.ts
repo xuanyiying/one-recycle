@@ -2,6 +2,15 @@ import { apiClient } from './apiClient';
 
 const API_BASE = '/customer';
 
+export interface UploadedFileResponse {
+  id: string;
+  fileUrl: string;
+  filename: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string;
+}
+
 export const customerService = {
   getSession: async (sessionId: string) => {
     return apiClient.get(`${API_BASE}/sessions/${sessionId}`);
@@ -19,12 +28,12 @@ export const customerService = {
     return apiClient.put(`${API_BASE}/sessions/${sessionId}/close`);
   },
 
-  uploadFile: async (file: File) => {
+  uploadFile: async (file: File): Promise<UploadedFileResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fileType', 'IMAGE');
     formData.append('category', 'CUSTOMER_SERVICE');
 
-    return apiClient.upload('/storage/upload', formData);
+    return apiClient.upload<UploadedFileResponse>('/storage/upload', formData);
   },
 };

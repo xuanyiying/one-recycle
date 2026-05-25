@@ -52,11 +52,11 @@ function ImageUpload({ value, onChange, multiple = false }: ImageUploadProps) {
           formData.append('fileType', 'IMAGE');
           formData.append('category', 'product');
 
-          const response = await apiClient.upload<{ url: string }>('/storage/upload', formData, {
+          const response = await apiClient.upload<{ fileUrl: string }>('/storage/upload', formData, {
             showError: false
           });
 
-          const url = response.url;
+          const url = response.fileUrl;
 
           if (multiple) {
             const currentUrls = (value as string[]) || [];

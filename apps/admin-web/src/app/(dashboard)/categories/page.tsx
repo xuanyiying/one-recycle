@@ -37,7 +37,6 @@ import {
   UploadCloud
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -45,8 +44,8 @@ export default function CategoriesPage() {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [iconLibrary, setIconLibrary] = useState<{
-    name: string | undefined; id: string; url: string 
-}[]>([]);
+    name: string | undefined; id: string; url: string
+  }[]>([]);
   const [selectedIconId, setSelectedIconId] = useState<string | null>('icon-1');
   const [customIcon, setCustomIcon] = useState<string | null>(null);
   const [customIconName, setCustomIconName] = useState('');
@@ -464,7 +463,7 @@ export default function CategoriesPage() {
                 <span className="w-6 mr-2" />
               )}
               {category.iconUrl && (
-                <Image
+                <img
                   src={category.iconUrl}
                   alt={category.name}
                   width={24}
@@ -862,7 +861,7 @@ export default function CategoriesPage() {
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-secondary-100 bg-secondary-50">
                   {effectiveIcon ? (
-                    <Image src={effectiveIcon} alt="分类图标" width={40} height={40} className="h-10 w-10" />
+                    <img src={effectiveIcon} alt="分类图标" width={40} height={40} className="h-10 w-10" />
                   ) : (
                     <ImageIcon className="h-6 w-6 text-secondary-400" />
                   )}
@@ -925,7 +924,7 @@ export default function CategoriesPage() {
                         setCustomIconName('');
                       }}
                     >
-                      <Image src={icon.url} alt={icon.name || '图标'} width={32} height={32} className="h-8 w-8 rounded-lg" />
+                      <img src={icon.url} alt={icon.name || '图标'} width={32} height={32} className="h-8 w-8 rounded-lg" />
                       <span className={cn("flex-1 truncate", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground")}>{icon.name || ''}</span>
                       <GripVertical className={cn("h-4 w-4", selectedIconId === icon.id && !customIcon ? "text-primary" : "text-muted-foreground/50")} />
                     </div>

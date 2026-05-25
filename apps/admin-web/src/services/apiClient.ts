@@ -517,9 +517,6 @@ export class ApiClient {
     try {
       const response = await this.instance.post<ApiResponse<T>>(url, formData, {
         ...config,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
       if (config?.showSuccess && config?.successMessage) {
         toast.success(config.successMessage);
