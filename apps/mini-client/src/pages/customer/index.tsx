@@ -69,15 +69,17 @@ const CustomerServicePage: React.FC = () => {
 
   const initSession = async () => {
     try {
-      if (!isOffline) {
-        await connect();
-      }
-
+      // 先创建会话，不阻塞在 WebSocket 连接上
       const newSession = await createSession();
       if (newSession) {
+        // 异步连接 WebSocket，失败不影响会话创建
         if (!isOffline) {
-          await loadMessages(newSession.id);
-          emit('join_session', { sessionId: newSession.id });
+          connect().then(() => {
+            loadMessages(newSession.id);
+            emit('join_session', { sessionId: newSession.id });
+          }).catch((err) => {
+            logger.warn('WebSocket connect failed, session still available:', err);
+          });
         }
       }
     } catch (error) {
