@@ -1,19 +1,20 @@
-import { Module } from '@nestjs/common';
-import { PointsController } from './points.controller';
-import { PointsAdminController } from './points-admin.controller';
-import { PointsService } from './points.service';
-import { PointsProductService } from './services/points-product.service';
-import { PointsOrderService } from './services/points-order.service';
-import { PointsRecordService } from './services/points-record.service';
-import { SignInService } from './services/sign-in.service';
-import { PointsTaskService } from './services/points-task.service';
-import { InviteService } from './services/invite.service';
-import { ReferralRewardService } from './services/referral-reward.service';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { Module } from '@nestjs/common';
+import { PointsAdminController } from './points-admin.controller';
+import { PointsController } from './points.controller';
+import { PointsService } from './points.service';
+import { ReferralController } from './referral.controller';
+import { InviteService } from './services/invite.service';
+import { PointsOrderService } from './services/points-order.service';
+import { PointsProductService } from './services/points-product.service';
+import { PointsRecordService } from './services/points-record.service';
+import { PointsTaskService } from './services/points-task.service';
+import { ReferralRewardService } from './services/referral-reward.service';
+import { SignInService } from './services/sign-in.service';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [PointsController, PointsAdminController],
+  controllers: [PointsController, PointsAdminController, ReferralController],
   providers: [
     PointsService,
     PointsProductService,
@@ -35,4 +36,4 @@ import { PrismaModule } from '@/prisma/prisma.module';
     ReferralRewardService,
   ],
 })
-export class PointsModule {}
+export class PointsModule { }

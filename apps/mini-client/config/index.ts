@@ -1,10 +1,11 @@
-import { defineConfig, type UserConfigExport } from '@tarojs/cli'
+import { defineConfig } from '@tarojs/cli'
+import type { UserConfigExport } from '@tarojs/cli'
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 import devConfig from './dev'
 import prodConfig from './prod'
 // import vitePluginImp from 'vite-plugin-imp'
 // https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
-export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
+export default defineConfig<'webpack5'>(async (merge, { mode }) => {
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'yishu-recycle',
     date: '2026-2-4',
@@ -41,7 +42,8 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       compile: {
         include: [
           filename => /node_modules[\\/]uuid/.test(filename),
-          filename => /node_modules[\\/]@nutui[\\/]nutui-react-taro/.test(filename)
+          filename => /node_modules[\\/]@nutui[\\/]nutui-react-taro/.test(filename),
+          filename => /node_modules[\\/]immer/.test(filename)
         ]
       },
       miniCssExtractPluginOption: {
@@ -104,7 +106,7 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       }
     }
   }
-  if (process.env.NODE_ENV === 'development') {
+  if (mode === 'development') {
     // 本地开发构建配置（不混淆压缩）
     return merge({}, baseConfig, devConfig)
   }

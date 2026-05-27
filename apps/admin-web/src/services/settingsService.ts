@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import { cacheService, CACHE_KEYS } from './cacheService';
+import { CACHE_KEYS, cacheService } from './cacheService';
 
 // 个人资料接口
 export interface UserProfile {
@@ -7,7 +7,7 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  avatar?: string;
+  avatarUrl?: string;
   role: string;
   department?: string;
   position?: string;
@@ -20,7 +20,7 @@ export interface UpdateProfileRequest {
   name?: string;
   email?: string;
   phone?: string;
-  avatar?: string;
+  avatarUrl?: string;
   department?: string;
   position?: string;
 }
@@ -242,8 +242,10 @@ class SettingsService {
 
   async uploadAvatar(file: File): Promise<FileUploadResponse> {
     const formData = new FormData();
-    formData.append('avatar', file);
-    const response: FileUploadResponse = await apiClient.post('/profile/avatar', formData);
+    formData.append('file', file);
+    formData.append('fileType', 'IMAGE');
+    formData.append('category', 'AVATAR');
+    const response: FileUploadResponse = await apiClient.post('/storage/upload', formData);
     return response;
   }
 

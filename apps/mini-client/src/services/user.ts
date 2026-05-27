@@ -1,6 +1,6 @@
-import { post, get, put, upload } from '@/utils/request'
 import { User } from '@/types'
 import { logger } from '@/utils/logger'
+import { get, post, put, upload } from '@/utils/request'
 
 // 用户相关 API 服务
 
@@ -25,10 +25,11 @@ export const getUserBalance = (userId: number | string) => {
 }
 
 // 上传头像
-export const uploadAvatar = async (filePath: string, userId: number | string) => {
+export const uploadAvatar = async (filePath: string, _userId: number | string) => {
     try {
-        const result = await upload('/upload/avatar', filePath, {
-            userId: String(userId)
+        const result = await upload('/api/storage/upload', filePath, {
+            fileType: 'IMAGE',
+            category: 'AVATAR'
         })
         return result
     } catch (error) {

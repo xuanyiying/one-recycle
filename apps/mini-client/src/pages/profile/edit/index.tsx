@@ -140,7 +140,7 @@ export default function ProfileEdit(): JSX.Element {
       if (cachedUser && !isRetry) {
         const userData = {
           nickname: cachedUser.nickname || '',
-          avatarUrl: cachedUser.avatar || '',
+          avatarUrl: cachedUser.avatarUrl || '',
           phone: cachedUser.phone || ''
         }
         setFormData(userData)
@@ -153,7 +153,7 @@ export default function ProfileEdit(): JSX.Element {
       if (result.success && result.data) {
         const userData = {
           nickname: result.data.nickname || '',
-          avatarUrl: result.data.avatar || '',
+          avatarUrl: result.data.avatarUrl || '',
           phone: result.data.phone || ''
         }
         setFormData(userData)
@@ -263,21 +263,23 @@ export default function ProfileEdit(): JSX.Element {
           if (user?.id) {
             const uploadResult = await uploadAvatar(compressedResult.tempFilePath, user.id)
             if (uploadResult.success) {
-              setFormData(prev => ({ ...prev, avatarUrl: uploadResult.url }))
-              Taro.showToast({ title: '头像已更新', icon: 'success' })
+              const avatarUrl = uploadResult.data?.fileUrl || uploadResult.url || ''
+              if (avatarUrl) {
+                setFormData(prev => ({ ...prev, avatarUrl }))
+                Taro.showToast({ title: '头像已更新', icon: 'success' })
+              } else {
+                throw new Error('获取头像URL失败')
+              }
             } else {
               throw new Error(uploadResult.message || '上传失败')
             }
           } else {
-            // 本地预览模式
-            setFormData(prev => ({ ...prev, avatarUrl: compressedResult.tempFilePath }))
-            Taro.showToast({ title: '头像已更新', icon: 'success' })
+            // 本地预览模式 - 未登录时不保存头像
+            Taro.showToast({ title: '请先登录', icon: 'none' })
           }
         } catch (error) {
           logger.error('处理图片失败:', error)
-          // 降级处理：直接使用原图
-          setFormData(prev => ({ ...prev, avatarUrl: tempFilePath }))
-          Taro.showToast({ title: '头像已更新', icon: 'success' })
+          Taro.showToast({ title: '头像上传失败，请重试', icon: 'none' })
         } finally {
           Taro.hideLoading()
         }
@@ -508,7 +510,7 @@ export default function ProfileEdit(): JSX.Element {
       }
 
       if (formData.avatarUrl !== originalData.avatarUrl) {
-        updateData.avatar = formData.avatarUrl
+        updateData.avatarUrl = formData.avatarUrl
       }
 
       const result = await updateUserInfo(user.id, updateData)

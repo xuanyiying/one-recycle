@@ -227,6 +227,31 @@ const baseDefinitions: Record<string, IconDefinition> = {
     viewBox: '0 0 24 24',
     body: (color) =>
       `<path ${stroke(color)} d="M8 21h8"/><path ${stroke(color)} d="M12 17v4"/><path ${stroke(color)} d="M7 4h10"/><path ${stroke(color)} d="M9 17v-4a2 2 0 012-2h2a2 2 0 012 2v4"/><path ${stroke(color)} d="M6 8v9"/><path ${stroke(color)} d="M18 8v9"/>`
+  },
+  poster: {
+    viewBox: '0 0 24 24',
+    body: (color) =>
+      `<rect ${stroke(color)} x="3" y="3" width="18" height="18" rx="2"/><path ${stroke(color)} d="M3 15l4-4 4 4"/><path ${stroke(color)} d="M13 11l3-3 5 5"/><circle ${fill(color)} cx="8.5" cy="8.5" r="1.5"/>`
+  },
+  share: {
+    viewBox: '0 0 24 24',
+    body: (color) =>
+      `<path ${stroke(color)} d="M18 8a3 3 0 100-6 3 3 0 000 6z"/><path ${stroke(color)} d="M6 15a3 3 0 100-6 3 3 0 000 6z"/><path ${stroke(color)} d="M18 22a3 3 0 100-6 3 3 0 000 6z"/><path ${stroke(color)} d="M8.59 13.51l6.83 3.98"/><path ${stroke(color)} d="M15.41 6.51l-6.82 3.98"/>`
+  },
+  users: {
+    viewBox: '0 0 24 24',
+    body: (color) =>
+      `<path ${stroke(color)} d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle ${stroke(color)} cx="9" cy="7" r="4"/><path ${stroke(color)} d="M23 21v-2a4 4 0 00-3-3.87"/><path ${stroke(color)} d="M16 3.13a4 4 0 010 7.75"/>`
+  },
+  gift: {
+    viewBox: '0 0 24 24',
+    body: (color) =>
+      `<rect ${stroke(color)} x="3" y="8" width="18" height="4" rx="1"/><path ${stroke(color)} d="M12 8v13"/><path ${stroke(color)} d="M19 12v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7"/><path ${stroke(color)} d="M7.5 8a2.5 2.5 0 010-5 2.5 2.5 0 01.5 5z"/><path ${stroke(color)} d="M16.5 8a2.5 2.5 0 000-5 2.5 2.5 0 00-.5 5z"/>`
+  },
+  'qr-code': {
+    viewBox: '0 0 24 24',
+    body: (color) =>
+      `<rect ${stroke(color)} x="3" y="3" width="7" height="7" rx="1"/><rect ${stroke(color)} x="14" y="3" width="7" height="7" rx="1"/><rect ${stroke(color)} x="3" y="14" width="7" height="7" rx="1"/><path ${stroke(color)} d="M14 14h7"/><path ${stroke(color)} d="M14 17h7"/><path ${stroke(color)} d="M14 20h7"/><path ${stroke(color)} d="M17 14v7"/>`
   }
 }
 

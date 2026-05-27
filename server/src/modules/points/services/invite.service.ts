@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { PointsType } from '@prisma/client';
+import * as qrcode from 'qrcode';
 import { PointsRecordService } from './points-record.service';
 
 @Injectable()
@@ -13,7 +14,7 @@ export class InviteService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) {}
+  ) { }
 
   /**
    * 获取邀请码（用户ID的base62编码）
@@ -209,5 +210,25 @@ export class InviteService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async generateReferralQRCode(userId: bigint): Promise<string> {
+    const inviteCode = this.getInviteCode(userId);
+    const qrContent = `${process.env.FRONTEND_URL || 'https://backbuy.cn'}/register?inviteCode=${inviteCode}`;
+
+    try {
+      const qrCodeDataUrl = await qrcode.toDataURL(qrContent, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#1B5E20',
+          light: '#FFFFFF',
+        },
+      });
+      return qrCodeDataUrl;
+    } catch (error) {
+      this.logger.error('Failed to generate QR code:', error);
+      throw new Error('QR code generation failed');
+    }
   }
 }

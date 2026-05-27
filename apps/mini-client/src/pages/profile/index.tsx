@@ -1,15 +1,15 @@
 import { logger } from '@/utils/logger'
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { View, Text } from '@tarojs/components'
-import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
+import { Text, View } from '@tarojs/components'
+import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import AuthGuard from '@/components/AuthGuard'
 import { Icon } from '@/components/Icon'
 import { useAuth } from '@/hooks/useAuth'
 import { useSafeArea } from '@/hooks/useSafeArea'
-import accountService from '@/services/account'
 import { getUserById } from '@/services'
+import accountService from '@/services/account'
 import type { Account } from '@/types/account'
-import AuthGuard from '@/components/AuthGuard'
 import { Avatar } from '@nutui/nutui-react-taro'
 import './index.scss'
 
@@ -238,8 +238,8 @@ export default function Profile(): JSX.Element {
                 if (res.confirm) {
                     try {
                         await logout()
-                        Taro.reLaunch({
-                            url: '/pages/login/index'
+                        Taro.switchTab({
+                            url: '/pages/index/index'
                         })
                     } catch (error) {
                         logger.error('退出登录失败:', error)
@@ -260,6 +260,12 @@ export default function Profile(): JSX.Element {
             }
         })
     }, [logout])
+
+    const handleGoLogin = useCallback(() => {
+        Taro.navigateTo({
+            url: `/pages/login/index?redirect=${encodeURIComponent('/pages/profile/index')}`
+        })
+    }, [])
 
     // iOS标准加载状态组件
     const LoadingComponent = useMemo(() => (
@@ -291,6 +297,116 @@ export default function Profile(): JSX.Element {
         <AuthGuard showLoginPrompt>
             {isLoading ? (
                 LoadingComponent
+            ) : hasError && loadingState.error === '用户未登录' ? (
+                // 未登录时显示友好的登录引导卡片
+                <View className='profile-page'>
+                    <View className='profile-bg' />
+                    <View
+                        className='user-header'
+                        style={{
+                            paddingTop: safeAreaTop ? `calc(${safeAreaTop}px + 60rpx)` : undefined
+                        }}
+                    >
+                        <View className='login-guide-card'>
+                            <View className='avatar-wrapper'>
+                                <View className='avatar-ring'>
+                                    <View className='user-avatar avatar-placeholder'>
+                                        <Icon name='user' size={40} color='#ccc' />
+                                    </View>
+                                </View>
+                            </View>
+                            <View className='user-info'>
+                                <Text className='nickname'>点击登录</Text>
+                            </View>
+                            <View className='login-btn' onClick={handleGoLogin}>
+                                <Text>去登录</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* 核心数据卡片 - 未登录状态 */}
+                    <View className='stats-card'>
+                        <View className='stats-item'>
+                            <View className='stats-icon orders'>
+                                <Icon name='order' size={24} />
+                            </View>
+                            <Text className='stats-num'>-</Text>
+                            <Text className='stats-label'>累计回收</Text>
+                        </View>
+                        <View className='stats-divider' />
+                        <View className='stats-item'>
+                            <View className='stats-icon income'>
+                                <Icon name='money' size={24} />
+                            </View>
+                            <Text className='stats-num'>-</Text>
+                            <Text className='stats-label'>累计收益</Text>
+                        </View>
+                        <View className='stats-divider' />
+                        <View className='stats-item'>
+                            <View className='stats-icon carbon'>
+                                <Icon name='leaf' size={24} />
+                            </View>
+                            <Text className='stats-num'>-</Text>
+                            <Text className='stats-label'>累计减碳</Text>
+                        </View>
+                    </View>
+
+                    {/* 功能菜单区域 */}
+                    <View className='menu-section'>
+                        <View className='menu-item' onClick={handleGoLogin}>
+                            <View className='menu-icon-wrapper blue'>
+                                <Icon name='order' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>我的订单</Text>
+                            <Icon name='arrow-right' className='menu-arrow' />
+                        </View>
+
+                        <View className='menu-item' onClick={handleGoLogin}>
+                            <View className='menu-icon-wrapper green'>
+                                <Icon name='location' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>地址管理</Text>
+                            <Icon name='arrow-right' className='menu-arrow' />
+                        </View>
+
+                        <View className='menu-item' onClick={handleGoLogin}>
+                            <View className='menu-icon-wrapper orange'>
+                                <Icon name='withdraw' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>余额提现</Text>
+                            <View className='menu-extra'>
+                                <Text className='balance-text'>¥0.00</Text>
+                                <Icon name='arrow-right' className='menu-arrow' />
+                            </View>
+                        </View>
+
+                        <View className='menu-item' onClick={handleGoLogin}>
+                            <View className='menu-icon-wrapper purple'>
+                                <Icon name='transaction' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>交易记录</Text>
+                            <Icon name='arrow-right' className='menu-arrow' />
+                        </View>
+
+                        <View className='menu-item' onClick={handleGoLogin}>
+                            <View className='menu-icon-wrapper green'>
+                                <Icon name='share' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>邀请好友</Text>
+                            <Icon name='arrow-right' className='menu-arrow' />
+                        </View>
+                    </View>
+
+                    <View className='menu-section'>
+                        <View className='menu-item' onClick={onContactService}>
+                            <View className='menu-icon-wrapper cyan'>
+                                <Icon name='service' className='menu-icon' />
+                            </View>
+                            <Text className='menu-text'>联系客服</Text>
+                            <Icon name='arrow-right' className='menu-arrow' />
+                        </View>
+                    </View>
+                </View>
             ) : hasError ? (
                 ErrorComponent
             ) : (

@@ -7,7 +7,7 @@ import { useSafeArea } from '@/hooks/useSafeArea';
 import { getInviteList, getInviteStats, InviteRecord, InviteStats } from '@/services/referral';
 import { logger } from '@/utils/logger';
 import { Button, Image, Text, View } from '@tarojs/components';
-import Taro, { usePullDownRefresh } from '@tarojs/taro';
+import Taro, { usePullDownRefresh, useShareAppMessage } from '@tarojs/taro';
 import { useCallback, useEffect, useState } from 'react';
 import './index.scss';
 
@@ -54,6 +54,16 @@ const ReferralPage: React.FC = () => {
   usePullDownRefresh(async () => {
     await loadData(true);
     Taro.stopPullDownRefresh();
+  });
+
+  // 分享好友功能
+  useShareAppMessage(() => {
+    const inviteCode = stats?.inviteCode || '';
+    return {
+      title: `${user?.nickname || '好友'} 邀请你加入一键回收，一起环保赚钱！`,
+      path: `/pages/index/index?inviteCode=${inviteCode}`,
+      imageUrl: '',
+    };
   });
 
   const loadMore = async () => {
@@ -108,7 +118,10 @@ const ReferralPage: React.FC = () => {
         <Text className="code-label">我的邀请码</Text>
         <View className="code-value">
           <Text className="code-text">{stats?.inviteCode || '------'}</Text>
-          <Button className="copy-btn" onClick={handleCopyCode}>复制</Button>
+          <Button className="copy-btn" onClick={handleCopyCode}>
+            <Icon name="copy" size={22} color="#fff" />
+            <Text style={{ marginLeft: '6rpx' }}>复制</Text>
+          </Button>
         </View>
       </View>
     </View>
@@ -117,12 +130,18 @@ const ReferralPage: React.FC = () => {
   const renderShareSection = () => (
     <View className="share-section">
       <Button className="share-btn poster-btn" onClick={() => setShowPoster(true)}>
-        <Icon name="poster" size={40} color="#2E7D32" />
+        <View className="share-icon-wrapper poster-bg">
+          <Icon name="poster" size={44} color="#2E7D32" />
+        </View>
         <Text className="share-text">生成邀请海报</Text>
+        <Text className="share-desc">精美海报一键分享</Text>
       </Button>
-      <Button className="share-btn" open-type="share">
-        <Icon name="share" size={40} color="#2E7D32" />
+      <Button className="share-btn" openType="share">
+        <View className="share-icon-wrapper share-bg">
+          <Icon name="share" size={44} color="#F97316" />
+        </View>
         <Text className="share-text">分享给好友</Text>
+        <Text className="share-desc">微信好友直接邀请</Text>
       </Button>
     </View>
   );
@@ -171,9 +190,11 @@ const ReferralPage: React.FC = () => {
         </>
       ) : (
         <View className="empty-state">
-          <Icon name="users" size={80} color="#ccc" />
+          <View className="empty-icon-wrapper">
+            <Icon name="users" size={80} color="rgba(255,255,255,0.5)" />
+          </View>
           <Text className="empty-text">暂无邀请记录</Text>
-          <Text className="empty-text">分享邀请码给好友开始推广</Text>
+          <Text className="empty-hint">分享邀请码给好友开始推广</Text>
         </View>
       )}
     </View>

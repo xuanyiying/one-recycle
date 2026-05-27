@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth'
 import { logger } from '@/utils/logger'
 import { Storage } from '@/utils/storage'
-import { Text, View } from '@tarojs/components'
+import { Image, Text, View } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import './index.scss'
@@ -12,6 +12,8 @@ interface AuthGuardProps {
   redirectTo?: string
   /** 超时时间 (ms)，默认 3000 */
   timeout?: number
+  /** 显示登录提示弹窗（含取消按钮），而非直接跳转登录页 */
+  showLoginPrompt?: boolean
 }
 
 /**
@@ -27,13 +29,15 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
   children,
   fallback,
   redirectTo = '/pages/login/index',
-  timeout = 3000
+  timeout = 3000,
+  showLoginPrompt = false
 }) => {
   const { isLoggedIn, loading, checkAuthStatus, login } = useAuth()
 
   // 内部状态
   const [status, setStatus] = useState<'idle' | 'checking' | 'authorized' | 'unauthorized' | 'timeout' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [promptDismissed, setPromptDismissed] = useState(false)
 
   // 使用 Ref 记录是否已卸载，防止内存泄漏
   const isMounted = useRef(true)
@@ -93,6 +97,22 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
       })
     }, 100)
   }, [getRedirectUrl])
+
+  // 登录提示弹窗：前往登录页
+  const handleGoLogin = useCallback(() => {
+    const url = getRedirectUrl()
+    Taro.navigateTo({
+      url,
+      fail: () => {
+        Taro.redirectTo({ url })
+      }
+    })
+  }, [getRedirectUrl])
+
+  // 登录提示弹窗：暂不登录
+  const handleDismissPrompt = useCallback(() => {
+    setPromptDismissed(true)
+  }, [])
 
   // 核心鉴权逻辑
   const performCheck = useCallback(async () => {
@@ -160,11 +180,11 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
   // 状态处理副作用
   useEffect(() => {
     if (status === 'unauthorized') {
-      if (!fallback) {
+      if (!fallback && !showLoginPrompt) {
         performRedirect()
       }
     }
-  }, [status, fallback, performRedirect])
+  }, [status, fallback, showLoginPrompt, performRedirect])
 
   // 渲染逻辑
   if (status === 'authorized') {
@@ -193,7 +213,37 @@ const AuthGuard: React.FC<AuthGuardProps> = memo(({
 
   // 自定义未登录展示
   if (status === 'unauthorized') {
-    if (fallback) return <>{fallback}</>
+    // showLoginPrompt 模式：显示登录提示弹窗
+    if (showLoginPrompt && !promptDismissed) {
+      return (
+        <>
+          {children}
+          <View className="auth-guard-login-prompt-overlay">
+            <View className="auth-prompt-card">
+              <Image
+                className="prompt-image"
+                src="/assets/icons/logo.jpg"
+                mode="aspectFit"
+              />
+              <Text className="prompt-title">登录后可体验完整功能</Text>
+              <View className="prompt-btn-login" onClick={handleGoLogin}>
+                去登录
+              </View>
+              <View className="prompt-btn-cancel" onClick={handleDismissPrompt}>
+                暂不登录
+              </View>
+            </View>
+          </View>
+        </>
+      )
+    }
+
+    // showLoginPrompt 已关闭，正常显示页面
+    if (showLoginPrompt && promptDismissed) {
+      return <>{children}</>
+    }
+
+    // fallback 模式
     return (
       <View className="auth-guard-container">
         <View className="skeleton-screen">

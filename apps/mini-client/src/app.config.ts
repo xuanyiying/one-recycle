@@ -88,5 +88,6 @@ export default {
     requiredPrivateInfos: [
         'getLocation',
         'chooseLocation'
-    ]
+    ],
+    lazyCodeLoading: 'requiredComponents'
 }

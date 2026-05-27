@@ -59,7 +59,7 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
   try {
     const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/storage/upload`,
+      url: `${baseUrl}/api/storage/upload`,
       filePath,
       name: 'file',
       formData: { fileType: 'IMAGE', category: 'USER_UPLOAD' },
@@ -73,7 +73,7 @@ export const uploadImage = async (filePath: string): Promise<UploadResponse> => 
       const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
-          url: `${baseUrl}/storage/upload`,
+          url: `${baseUrl}/api/storage/upload`,
           filePath,
           name: 'file',
           formData: { fileType: 'IMAGE', category: 'USER_UPLOAD' },
@@ -132,7 +132,7 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
   try {
     const token = Storage.getToken() || ''
     const uploadResult = await Taro.uploadFile({
-      url: `${baseUrl}/storage/upload`,
+      url: `${baseUrl}/api/storage/upload`,
       filePath,
       name: 'file',
       formData: { fileType: 'IMAGE', category: 'AVATAR' },
@@ -146,7 +146,7 @@ export const uploadAvatar = async (filePath: string): Promise<UploadResponse> =>
       const newToken = refreshResult.success ? refreshResult.token : null
       if (newToken) {
         const retryResult = await Taro.uploadFile({
-          url: `${baseUrl}/storage/upload`,
+          url: `${baseUrl}/api/storage/upload`,
           filePath,
           name: 'file',
           formData: { fileType: 'IMAGE', category: 'AVATAR' },
@@ -289,7 +289,7 @@ export const uploadOrderPhotos = async (filePaths: string[]): Promise<string[]> 
 
     const doServerUpload = async (authToken: string) => {
       const uploadResult = await Taro.uploadFile({
-        url: `${baseUrl}/storage/upload-batch`,
+        url: `${baseUrl}/api/storage/upload-batch`,
         filePath,
         name: 'files',
         header: {

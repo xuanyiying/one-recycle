@@ -253,8 +253,25 @@ export default function Login() {
     Taro.navigateTo({ url: `/pages/agreement/index?type=${type}` })
   }
 
+  // 暂不登录，返回上一页或首页
+  const handleBack = () => {
+    const pages = Taro.getCurrentPages()
+    if (pages.length > 1) {
+      Taro.navigateBack()
+    } else {
+      Taro.switchTab({ url: '/pages/index/index' })
+    }
+  }
+
   return (
     <View className="login-container">
+      {/* 顶部返回按钮 */}
+      <View className="login-back-bar">
+        <View className="back-btn" onClick={handleBack}>
+          <Text className="back-text">暂不登录</Text>
+        </View>
+      </View>
+
       {/* 头部 Logo */}
       <View className="login-header">
         <View className="logo">
