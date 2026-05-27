@@ -1,11 +1,11 @@
-import { View, Text, ScrollView, Picker } from '@tarojs/components'
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
+import AuthGuard from '@/components/AuthGuard'
+import { Icon } from '@/components/Icon'
 import { useAuth } from '@/hooks/useAuth'
 import accountService from '@/services/account'
 import type { Transaction } from '@/types/account'
-import AuthGuard from '@/components/AuthGuard'
-import { Icon } from '@/components/Icon'
+import { Picker, ScrollView, Text, View } from '@tarojs/components'
+import Taro, { usePullDownRefresh, useReachBottom } from '@tarojs/taro'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './index.scss'
 
 export default function TransactionList() {
@@ -18,11 +18,11 @@ export default function TransactionList() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [showFilter, setShowFilter] = useState(false)
   const [pendingTypeFilter, setPendingTypeFilter] = useState('all')
-  
+
   // Use ref to track transactions for loadTransactions to avoid dependency cycle
   const transactionsRef = useRef(transactions)
   useEffect(() => {
-      transactionsRef.current = transactions
+    transactionsRef.current = transactions
   }, [transactions])
 
   const timeRanges = ['全部', '本月', '近3个月']
@@ -53,10 +53,13 @@ export default function TransactionList() {
     }
   }
 
+  const loadingRef = useRef(false)
+
   const loadTransactions = useCallback(async (pageNum: number = 1, append: boolean = false) => {
-    if (loading || !user) return
+    if (loadingRef.current || !user) return
 
     try {
+      loadingRef.current = true
       setLoading(true)
       const timeRange = getTimeRange(timeFilter)
       const { transactions: data, total: totalCount } = await accountService.getMyTransactions({
@@ -79,9 +82,10 @@ export default function TransactionList() {
         icon: 'none',
       })
     } finally {
+      loadingRef.current = false
       setLoading(false)
     }
-  }, [loading, user, timeFilter])
+  }, [user, timeFilter])
 
   useEffect(() => {
     setPage(1)
@@ -96,7 +100,7 @@ export default function TransactionList() {
   })
 
   useReachBottom(() => {
-    if (hasMore && !loading) {
+    if (hasMore && !loadingRef.current) {
       const nextPage = page + 1
       setPage(nextPage)
       loadTransactions(nextPage, true)
@@ -179,7 +183,7 @@ export default function TransactionList() {
           <Picker mode="selector" range={timeRanges} value={timeFilter} onChange={handleTimeFilterChange}>
             <View className="filter-picker">
               <Text className="filter-text">{timeRanges[timeFilter]}</Text>
-              <Icon name="arrow-down" size={24} style={{ color: '#4CAF50' }} /> 
+              <Icon name="arrow-down" size={24} style={{ color: '#4CAF50' }} />
             </View>
           </Picker>
         </View>
