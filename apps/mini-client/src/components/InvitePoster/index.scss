@@ -18,6 +18,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -27,6 +28,7 @@
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -124,7 +126,6 @@
     transform: rotate(360deg);
   }
 }
-}
 
 .poster-image-wrapper {
   width: 100%;
@@ -140,6 +141,7 @@
     transform: scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
