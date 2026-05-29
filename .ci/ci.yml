@@ -7,6 +7,9 @@ main:
   push:
     - &server-ci
       name: server-ci
+      ifModify:
+        - server/**
+        - .ci/**
       runner:
         cpus: 2
       docker:
@@ -53,6 +56,9 @@ main:
 
     - &admin-web-ci
       name: admin-web-ci
+      ifModify:
+        - apps/admin-web/**
+        - .ci/**
       runner:
         cpus: 2
       docker:

@@ -163,6 +163,8 @@ export class PointsAdminController {
         key: 'REFERRAL_MIN_REWARD_POINTS',
         value: dto.minRewardPoints?.toString(),
       },
+      { key: 'INVITE_REWARD_TYPE', value: dto.inviteRewardType },
+      { key: 'INVITE_REWARD_VALUE', value: dto.inviteRewardValue?.toString() },
     ];
 
     for (const config of configKeys) {

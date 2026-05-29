@@ -138,11 +138,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3001/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13001/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -173,11 +173,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3003/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13003/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -208,11 +208,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3005/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13005/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -243,11 +243,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3006/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13006/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -278,11 +278,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3004/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13004/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -313,11 +313,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3009/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13009/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -348,11 +348,11 @@ services:
     networks:
       - one-recycle-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:3008/api/health" ]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13008/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -400,6 +400,12 @@ services:
         condition: service_healthy
     networks:
       - one-recycle-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:13007/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     deploy:
       resources:
         limits:

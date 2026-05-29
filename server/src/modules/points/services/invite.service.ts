@@ -8,9 +8,6 @@ import { PointsRecordService } from './points-record.service';
 export class InviteService {
   private readonly logger = new Logger(InviteService.name);
 
-  // 邀请奖励积分
-  private readonly INVITE_REWARD_POINTS = 50;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
@@ -50,24 +47,35 @@ export class InviteService {
     return BigInt(num);
   }
 
+  private async getInviteRewardConfig(): Promise<{ type: string; value: number }> {
+    const configs = await this.prisma.systemConfig.findMany({
+      where: {
+        key: { in: ['INVITE_REWARD_TYPE', 'INVITE_REWARD_VALUE'] },
+        isActive: true,
+      },
+    });
+    const configMap = new Map(configs.map((c) => [c.key, c.value]));
+    return {
+      type: configMap.get('INVITE_REWARD_TYPE') || 'FIXED',
+      value: parseFloat(configMap.get('INVITE_REWARD_VALUE') || '50'),
+    };
+  }
+
   /**
    * 处理邀请关系
    */
   async handleInvite(inviteeId: bigint, inviteCode: string) {
-    // 解析邀请码
     const inviterId = this.parseInviteCode(inviteCode);
     if (!inviterId) {
       this.logger.warn(`Invalid invite code: ${inviteCode}`);
       return;
     }
 
-    // 不能邀请自己
     if (inviterId === inviteeId) {
       this.logger.warn(`User cannot invite themselves: ${inviteeId}`);
       return;
     }
 
-    // 检查邀请人是否存在
     const inviter = await this.prisma.user.findUnique({
       where: { id: inviterId },
     });
@@ -77,7 +85,6 @@ export class InviteService {
       return;
     }
 
-    // 检查是否已被邀请
     const existingInvite = await this.prisma.inviteRecord.findUnique({
       where: { inviteeId },
     });
@@ -87,28 +94,39 @@ export class InviteService {
       return;
     }
 
-    // 创建邀请记录并发放奖励
-    await this.prisma.$transaction(async (tx) => {
-      // 创建邀请记录
-      await tx.inviteRecord.create({
-        data: {
-          inviterId,
-          inviteeId,
-          rewardPoints: this.INVITE_REWARD_POINTS,
-        },
-      });
+    const inviteRewardConfig = await this.getInviteRewardConfig();
 
-      // 给邀请人发放积分
-      await this.pointsRecordService.addPoints(
-        inviterId,
-        this.INVITE_REWARD_POINTS,
-        PointsType.INVITE,
-        '邀请好友奖励',
-        'INVITE',
-        inviteeId.toString(),
-        tx,
-      );
-    });
+    if (inviteRewardConfig.type === 'FIXED') {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.inviteRecord.create({
+          data: {
+            inviterId,
+            inviteeId,
+            rewardPoints: inviteRewardConfig.value,
+          },
+        });
+
+        await this.pointsRecordService.addPoints(
+          inviterId,
+          inviteRewardConfig.value,
+          PointsType.INVITE,
+          '邀请好友奖励',
+          'INVITE',
+          inviteeId.toString(),
+          tx,
+        );
+      });
+    } else {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.inviteRecord.create({
+          data: {
+            inviterId,
+            inviteeId,
+            rewardPoints: 0,
+          },
+        });
+      });
+    }
 
     this.logger.log(
       `Invite processed: inviter=${inviterId}, invitee=${inviteeId}`,

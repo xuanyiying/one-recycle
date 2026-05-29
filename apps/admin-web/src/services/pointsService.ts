@@ -198,3 +198,24 @@ export const pointsTaskApi = {
   },
 };
 
+export interface ReferralConfig {
+  rewardType: 'FIXED' | 'PERCENTAGE';
+  rewardValue: number;
+  rewardTiming: 'FIRST_ORDER' | 'EVERY_ORDER';
+  minRewardPoints: number;
+  inviteRewardType: 'FIXED' | 'PERCENTAGE';
+  inviteRewardValue: number;
+}
+
+export const referralConfigApi = {
+  async getConfig(): Promise<ReferralConfig> {
+    const res = await apiClient.get('/admin/points/referral/config');
+    return res.data || res;
+  },
+
+  async updateConfig(data: Partial<ReferralConfig>): Promise<ReferralConfig> {
+    const res = await apiClient.post('/admin/points/referral/config', data);
+    return res.data || res;
+  },
+};
+

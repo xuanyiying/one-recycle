@@ -1,11 +1,13 @@
 # ============================================================
-# 部署流水线 — CI 构建镜像，推送 CNB Registry，服务器只拉取
+# 部署流水线 — 细粒度按需部署
 # ============================================================
 #
 # 改动要点：
-#   1. 移除冗余的 CI 步骤（lint/typecheck/test），由 ci.yml 负责
-#   2. 在 CNB 构建环境中 docker build + push 镜像
-#   3. SSH 部署仅做 docker compose pull + up，大幅缩短部署时间
+#   1. 使用 ifModify 实现按需部署：server 变更部署 server，admin-web 变更部署 admin-web
+#   2. 小程序 (apps/mini-client) 修改不触发部署
+#   3. 移除 docker compose down，使用定向更新避免不必要的服务中断
+#   4. 修复微服务健康检查端口（gRPC 服务使用 PORT+10000）
+#   5. SSH 部署仅做 docker compose pull + up，大幅缩短部署时间
 #
 # 所需密钥（通过 imports 导入，请在密钥仓库中配置 deploy.yml）：
 #   DEPLOY_HOST        - 部署服务器 IP
@@ -31,6 +33,18 @@
     key: deploy-lock
     wait: true
 
+# --- ifModify 路径配置 ---
+
+.server-if-modify: &server-if-modify
+  - server/**
+  - .ci/**
+  - deploy/**
+
+.admin-web-if-modify: &admin-web-if-modify
+  - apps/admin-web/**
+  - .ci/**
+  - deploy/**
+
 # --- 共用构建阶段 ---
 
 .build-server: &build-server
@@ -51,7 +65,19 @@
       --build-arg API_BACKEND_URL=http://api-gateway:3002 \
       ./apps/admin-web
 
-.push-images: &push-images
+.push-server-images: &push-server-images
+  name: push-server-images
+  script: |
+    docker push ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/server:${IMAGE_TAG}
+    docker push ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/server:${CNB_BRANCH}
+
+.push-admin-web-images: &push-admin-web-images
+  name: push-admin-web-images
+  script: |
+    docker push ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/admin-web:${IMAGE_TAG}
+    docker push ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/admin-web:${CNB_BRANCH}
+
+.push-all-images: &push-all-images
   name: push-images
   script: |
     docker push ${CNB_DOCKER_REGISTRY}/${CNB_REPO_SLUG_LOWERCASE}/server:${IMAGE_TAG}
@@ -72,25 +98,23 @@
 .health-check-monolith: &health-check-monolith
   name: health-check
   script: |
-    sleep 30
+    sleep 45
     DOMAIN="${DOMAIN:-backbuy.cn}"
     echo "=== Starting health check for ${DOMAIN} ==="
-    for i in $(seq 1 15); do
-      echo "Health check attempt $i/15..."
-      # 尝试 https 和 http，使用 -k 忽略证书问题，-L 跟随重定向，-f 失败时返回非零
+    for i in $(seq 1 20); do
+      echo "Health check attempt $i/20..."
       if curl -skfL --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
          curl -skfL --max-time 10 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
         echo "✅ Application health passed: https://${DOMAIN}/api/health"
         exit 0
       fi
-      
-      # 打印一些调试信息
+
       echo "Wait for service to be ready..."
       curl -Iks --max-time 5 "https://${DOMAIN}/api/health" 2>/dev/null | grep -E "HTTP/|server" || true
       sleep 10
     done
-    
-    echo "❌ Health check failed after 15 attempts"
+
+    echo "❌ Health check failed after 20 attempts"
     ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
     cd $HOME/one-recycle/deploy
     echo "=== Docker Containers ==="
@@ -107,23 +131,23 @@
 .health-check-microservices: &health-check-microservices
   name: health-check
   script: |
-    sleep 30
+    sleep 45
     DOMAIN="${DOMAIN:-backbuy.cn}"
     echo "=== Starting health check for ${DOMAIN} ==="
-    for i in $(seq 1 15); do
-      echo "Health check attempt $i/15..."
+    for i in $(seq 1 20); do
+      echo "Health check attempt $i/20..."
       if curl -skfL --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
          curl -skfL --max-time 10 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
         echo "✅ Application health passed: https://${DOMAIN}/api/health"
         exit 0
       fi
-      
+
       echo "Wait for service to be ready..."
       curl -Iks --max-time 5 "https://${DOMAIN}/api/health" 2>/dev/null | grep -E "HTTP/|server" || true
       sleep 10
     done
-    
-    echo "❌ Health check failed after 15 attempts"
+
+    echo "❌ Health check failed after 20 attempts"
     ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
     cd $HOME/one-recycle/deploy
     echo "=== Docker Containers ==="
@@ -138,13 +162,14 @@
     DOMAIN: ${DOMAIN:-backbuy.cn}
 
 # ============================================================
-# Monolith 部署 (prod 分支)
+# Monolith 部署 (prod 分支) — 按需部署
 # ============================================================
 
 prod:
   push:
-    - name: deploy-monolith
+    - name: deploy-server
       <<: *deploy-base
+      ifModify: *server-if-modify
       stages:
         - name: set-image-tag
           script: echo -n "${CNB_COMMIT_SHORT}"
@@ -152,8 +177,7 @@ prod:
             info: IMAGE_TAG
 
         - *build-server
-        - *build-admin-web
-        - *push-images
+        - *push-server-images
         - *setup-ssh
 
         - name: deploy
@@ -169,66 +193,111 @@ prod:
             DEPLOY_DIR="$PROJECT_DIR/deploy"
             CONFIG_DIR="$DEPLOY_DIR/config"
             ENV_FILE="$CONFIG_DIR/.env.production"
-            echo "=== Deploying monolith (tag: $IMAGE_TAG) ==="
+            echo "=== Deploying monolith server (tag: $IMAGE_TAG) ==="
 
-            # 登录 CNB Registry
             echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
 
-            # 更新代码（Caddyfile、docker-compose 等配置文件）
             cd "$PROJECT_DIR"
             git fetch origin
             git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
               echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
               echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
             fi
 
-            # === 写入 docker-compose 使用的 .env.production ===
-            # 此文件每次部署都会重新生成（IMAGE_TAG 会变）
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
-              # 从持久化配置中读取 DB/Redis 密码
               echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
               echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
-              # 追加持久化配置（JWT_SECRET, CORS_ORIGINS, WECHAT_APP_ID 等）
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
-            # 检查数据库是否已初始化
-            DB_INITIALIZED=false
-            if [ -d "$DEPLOY_DIR/data/postgres" ] && [ "$(ls -A "$DEPLOY_DIR/data/postgres" 2>/dev/null)" ]; then
-              DB_INITIALIZED=true
-              echo "=== 数据库已存在，将执行迁移 ==="
-            else
-              echo "=== 首次部署，将初始化数据库（迁移 + 种子数据）==="
-            fi
-
-            # 拉取预构建镜像
             cd "$DEPLOY_DIR"
-            echo "=== Pulling images from CNB registry ==="
-            docker compose pull api-gateway admin-web
 
-            # 重启服务
-            echo "=== Stopping old containers ==="
-            docker compose down || true
+            echo "=== Ensuring infrastructure is running ==="
+            docker compose up -d postgres redis
+            sleep 5
 
-            echo "=== Starting monolith ==="
-            docker compose up -d --no-build
+            echo "=== Pulling server image ==="
+            docker compose pull api-gateway
 
-            echo "=== Waiting for services ==="
-            sleep 15
-            docker compose ps
-            docker compose logs --tail=20
+            echo "=== Restarting server ==="
+            docker compose up -d --force-recreate --no-deps api-gateway
 
             echo "=== Cleaning up old images ==="
             docker image prune -f
-            echo "=== Monolith deployment completed ==="
+            echo "=== Server deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+
+        - *health-check-monolith
+
+    - name: deploy-admin-web
+      <<: *deploy-base
+      ifModify: *admin-web-if-modify
+      stages:
+        - name: set-image-tag
+          script: echo -n "${CNB_COMMIT_SHORT}"
+          exports:
+            info: IMAGE_TAG
+
+        - *build-admin-web
+        - *push-admin-web-images
+        - *setup-ssh
+
+        - name: deploy
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+              CNB_BRANCH="$CNB_BRANCH" \
+              IMAGE_TAG="$IMAGE_TAG" \
+              DOMAIN="$DOMAIN" \
+              CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
+              'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
+            echo "=== Deploying admin-web (tag: $IMAGE_TAG) ==="
+
+            echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              touch "$ENV_FILE"
+            fi
+
+            {
+              echo "IMAGE_TAG=$IMAGE_TAG"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
+            } > "$DEPLOY_DIR/.env.production"
+
+            cd "$DEPLOY_DIR"
+
+            echo "=== Pulling admin-web image ==="
+            docker compose pull admin-web
+
+            echo "=== Restarting admin-web ==="
+            docker compose up -d --force-recreate --no-deps admin-web
+
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
+            echo "=== Admin-web deployment completed ==="
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
@@ -236,13 +305,14 @@ prod:
         - *health-check-monolith
 
 # ============================================================
-# Microservices 部署 (withoutai 分支)
+# Microservices 部署 (withoutai 分支) — 按需部署
 # ============================================================
 
 withoutai:
   push:
-    - name: deploy-microservices
+    - name: deploy-server
       <<: *deploy-base
+      ifModify: *server-if-modify
       stages:
         - name: set-image-tag
           script: echo -n "${CNB_COMMIT_SHORT}"
@@ -250,8 +320,7 @@ withoutai:
             info: IMAGE_TAG
 
         - *build-server
-        - *build-admin-web
-        - *push-images
+        - *push-server-images
         - *setup-ssh
 
         - name: deploy
@@ -267,9 +336,8 @@ withoutai:
             DEPLOY_DIR="$PROJECT_DIR/deploy"
             CONFIG_DIR="$DEPLOY_DIR/config"
             ENV_FILE="$CONFIG_DIR/.env.production"
-            echo "=== Deploying microservices (tag: $IMAGE_TAG) ==="
+            echo "=== Deploying microservices server (tag: $IMAGE_TAG) ==="
 
-            # 登录 CNB Registry
             echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
 
             cd "$PROJECT_DIR"
@@ -278,14 +346,12 @@ withoutai:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
               echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
               echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
             fi
 
-            # === 写入 docker-compose 使用的 .env.production ===
             {
               echo "IMAGE_TAG=$IMAGE_TAG"
               echo "DOMAIN=$DOMAIN"
@@ -294,32 +360,98 @@ withoutai:
               grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
             } > "$DEPLOY_DIR/.env.production"
 
-            # 检查数据库是否已初始化
-            if [ -d "$DEPLOY_DIR/data/postgres" ] && [ "$(ls -A "$DEPLOY_DIR/data/postgres" 2>/dev/null)" ]; then
-              echo "=== 数据库已存在，将执行迁移 ==="
-            else
-              echo "=== 首次部署，将初始化数据库（迁移 + 种子数据）==="
-            fi
-
-            # 拉取预构建镜像
             cd "$DEPLOY_DIR"
-            echo "=== Pulling images from CNB registry ==="
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
+            COMPOSE_OPTS="--env-file .env.production -f docker/docker-compose.production.yml"
 
-            echo "=== Stopping old containers ==="
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
+            echo "=== Ensuring infrastructure is running ==="
+            docker compose $COMPOSE_OPTS up -d postgres redis
+            sleep 5
 
-            echo "=== Starting microservices ==="
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d --no-build
+            echo "=== Pulling server images ==="
+            docker compose $COMPOSE_OPTS pull api-gateway account-service order-service notification-service payment-service dispatch-service inventory-service category-service
 
-            echo "=== Waiting for services ==="
-            sleep 15
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml logs --tail=20
+            echo "=== Restarting core services ==="
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps \
+              api-gateway account-service order-service notification-service \
+              payment-service dispatch-service inventory-service category-service
+
+            echo "=== Waiting for core services to stabilize ==="
+            sleep 30
+
+            echo "=== Pulling and restarting queue-service ==="
+            docker compose $COMPOSE_OPTS pull queue-service
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps queue-service
 
             echo "=== Cleaning up old images ==="
             docker image prune -f
-            echo "=== Microservices deployment completed ==="
+            echo "=== Server deployment completed ==="
+            ENDSSH
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
+
+        - *health-check-microservices
+
+    - name: deploy-admin-web
+      <<: *deploy-base
+      ifModify: *admin-web-if-modify
+      stages:
+        - name: set-image-tag
+          script: echo -n "${CNB_COMMIT_SHORT}"
+          exports:
+            info: IMAGE_TAG
+
+        - *build-admin-web
+        - *push-admin-web-images
+        - *setup-ssh
+
+        - name: deploy
+          script: |
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+              CNB_BRANCH="$CNB_BRANCH" \
+              IMAGE_TAG="$IMAGE_TAG" \
+              DOMAIN="$DOMAIN" \
+              CNB_REGISTRY_TOKEN="$CNB_REGISTRY_TOKEN" \
+              'bash -s' << 'ENDSSH'
+            set -e
+            PROJECT_DIR="$HOME/one-recycle"
+            DEPLOY_DIR="$PROJECT_DIR/deploy"
+            CONFIG_DIR="$DEPLOY_DIR/config"
+            ENV_FILE="$CONFIG_DIR/.env.production"
+            echo "=== Deploying admin-web (tag: $IMAGE_TAG) ==="
+
+            echo "$CNB_REGISTRY_TOKEN" | docker login docker.cnb.cool -u cnb --password-stdin
+
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git reset --hard "origin/${CNB_BRANCH}" 2>/dev/null || git reset --hard "$CNB_BRANCH"
+
+            mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
+              touch "$ENV_FILE"
+            fi
+
+            {
+              echo "IMAGE_TAG=$IMAGE_TAG"
+              echo "DOMAIN=$DOMAIN"
+              echo "DB_PASSWORD=$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              echo "REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' "$ENV_FILE" | cut -d'=' -f2-)"
+              grep -v '^IMAGE_TAG=' "$ENV_FILE" | grep -v '^DOMAIN=' | grep -v '^DB_PASSWORD=' | grep -v '^REDIS_PASSWORD='
+            } > "$DEPLOY_DIR/.env.production"
+
+            cd "$DEPLOY_DIR"
+            COMPOSE_OPTS="--env-file .env.production -f docker/docker-compose.production.yml"
+
+            echo "=== Pulling admin-web image ==="
+            docker compose $COMPOSE_OPTS pull admin-web
+
+            echo "=== Restarting admin-web ==="
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps admin-web
+
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
+            echo "=== Admin-web deployment completed ==="
             ENDSSH
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
@@ -327,7 +459,7 @@ withoutai:
         - *health-check-microservices
 
 # ============================================================
-# Tag 推送部署 + 手动触发部署
+# Tag 推送部署 (全量部署)
 # ============================================================
 
 $:
@@ -352,7 +484,7 @@ $:
 
         - *build-server
         - *build-admin-web
-        - *push-images
+        - *push-all-images
         - *setup-ssh
 
         - name: deploy-monolith
@@ -379,10 +511,8 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
               echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
-              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
             fi
 
@@ -395,11 +525,18 @@ $:
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
+
+            echo "=== Ensuring infrastructure ==="
+            docker compose up -d postgres redis
+            sleep 5
+
+            echo "=== Pulling images ==="
             docker compose pull api-gateway admin-web
-            docker compose down || true
-            docker compose up -d --no-build
-            sleep 15
-            docker compose ps
+
+            echo "=== Restarting services ==="
+            docker compose up -d --force-recreate --no-deps api-gateway
+            docker compose up -d --force-recreate --no-deps admin-web
+
             docker image prune -f
             echo "=== Monolith deployment completed ==="
             ENDSSH
@@ -430,10 +567,8 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
               echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
-              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
             fi
 
@@ -446,11 +581,26 @@ $:
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d --no-build
-            sleep 15
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
+            COMPOSE_OPTS="--env-file .env.production -f docker/docker-compose.production.yml"
+
+            echo "=== Ensuring infrastructure ==="
+            docker compose $COMPOSE_OPTS up -d postgres redis
+            sleep 5
+
+            echo "=== Pulling images ==="
+            docker compose $COMPOSE_OPTS pull
+
+            echo "=== Restarting core services ==="
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps \
+              api-gateway account-service order-service notification-service \
+              payment-service dispatch-service inventory-service category-service
+            sleep 30
+
+            echo "=== Restarting queue-service ==="
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps queue-service
+
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps admin-web
+
             docker image prune -f
             echo "=== Microservices deployment completed ==="
             ENDSSH
@@ -472,7 +622,7 @@ $:
 
         - *build-server
         - *build-admin-web
-        - *push-images
+        - *push-all-images
         - *setup-ssh
 
         - name: deploy-monolith
@@ -499,10 +649,8 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
               echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
-              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
             fi
 
@@ -515,11 +663,18 @@ $:
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
+
+            echo "=== Ensuring infrastructure ==="
+            docker compose up -d postgres redis
+            sleep 5
+
+            echo "=== Pulling images ==="
             docker compose pull api-gateway admin-web
-            docker compose down || true
-            docker compose up -d --no-build
-            sleep 15
-            docker compose ps
+
+            echo "=== Restarting services ==="
+            docker compose up -d --force-recreate --no-deps api-gateway
+            docker compose up -d --force-recreate --no-deps admin-web
+
             docker image prune -f
             echo "=== Monolith deployment completed ==="
             ENDSSH
@@ -550,10 +705,8 @@ $:
 
             mkdir -p "$DEPLOY_DIR"/{caddy,www/html,data/{postgres,redis},config}
 
-            # === 确保持久化配置 (config/.env.production) 存在 ===
             if [ ! -f "$ENV_FILE" ]; then
               echo "!!! 警告: 找不到配置文件 $ENV_FILE !!!"
-              echo "请确保服务器上已手动配置该文件，包含 DB_PASSWORD, REDIS_PASSWORD, JWT_SECRET 等关键配置。"
               touch "$ENV_FILE"
             fi
 
@@ -566,11 +719,26 @@ $:
             } > "$DEPLOY_DIR/.env.production"
 
             cd "$DEPLOY_DIR"
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml pull
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml down || true
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml up -d --no-build
-            sleep 15
-            docker compose --env-file .env.production -f docker/docker-compose.production.yml ps
+            COMPOSE_OPTS="--env-file .env.production -f docker/docker-compose.production.yml"
+
+            echo "=== Ensuring infrastructure ==="
+            docker compose $COMPOSE_OPTS up -d postgres redis
+            sleep 5
+
+            echo "=== Pulling images ==="
+            docker compose $COMPOSE_OPTS pull
+
+            echo "=== Restarting core services ==="
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps \
+              api-gateway account-service order-service notification-service \
+              payment-service dispatch-service inventory-service category-service
+            sleep 30
+
+            echo "=== Restarting queue-service ==="
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps queue-service
+
+            docker compose $COMPOSE_OPTS up -d --force-recreate --no-deps admin-web
+
             docker image prune -f
             echo "=== Microservices deployment completed ==="
             ENDSSH

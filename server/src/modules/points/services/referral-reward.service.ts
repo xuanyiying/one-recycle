@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { toNumber } from '@/common/utils/decimal.util';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
 import { PointsType, ReferralRewardStatus } from '@prisma/client';
 import { PointsRecordService } from './points-record.service';
-import { toNumber } from '@/common/utils/decimal.util';
 
 export enum RewardType {
   FIXED = 'FIXED',
@@ -19,6 +19,8 @@ export interface ReferralRewardConfig {
   rewardValue: number;
   rewardTiming: RewardTiming;
   minRewardPoints?: number;
+  inviteRewardType: string;
+  inviteRewardValue: number;
 }
 
 @Injectable()
@@ -28,7 +30,7 @@ export class ReferralRewardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) {}
+  ) { }
 
   async getReferralRewardConfig(): Promise<ReferralRewardConfig> {
     const configs = await this.prisma.systemConfig.findMany({
@@ -39,6 +41,8 @@ export class ReferralRewardService {
             'REFERRAL_REWARD_VALUE',
             'REFERRAL_REWARD_TIMING',
             'REFERRAL_MIN_REWARD_POINTS',
+            'INVITE_REWARD_TYPE',
+            'INVITE_REWARD_VALUE',
           ],
         },
         isActive: true,
@@ -59,6 +63,8 @@ export class ReferralRewardService {
         configMap.get('REFERRAL_MIN_REWARD_POINTS') || '1',
         10,
       ),
+      inviteRewardType: configMap.get('INVITE_REWARD_TYPE') || 'FIXED',
+      inviteRewardValue: parseFloat(configMap.get('INVITE_REWARD_VALUE') || '50'),
     };
   }
 
@@ -143,7 +149,16 @@ export class ReferralRewardService {
     const orderAmount = toNumber(
       order.settlementAmount || order.estimatedAmount,
     );
-    const rewardPoints = this.calculateRewardPoints(orderAmount, config);
+    let rewardPoints: number;
+    if (config.inviteRewardType === 'PERCENTAGE') {
+      rewardPoints = Math.floor(orderAmount * (config.inviteRewardValue / 100));
+      if (config.minRewardPoints && rewardPoints < config.minRewardPoints) {
+        rewardPoints = config.minRewardPoints;
+      }
+      rewardPoints = Math.max(0, rewardPoints);
+    } else {
+      rewardPoints = this.calculateRewardPoints(orderAmount, config);
+    }
 
     if (rewardPoints <= 0) {
       this.logger.log(`Reward points is zero, skipping: ${orderId}`);
@@ -164,8 +179,8 @@ export class ReferralRewardService {
           inviteeId: inviteRecord.inviteeId,
           rewardPoints,
           orderAmount,
-          rewardType: config.rewardType,
-          rewardValue: config.rewardValue,
+          rewardType: config.inviteRewardType === 'PERCENTAGE' ? RewardType.PERCENTAGE : config.rewardType,
+          rewardValue: config.inviteRewardType === 'PERCENTAGE' ? config.inviteRewardValue : config.rewardValue,
           status: ReferralRewardStatus.COMPLETED,
         },
       });

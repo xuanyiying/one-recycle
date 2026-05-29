@@ -1,19 +1,21 @@
-import { logger } from '@/utils/logger'
-import { useState, useEffect, useCallback } from 'react'
-import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { View, Text, Image, ScrollView } from '@tarojs/components'
-import { useAuth } from '@/hooks/useAuth'
-import { getQAList, getNewsBriefs } from '@/services/system'
-import { getFeaturedCategories, getActiveCategories } from '@/services/category'
-import { Category } from '@/types/category'
-import { QAItem, NewsBrief } from '@/types'
-import { CategoryCard } from '@/components/CategoryCard'
 import locationIcon from '@/assets/icons/location.svg'
-import { useMenu } from './useMenu'
+import '@/components/AuthGuard/index.scss'
+import { CategoryCard } from '@/components/CategoryCard'
+import { useAuth } from '@/hooks/useAuth'
+import { getActiveCategories, getFeaturedCategories } from '@/services/category'
+import { LocationService } from '@/services/location'
+import { getNewsBriefs, getQAList } from '@/services/system'
+import { NewsBrief, QAItem } from '@/types'
+import { Category } from '@/types/category'
+import { logger } from '@/utils/logger'
+import { Image, ScrollView, Text, View } from '@tarojs/components'
+import Taro, { useDidShow, usePullDownRefresh } from '@tarojs/taro'
+import { useCallback, useEffect, useState } from 'react'
 import './index.scss'
+import { useMenu } from './useMenu'
 
 export default function Index() {
-  const { user } = useAuth()
+  const { user, isLoggedIn, checkAuthStatus } = useAuth()
   const { features, handleFeatureClick } = useMenu()
   const [currentCity, setCurrentCity] = useState('北京')
   const [qaList, setQAList] = useState<QAItem[]>([])
@@ -23,6 +25,8 @@ export default function Index() {
   const [featuredCategories, setFeaturedCategories] = useState<Category[]>([])
   const [activeCategories, setActiveCategories] = useState<Category[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [pendingCategoryId, setPendingCategoryId] = useState<number | null>(null)
 
   usePullDownRefresh(async () => {
     await initPageData()
@@ -31,9 +35,15 @@ export default function Index() {
 
   useEffect(() => {
     initPageData()
-    // 模拟定位
-    setTimeout(() => setCurrentCity('北京市'), 1000)
+    LocationService.getCityByIP().then(setCurrentCity)
   }, [])
+
+  useDidShow(() => {
+    if (isLoggedIn && showLoginPrompt) {
+      setShowLoginPrompt(false)
+      setPendingCategoryId(null)
+    }
+  })
 
   const initPageData = async () => {
     try {
@@ -75,10 +85,35 @@ export default function Index() {
   }, [])
 
   // 处理分类点击跳转
-  const handleCategoryClick = useCallback((categoryId: number) => {
+  const handleCategoryClick = useCallback(async (categoryId: number) => {
+    const { isLoggedIn: loggedIn } = await checkAuthStatus()
+    if (loggedIn) {
+      Taro.navigateTo({
+        url: `/pages/recycle/index?categoryId=${categoryId}`
+      })
+      return
+    }
+
+    setPendingCategoryId(categoryId)
+    setShowLoginPrompt(true)
+  }, [checkAuthStatus])
+
+  const handleLoginPromptGoLogin = useCallback(() => {
+    const redirectUrl = pendingCategoryId
+      ? `/pages/recycle/index?categoryId=${pendingCategoryId}`
+      : '/pages/recycle/index'
     Taro.navigateTo({
-      url: `/pages/recycle/index?categoryId=${categoryId}`
+      url: `/pages/login/index?redirect=${encodeURIComponent(redirectUrl)}`,
+      fail: () => {
+        Taro.showToast({ title: '跳转失败，请重试', icon: 'none' })
+      }
     })
+    setShowLoginPrompt(false)
+  }, [pendingCategoryId])
+
+  const handleLoginPromptDismiss = useCallback(() => {
+    setShowLoginPrompt(false)
+    setPendingCategoryId(null)
   }, [])
 
   return (
@@ -272,6 +307,25 @@ export default function Index() {
           )}
         </View>
       </View>
+
+      {showLoginPrompt && (
+        <View className='auth-guard-login-prompt-overlay'>
+          <View className='auth-prompt-card'>
+            <Image
+              className='prompt-image'
+              src='/assets/icons/logo.jpg'
+              mode='aspectFit'
+            />
+            <Text className='prompt-title'>登录后即可预约回收</Text>
+            <View className='prompt-btn-login' onClick={handleLoginPromptGoLogin}>
+              去登录
+            </View>
+            <View className='prompt-btn-cancel' onClick={handleLoginPromptDismiss}>
+              暂不登录
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   )
 }

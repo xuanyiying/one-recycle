@@ -42,6 +42,7 @@ import { PointsModule } from './modules/points/points.module';
 import { ContentConfigModule } from './modules/content-config/content-config.module';
 import { CategoryWarehouseModule } from './modules/category-warehouse/category-warehouse.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { LocationModule } from './modules/location/location.module';
 
 // 健康检查模块
 import { HealthModule } from './modules/health/health.module';
@@ -101,6 +102,7 @@ import { HealthModule } from './modules/health/health.module';
     ContentConfigModule,
     CategoryWarehouseModule,
     SettingsModule,
+    LocationModule,
   ],
   controllers: [AppController],
   providers: [

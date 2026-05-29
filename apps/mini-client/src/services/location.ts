@@ -1,31 +1,24 @@
+import { Address, Coordinates, LocationInfo } from '@/types/address'
 import Taro from '@tarojs/taro'
-import { LocationInfo, Coordinates, Address } from '@/types/address'
 import { get } from '../utils/request'
 
-/**
- * Location Service
- * Handles GPS positioning, reverse geocoding, and address suggestions
- */
 export class LocationService {
   private static readonly CACHE_KEY = 'last_known_location'
-  private static readonly CACHE_EXPIRY = 1000 * 60 * 30 // 30 minutes
+  private static readonly CACHE_EXPIRY = 1000 * 60 * 30
+  private static readonly CITY_CACHE_KEY = 'ip_city'
+  private static readonly CITY_CACHE_EXPIRY = 1000 * 60 * 60
 
-  /**
-   * Get current GPS coordinates
-   */
   static async getCurrentCoordinates(): Promise<Coordinates> {
     try {
-      // Check if location permission is authorized
       const setting = await Taro.getSetting()
-      
+
       if (setting.authSetting['scope.userLocation'] === false) {
-        // If explicitly denied, we need to show a modal to guide user to settings
         const res = await Taro.showModal({
           title: '定位未授权',
           content: '请在设置中允许使用定位信息，以便为您自动填写地址',
           confirmText: '去设置'
         })
-        
+
         if (res.confirm) {
           await Taro.openSetting()
         }
@@ -33,42 +26,35 @@ export class LocationService {
       }
 
       Taro.showLoading({ title: '定位中...', mask: true })
-      
+
       const { latitude, longitude } = await Taro.getLocation({
         type: 'gcj02',
         isHighAccuracy: true,
         highAccuracyExpireTime: 3000
       })
-      
+
       Taro.hideLoading()
-      
+
       const coords = { latitude, longitude }
       this.cacheLocation(coords)
       return coords
     } catch (error: any) {
       Taro.hideLoading()
-      
-      // If it's an error we already threw (like "定位权限未开启"), rethrow it
+
       if (error.message === '定位权限未开启') {
         throw error
       }
-      
-      // Fallback to cache if available
+
       const cached = this.getCachedLocation()
       if (cached) return cached.coordinates
-      
+
       const msg = error.errMsg?.includes('deny') ? '定位权限未开启' : '无法获取当前位置，请重试'
       throw new Error(msg)
     }
   }
 
-  /**
-   * Reverse geocode coordinates to get address details
-   */
   static async reverseGeocode(coords: Coordinates): Promise<LocationInfo> {
     try {
-      // Integration with Tencent Map or similar reverse geocoding API
-      // For now, returning mock data or using a placeholder API call
       const res = await get('/location/reverse-geocode', {
         lat: coords.latitude,
         lng: coords.longitude
@@ -79,12 +65,9 @@ export class LocationService {
     }
   }
 
-  /**
-   * Get address suggestions based on keyword and current location
-   */
   static async getSuggestions(keyword: string, coords?: Coordinates): Promise<LocationInfo[]> {
     if (!keyword) return []
-    
+
     try {
       const res = await get('/location/suggestions', {
         keyword,
@@ -97,9 +80,6 @@ export class LocationService {
     }
   }
 
-  /**
-   * Choose location from map
-   */
   static async chooseLocation(initialCoords?: Coordinates): Promise<Partial<Address> & { coordinates: Coordinates }> {
     try {
       const options: any = {}
@@ -109,8 +89,7 @@ export class LocationService {
       }
 
       const res = await Taro.chooseLocation(options)
-      
-      // Basic parsing of the address string returned by chooseLocation
+
       return {
         detail: res.name || res.address,
         coordinates: {
@@ -126,9 +105,40 @@ export class LocationService {
     }
   }
 
-  /**
-   * Cache the last known location
-   */
+  static async getCityByIP(): Promise<string> {
+    try {
+      const cached = this.getCachedCity()
+      if (cached) return cached
+
+      const res = await get<{ success?: boolean; data?: { city?: string; province?: string }; city?: string; province?: string }>('/location/ip')
+      const city = res?.data?.city || res?.city || ''
+      const province = res?.data?.province || res?.province || ''
+
+      const cityName = city || province.replace(/省$/, '') || '未知'
+
+      this.cacheCity(cityName)
+      return cityName
+    } catch {
+      return '未知'
+    }
+  }
+
+  private static cacheCity(city: string): void {
+    try {
+      Taro.setStorageSync(this.CITY_CACHE_KEY, { city, timestamp: Date.now() })
+    } catch { }
+  }
+
+  private static getCachedCity(): string | null {
+    try {
+      const cached = Taro.getStorageSync(this.CITY_CACHE_KEY)
+      if (cached && Date.now() - cached.timestamp < this.CITY_CACHE_EXPIRY) {
+        return cached.city
+      }
+    } catch { }
+    return null
+  }
+
   private static cacheLocation(coordinates: Coordinates): void {
     Taro.setStorage({
       key: this.CACHE_KEY,
@@ -139,16 +149,13 @@ export class LocationService {
     })
   }
 
-  /**
-   * Retrieve cached location if not expired
-   */
   private static getCachedLocation(): { coordinates: Coordinates; timestamp: number } | null {
     try {
       const cached = Taro.getStorageSync(this.CACHE_KEY)
       if (cached && Date.now() - cached.timestamp < this.CACHE_EXPIRY) {
         return cached
       }
-    } catch (e) {}
+    } catch (e) { }
     return null
   }
 }

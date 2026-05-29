@@ -74,6 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
               { href: '/points/products', label: '商品管理' },
               { href: '/points/orders', label: '订单管理' },
               { href: '/points/tasks', label: '任务管理' },
+              { href: '/points/referral', label: '推广配置' },
             ]
           },
         ],
