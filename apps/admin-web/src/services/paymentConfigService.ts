@@ -73,7 +73,6 @@ export interface PaymentProviderOption {
 export const PAYMENT_PROVIDERS: PaymentProviderOption[] = [
   { code: 'wechat_pay', name: '微信支付', provider: 'WECHAT', description: '微信支付企业付款到零钱' },
   { code: 'alipay', name: '支付宝', provider: 'ALIPAY', description: '支付宝转账到账户' },
-  { code: 'unionpay', name: '银联支付', provider: 'UNIONPAY', description: '银联在线支付' },
 ];
 
 class PaymentConfigService {

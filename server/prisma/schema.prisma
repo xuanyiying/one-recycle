@@ -523,7 +523,6 @@ enum RefundStatus {
 enum PaymentProvider {
   WECHAT
   ALIPAY
-  UNIONPAY
   BALANCE
 }
 
