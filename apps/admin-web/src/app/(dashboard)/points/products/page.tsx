@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { pointsProductApi, PointsProduct, CreateProductDto, UpdateProductDto } from '@/services/pointsService';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import ProductModal from './components/ProductModal';
 
 export default function PointsProductsPage() {
@@ -26,6 +27,8 @@ export default function PointsProductsPage() {
   const [type, setType] = useState<'ALL' | 'VIRTUAL' | 'PHYSICAL'>('ALL');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<PointsProduct | null>(null);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const debouncedKeyword = useDebounce(keyword, 300);
 
@@ -73,9 +76,12 @@ export default function PointsProductsPage() {
   };
 
   const handleDelete = async (product: PointsProduct) => {
-    if (!confirm(`确定要删除商品"${product.name}"吗？`)) {
-      return;
-    }
+    const confirmed = await showConfirm(`确定要删除商品"${product.name}"吗？`, {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
 
     try {
       await pointsProductApi.deleteProduct(Number(product.id));
@@ -258,6 +264,7 @@ export default function PointsProductsPage() {
         onSubmit={handleSubmit}
         initialData={editingProduct || undefined}
       />
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

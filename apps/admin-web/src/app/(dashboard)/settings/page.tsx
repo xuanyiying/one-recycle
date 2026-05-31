@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import {
   settingsService,
   SystemSettings,
@@ -51,6 +52,8 @@ export default function SettingsPage() {
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
   const [backupSettings, setBackupSettings] = useState<BackupSettings | null>(null);
   const [backupRecords, setBackupRecords] = useState<BackupRecord[]>([]);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -118,7 +121,12 @@ export default function SettingsPage() {
   };
 
   const handleClearCache = async () => {
-    if (!confirm('确定要清理系统缓存吗？')) return;
+    const confirmed = await showConfirm('确定要清理系统缓存吗？', {
+      title: '确认操作',
+      type: 'warning',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await settingsService.clearCache();
       toast.success('缓存清理成功');
@@ -728,6 +736,7 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

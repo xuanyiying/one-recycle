@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -9,38 +16,32 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
+import { cn } from '@/lib/utils/cn';
 import {
-  logisticsService,
-  LogisticsProvider,
   CreateLogisticsProviderRequest,
-  UpdateLogisticsProviderRequest,
   EXPRESS_COMPANIES,
+  LogisticsProvider,
+  logisticsService,
+  UpdateLogisticsProviderRequest,
 } from '@/services/logisticsService';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  RotateCw,
-  Truck,
-  Key,
-  Link,
   CheckCircle,
-  XCircle,
+  Edit,
   Eye,
   EyeOff,
+  Key,
+  Link,
+  Plus,
+  RotateCw,
+  Search,
+  Trash2,
+  Truck,
+  XCircle,
   Zap,
 } from 'lucide-react';
-import { toast } from '@/components/ui/toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { cn } from '@/lib/utils/cn';
 
 interface ProviderFormData {
   name: string;
@@ -62,6 +63,8 @@ export default function LogisticsSettingsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [testingId, setTestingId] = useState<number | null>(null);
   const [showSecret, setShowSecret] = useState(false);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const {
     register,
@@ -134,7 +137,12 @@ export default function LogisticsSettingsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除这个快递公司配置吗？')) return;
+    const confirmed = await showConfirm('确定要删除这个快递公司配置吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await logisticsService.deleteProvider(id);
       fetchProviders();
@@ -551,6 +559,7 @@ export default function LogisticsSettingsPage() {
           </div>
         </form>
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

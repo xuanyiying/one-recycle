@@ -1,43 +1,44 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Pagination } from '@/components/ui/pagination';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { Pagination } from '@/components/ui/pagination';
+import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import {
-  notificationService,
-  Notification,
-  NotificationType,
-  NotificationStatus,
-  NotificationPriority,
-  RecipientType,
-  NotificationStats,
   CreateNotificationRequest,
+  Notification,
+  NotificationPriority,
+  notificationService,
+  NotificationStats,
+  NotificationStatus,
+  NotificationType,
+  RecipientType,
 } from '@/services/notificationService';
 import {
-  Bell,
-  Plus,
-  Search,
-  RefreshCw,
-  Send,
-  Edit,
-  Trash2,
-  Eye,
-  Clock,
   AlertCircle,
+  Bell,
+  Clock,
+  Edit,
+  Eye,
   Info,
   Megaphone,
-  Wrench,
   Play,
+  Plus,
+  RefreshCw,
+  Search,
+  Send,
+  Trash2,
+  Wrench,
   XCircle,
 } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 const NotificationTypeConfig = {
   [NotificationType.SYSTEM]: { label: '系统通知', icon: Info, color: 'bg-blue-100 text-blue-800' },
@@ -76,6 +77,8 @@ export default function NotificationsPage() {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [searchInput, setSearchInput] = useState(search);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
@@ -171,7 +174,12 @@ export default function NotificationsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除此通知吗？')) return;
+    const confirmed = await showConfirm('确定要删除此通知吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await notificationService.deleteNotification(id);
       toast.success('删除成功');
@@ -188,7 +196,12 @@ export default function NotificationsPage() {
       toast.warning('只能发送草稿或发送失败的通知');
       return;
     }
-    if (!confirm('确定要立即发送此通知吗？')) return;
+    const confirmed = await showConfirm('确定要立即发送此通知吗？', {
+      title: '确认操作',
+      type: 'warning',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await notificationService.sendNotification({
         notificationId: notification.id,
@@ -208,7 +221,12 @@ export default function NotificationsPage() {
       toast.warning('只能取消已计划的通知');
       return;
     }
-    if (!confirm('确定要取消此计划通知吗？')) return;
+    const confirmed = await showConfirm('确定要取消此计划通知吗？', {
+      title: '确认操作',
+      type: 'warning',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await notificationService.cancelNotification(notification.id);
       toast.success('已取消计划');
@@ -422,8 +440,8 @@ export default function NotificationsPage() {
                         </td>
                         <td className="p-4 text-sm">
                           {notification.recipientType === RecipientType.ALL_USERS ? '所有用户' :
-                           notification.recipientType === RecipientType.COURIERS ? '快递员' :
-                           notification.recipientType === RecipientType.USER_GROUP ? '用户组' : '指定用户'}
+                            notification.recipientType === RecipientType.COURIERS ? '快递员' :
+                              notification.recipientType === RecipientType.USER_GROUP ? '用户组' : '指定用户'}
                         </td>
                         <td className="p-4 text-sm">
                           {notification.readCount} / {notification.totalRecipients}
@@ -644,6 +662,7 @@ export default function NotificationsPage() {
           </div>
         )}
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

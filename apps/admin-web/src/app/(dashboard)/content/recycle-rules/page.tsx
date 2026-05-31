@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import { Modal } from '@/components/ui/modal';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,6 +24,8 @@ export default function RecycleRulesPage() {
   const [editingItem, setEditingItem] = useState<RecycleRule | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const [formData, setFormData] = useState<CreateRecycleRuleDto & { tagsInput?: string }>({
     category: 'SERVICE_TYPE',
@@ -85,7 +88,12 @@ export default function RecycleRulesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这条规则吗？')) return;
+    const confirmed = await showConfirm('确定要删除这条规则吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     
     setDeletingId(id);
     try {
@@ -366,6 +374,7 @@ export default function RecycleRulesPage() {
           </Button>
         </div>
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

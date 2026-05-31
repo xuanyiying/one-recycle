@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -9,40 +16,34 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
+import { cn } from '@/lib/utils/cn';
 import {
-  notificationTemplateService,
-  NotificationTemplate,
   CreateTemplateRequest,
-  UpdateTemplateRequest,
+  NotificationTemplate,
+  notificationTemplateService,
   TEMPLATE_TYPES,
+  UpdateTemplateRequest,
 } from '@/services/notificationTemplateService';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  RotateCw,
-  FileText,
-  ShoppingBag,
-  UserCheck,
-  Gift,
-  Eye,
   CheckCircle,
-  XCircle,
-  Variable,
+  Edit,
+  Eye,
+  FileText,
+  Gift,
+  Plus,
   PlusCircle,
+  RotateCw,
+  Search,
+  ShoppingBag,
+  Trash2,
+  UserCheck,
+  Variable,
+  XCircle,
   X as XIcon,
 } from 'lucide-react';
-import { toast } from '@/components/ui/toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { cn } from '@/lib/utils/cn';
 
 interface TemplateFormData {
   name: string;
@@ -98,6 +99,8 @@ export default function NotificationTemplatesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [validateResult, setValidateResult] = useState<{ isValid: boolean; errors?: string[] } | null>(null);
   const [validateLoading, setValidateLoading] = useState(false);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const {
     register,
@@ -166,7 +169,12 @@ export default function NotificationTemplatesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个通知模板吗？')) return;
+    const confirmed = await showConfirm('确定要删除这个通知模板吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await notificationTemplateService.deleteTemplate(id);
       fetchTemplates();
@@ -762,6 +770,7 @@ export default function NotificationTemplatesPage() {
           </div>
         )}
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

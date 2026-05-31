@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -9,37 +16,31 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
+import { cn } from '@/lib/utils/cn';
 import {
+  CreatePaymentConfigRequest,
+  PAYMENT_PROVIDERS,
   paymentConfigService,
   PaymentProviderConfig,
-  CreatePaymentConfigRequest,
   UpdatePaymentConfigRequest,
-  PAYMENT_PROVIDERS,
 } from '@/services/paymentConfigService';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  RotateCw,
-  CreditCard,
-  Key,
   CheckCircle,
-  XCircle,
+  CreditCard,
+  Edit,
   Eye,
   EyeOff,
+  Key,
+  Plus,
+  RotateCw,
+  Search,
+  Trash2,
+  XCircle,
   Zap,
 } from 'lucide-react';
-import { toast } from '@/components/ui/toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { cn } from '@/lib/utils/cn';
 
 interface PaymentConfigFormData {
   code: string;
@@ -76,6 +77,8 @@ export default function PaymentConfigSettingsPage() {
   const [showSecret, setShowSecret] = useState(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [showPublicKey, setShowPublicKey] = useState(false);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const {
     register,
@@ -172,7 +175,12 @@ export default function PaymentConfigSettingsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除这个支付渠道配置吗？')) return;
+    const confirmed = await showConfirm('确定要删除这个支付渠道配置吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await paymentConfigService.deleteConfig(id);
       fetchConfigs();
@@ -709,6 +717,7 @@ export default function PaymentConfigSettingsPage() {
           </div>
         </form>
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

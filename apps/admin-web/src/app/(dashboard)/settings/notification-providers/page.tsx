@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -9,40 +16,34 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Modal } from '@/components/ui/modal';
+import { toast } from '@/components/ui/toast';
+import { cn } from '@/lib/utils/cn';
 import {
-  notificationProviderConfigService,
-  NotificationProviderConfig,
   CreateNotificationProviderConfigRequest,
-  UpdateNotificationProviderConfigRequest,
   NOTIFICATION_TYPES,
+  NotificationProviderConfig,
+  notificationProviderConfigService,
+  UpdateNotificationProviderConfigRequest,
 } from '@/services/notificationProviderConfigService';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  RotateCw,
   Bell,
-  MessageSquare,
-  Mail,
-  Smartphone,
-  Key,
   CheckCircle,
-  XCircle,
+  Edit,
   Eye,
   EyeOff,
   Globe,
+  Key,
+  Mail,
+  MessageSquare,
+  Plus,
+  RotateCw,
+  Search,
+  Smartphone,
+  Trash2,
+  XCircle,
 } from 'lucide-react';
-import { toast } from '@/components/ui/toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { cn } from '@/lib/utils/cn';
 
 interface ProviderFormData {
   name: string;
@@ -85,6 +86,8 @@ export default function NotificationProvidersSettingsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const {
     register,
@@ -172,7 +175,12 @@ export default function NotificationProvidersSettingsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除这个通知服务商配置吗？')) return;
+    const confirmed = await showConfirm('确定要删除这个通知服务商配置吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await notificationProviderConfigService.deleteConfig(id);
       fetchConfigs();
@@ -624,6 +632,7 @@ export default function NotificationProvidersSettingsPage() {
           </div>
         </form>
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

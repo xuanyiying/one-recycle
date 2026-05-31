@@ -20,6 +20,7 @@ import { userService, UserStats } from '@/services/userService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, UserListResponse, UserRole, UserQueryParams, UserStatus } from '@/types/user';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Plus, Search, Edit, Trash2, RotateCw, Eye, Download, UserCheck, UserX } from 'lucide-react';
 import UserModal from './components/UserModal';
@@ -49,6 +50,8 @@ export default function UsersPage() {
 
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   useEffect(() => {
     setSearchInput(search);
@@ -117,7 +120,12 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除该员工吗？此操作不可恢复。')) return;
+    const confirmed = await showConfirm('确定要删除该员工吗？此操作不可恢复。', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
 
     try {
       await staffService.deleteStaff(id);
@@ -149,7 +157,12 @@ export default function UsersPage() {
     const newStatus = user.status === UserStatus.ACTIVE ? UserStatus.SUSPENDED : UserStatus.ACTIVE;
     const actionText = newStatus === UserStatus.SUSPENDED ? '禁用' : '启用';
     
-    if (!confirm(`确定要${actionText}该用户吗？`)) return;
+    const confirmed = await showConfirm(`确定要${actionText}该用户吗？`, {
+      title: '确认操作',
+      type: 'warning',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
 
     try {
       await userService.updateUserStatus(user.id, newStatus);
@@ -386,6 +399,7 @@ export default function UsersPage() {
         user={selectedUser}
         onCancel={() => setDetailModalVisible(false)}
       />
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

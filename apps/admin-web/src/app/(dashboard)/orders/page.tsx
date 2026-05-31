@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from '@/components/ui/toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { getNextStatuses, getStatusActionLabel, orderStatusLabels, orderStatusSequence } from '@/lib/orderStateMachine';
+import { getAdminNextStatuses, getStatusActionLabel, orderStatusLabels, orderStatusSequence } from '@/lib/orderStateMachine';
 import { cn } from '@/lib/utils/cn';
 import {
   Order,
@@ -107,6 +108,8 @@ export default function OrdersPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [modalLoading, setModalLoading] = useState(false);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const updateUrl = useCallback(
     (newParams: any) => {
@@ -261,7 +264,12 @@ export default function OrdersPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除该订单吗？此操作不可恢复。')) return;
+    const confirmed = await showConfirm('确定要删除该订单吗？此操作不可恢复。', {
+      title: '删除确认',
+      type: 'danger',
+      confirmText: '删除',
+    });
+    if (!confirmed) return;
 
     try {
       await orderService.deleteOrder(id);
@@ -290,7 +298,12 @@ export default function OrdersPage() {
 
   const handleStatusTransition = async (orderId: number, currentStatus: OrderStatus, targetStatus: OrderStatus) => {
     const actionLabel = getStatusActionLabel(currentStatus, targetStatus);
-    if (!confirm(`确定要执行"${actionLabel}"操作吗？`)) return;
+    const confirmed = await showConfirm(`确定要执行"${actionLabel}"操作吗？`, {
+      title: '状态流转确认',
+      type: targetStatus === OrderStatus.CANCELLED ? 'danger' : 'warning',
+      confirmText: actionLabel || '确定',
+    });
+    if (!confirmed) return;
 
     try {
       await orderService.updateOrderStatus(orderId, targetStatus);
@@ -813,7 +826,7 @@ export default function OrdersPage() {
                         {visibleColumns.actions && (
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              {getNextStatuses(order.status).map((nextStatus) => {
+                              {getAdminNextStatuses(order.status).map((nextStatus) => {
                                 const actionLabel = getStatusActionLabel(order.status, nextStatus);
                                 if (!actionLabel) return null;
                                 const isCancel = nextStatus === OrderStatus.CANCELLED;
@@ -1126,6 +1139,8 @@ export default function OrdersPage() {
         onOk={handleModalOk}
         loading={modalLoading}
       />
+
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

@@ -112,3 +112,32 @@ export const statusActionLabels: Partial<Record<OrderStatus, Partial<Record<Orde
 export function getStatusActionLabel(from: OrderStatus, to: OrderStatus): string | undefined {
   return statusActionLabels[from]?.[to];
 }
+
+// 后台人员可操作的状态流转（操作员/管理员共享相同权限，排除快递/物流端自动更新的状态）
+export const backendTransitions: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.PENDING]: [OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_PICKUP]: [OrderStatus.CANCELLED],
+  [OrderStatus.PICKED_UP]: [],
+  [OrderStatus.IN_TRANSIT]: [OrderStatus.CANCELLED],
+  [OrderStatus.PENDING_RECEIPT]: [OrderStatus.INSPECTING],
+  [OrderStatus.INSPECTING]: [OrderStatus.INSPECTED, OrderStatus.INSPECTION_EXCEPTION],
+  [OrderStatus.INSPECTION_EXCEPTION]: [OrderStatus.MANUAL_PROCESSING, OrderStatus.INSPECTING],
+  [OrderStatus.MANUAL_PROCESSING]: [OrderStatus.INSPECTED, OrderStatus.CANCELLED],
+  [OrderStatus.INSPECTED]: [OrderStatus.PENDING_INBOUND],
+  [OrderStatus.PENDING_INBOUND]: [OrderStatus.INBOUNDED],
+  [OrderStatus.INBOUNDED]: [OrderStatus.PENDING_SETTLEMENT],
+  [OrderStatus.PENDING_SETTLEMENT]: [OrderStatus.COMPLETED],
+  [OrderStatus.COMPLETED]: [OrderStatus.REFUNDED],
+  [OrderStatus.CANCELLED]: [],
+  [OrderStatus.REFUNDED]: [],
+};
+
+// 兼容性别名：adminTransitions = backendTransitions（操作员/管理员权限一致）
+export const adminTransitions = backendTransitions;
+
+export function getBackendNextStatuses(from: OrderStatus): OrderStatus[] {
+  return backendTransitions[from] ?? [];
+}
+
+// 兼容性别名
+export const getAdminNextStatuses = getBackendNextStatuses;

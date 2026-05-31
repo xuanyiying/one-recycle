@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import { Modal } from '@/components/ui/modal';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -89,6 +90,8 @@ export default function TicketsPage() {
   const [resolveComment, setResolveComment] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [closingId, setClosingId] = useState<string | null>(null);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -185,7 +188,12 @@ export default function TicketsPage() {
   };
 
   const handleClose = async (ticketId: string) => {
-    if (!confirm('确定要关闭这个工单吗？')) return;
+    const confirmed = await showConfirm('确定要关闭这个工单吗？', {
+      title: '确认操作',
+      type: 'warning',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
 
     setClosingId(ticketId);
     try {
@@ -516,6 +524,7 @@ export default function TicketsPage() {
           </Button>
         </div>
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

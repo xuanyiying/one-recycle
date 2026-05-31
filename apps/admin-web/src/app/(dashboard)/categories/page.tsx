@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -72,6 +73,8 @@ export default function CategoriesPage() {
   const [categoryIsVisible, setCategoryIsVisible] = useState(true);
   const [categoryIsFeatured, setCategoryIsFeatured] = useState(false);
   const [categoryParentId, setCategoryParentId] = useState('');
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const effectiveIcon = useMemo(() => {
     if (customIcon) return customIcon;
@@ -321,14 +324,18 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('确定要删除这个分类吗？')) {
-      try {
-        await categoryService.deleteCategory(id);
-        toast.success('分类已删除');
-        loadCategories();
-      } catch (error) {
-        // handled
-      }
+    const confirmed = await showConfirm('确定要删除这个分类吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
+    try {
+      await categoryService.deleteCategory(id);
+      toast.success('分类已删除');
+      loadCategories();
+    } catch (error) {
+      // handled
     }
   };
 
@@ -935,6 +942,7 @@ export default function CategoriesPage() {
           </Card>
         </div>
       </div>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

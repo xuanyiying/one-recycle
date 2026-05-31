@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { toast } from '@/components/ui/toast';
+import { ConfirmDialog, useConfirm } from '@/components/ui/confirm-dialog';
 import {
   categoryWarehouseService,
   CategoryWarehouseConfig,
@@ -31,6 +32,8 @@ export default function CategoryWarehousePage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<CategoryWarehouseConfig | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  const { confirm: showConfirm, dialogProps } = useConfirm();
 
   const [formData, setFormData] = useState<CreateCategoryWarehouseRequest>({
     categoryId: 0,
@@ -115,9 +118,12 @@ export default function CategoryWarehousePage() {
 
   // 删除配置
   const handleDelete = async (id: number) => {
-    if (!confirm('确定要删除该配置吗？')) {
-      return;
-    }
+    const confirmed = await showConfirm('确定要删除该配置吗？', {
+      title: '确认操作',
+      type: 'danger',
+      confirmText: '确定',
+    });
+    if (!confirmed) return;
     try {
       await categoryWarehouseService.deleteConfig(id);
       toast.success('删除成功');
@@ -386,6 +392,7 @@ export default function CategoryWarehousePage() {
           </div>
         </div>
       </Modal>
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }
