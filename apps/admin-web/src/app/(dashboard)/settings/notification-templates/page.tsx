@@ -652,7 +652,7 @@ export default function NotificationTemplatesPage() {
                 </div>
               ))}
               {variables.length === 0 && (
-                <p className="text-xs text-muted-foreground">暂无变量，点击"添加变量"按钮新增</p>
+                <p className="text-xs text-muted-foreground">暂无变量，点击&ldquo;添加变量&rdquo;按钮新增</p>
               )}
             </div>
           </div>
@@ -754,7 +754,7 @@ export default function NotificationTemplatesPage() {
               ) : (
                 <div className="rounded-md border border-dashed border-border/40 p-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    填写变量值后点击"渲染预览"查看结果
+                    填写变量值后点击&ldquo;渲染预览&rdquo;查看结果
                   </p>
                 </div>
               )}
