@@ -606,7 +606,17 @@ enum NotificationPriority {
 enum TemplateType {
   ORDER_CONFIRMATION
   PAYMENT_SUCCESS
+  PICKUP_REMINDER
   DELIVERY_UPDATE
+  ACCOUNT_VERIFICATION
+  PASSWORD_RESET
+  POINTS_CREDIT
+  POINTS_DEBIT
+  SETTLEMENT_NOTICE
+  WITHDRAWAL_RESULT
+  INVITE_REWARD
+  SIGN_IN_REWARD
+  PROMOTIONAL
   SYSTEM_ALERT
   CUSTOM
 }
@@ -619,11 +629,11 @@ model InventoryItem {
   name             String                 @map("name")
   description      String?                @map("description")
   unit             String                 @map("unit")
-  quantity         Decimal                 @map("quantity") @db.Decimal(12, 2)
-  reservedQty      Decimal                 @default(0) @map("reserved_qty") @db.Decimal(12, 2)
-  availableQty     Decimal                 @map("available_qty") @db.Decimal(12, 2)
-  unitPrice        Decimal                 @map("unit_price") @db.Decimal(12, 2)
-  totalPrice       Decimal                 @map("total_price") @db.Decimal(12, 2)
+  quantity         Decimal                @map("quantity") @db.Decimal(12, 2)
+  reservedQty      Decimal                @default(0) @map("reserved_qty") @db.Decimal(12, 2)
+  availableQty     Decimal                @map("available_qty") @db.Decimal(12, 2)
+  unitPrice        Decimal                @map("unit_price") @db.Decimal(12, 2)
+  totalPrice       Decimal                @map("total_price") @db.Decimal(12, 2)
   location         String?                @map("location")
   status           InventoryStatus        @map("status")
   itemType         ItemType               @map("item_type")
@@ -687,7 +697,7 @@ model Reservation {
   id          BigInt            @id @default(autoincrement()) @map("id")
   itemId      BigInt            @map("item_id")
   orderId     BigInt            @map("order_id")
-  quantity    Decimal            @map("quantity") @db.Decimal(12, 2)
+  quantity    Decimal           @map("quantity") @db.Decimal(12, 2)
   status      ReservationStatus @map("status")
   reservedAt  DateTime          @map("reserved_at")
   confirmedAt DateTime?         @map("confirmed_at")
@@ -731,7 +741,7 @@ model Warehouse {
   type            WarehouseType             @map("type")
   address         String                    @map("address")
   contactPhone    String                    @map("contact_phone")
-  capacity        Int?                     @map("capacity")
+  capacity        Int?                      @map("capacity")
   status          WarehouseStatus           @map("status")
   description     String?                   @map("description")
   tenantId        BigInt?                   @map("tenant_id")
@@ -1294,14 +1304,14 @@ model TenantAddress {
 
 /// 回收定价规则表
 model RecyclePricingRule {
-  id         BigInt  @id @default(autoincrement()) @map("id")
-  tenantId   BigInt  @map("tenant_id")
-  categoryId Int     @map("category_id")
+  id         BigInt   @id @default(autoincrement()) @map("id")
+  tenantId   BigInt   @map("tenant_id")
+  categoryId Int      @map("category_id")
   basePrice  Decimal  @map("base_price") @db.Decimal(12, 2)
   minWeight  Decimal? @map("min_weight") @db.Decimal(10, 2)
   maxWeight  Decimal? @map("max_weight") @db.Decimal(10, 2)
-  ruleJson   Json?   @map("rule_json") // 复杂计费规则
-  isActive   Boolean @default(true) @map("is_active")
+  ruleJson   Json?    @map("rule_json") // 复杂计费规则
+  isActive   Boolean  @default(true) @map("is_active")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -2077,4 +2087,47 @@ model CategoryWarehouseConfig {
   @@index([warehouseId])
   @@index([isActive])
   @@map("category_warehouse_configs")
+}
+
+model PaymentProviderConfig {
+  id          Int      @id @default(autoincrement()) @map("id")
+  name        String   @map("name") @db.VarChar(50)
+  code        String   @unique @map("code") @db.VarChar(20)
+  provider    String   @map("provider") @db.VarChar(20)
+  apiUrl      String?  @map("api_url") @db.VarChar(255)
+  appId       String?  @map("app_id") @db.VarChar(100)
+  appSecret   String?  @map("app_secret") @db.VarChar(500)
+  merchantId  String?  @map("merchant_id") @db.VarChar(100)
+  privateKey  String?  @map("private_key") @db.VarChar(2000)
+  publicKey   String?  @map("public_key") @db.VarChar(2000)
+  certPath    String?  @map("cert_path") @db.VarChar(500)
+  keyPath     String?  @map("key_path") @db.VarChar(500)
+  callbackUrl String?  @map("callback_url") @db.VarChar(255)
+  config      Json?    @map("config")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([provider])
+  @@index([isActive])
+  @@map("payment_provider_configs")
+}
+
+model NotificationProviderConfig {
+  id        Int      @id @default(autoincrement()) @map("id")
+  name      String   @map("name") @db.VarChar(50)
+  type      String   @map("type") @db.VarChar(20)
+  provider  String   @map("provider") @db.VarChar(50)
+  apiKey    String?  @map("api_key") @db.VarChar(500)
+  apiSecret String?  @map("api_secret") @db.VarChar(500)
+  endpoint  String?  @map("endpoint") @db.VarChar(255)
+  config    Json?    @map("config")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([provider])
+  @@index([isActive])
+  @@map("notification_provider_configs")
 }

@@ -832,7 +832,32 @@ export class NotificationService implements INotificationService, OnModuleInit {
   }
 
   async getProviders(): Promise<NotificationProvider[]> {
-    await Promise.resolve();
+    const dbConfigs = await this.prisma.notificationProviderConfig.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    }).catch(() => []);
+
+    if (dbConfigs.length > 0) {
+      const typeMap: Record<string, NotificationType> = {
+        SMS: NotificationType.SMS,
+        EMAIL: NotificationType.EMAIL,
+        PUSH: NotificationType.PUSH,
+        WEBHOOK: NotificationType.WEBHOOK,
+      };
+
+      return dbConfigs.map((dbConfig) => ({
+        name: dbConfig.provider,
+        type: typeMap[dbConfig.type] || NotificationType.SMS,
+        isEnabled: dbConfig.isActive,
+        config: {
+          apiKey: dbConfig.apiKey,
+          apiSecret: dbConfig.apiSecret,
+          endpoint: dbConfig.endpoint,
+          ...(dbConfig.config as Record<string, any> || {}),
+        },
+      }));
+    }
+
     const smsProvider = this.configService.get<string>(
       'SMS_PROVIDER',
       'generic',
@@ -847,7 +872,6 @@ export class NotificationService implements INotificationService, OnModuleInit {
     );
 
     return [
-      // SMS 提供商
       {
         name:
           smsProvider === 'aliyun'
@@ -858,22 +882,18 @@ export class NotificationService implements INotificationService, OnModuleInit {
         type: NotificationType.SMS,
         isEnabled: this.configService.get<boolean>('SMS_ENABLED', true),
         config: {
-          // 通用配置
           apiKey: this.configService.get('SMS_API_KEY'),
           endpoint: this.configService.get('SMS_ENDPOINT'),
           signName: this.configService.get('SMS_SIGN_NAME'),
-          // 阿里云 SMS 配置
           accessKeyId: this.configService.get('ALIYUN_SMS_ACCESS_KEY_ID'),
           accessKeySecret: this.configService.get(
             'ALIYUN_SMS_ACCESS_KEY_SECRET',
           ),
-          // 腾讯云 SMS 配置
           secretId: this.configService.get('TENCENT_SMS_SECRET_ID'),
           secretKey: this.configService.get('TENCENT_SMS_SECRET_KEY'),
           appId: this.configService.get('TENCENT_SMS_APP_ID'),
         },
       },
-      // 邮件提供商
       {
         name:
           emailProvider === 'sendgrid'
@@ -888,12 +908,10 @@ export class NotificationService implements INotificationService, OnModuleInit {
           endpoint: this.configService.get('EMAIL_ENDPOINT'),
           fromAddress: this.configService.get('EMAIL_FROM_ADDRESS'),
           fromName: this.configService.get('EMAIL_FROM_NAME'),
-          // SMTP 配置
           smtpHost: this.configService.get('SMTP_HOST'),
           smtpPort: this.configService.get('SMTP_PORT'),
           smtpUser: this.configService.get('SMTP_USER'),
           smtpPass: this.configService.get('SMTP_PASS'),
-          // AWS SES 配置
           sesRegion: this.configService.get('AWS_SES_REGION'),
           sesAccessKeyId: this.configService.get('AWS_SES_ACCESS_KEY_ID'),
           sesSecretAccessKey: this.configService.get(
@@ -901,7 +919,6 @@ export class NotificationService implements INotificationService, OnModuleInit {
           ),
         },
       },
-      // 推送提供商
       {
         name:
           pushProvider === 'fcm'
@@ -914,20 +931,16 @@ export class NotificationService implements INotificationService, OnModuleInit {
         config: {
           apiKey: this.configService.get('PUSH_API_KEY'),
           endpoint: this.configService.get('PUSH_ENDPOINT'),
-          // FCM 配置
           fcmServerKey: this.configService.get('FCM_SERVER_KEY'),
           fcmProjectId: this.configService.get('FCM_PROJECT_ID'),
-          // JPush 配置
           jpushAppKey: this.configService.get('JPUSH_APP_KEY'),
           jpushMasterSecret: this.configService.get('JPUSH_MASTER_SECRET'),
-          // APNS 配置
           apnsKeyId: this.configService.get('APNS_KEY_ID'),
           apnsTeamId: this.configService.get('APNS_TEAM_ID'),
           apnsBundleId: this.configService.get('APNS_BUNDLE_ID'),
           apnsPrivateKey: this.configService.get('APNS_PRIVATE_KEY'),
         },
       },
-      // Webhook 提供商
       {
         name: 'webhook-provider',
         type: NotificationType.WEBHOOK,

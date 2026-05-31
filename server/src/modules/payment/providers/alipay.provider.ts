@@ -1,16 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PaymentProvider } from '@prisma/client';
+import axios, { AxiosInstance } from 'axios';
+import * as crypto from 'crypto';
 import {
   IPaymentProvider,
   PaymentResult,
+  RefundResult,
   TransferQueryResult,
   TransferStatus,
   WithdrawalAccountInfo,
 } from '../interfaces/payment-provider.interface';
-import * as crypto from 'crypto';
-import axios, { AxiosInstance } from 'axios';
-import { SnowflakeIdGenerator } from '@/common';
-import { PaymentProvider } from '@prisma/client';
 
 // 定义支付宝响应类型
 interface AlipayResponse {
@@ -36,6 +36,14 @@ interface AlipayQueryResponse extends AlipayResponse {
   fail_reason?: string;
 }
 
+interface AlipayRefundResponse extends AlipayResponse {
+  trade_no: string;
+  out_trade_no: string;
+  refund_fee?: string;
+  gmt_refund_pay?: string;
+  fund_change?: string;
+}
+
 /**
  * 支付宝支付提供商
  * 实现转账到账户功能
@@ -44,16 +52,28 @@ interface AlipayQueryResponse extends AlipayResponse {
 @Injectable()
 export class AlipayProvider implements IPaymentProvider {
   private readonly logger = new Logger(AlipayProvider.name);
-  private readonly appId: string;
-  private readonly privateKey: string;
-  private readonly alipayPublicKey: string;
-  private readonly apiUrl: string;
-  private readonly idGenerator = new SnowflakeIdGenerator({
-    workerId: 4,
-    datacenterId: 1,
-  });
-  private readonly httpClient: AxiosInstance;
+  private appId: string;
+  private privateKey: string;
+  private alipayPublicKey: string;
+  private apiUrl: string;
+  private httpClient: AxiosInstance;
   private readonly isDevelopment: boolean;
+  private callbackUrl: string;
+
+  static withConfig(
+    config: {
+      appId?: string;
+      privateKey?: string;
+      alipayPublicKey?: string;
+      apiUrl?: string;
+      callbackUrl?: string;
+    },
+    configService: ConfigService,
+  ): AlipayProvider {
+    const instance = new AlipayProvider(configService);
+    instance.updateConfig(config);
+    return instance;
+  }
 
   constructor(private readonly configService: ConfigService) {
     this.appId = this.configService.get<string>('ALIPAY_APP_ID', '');
@@ -68,12 +88,15 @@ export class AlipayProvider implements IPaymentProvider {
     );
     this.isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
+    this.callbackUrl = this.configService.get<string>(
+      'PAYMENT_CALLBACK_URL',
+      '',
+    );
 
     if (!this.appId || !this.privateKey || !this.alipayPublicKey) {
       this.logger.warn('Alipay configuration is incomplete');
     }
 
-    // 初始化HTTP客户端
     this.httpClient = axios.create({
       timeout: this.configService.get<number>('PAYMENT_TIMEOUT', 30000),
       headers: {
@@ -85,6 +108,29 @@ export class AlipayProvider implements IPaymentProvider {
 
   getProviderType(): PaymentProvider {
     return PaymentProvider.ALIPAY;
+  }
+
+  updateConfig(config: {
+    appId?: string;
+    privateKey?: string;
+    alipayPublicKey?: string;
+    apiUrl?: string;
+    callbackUrl?: string;
+  }) {
+    if (config.appId) this.appId = config.appId;
+    if (config.privateKey) this.privateKey = config.privateKey;
+    if (config.alipayPublicKey) this.alipayPublicKey = config.alipayPublicKey;
+    if (config.apiUrl) this.apiUrl = config.apiUrl;
+    if (config.callbackUrl !== undefined) {
+      this.callbackUrl = config.callbackUrl;
+      this.logger.log(`Alipay callback URL updated: ${this.callbackUrl}`);
+    }
+
+    this.logger.log('Alipay config updated from database');
+  }
+
+  getCallbackUrl(): string {
+    return this.callbackUrl;
   }
 
   /**
@@ -120,19 +166,6 @@ export class AlipayProvider implements IPaymentProvider {
           success: false,
           message: '转账金额必须在0.01-100000元之间',
           errorCode: 'INVALID_AMOUNT',
-        };
-      }
-
-      // 开发环境模拟
-      if (this.isDevelopment) {
-        this.logger.warn(
-          'Development mode: simulating Alipay transfer success',
-        );
-        await this.simulateDelay(1000);
-        return {
-          success: true,
-          transactionId: `ALI${this.idGenerator.nextId()}`,
-          message: '转账成功',
         };
       }
 
@@ -319,10 +352,8 @@ export class AlipayProvider implements IPaymentProvider {
         return false;
       }
 
-      // 构建待签名字符串
       const signString = this.buildSignString(params);
 
-      // 验证签名
       const verify = crypto.createVerify('RSA-SHA256');
       verify.update(signString, 'utf8');
 
@@ -340,6 +371,94 @@ export class AlipayProvider implements IPaymentProvider {
     } catch (error: any) {
       this.logger.error(`Verify callback failed: ${error.message}`);
       return false;
+    }
+  }
+
+  async refund(
+    outTradeNo: string,
+    outRefundNo: string,
+    totalAmount: number,
+    refundAmount: number,
+    reason?: string,
+  ): Promise<RefundResult> {
+    this.logger.log(
+      `Alipay refund: ${outTradeNo}, refundNo: ${outRefundNo}, total: ${totalAmount}, refund: ${refundAmount}`,
+    );
+
+    try {
+      if (!this.appId || !this.privateKey || !this.alipayPublicKey) {
+        throw new Error('支付宝配置不完整');
+      }
+
+      if (this.isDevelopment) {
+        this.logger.warn('Development mode: simulating Alipay refund success');
+        await this.simulateDelay(1000);
+        return {
+          success: true,
+          refundId: `ALIREF${Date.now()}`,
+          message: '退款成功',
+        };
+      }
+
+      const bizContent = {
+        out_trade_no: outTradeNo,
+        refund_amount: refundAmount.toFixed(2),
+        ...(reason ? { refund_reason: reason } : {}),
+        out_request_no: outRefundNo,
+      };
+
+      const params = {
+        app_id: this.appId,
+        method: 'alipay.trade.refund',
+        format: 'JSON',
+        charset: 'utf-8',
+        sign_type: 'RSA2',
+        timestamp: this.getTimestamp(),
+        version: '1.0',
+        biz_content: JSON.stringify(bizContent),
+      };
+
+      const sign = this.generateSign(params);
+      const requestData = { ...params, sign };
+
+      const response = await this.httpClient.post(
+        this.apiUrl,
+        new URLSearchParams(requestData).toString(),
+      );
+
+      const result = response.data as Record<string, AlipayRefundResponse>;
+      const responseKey = 'alipay_trade_refund_response';
+
+      if (!result[responseKey]) {
+        throw new Error('响应格式错误');
+      }
+
+      const refundResponse = result[responseKey];
+
+      if (!this.verifyResponseSign(result, responseKey)) {
+        throw new Error('响应签名验证失败');
+      }
+
+      if (refundResponse.code !== '10000') {
+        return {
+          success: false,
+          message: refundResponse.sub_msg || refundResponse.msg || '退款失败',
+          errorCode: refundResponse.sub_code || refundResponse.code,
+        };
+      }
+
+      return {
+        success: true,
+        refundId: refundResponse.trade_no,
+        message: '退款成功',
+      };
+    } catch (error: any) {
+      this.logger.error(`Alipay refund failed: ${error.message}`, error.stack);
+      return {
+        success: false,
+        message: this.getErrorMessage(error),
+        errorCode: 'REFUND_FAILED',
+      };
     }
   }
 

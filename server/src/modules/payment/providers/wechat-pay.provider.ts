@@ -1,19 +1,20 @@
+import { SnowflakeIdGenerator } from '@/common';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PaymentProvider } from '@prisma/client';
+import axios, { AxiosInstance } from 'axios';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as https from 'https';
+import * as xml2js from 'xml2js';
 import {
   IPaymentProvider,
   PaymentResult,
+  RefundResult,
   TransferQueryResult,
   TransferStatus,
   WithdrawalAccountInfo,
 } from '../interfaces/payment-provider.interface';
-import * as crypto from 'crypto';
-import * as https from 'https';
-import * as fs from 'fs';
-import axios, { AxiosInstance } from 'axios';
-import * as xml2js from 'xml2js';
-import { SnowflakeIdGenerator } from '@/common';
-import { PaymentProvider } from '@prisma/client';
 
 /**
  * 微信支付提供商
@@ -23,18 +24,36 @@ import { PaymentProvider } from '@prisma/client';
 @Injectable()
 export class WeChatPayProvider implements IPaymentProvider {
   private readonly logger = new Logger(WeChatPayProvider.name);
-  private readonly appId: string;
-  private readonly tenantId: string;
-  private readonly apiKey: string;
-  private readonly certPath: string;
-  private readonly keyPath: string;
-  private readonly apiUrl: string;
+  private appId: string;
+  private tenantId: string;
+  private apiKey: string;
+  private certPath: string;
+  private keyPath: string;
+  private apiUrl: string;
   private readonly idGenerator = new SnowflakeIdGenerator({
     workerId: 5,
     datacenterId: 1,
   });
-  private readonly httpClient: AxiosInstance;
+  private httpClient: AxiosInstance;
   private readonly isDevelopment: boolean;
+  private callbackUrl: string;
+
+  static withConfig(
+    config: {
+      appId?: string;
+      merchantId?: string;
+      apiKey?: string;
+      apiUrl?: string;
+      certPath?: string;
+      keyPath?: string;
+      callbackUrl?: string;
+    },
+    configService: ConfigService,
+  ): WeChatPayProvider {
+    const instance = new WeChatPayProvider(configService);
+    instance.updateConfig(config);
+    return instance;
+  }
 
   constructor(private readonly configService: ConfigService) {
     this.appId = this.configService.get<string>('WECHAT_APP_ID', '');
@@ -48,12 +67,15 @@ export class WeChatPayProvider implements IPaymentProvider {
     );
     this.isDevelopment =
       this.configService.get<string>('NODE_ENV') === 'development';
+    this.callbackUrl = this.configService.get<string>(
+      'PAYMENT_CALLBACK_URL',
+      '',
+    );
 
     if (!this.appId || !this.tenantId || !this.apiKey) {
       this.logger.warn('WeChat Pay configuration is incomplete');
     }
 
-    // 初始化HTTP客户端
     this.httpClient = axios.create({
       timeout: this.configService.get<number>('PAYMENT_TIMEOUT', 30000),
       headers: {
@@ -66,6 +88,40 @@ export class WeChatPayProvider implements IPaymentProvider {
 
   getProviderType(): PaymentProvider {
     return PaymentProvider.WECHAT;
+  }
+
+  updateConfig(config: {
+    appId?: string;
+    merchantId?: string;
+    apiKey?: string;
+    apiUrl?: string;
+    certPath?: string;
+    keyPath?: string;
+    callbackUrl?: string;
+  }) {
+    if (config.appId) this.appId = config.appId;
+    if (config.merchantId) this.tenantId = config.merchantId;
+    if (config.apiKey) this.apiKey = config.apiKey;
+    if (config.apiUrl) this.apiUrl = config.apiUrl;
+    if (config.certPath) this.certPath = config.certPath;
+    if (config.keyPath) this.keyPath = config.keyPath;
+    if (config.callbackUrl) {
+      this.callbackUrl = config.callbackUrl;
+      this.logger.log(`WeChat Pay callback URL updated: ${this.callbackUrl}`);
+    }
+
+    if (config.certPath || config.keyPath) {
+      this.httpClient = axios.create({
+        timeout: this.configService.get<number>('PAYMENT_TIMEOUT', 30000),
+        headers: {
+          'Content-Type': 'application/xml',
+          'User-Agent': 'OneRecycle-WeChatPay/1.0',
+        },
+        httpsAgent: this.createHttpsAgent(),
+      });
+    }
+
+    this.logger.log('WeChat Pay config updated from database');
   }
 
   /**
@@ -275,7 +331,10 @@ export class WeChatPayProvider implements IPaymentProvider {
       }
 
       const calculatedSign = this.generateSign(params);
-      const isValid = calculatedSign === sign;
+      const calculatedBuf = Buffer.from(calculatedSign, 'utf8');
+      const signBuf = Buffer.from(sign, 'utf8');
+      if (calculatedBuf.length !== signBuf.length) return false;
+      const isValid = crypto.timingSafeEqual(calculatedBuf, signBuf);
 
       if (!isValid) {
         this.logger.warn('Callback signature verification failed');
@@ -285,6 +344,90 @@ export class WeChatPayProvider implements IPaymentProvider {
     } catch (error: any) {
       this.logger.error(`Verify callback failed: ${error.message}`);
       return false;
+    }
+  }
+
+  async refund(
+    outTradeNo: string,
+    outRefundNo: string,
+    totalAmount: number,
+    refundAmount: number,
+    reason?: string,
+  ): Promise<RefundResult> {
+    this.logger.log(
+      `WeChat refund: ${outTradeNo}, refundNo: ${outRefundNo}, total: ${totalAmount}, refund: ${refundAmount}`,
+    );
+
+    try {
+      if (!this.appId || !this.tenantId || !this.apiKey) {
+        throw new Error('微信支付配置不完整');
+      }
+
+      if (this.isDevelopment) {
+        this.logger.warn('Development mode: simulating WeChat refund success');
+        await this.simulateDelay(1000);
+        return {
+          success: true,
+          refundId: `WXREF${this.idGenerator.nextId()}`,
+          message: '退款成功',
+        };
+      }
+
+      const params = {
+        appid: this.appId,
+        mch_id: this.tenantId,
+        nonce_str: this.generateNonceStr(),
+        out_trade_no: outTradeNo,
+        out_refund_no: outRefundNo,
+        total_fee: Math.round(totalAmount * 100),
+        refund_fee: Math.round(refundAmount * 100),
+        op_user_id: this.tenantId,
+        ...(reason ? { refund_desc: reason } : {}),
+      };
+
+      const sign = this.generateSign(params);
+      const requestData = { ...params, sign };
+
+      const xmlData = this.buildXml(requestData);
+      const response = await this.httpClient.post(
+        `${this.apiUrl}/secapi/pay/refund`,
+        xmlData,
+      );
+
+      const result = await this.parseXmlResponse(response.data);
+
+      if (!this.verifyResponseSign(result)) {
+        throw new Error('响应签名验证失败');
+      }
+
+      if (result.return_code !== 'SUCCESS') {
+        return {
+          success: false,
+          message: result.return_msg || '退款请求失败',
+          errorCode: result.err_code || 'REQUEST_FAILED',
+        };
+      }
+
+      if (result.result_code !== 'SUCCESS') {
+        return {
+          success: false,
+          message: result.err_code_des || '退款失败',
+          errorCode: result.err_code || 'REFUND_FAILED',
+        };
+      }
+
+      return {
+        success: true,
+        refundId: result.refund_id,
+        message: '退款成功',
+      };
+    } catch (error: any) {
+      this.logger.error(`WeChat refund failed: ${error.message}`, error.stack);
+      return {
+        success: false,
+        message: this.getErrorMessage(error),
+        errorCode: 'REFUND_FAILED',
+      };
     }
   }
 
@@ -362,7 +505,10 @@ export class WeChatPayProvider implements IPaymentProvider {
 
     const { sign, ...params } = data;
     const calculatedSign = this.generateSign(params);
-    return calculatedSign === sign;
+    const calculatedBuf = Buffer.from(calculatedSign, 'utf8');
+    const signBuf = Buffer.from(sign, 'utf8');
+    if (calculatedBuf.length !== signBuf.length) return false;
+    return crypto.timingSafeEqual(calculatedBuf, signBuf);
   }
 
   /**

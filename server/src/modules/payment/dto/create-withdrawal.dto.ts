@@ -1,14 +1,15 @@
+import { PaymentProvider } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { PaymentProvider } from '@prisma/client';
 
 class AccountInfoDto {
   @IsString()
@@ -39,6 +40,7 @@ export class CreateWithdrawalDto {
 
   @IsNumber()
   @Min(0.01)
+  @Max(50000)
   amount: number;
 
   @IsEnum(PaymentProvider)

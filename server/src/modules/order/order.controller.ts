@@ -1,32 +1,32 @@
+import { Public } from '@/common/decorators/auth.decorator';
+import { PrismaService } from '@/prisma/prisma.service';
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  ParseIntPipe,
-  Put,
   BadRequestException,
-  Req,
+  Body,
+  Controller,
+  Delete,
   ForbiddenException,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
 } from '@nestjs/common';
 import {
-  ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { OrderService } from './services/order.service';
+import { Order } from '@prisma/client';
+import type { Request } from 'express';
 import { CreateOrderDto, UpdateOrderDto } from './dto';
 import { OrderFilters } from './interfaces/order.interface';
-import { Order } from '@prisma/client';
-import { PrismaService } from '@/prisma/prisma.service';
-import { Public } from '@/common/decorators/auth.decorator';
-import type { Request } from 'express';
+import { OrderService } from './services/order.service';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -34,7 +34,7 @@ export class OrderController {
   constructor(
     private readonly orderService: OrderService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * 创建订单
@@ -156,7 +156,7 @@ export class OrderController {
    * @param id 订单ID
    * @param updateOrderData 更新订单数据
    */
-  @Patch(':id')
+  @Put(':id')
   @ApiOperation({ summary: '更新订单' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: '订单更新成功' })

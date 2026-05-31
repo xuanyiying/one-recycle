@@ -125,6 +125,7 @@ export const QUEUE_NAMES = {
   ORDER: 'order-queue',
   NOTIFICATION: 'notification-queue',
   DISPATCH: 'dispatch-queue',
+  PAYMENT_TIMEOUT: 'payment-timeout-queue',
 } as const;
 
 // 环境变量键名

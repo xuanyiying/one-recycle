@@ -52,9 +52,9 @@ export class PaymentGrpcController {
   async createPayment(data: CreatePaymentRequest): Promise<GetPaymentResponse> {
     try {
       const payment = await this.paymentService.create({
-        orderId: data.orderId.toString(), // 保持为字符串传递
+        orderId: data.orderId.toString(),
         amount: Number(data.amount),
-        provider: data.provider,
+        provider: data.provider as PaymentProvider,
       });
       return { payment: this.mapToPayment(payment) };
     } catch (error) {
@@ -150,15 +150,12 @@ export class PaymentGrpcController {
   ): Promise<PaymentLogResponse> {
     try {
       const paymentLog = await this.paymentService.createPaymentLog({
-        id: BigInt(0),
         orderId: BigInt(data.orderId),
-        transactionId: data.transactionId,
+        transactionId: BigInt(data.transactionId),
         status: data.status as PaymentStatus,
         amount: parseFloat(data.amount),
         provider: data.provider as PaymentProvider,
         rawData: data.reason,
-        createdAt: new Date(),
-        processedAt: new Date(),
       });
       return this.mapToPaymentLogResponse(paymentLog);
     } catch (error) {

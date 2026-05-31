@@ -1,10 +1,12 @@
 import {
   PersistentSnowflakeIdGenerator,
+  QUEUE_NAMES,
   RedisService,
   RedisSnowflakeStateStore,
 } from '@/common';
 import { toNumber } from '@/common/utils/decimal.util';
 import { PrismaService } from '@/prisma/prisma.service';
+import { InjectQueue } from '@nestjs/bull';
 import {
   BadRequestException,
   ConflictException,
@@ -20,9 +22,20 @@ import {
   Prisma,
   RefundStatus,
 } from '@prisma/client';
+import { Queue } from 'bull';
 import * as crypto from 'crypto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentProviderFactory } from './payment-provider.factory';
+
+interface PaymentLogData {
+  transactionId: bigint;
+  orderId: bigint;
+  amount: number;
+  status: PaymentStatus;
+  provider: PaymentProvider;
+  rawData?: string;
+  processedAt?: Date;
+}
 
 /**
  * 支付回调通知数据接口
@@ -63,6 +76,8 @@ export class PaymentService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
     private readonly paymentProviderFactory: PaymentProviderFactory,
+    @InjectQueue(QUEUE_NAMES.PAYMENT_TIMEOUT)
+    private readonly paymentTimeoutQueue: Queue,
   ) {
     this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('PAYMENT_WORKER_ID', 9),
@@ -100,7 +115,19 @@ export class PaymentService implements OnModuleInit {
       (p) => p.status === PaymentStatus.PENDING,
     );
     if (existingPending) {
-      return existingPending;
+      const timeoutMinutes = this.configService.get<number>(
+        'PAYMENT_TIMEOUT_MINUTES',
+        30,
+      );
+      const elapsed = Date.now() - existingPending.createdAt.getTime();
+      if (elapsed > timeoutMinutes * 60 * 1000) {
+        await this.prisma.payment.update({
+          where: { id: existingPending.id },
+          data: { status: PaymentStatus.FAILED, closedAt: new Date() },
+        });
+      } else {
+        return existingPending;
+      }
     }
 
     // 生成交易号
@@ -116,16 +143,28 @@ export class PaymentService implements OnModuleInit {
       `Creating payment for order ${createPaymentDto.orderId}, transactionId: ${transactionId}`,
     );
 
-    return this.prisma.payment.create({
+    const payment = await this.prisma.payment.create({
       data: {
         orderId: BigInt(createPaymentDto.orderId),
-        provider: createPaymentDto.provider as PaymentProvider,
+        provider: createPaymentDto.provider,
         outTradeNo: outTradeNo,
         total: createPaymentDto.amount,
         status: PaymentStatus.PENDING,
         transactionId: transactionId,
       },
     });
+
+    const timeoutMinutes = this.configService.get<number>(
+      'PAYMENT_TIMEOUT_MINUTES',
+      30,
+    );
+    await this.paymentTimeoutQueue.add(
+      'payment-timeout',
+      { paymentId: payment.id },
+      { delay: timeoutMinutes * 60 * 1000 },
+    );
+
+    return payment;
   }
 
   async updatePaymentStatus(transactionId: bigint, status: PaymentStatus) {
@@ -193,7 +232,10 @@ export class PaymentService implements OnModuleInit {
       throw new ConflictException('只有支付成功的订单才能退款');
     }
 
-    // 使用 Decimal 类型比较，避免浮点数精度问题
+    if (refundAmount <= 0) {
+      throw new ConflictException('退款金额必须大于0');
+    }
+
     const refundDecimal = new Prisma.Decimal(refundAmount);
     if (refundDecimal.greaterThan(payment.total)) {
       throw new ConflictException('退款金额不能超过支付金额');
@@ -221,7 +263,7 @@ export class PaymentService implements OnModuleInit {
       `Creating refund for payment ${paymentId}, amount: ${refundAmount}`,
     );
 
-    return this.prisma.refund.create({
+    const refund = await this.prisma.refund.create({
       data: {
         paymentId: paymentId,
         outRefundNo,
@@ -230,6 +272,42 @@ export class PaymentService implements OnModuleInit {
         status: RefundStatus.PROCESSING,
       },
     });
+
+    try {
+      const provider = this.paymentProviderFactory.getProvider(
+        payment.provider,
+      );
+      const result = await provider.refund(
+        payment.outTradeNo,
+        outRefundNo,
+        payment.total.toNumber(),
+        refundAmount,
+        reason,
+      );
+
+      if (!result.success) {
+        await this.prisma.refund.update({
+          where: { id: refund.id },
+          data: { status: RefundStatus.FAILED },
+        });
+        throw new ConflictException(result.message || '退款请求失败');
+      }
+
+      return this.prisma.refund.update({
+        where: { id: refund.id },
+        data: {
+          status: RefundStatus.SUCCESS,
+          notifyRaw: JSON.stringify({ refundId: result.refundId }),
+        },
+      });
+    } catch (error) {
+      if (error instanceof ConflictException) throw error;
+      await this.prisma.refund.update({
+        where: { id: refund.id },
+        data: { status: RefundStatus.FAILED },
+      });
+      throw error;
+    }
   }
 
   async updateRefundStatus(refundId: bigint, status: RefundStatus) {
@@ -239,6 +317,19 @@ export class PaymentService implements OnModuleInit {
 
     if (!refund) {
       throw new NotFoundException('退款记录不存在');
+    }
+
+    const validTransitions: Record<RefundStatus, RefundStatus[]> = {
+      [RefundStatus.PROCESSING]: [RefundStatus.SUCCESS, RefundStatus.FAILED],
+      [RefundStatus.SUCCESS]: [],
+      [RefundStatus.FAILED]: [],
+    };
+
+    const allowed = validTransitions[refund.status];
+    if (!allowed || !allowed.includes(status)) {
+      throw new ConflictException(
+        `非法的退款状态转换: ${refund.status} -> ${status}`,
+      );
     }
 
     this.logger.log(`Updating refund ${refundId} status to ${status}`);
@@ -286,16 +377,20 @@ export class PaymentService implements OnModuleInit {
     return refund;
   }
 
-  async handlePaymentNotify(notifyData: PaymentNotifyData) {
-    // 1. 验证回调签名
-    if (!this.verifyPaymentNotifySignature(notifyData)) {
-      this.logger.error(
-        `Payment notify signature verification failed for outTradeNo: ${notifyData.outTradeNo}`,
-      );
-      throw new BadRequestException('支付回调签名验证失败');
+  async findRefundByOutRefundNo(outRefundNo: string) {
+    const refund = await this.prisma.refund.findFirst({
+      where: { outRefundNo },
+      include: { payment: true },
+    });
+
+    if (!refund) {
+      throw new NotFoundException('退款记录不存在');
     }
 
-    // 2. 查找支付记录
+    return refund;
+  }
+
+  async handlePaymentNotify(notifyData: PaymentNotifyData) {
     const payment = await this.prisma.payment.findFirst({
       where: { outTradeNo: notifyData.outTradeNo },
     });
@@ -307,7 +402,13 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('支付记录不存在');
     }
 
-    // 3. 幂等检查：如果已处理，直接返回
+    if (!this.verifyPaymentNotifySignature(notifyData, payment.provider)) {
+      this.logger.error(
+        `Payment notify signature verification failed for outTradeNo: ${notifyData.outTradeNo}`,
+      );
+      throw new BadRequestException('支付回调签名验证失败');
+    }
+
     if (
       payment.status === PaymentStatus.SUCCESS ||
       payment.status === PaymentStatus.FAILED
@@ -318,7 +419,6 @@ export class PaymentService implements OnModuleInit {
       return payment;
     }
 
-    // 4. 使用条件更新确保并发安全：只有 PENDING 状态才能被更新
     const newStatus =
       notifyData.tradeState === 'SUCCESS'
         ? PaymentStatus.SUCCESS
@@ -354,17 +454,9 @@ export class PaymentService implements OnModuleInit {
   }
 
   async handleRefundNotify(notifyData: RefundNotifyData) {
-    // 1. 验证回调签名
-    if (!this.verifyRefundNotifySignature(notifyData)) {
-      this.logger.error(
-        `Refund notify signature verification failed for outRefundNo: ${notifyData.outRefundNo}`,
-      );
-      throw new BadRequestException('退款回调签名验证失败');
-    }
-
-    // 2. 查找退款记录
     const refund = await this.prisma.refund.findFirst({
       where: { outRefundNo: notifyData.outRefundNo },
+      include: { payment: true },
     });
 
     if (!refund) {
@@ -374,7 +466,15 @@ export class PaymentService implements OnModuleInit {
       throw new NotFoundException('退款记录不存在');
     }
 
-    // 3. 幂等检查
+    if (
+      !this.verifyRefundNotifySignature(notifyData, refund.payment.provider)
+    ) {
+      this.logger.error(
+        `Refund notify signature verification failed for outRefundNo: ${notifyData.outRefundNo}`,
+      );
+      throw new BadRequestException('退款回调签名验证失败');
+    }
+
     if (
       refund.status === RefundStatus.SUCCESS ||
       refund.status === RefundStatus.FAILED
@@ -382,10 +482,12 @@ export class PaymentService implements OnModuleInit {
       this.logger.warn(
         `Refund already processed: ${notifyData.outRefundNo}, status: ${refund.status}`,
       );
-      return refund;
+      return this.prisma.refund.findUnique({
+        where: { id: refund.id },
+        include: { payment: true },
+      });
     }
 
-    // 4. 使用条件更新确保并发安全：只有 PROCESSING 状态才能被更新
     const newStatus =
       notifyData.refundStatus === 'SUCCESS'
         ? RefundStatus.SUCCESS
@@ -411,18 +513,42 @@ export class PaymentService implements OnModuleInit {
       this.logger.warn(
         `Refund already updated by another request: ${notifyData.outRefundNo}`,
       );
-      return this.prisma.refund.findUnique({ where: { id: refund.id } });
+      return this.prisma.refund.findUnique({
+        where: { id: refund.id },
+        include: { payment: true },
+      });
     }
 
-    return this.prisma.refund.findUnique({ where: { id: refund.id } });
+    if (newStatus === RefundStatus.SUCCESS) {
+      const allRefunds = await this.prisma.refund.findMany({
+        where: { paymentId: refund.paymentId, status: RefundStatus.SUCCESS },
+        select: { refundAmount: true },
+      });
+      const totalRefunded = allRefunds.reduce(
+        (sum, r) => sum.plus(new Prisma.Decimal(r.refundAmount)),
+        new Prisma.Decimal(0),
+      );
+      const payment = await this.prisma.payment.findUnique({
+        where: { id: refund.paymentId },
+      });
+      if (payment && totalRefunded.greaterThanOrEqualTo(payment.total)) {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: PaymentStatus.REFUNDED },
+        });
+      }
+    }
+
+    return this.prisma.refund.findUnique({
+      where: { id: refund.id },
+      include: { payment: true },
+    });
   }
 
-  /**
-   * 验证支付回调签名
-   * 根据不同支付提供商进行签名验证
-   */
-  private verifyPaymentNotifySignature(notifyData: PaymentNotifyData): boolean {
-    // 如果未提供签名，在开发环境跳过验证但记录警告
+  private verifyPaymentNotifySignature(
+    notifyData: PaymentNotifyData,
+    provider: PaymentProvider,
+  ): boolean {
     if (!notifyData.sign && !notifyData.rawData) {
       const nodeEnv = this.configService.get<string>('NODE_ENV');
       if (nodeEnv === 'development' || nodeEnv === 'test') {
@@ -436,8 +562,6 @@ export class PaymentService implements OnModuleInit {
     }
 
     try {
-      const provider = this.detectProviderFromTradeNo(notifyData.outTradeNo);
-
       if (provider === PaymentProvider.WECHAT) {
         return this.verifyWechatSignature(
           notifyData.rawData || '',
@@ -451,16 +575,7 @@ export class PaymentService implements OnModuleInit {
         );
       }
 
-      const nodeEnv = this.configService.get<string>('NODE_ENV');
-      if (nodeEnv === 'development' || nodeEnv === 'test') {
-        this.logger.warn(
-          `Unknown provider for payment notify, skipping verification in dev/test mode`,
-        );
-        return true;
-      }
-      this.logger.error(
-        `Unknown provider for payment notify in production, outTradeNo: ${notifyData.outTradeNo}`,
-      );
+      this.logger.error(`Unknown provider for payment notify: ${provider}`);
       return false;
     } catch (error) {
       this.logger.error(
@@ -470,12 +585,10 @@ export class PaymentService implements OnModuleInit {
     }
   }
 
-  /**
-   * 验证退款回调签名
-   * 与支付回调签名验证逻辑一致
-   */
-  private verifyRefundNotifySignature(notifyData: RefundNotifyData): boolean {
-    // 如果未提供签名，在开发环境跳过验证但记录警告
+  private verifyRefundNotifySignature(
+    notifyData: RefundNotifyData,
+    provider: PaymentProvider,
+  ): boolean {
     if (!notifyData.sign && !notifyData.rawData) {
       const nodeEnv = this.configService.get<string>('NODE_ENV');
       if (nodeEnv === 'development' || nodeEnv === 'test') {
@@ -488,10 +601,7 @@ export class PaymentService implements OnModuleInit {
       return false;
     }
 
-    // 退款签名验证逻辑与支付回调类似
     try {
-      const provider = this.detectProviderFromTradeNo(notifyData.outRefundNo);
-
       if (provider === PaymentProvider.WECHAT) {
         return this.verifyWechatSignature(
           notifyData.rawData || '',
@@ -505,9 +615,7 @@ export class PaymentService implements OnModuleInit {
         );
       }
 
-      this.logger.error(
-        `Unknown provider for refund notify in production, outRefundNo: ${notifyData.outRefundNo}`,
-      );
+      this.logger.error(`Unknown provider for refund notify: ${provider}`);
       return false;
     } catch (error) {
       this.logger.error(
@@ -517,25 +625,6 @@ export class PaymentService implements OnModuleInit {
     }
   }
 
-  /**
-   * 从交易号推断支付提供商
-   */
-  private detectProviderFromTradeNo(
-    outTradeNo: string,
-  ): PaymentProvider | null {
-    if (outTradeNo.startsWith('WX') || outTradeNo.startsWith('weixin')) {
-      return PaymentProvider.WECHAT;
-    }
-    if (outTradeNo.startsWith('ALI') || outTradeNo.startsWith('alipay')) {
-      return PaymentProvider.ALIPAY;
-    }
-    return null;
-  }
-
-  /**
-   * 微信支付签名验证（HMAC-SHA256）
-   * 生产环境应使用微信支付平台证书进行非对称签名验证
-   */
   private verifyWechatSignature(rawData: string, sign: string): boolean {
     const apiKey = this.configService.get<string>('WECHAT_PAY_API_KEY');
     if (!apiKey) {
@@ -549,7 +638,10 @@ export class PaymentService implements OnModuleInit {
       .digest('hex')
       .toUpperCase();
 
-    return expectedSign === sign.toUpperCase();
+    const expectedBuf = Buffer.from(expectedSign, 'utf8');
+    const signBuf = Buffer.from(sign.toUpperCase(), 'utf8');
+    if (expectedBuf.length !== signBuf.length) return false;
+    return crypto.timingSafeEqual(expectedBuf, signBuf);
   }
 
   /**
@@ -624,7 +716,7 @@ export class PaymentService implements OnModuleInit {
   }
 
   // 支付日志相关方法
-  async createPaymentLog(data: any) {
+  async createPaymentLog(data: PaymentLogData) {
     return this.prisma.paymentLog.create({ data });
   }
 
@@ -756,17 +848,35 @@ export class PaymentService implements OnModuleInit {
         `Transfer exception: ${transactionId}`,
         error instanceof Error ? error.stack : String(error),
       );
-      await this.updatePaymentStatus(transactionId, PaymentStatus.FAILED);
-      await this.createPaymentLog({
-        transactionId,
-        orderId: orderId,
-        amount,
-        status: PaymentStatus.FAILED,
-        provider,
-        rawData: JSON.stringify({
-          error: error instanceof Error ? error.message : String(error),
-        }),
-      });
+      try {
+        const currentPayment = await this.prisma.payment.findFirst({
+          where: { transactionId: transactionId },
+        });
+        if (currentPayment && currentPayment.status === PaymentStatus.PENDING) {
+          await this.updatePaymentStatus(transactionId, PaymentStatus.FAILED);
+          await this.createPaymentLog({
+            transactionId,
+            orderId: orderId,
+            amount,
+            status: PaymentStatus.FAILED,
+            provider,
+            rawData: JSON.stringify({
+              error: error instanceof Error ? error.message : String(error),
+            }),
+          });
+        } else if (
+          currentPayment &&
+          currentPayment.status === PaymentStatus.SUCCESS
+        ) {
+          this.logger.warn(
+            `Transfer ${transactionId} already succeeded before error, skipping status update`,
+          );
+        }
+      } catch (logError) {
+        this.logger.error(
+          `Failed to update payment status on error: ${logError}`,
+        );
+      }
       throw error;
     }
   }

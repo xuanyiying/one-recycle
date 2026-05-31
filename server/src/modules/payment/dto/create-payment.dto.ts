@@ -1,17 +1,5 @@
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  SUCCESS = 'SUCCESS',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-}
-
-export enum PaymentMethod {
-  WECHAT = 'WECHAT',
-  ALIPAY = 'ALIPAY',
-  BANK_CARD = 'BANK_CARD',
-}
+import { PaymentProvider } from '@prisma/client';
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreatePaymentDto {
   @IsString()
@@ -21,8 +9,8 @@ export class CreatePaymentDto {
   @Min(0)
   amount!: number;
 
-  @IsString()
-  provider!: string;
+  @IsEnum(PaymentProvider)
+  provider!: PaymentProvider;
 
   @IsString()
   @IsOptional()

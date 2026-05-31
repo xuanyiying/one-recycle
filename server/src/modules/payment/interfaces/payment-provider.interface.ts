@@ -46,6 +46,13 @@ export interface WithdrawalAccountInfo {
 /**
  * 支付提供商接口
  */
+export interface RefundResult {
+  success: boolean;
+  refundId?: string;
+  message?: string;
+  errorCode?: string;
+}
+
 export interface IPaymentProvider {
   /**
    * 获取提供商类型
@@ -77,4 +84,12 @@ export interface IPaymentProvider {
    * @param callbackData 回调数据
    */
   verifyCallback(callbackData: any): boolean;
+
+  refund(
+    outTradeNo: string,
+    outRefundNo: string,
+    totalAmount: number,
+    refundAmount: number,
+    reason?: string,
+  ): Promise<RefundResult>;
 }

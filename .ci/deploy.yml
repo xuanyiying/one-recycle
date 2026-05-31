@@ -95,69 +95,177 @@
 
 # --- 共用 health-check ---
 
-.health-check-monolith: &health-check-monolith
+.health-check-server-monolith: &health-check-server-monolith
   name: health-check
   script: |
-    sleep 45
     DOMAIN="${DOMAIN:-backbuy.cn}"
-    echo "=== Starting health check for ${DOMAIN} ==="
-    for i in $(seq 1 20); do
-      echo "Health check attempt $i/20..."
-      if curl -skfL --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
-         curl -skfL --max-time 10 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
-        echo "✅ Application health passed: https://${DOMAIN}/api/health"
+    ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+    cd $HOME/one-recycle/deploy
+    echo "=== Waiting for api-gateway to become healthy ==="
+    for i in $(seq 1 18); do
+      STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-api-gateway 2>/dev/null || echo "not_found")
+      echo "  [$i/18] api-gateway: $STATUS"
+      if [ "$STATUS" = "healthy" ]; then
+        echo "✅ api-gateway is healthy"
         exit 0
       fi
-
-      echo "Wait for service to be ready..."
-      curl -Iks --max-time 5 "https://${DOMAIN}/api/health" 2>/dev/null | grep -E "HTTP/|server" || true
       sleep 10
     done
-
-    echo "❌ Health check failed after 20 attempts"
-    ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
-    cd $HOME/one-recycle/deploy
-    echo "=== Docker Containers ==="
+    echo "❌ api-gateway health check timed out (3min)"
+    echo "=== Container status ==="
     docker compose ps -a
-    echo "=== Caddy logs ==="
-    docker logs one-recycle-caddy --tail=30 2>/dev/null || true
-    echo "=== Backend logs ==="
-    docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
-    ENDSSH
+    echo "=== api-gateway logs ==="
+    docker logs one-recycle-api-gateway --tail=50 2>&1 | tail -30
     exit 1
+    ENDSSH
+
+    echo "=== End-to-end verification ==="
+    if curl -skfL --max-time 15 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
+       curl -skfL --max-time 15 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
+      echo "✅ End-to-end health check passed"
+    else
+      echo "⚠️  Container healthy but external endpoint not reachable (may need caddy reload)"
+    fi
   env:
     DOMAIN: ${DOMAIN:-backbuy.cn}
 
-.health-check-microservices: &health-check-microservices
+.health-check-admin-web-monolith: &health-check-admin-web-monolith
   name: health-check
   script: |
-    sleep 45
     DOMAIN="${DOMAIN:-backbuy.cn}"
-    echo "=== Starting health check for ${DOMAIN} ==="
-    for i in $(seq 1 20); do
-      echo "Health check attempt $i/20..."
-      if curl -skfL --max-time 10 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
-         curl -skfL --max-time 10 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
-        echo "✅ Application health passed: https://${DOMAIN}/api/health"
+    ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+    cd $HOME/one-recycle/deploy
+
+    echo "=== Step 1: Verify server dependency ==="
+    SERVER_STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-api-gateway 2>/dev/null || echo "not_found")
+    if [ "$SERVER_STATUS" != "healthy" ]; then
+      echo "❌ api-gateway is not healthy (status: $SERVER_STATUS), admin-web depends on it"
+      exit 1
+    fi
+    echo "✅ api-gateway dependency OK"
+
+    echo "=== Step 2: Waiting for admin-web to become healthy ==="
+    for i in $(seq 1 12); do
+      STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-admin-web 2>/dev/null || echo "not_found")
+      echo "  [$i/12] admin-web: $STATUS"
+      if [ "$STATUS" = "healthy" ]; then
+        echo "✅ admin-web is healthy"
         exit 0
       fi
+      sleep 5
+    done
+    echo "❌ admin-web health check timed out (1min)"
+    echo "=== Container status ==="
+    docker compose ps -a
+    echo "=== admin-web logs ==="
+    docker logs one-recycle-admin-web --tail=30 2>&1
+    exit 1
+    ENDSSH
 
-      echo "Wait for service to be ready..."
-      curl -Iks --max-time 5 "https://${DOMAIN}/api/health" 2>/dev/null | grep -E "HTTP/|server" || true
-      sleep 10
+    echo "=== End-to-end verification ==="
+    if curl -skfL --max-time 15 "https://admin.${DOMAIN}/" >/dev/null 2>&1 || \
+       curl -skfL --max-time 15 "http://admin.${DOMAIN}/" >/dev/null 2>&1; then
+      echo "✅ Admin end-to-end health check passed"
+    else
+      echo "⚠️  Container healthy but external endpoint not reachable"
+    fi
+  env:
+    DOMAIN: ${DOMAIN:-backbuy.cn}
+
+.health-check-server-microservices: &health-check-server-microservices
+  name: health-check
+  script: |
+    DOMAIN="${DOMAIN:-backbuy.cn}"
+    ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+    cd $HOME/one-recycle/deploy
+    SERVICES="api-gateway account-service order-service notification-service payment-service dispatch-service inventory-service category-service queue-service"
+    echo "=== Waiting for all services to become healthy ==="
+    FAILED=""
+    for SVC in $SERVICES; do
+      CONTAINER="one-recycle-${SVC}"
+      HEALTHY=false
+      for i in $(seq 1 18); do
+        STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER" 2>/dev/null || echo "not_found")
+        if [ "$STATUS" = "healthy" ]; then
+          echo "  ✅ $SVC: healthy"
+          HEALTHY=true
+          break
+        fi
+        if [ "$i" = "1" ]; then
+          echo "  Waiting for $SVC (current: $STATUS)..."
+        fi
+        sleep 10
+      done
+      if [ "$HEALTHY" = "false" ]; then
+        STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER" 2>/dev/null || echo "not_found")
+        echo "  ❌ $SVC: $STATUS (timed out)"
+        FAILED="$FAILED $SVC"
+      fi
     done
 
-    echo "❌ Health check failed after 20 attempts"
-    ssh "$DEPLOY_USER@$DEPLOY_HOST" DOMAIN="$DOMAIN" 'bash -s' <<'ENDSSH'
-    cd $HOME/one-recycle/deploy
-    echo "=== Docker Containers ==="
-    docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a
-    echo "=== Caddy logs ==="
-    docker logs one-recycle-caddy --tail=30 2>/dev/null || true
-    echo "=== API Gateway logs ==="
-    docker logs one-recycle-api-gateway --tail=30 2>/dev/null || true
+    if [ -n "$FAILED" ]; then
+      echo "❌ Failed services:$FAILED"
+      echo "=== Container status ==="
+      docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a
+      for SVC in $FAILED; do
+        echo "=== $SVC logs ==="
+        docker logs "one-recycle-${SVC}" --tail=30 2>&1 | tail -20
+      done
+      exit 1
+    fi
+    echo "✅ All services are healthy"
     ENDSSH
+
+    echo "=== End-to-end verification ==="
+    if curl -skfL --max-time 15 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
+       curl -skfL --max-time 15 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
+      echo "✅ End-to-end health check passed"
+    else
+      echo "⚠️  Containers healthy but external endpoint not reachable"
+    fi
+  env:
+    DOMAIN: ${DOMAIN:-backbuy.cn}
+
+.health-check-admin-web-microservices: &health-check-admin-web-microservices
+  name: health-check
+  script: |
+    DOMAIN="${DOMAIN:-backbuy.cn}"
+    ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+    cd $HOME/one-recycle/deploy
+
+    echo "=== Step 1: Verify server dependency ==="
+    SERVER_STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-api-gateway 2>/dev/null || echo "not_found")
+    if [ "$SERVER_STATUS" != "healthy" ]; then
+      echo "❌ api-gateway is not healthy (status: $SERVER_STATUS), admin-web depends on it"
+      exit 1
+    fi
+    echo "✅ api-gateway dependency OK"
+
+    echo "=== Step 2: Waiting for admin-web to become healthy ==="
+    for i in $(seq 1 12); do
+      STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-admin-web 2>/dev/null || echo "not_found")
+      echo "  [$i/12] admin-web: $STATUS"
+      if [ "$STATUS" = "healthy" ]; then
+        echo "✅ admin-web is healthy"
+        exit 0
+      fi
+      sleep 5
+    done
+    echo "❌ admin-web health check timed out (1min)"
+    echo "=== Container status ==="
+    docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a
+    echo "=== admin-web logs ==="
+    docker logs one-recycle-admin-web --tail=30 2>&1
     exit 1
+    ENDSSH
+
+    echo "=== End-to-end verification ==="
+    if curl -skfL --max-time 15 "https://admin.${DOMAIN}/" >/dev/null 2>&1 || \
+       curl -skfL --max-time 15 "http://admin.${DOMAIN}/" >/dev/null 2>&1; then
+      echo "✅ Admin end-to-end health check passed"
+    else
+      echo "⚠️  Container healthy but external endpoint not reachable"
+    fi
   env:
     DOMAIN: ${DOMAIN:-backbuy.cn}
 
@@ -236,7 +344,7 @@ prod:
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
 
-        - *health-check-monolith
+        - *health-check-server-monolith
 
     - name: deploy-admin-web
       <<: *deploy-base
@@ -302,7 +410,7 @@ prod:
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
 
-        - *health-check-monolith
+        - *health-check-admin-web-monolith
 
 # ============================================================
 # Microservices 部署 (withoutai 分支) — 按需部署
@@ -389,7 +497,7 @@ withoutai:
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
 
-        - *health-check-microservices
+        - *health-check-server-microservices
 
     - name: deploy-admin-web
       <<: *deploy-base
@@ -456,7 +564,7 @@ withoutai:
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
 
-        - *health-check-microservices
+        - *health-check-admin-web-microservices
 
 # ============================================================
 # Tag 推送部署 (全量部署)
@@ -607,7 +715,57 @@ $:
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
 
-        - *health-check-monolith
+        - name: health-check
+          script: |
+            DOMAIN="${DOMAIN:-backbuy.cn}"
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+            cd $HOME/one-recycle/deploy
+
+            echo "=== Waiting for api-gateway to become healthy ==="
+            for i in $(seq 1 18); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-api-gateway 2>/dev/null || echo "not_found")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "  ✅ api-gateway: healthy"
+                break
+              fi
+              echo "  [$i/18] api-gateway: $STATUS"
+              if [ "$i" = "18" ]; then
+                echo "❌ api-gateway health check timed out"
+                docker compose ps -a
+                docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a 2>/dev/null || true
+                docker logs one-recycle-api-gateway --tail=30 2>&1
+                exit 1
+              fi
+              sleep 10
+            done
+
+            echo "=== Waiting for admin-web to become healthy ==="
+            for i in $(seq 1 12); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-admin-web 2>/dev/null || echo "not_found")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "  ✅ admin-web: healthy"
+                break
+              fi
+              echo "  [$i/12] admin-web: $STATUS"
+              if [ "$i" = "12" ]; then
+                echo "❌ admin-web health check timed out"
+                docker logs one-recycle-admin-web --tail=30 2>&1
+                exit 1
+              fi
+              sleep 5
+            done
+            echo "✅ All services are healthy"
+            ENDSSH
+
+            echo "=== End-to-end verification ==="
+            if curl -skfL --max-time 15 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
+               curl -skfL --max-time 15 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
+              echo "✅ End-to-end health check passed"
+            else
+              echo "⚠️  Containers healthy but external endpoint not reachable"
+            fi
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}
 
   web_trigger_deploy:
     - name: deploy-manual
@@ -745,4 +903,54 @@ $:
           env:
             DOMAIN: ${DOMAIN:-backbuy.cn}
 
-        - *health-check-monolith
+        - name: health-check
+          script: |
+            DOMAIN="${DOMAIN:-backbuy.cn}"
+            ssh "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'ENDSSH'
+            cd $HOME/one-recycle/deploy
+
+            echo "=== Waiting for api-gateway to become healthy ==="
+            for i in $(seq 1 18); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-api-gateway 2>/dev/null || echo "not_found")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "  ✅ api-gateway: healthy"
+                break
+              fi
+              echo "  [$i/18] api-gateway: $STATUS"
+              if [ "$i" = "18" ]; then
+                echo "❌ api-gateway health check timed out"
+                docker compose ps -a
+                docker compose --env-file .env.production -f docker/docker-compose.production.yml ps -a 2>/dev/null || true
+                docker logs one-recycle-api-gateway --tail=30 2>&1
+                exit 1
+              fi
+              sleep 10
+            done
+
+            echo "=== Waiting for admin-web to become healthy ==="
+            for i in $(seq 1 12); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' one-recycle-admin-web 2>/dev/null || echo "not_found")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "  ✅ admin-web: healthy"
+                break
+              fi
+              echo "  [$i/12] admin-web: $STATUS"
+              if [ "$i" = "12" ]; then
+                echo "❌ admin-web health check timed out"
+                docker logs one-recycle-admin-web --tail=30 2>&1
+                exit 1
+              fi
+              sleep 5
+            done
+            echo "✅ All services are healthy"
+            ENDSSH
+
+            echo "=== End-to-end verification ==="
+            if curl -skfL --max-time 15 "https://${DOMAIN}/api/health" >/dev/null 2>&1 || \
+               curl -skfL --max-time 15 "http://${DOMAIN}/api/health" >/dev/null 2>&1; then
+              echo "✅ End-to-end health check passed"
+            else
+              echo "⚠️  Containers healthy but external endpoint not reachable"
+            fi
+          env:
+            DOMAIN: ${DOMAIN:-backbuy.cn}

@@ -1,4 +1,18 @@
-import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  PersistentSnowflakeIdGenerator,
+  RedisService,
+  RedisSnowflakeStateStore,
+} from '@/common';
+import { toDecimal } from '@/common/utils/decimal.util';
+import { PrismaService } from '@/prisma/prisma.service';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   AccountType,
   PaymentProvider,
@@ -7,25 +21,20 @@ import {
   TransactionType,
   WithdrawalStatus,
 } from '@prisma/client';
-import { PrismaService } from '@/prisma/prisma.service';
+import { PaymentProviderFactory } from './payment-provider.factory';
 import { PaymentService } from './payment.service';
-import { toDecimal } from '@/common/utils/decimal.util';
-import {
-  PersistentSnowflakeIdGenerator,
-  RedisSnowflakeStateStore,
-  RedisService,
-} from '@/common';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 class WithdrawalService implements OnModuleInit {
   private readonly idGenerator: PersistentSnowflakeIdGenerator;
+  private readonly logger = new Logger(WithdrawalService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentService: PaymentService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly paymentProviderFactory: PaymentProviderFactory,
   ) {
     this.idGenerator = new PersistentSnowflakeIdGenerator({
       workerId: this.configService.get<number>('PAYMENT_WORKER_ID', 9),
@@ -63,9 +72,69 @@ class WithdrawalService implements OnModuleInit {
   }) {
     const amount = toDecimal(params.amount);
 
+    const minAmount = this.configService.get<number>(
+      'WITHDRAWAL_MIN_AMOUNT',
+      1,
+    );
+    const maxAmount = this.configService.get<number>(
+      'WITHDRAWAL_MAX_AMOUNT',
+      50000,
+    );
+    if (amount.lessThan(minAmount) || amount.greaterThan(maxAmount)) {
+      throw new BadRequestException(
+        `提现金额必须在${minAmount}-${maxAmount}元之间`,
+      );
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayWithdrawals = await this.prisma.withdrawal.findMany({
+      where: {
+        userId: params.userId,
+        status: { notIn: [WithdrawalStatus.FAILED, WithdrawalStatus.REJECTED] },
+        createdAt: { gte: todayStart },
+      },
+      select: { amount: true },
+    });
+    const todayTotal = todayWithdrawals.reduce(
+      (sum, w) => sum.plus(toDecimal(w.amount)),
+      new Prisma.Decimal(0),
+    );
+    const dailyLimit = this.configService.get<number>(
+      'WITHDRAWAL_DAILY_LIMIT',
+      50000,
+    );
+    if (todayTotal.plus(amount).greaterThan(dailyLimit)) {
+      throw new BadRequestException('超出每日提现限额');
+    }
+
+    const minPoints = this.configService.get<number>(
+      'WITHDRAWAL_MIN_POINTS',
+      0,
+    );
+    if (minPoints > 0) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: params.userId },
+        select: { points: true },
+      });
+      if (!user || user.points < minPoints) {
+        throw new BadRequestException(`积分需达到${minPoints}才能提现`);
+      }
+    }
+
+    const rateLimitKey = `withdrawal:rate:${params.userId}`;
+    const rateLimitSeconds = this.configService.get<number>(
+      'WITHDRAWAL_RATE_LIMIT_SECONDS',
+      60,
+    );
+    const exists = await this.redisService.getClient().get(rateLimitKey);
+    if (exists) {
+      throw new BadRequestException('提现操作过于频繁，请稍后再试');
+    }
+
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
-        return await this.prisma.$transaction(async (tx) => {
+        const result = await this.prisma.$transaction(async (tx) => {
           const account = await tx.account.findUnique({
             where: {
               userId_accountType: {
@@ -217,6 +286,18 @@ class WithdrawalService implements OnModuleInit {
 
           return withdrawal;
         });
+        await this.redisService
+          .getClient()
+          .setex(rateLimitKey, rateLimitSeconds, '1');
+
+        this.processWithdrawal(result.id).catch((err) => {
+          this.logger.error(
+            `Auto-process withdrawal ${result.id} failed: ${err?.message}`,
+            err?.stack,
+          );
+        });
+
+        return result;
       } catch (error: any) {
         if (
           String(error?.message) === 'ACCOUNT_VERSION_CONFLICT' ||
@@ -258,107 +339,115 @@ class WithdrawalService implements OnModuleInit {
         withdrawal.outTradeNo,
       );
 
-      return await this.prisma.$transaction(async (tx) => {
-        const account = await tx.account.findUniqueOrThrow({
-          where: {
-            userId_accountType: {
-              userId: withdrawal.userId,
-              accountType: AccountType.WALLET,
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          const account = await tx.account.findUniqueOrThrow({
+            where: {
+              userId_accountType: {
+                userId: withdrawal.userId,
+                accountType: AccountType.WALLET,
+              },
             },
-          },
-        });
+          });
 
-        const amount = withdrawal.amount;
+          const amount = withdrawal.amount;
 
-        await tx.transaction.create({
-          data: {
-            accountId: account.id,
-            type: TransactionType.WITHDRAWAL_SUCCESS,
-            amount,
-            balanceBefore: account.availableBalance,
-            balanceAfter: account.availableBalance,
-            withdrawalId: withdrawal.id,
-            description: `Withdrawal success #${withdrawal.outTradeNo}`,
-          },
-        });
+          await tx.transaction.create({
+            data: {
+              accountId: account.id,
+              type: TransactionType.WITHDRAWAL_SUCCESS,
+              amount,
+              balanceBefore: account.availableBalance,
+              balanceAfter: account.availableBalance,
+              withdrawalId: withdrawal.id,
+              description: `Withdrawal success #${withdrawal.outTradeNo}`,
+            },
+          });
 
-        await tx.account.updateMany({
-          where: { id: account.id, version: account.version },
-          data: {
-            frozenBalance: { decrement: amount },
-            totalWithdrawal: { increment: amount },
-            version: { increment: 1 },
-          },
-        });
+          await tx.account.updateMany({
+            where: { id: account.id, version: account.version },
+            data: {
+              frozenBalance: { decrement: amount },
+              totalWithdrawal: { increment: amount },
+              version: { increment: 1 },
+            },
+          });
 
-        const platformWallet = await this.ensurePlatformWallet(tx);
-        await tx.platformWallet.updateMany({
-          where: { id: platformWallet.id, version: platformWallet.version },
-          data: {
-            frozenAmount: { decrement: amount },
-            totalPayout: { increment: amount },
-            version: { increment: 1 },
-          },
-        });
+          const platformWallet = await this.ensurePlatformWallet(tx);
+          await tx.platformWallet.updateMany({
+            where: { id: platformWallet.id, version: platformWallet.version },
+            data: {
+              frozenAmount: { decrement: amount },
+              totalPayout: { increment: amount },
+              version: { increment: 1 },
+            },
+          });
 
-        await tx.platformTransaction.create({
-          data: {
-            walletId: platformWallet.id,
-            type: 'WITHDRAWAL_SUCCESS',
-            amount: amount.negated(),
-            balanceBefore: platformWallet.balance,
-            balanceAfter: platformWallet.balance,
-            relatedOrderNo: withdrawal.outTradeNo,
-            description: `Payout success for withdrawal #${withdrawal.outTradeNo}`,
-          },
-        });
+          await tx.platformTransaction.create({
+            data: {
+              walletId: platformWallet.id,
+              type: 'WITHDRAWAL_SUCCESS',
+              amount: amount.negated(),
+              balanceBefore: platformWallet.balance,
+              balanceAfter: platformWallet.balance,
+              relatedOrderNo: withdrawal.outTradeNo,
+              description: `Payout success for withdrawal #${withdrawal.outTradeNo}`,
+            },
+          });
 
-        const tenantIdRaw = (withdrawal.accountInfo as any)?.tenantId;
-        if (tenantIdRaw) {
-          const tenantId = BigInt(tenantIdRaw);
-          let tenantUpdated = false;
-          for (let i = 0; i < 3; i += 1) {
-            const tenant = await tx.tenant.findUnique({
-              where: { id: tenantId },
-            });
-            if (!tenant) break;
-            const updated = await tx.tenant.updateMany({
-              where: { id: tenant.id, version: tenant.version },
-              data: {
-                frozenBalance: { decrement: amount },
-                balance: { decrement: amount },
-                version: { increment: 1 },
-              },
-            });
-            if (updated.count !== 1) continue;
-            await tx.tenantTransaction.create({
-              data: {
-                tenantId: tenant.id,
-                type: TenantTransactionType.WITHDRAWAL,
-                amount: amount.negated(),
-                balanceAfter: toDecimal(tenant.balance).minus(amount),
-                relatedType: 'WITHDRAWAL',
-                relatedId: `SUCCESS:${withdrawal.outTradeNo}`,
-                remark: `Withdrawal payout #${withdrawal.outTradeNo}`,
-              },
-            });
-            tenantUpdated = true;
-            break;
+          const tenantIdRaw = (withdrawal.accountInfo as any)?.tenantId;
+          if (tenantIdRaw) {
+            const tenantId = BigInt(tenantIdRaw);
+            let tenantUpdated = false;
+            for (let i = 0; i < 3; i += 1) {
+              const tenant = await tx.tenant.findUnique({
+                where: { id: tenantId },
+              });
+              if (!tenant) break;
+              const updated = await tx.tenant.updateMany({
+                where: { id: tenant.id, version: tenant.version },
+                data: {
+                  frozenBalance: { decrement: amount },
+                  balance: { decrement: amount },
+                  version: { increment: 1 },
+                },
+              });
+              if (updated.count !== 1) continue;
+              await tx.tenantTransaction.create({
+                data: {
+                  tenantId: tenant.id,
+                  type: TenantTransactionType.WITHDRAWAL,
+                  amount: amount.negated(),
+                  balanceAfter: toDecimal(tenant.balance).minus(amount),
+                  relatedType: 'WITHDRAWAL',
+                  relatedId: `SUCCESS:${withdrawal.outTradeNo}`,
+                  remark: `Withdrawal payout #${withdrawal.outTradeNo}`,
+                },
+              });
+              tenantUpdated = true;
+              break;
+            }
+            if (!tenantUpdated) {
+              throw new BadRequestException('提现处理失败，请重试');
+            }
           }
-          if (!tenantUpdated) {
-            throw new BadRequestException('提现处理失败，请重试');
-          }
-        }
 
-        return tx.withdrawal.update({
-          where: { id: withdrawalId },
-          data: {
-            status: WithdrawalStatus.SUCCESS,
-            processedAt: new Date(),
-            callbackData: transferResult as any,
-          },
+          return tx.withdrawal.update({
+            where: { id: withdrawalId },
+            data: {
+              status: WithdrawalStatus.SUCCESS,
+              processedAt: new Date(),
+              callbackData: transferResult as any,
+            },
+          });
         });
-      });
+      } catch (dbError: any) {
+        this.logger.error(
+          `CRITICAL: Transfer succeeded but DB update failed for withdrawal ${withdrawalId}. Manual reconciliation required.`,
+          dbError.stack,
+        );
+        throw dbError;
+      }
     } catch (error: any) {
       return this.prisma.$transaction(async (tx) => {
         const account = await tx.account.findUniqueOrThrow({
@@ -427,7 +516,6 @@ class WithdrawalService implements OnModuleInit {
             const updated = await tx.tenant.updateMany({
               where: { id: tenant.id, version: tenant.version },
               data: {
-                balance: { decrement: amount },
                 frozenBalance: { decrement: amount },
                 version: { increment: 1 },
               },
@@ -474,11 +562,33 @@ class WithdrawalService implements OnModuleInit {
     status: 'SUCCESS' | 'FAILED' | 'TIMEOUT';
     providerTxnNo?: string;
     raw?: any;
+    sign?: string;
+    signType?: string;
+    rawData?: string;
   }) {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { outTradeNo: params.outTradeNo },
     });
     if (!withdrawal) throw new Error('WITHDRAWAL_NOT_FOUND');
+
+    if (!params.sign && !params.rawData) {
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      if (nodeEnv === 'development' || nodeEnv === 'test') {
+        this.logger.warn(
+          'Withdrawal notify received without signature in dev/test mode - skipping verification',
+        );
+      } else {
+        this.logger.error('Withdrawal notify missing signature in production');
+        throw new BadRequestException('提现回调签名验证失败');
+      }
+    } else {
+      const provider = this.paymentProviderFactory.getProvider(
+        withdrawal.provider,
+      );
+      if (!provider.verifyCallback(params)) {
+        throw new BadRequestException('提现回调签名验证失败');
+      }
+    }
 
     if (params.status === 'SUCCESS') {
       if (withdrawal.status === WithdrawalStatus.SUCCESS) return withdrawal;
@@ -644,7 +754,6 @@ class WithdrawalService implements OnModuleInit {
           const updated = await tx.tenant.updateMany({
             where: { id: tenant.id, version: tenant.version },
             data: {
-              balance: { decrement: amount },
               frozenBalance: { decrement: amount },
               version: { increment: 1 },
             },
@@ -683,6 +792,94 @@ class WithdrawalService implements OnModuleInit {
         },
       });
     });
+  }
+
+  async findWithdrawals(query: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query.status) {
+      where.status = query.status;
+    }
+    if (query.userId) {
+      where.userId = BigInt(query.userId);
+    }
+    if (query.startDate || query.endDate) {
+      where.createdAt = {};
+      if (query.startDate) {
+        where.createdAt.gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        where.createdAt.lte = new Date(query.endDate);
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.withdrawal.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, nickname: true, mobile: true },
+          },
+          account: {
+            select: { id: true, accountType: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.withdrawal.count({ where }),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findWithdrawalById(id: bigint) {
+    const withdrawal = await this.prisma.withdrawal.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: { id: true, nickname: true, mobile: true },
+        },
+        account: {
+          select: { id: true, accountType: true, availableBalance: true },
+        },
+      },
+    });
+
+    if (!withdrawal) {
+      throw new NotFoundException('提现记录不存在');
+    }
+
+    return withdrawal;
+  }
+
+  async findByOutTradeNo(outTradeNo: string) {
+    const withdrawal = await this.prisma.withdrawal.findUnique({
+      where: { outTradeNo },
+    });
+
+    if (!withdrawal) {
+      throw new NotFoundException('提现记录不存在');
+    }
+
+    return withdrawal;
   }
 }
 

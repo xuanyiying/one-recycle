@@ -1,10 +1,29 @@
 'use client';
 
-import React from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { cn } from '@/lib/utils/cn';
 import type { LucideIcon } from 'lucide-react';
+import {
+  Bell,
+  BookOpen,
+  CreditCard,
+  Database,
+  FileText,
+  Gift,
+  LayoutDashboard,
+  MessageSquare,
+  Settings,
+  ShoppingBag,
+  Tags,
+  Truck,
+  Users,
+  Wallet,
+  Warehouse,
+  X
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React from 'react';
+import { Button } from './ui/button';
 
 interface MenuItem {
   href: string;
@@ -13,22 +32,6 @@ interface MenuItem {
   activePrefixes?: string[];
   children?: Array<{ href: string; label: string }>;
 }
-import {
-  LayoutDashboard,
-  Users,
-  ShoppingBag,
-  Tags,
-  Database,
-  Truck,
-  Bell,
-  Settings,
-  Wallet,
-  X,
-  Gift,
-  FileText,
-  Warehouse
-} from 'lucide-react';
-import { Button } from './ui/button';
 
 interface SidebarProps {
   className?: string;
@@ -107,6 +110,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
         title: '系统设置',
         items: [
           { href: '/notifications', icon: Bell, label: '通知管理' },
+          { href: '/settings/payment', icon: CreditCard, label: '支付渠道' },
+          { href: '/settings/notification-providers', icon: MessageSquare, label: '通知服务商' },
+          { href: '/settings/notification-templates', icon: BookOpen, label: '通知模板' },
           { href: '/settings/logistics', icon: Truck, label: '快递接入' },
           { href: '/settings/category-warehouse', icon: Warehouse, label: '分类仓库' },
           { href: '/settings', icon: Settings, label: '系统设置' },
