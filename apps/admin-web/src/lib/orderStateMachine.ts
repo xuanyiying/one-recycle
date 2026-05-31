@@ -58,3 +58,57 @@ export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
 export function getNextStatuses(from: OrderStatus): OrderStatus[] {
   return orderStatusTransitions[from] ?? [];
 }
+
+export const statusActionLabels: Partial<Record<OrderStatus, Partial<Record<OrderStatus, string>>>> = {
+  [OrderStatus.PENDING]: {
+    [OrderStatus.PENDING_PICKUP]: '接单',
+    [OrderStatus.CANCELLED]: '取消订单',
+  },
+  [OrderStatus.PENDING_PICKUP]: {
+    [OrderStatus.PICKED_UP]: '确认取件',
+    [OrderStatus.CANCELLED]: '取消订单',
+  },
+  [OrderStatus.PICKED_UP]: {
+    [OrderStatus.IN_TRANSIT]: '开始运输',
+  },
+  [OrderStatus.IN_TRANSIT]: {
+    [OrderStatus.PENDING_RECEIPT]: '到达待收货',
+    [OrderStatus.CANCELLED]: '取消订单',
+  },
+  [OrderStatus.PENDING_RECEIPT]: {
+    [OrderStatus.INSPECTING]: '确认收货',
+  },
+  [OrderStatus.INSPECTING]: {
+    [OrderStatus.INSPECTED]: '验货合格',
+    [OrderStatus.INSPECTION_EXCEPTION]: '验货异常',
+  },
+  [OrderStatus.INSPECTION_EXCEPTION]: {
+    [OrderStatus.MANUAL_PROCESSING]: '转人工处理',
+    [OrderStatus.INSPECTING]: '重新验货',
+  },
+  [OrderStatus.MANUAL_PROCESSING]: {
+    [OrderStatus.INSPECTED]: '处理完成',
+    [OrderStatus.CANCELLED]: '取消订单',
+  },
+  [OrderStatus.INSPECTED]: {
+    [OrderStatus.PENDING_INBOUND]: '待入库',
+  },
+  [OrderStatus.PENDING_INBOUND]: {
+    [OrderStatus.INBOUNDED]: '确认入库',
+  },
+  [OrderStatus.INBOUNDED]: {
+    [OrderStatus.PENDING_SETTLEMENT]: '待结算',
+  },
+  [OrderStatus.PENDING_SETTLEMENT]: {
+    [OrderStatus.COMPLETED]: '确认结算',
+  },
+  [OrderStatus.COMPLETED]: {
+    [OrderStatus.REFUNDED]: '退款',
+  },
+  [OrderStatus.CANCELLED]: {},
+  [OrderStatus.REFUNDED]: {},
+};
+
+export function getStatusActionLabel(from: OrderStatus, to: OrderStatus): string | undefined {
+  return statusActionLabels[from]?.[to];
+}

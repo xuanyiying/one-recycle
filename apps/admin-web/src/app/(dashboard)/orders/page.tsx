@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table';
 import { toast } from '@/components/ui/toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { orderStatusLabels, orderStatusSequence } from '@/lib/orderStateMachine';
+import { getNextStatuses, getStatusActionLabel, orderStatusLabels, orderStatusSequence } from '@/lib/orderStateMachine';
 import { cn } from '@/lib/utils/cn';
 import {
   Order,
@@ -285,6 +285,20 @@ export default function OrdersPage() {
       toast.error('更新失败');
     } finally {
       setModalLoading(false);
+    }
+  };
+
+  const handleStatusTransition = async (orderId: number, currentStatus: OrderStatus, targetStatus: OrderStatus) => {
+    const actionLabel = getStatusActionLabel(currentStatus, targetStatus);
+    if (!confirm(`确定要执行"${actionLabel}"操作吗？`)) return;
+
+    try {
+      await orderService.updateOrderStatus(orderId, targetStatus);
+      toast.success(`${actionLabel}成功`);
+      fetchOrders();
+    } catch (error) {
+      console.error(error);
+      toast.error(`${actionLabel}失败`);
     }
   };
 
@@ -798,7 +812,23 @@ export default function OrdersPage() {
                         )}
                         {visibleColumns.actions && (
                           <TableCell className="text-right">
-                            <div className="flex justify-end space-x-2">
+                            <div className="flex justify-end gap-2">
+                              {getNextStatuses(order.status).map((nextStatus) => {
+                                const actionLabel = getStatusActionLabel(order.status, nextStatus);
+                                if (!actionLabel) return null;
+                                const isCancel = nextStatus === OrderStatus.CANCELLED;
+                                return (
+                                  <Button
+                                    key={nextStatus}
+                                    variant={isCancel ? 'outline' : 'default'}
+                                    size="sm"
+                                    className="h-7"
+                                    onClick={() => handleStatusTransition(order.id, order.status, nextStatus)}
+                                  >
+                                    {actionLabel}
+                                  </Button>
+                                );
+                              })}
                               <Button
                                 variant="ghost"
                                 size="icon"

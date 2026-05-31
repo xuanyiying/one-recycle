@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Modal } from '@/components/ui/modal';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { Select } from '@/components/ui/select';
+import { getNextStatuses, orderStatusLabels } from '@/lib/orderStateMachine';
 import { Order, OrderStatus, UpdateOrderRequest } from '@/services/orderService';
-import { orderStatusLabels, getNextStatuses } from '@/lib/orderStateMachine';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 interface EditableItem {
@@ -58,10 +58,21 @@ const OrderModal: React.FC<OrderModalProps> = ({
     }
   }, [visible, order, reset]);
 
+  const formatDateTimeForApi = (value?: string): string | undefined => {
+    if (!value || value.trim() === '') return undefined;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return undefined;
+    return date.toISOString();
+  };
+
   const onSubmit = (values: UpdateOrderRequest) => {
     if (order) {
       const updatedValues = {
         ...values,
+        expectPickupTime: formatDateTimeForApi(values.expectPickupTime),
+        expectDeliveryTime: formatDateTimeForApi(values.expectDeliveryTime),
+        actualPickupTime: formatDateTimeForApi(values.actualPickupTime),
+        actualDeliveryTime: formatDateTimeForApi(values.actualDeliveryTime),
         items: editableItems,
       };
       onOk(order.id, updatedValues);
@@ -69,8 +80,8 @@ const OrderModal: React.FC<OrderModalProps> = ({
   };
 
   const handleItemQuantityChange = (itemId: number, newQuantity: number) => {
-    setEditableItems(prev => 
-      prev.map(item => 
+    setEditableItems(prev =>
+      prev.map(item =>
         item.id === itemId ? { ...item, quantity: Math.max(0, newQuantity) } : item
       )
     );
