@@ -4,6 +4,7 @@ import {
   RedisSnowflakeStateStore,
 } from '@/common';
 import { WeChatPlatform } from '@/modules/auth/platforms';
+import { InviteService } from '@/modules/points/services/invite.service';
 import { UpdateUserDto } from '@/modules/user/dto';
 import { UserService } from '@/modules/user/services/user.service';
 import {
@@ -88,6 +89,7 @@ class AuthRedisService implements OnModuleInit {
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
+    private readonly inviteService: InviteService,
   ) {
     this.CODE_RESEND_INTERVAL_SECONDS = this.configService.get<number>(
       'auth.codeResendIntervalSeconds',
@@ -120,7 +122,7 @@ class AuthRedisService implements OnModuleInit {
   }
 
   async login(loginDto: LoginDto): Promise<AuthResult> {
-    const { mobile, verificationCode } = loginDto;
+    const { mobile, verificationCode, inviteCode } = loginDto;
     this.logger.log('尝试登录');
 
     // 验证手机号格式
@@ -151,6 +153,9 @@ class AuthRedisService implements OnModuleInit {
 
     // 清除已使用的验证码
     await this.deleteVerificationCode(mobile);
+
+    // 处理邀请码（仅在提供了邀请码时执行，handleInvite 内部已做幂等校验）
+    await this.tryHandleInvite(BigInt(user.id), inviteCode);
 
     this.logger.log(`登录成功: userId=${user.id}`);
 
@@ -272,7 +277,7 @@ class AuthRedisService implements OnModuleInit {
     platform: string,
     thirdPartyLoginDto: ThirdPartyLoginDto,
   ): Promise<AuthResult> {
-    const { code, nickname, avatarUrl } = thirdPartyLoginDto;
+    const { code, nickname, avatarUrl, inviteCode } = thirdPartyLoginDto;
     this.logger.log(`第三方登录: platform=${platform}`);
 
     // 根据平台获取用户信息
@@ -354,6 +359,9 @@ class AuthRedisService implements OnModuleInit {
     // 生成令牌
     const tokens = await this.generateTokens(user);
 
+    // 处理邀请码（仅在提供了邀请码时执行，handleInvite 内部已做幂等校验）
+    await this.tryHandleInvite(BigInt(user.id), inviteCode);
+
     return {
       user: {
         id: user.id,
@@ -371,6 +379,27 @@ class AuthRedisService implements OnModuleInit {
   }
 
   // ==================== Redis操作方法 ====================
+
+  /**
+   * 处理邀请码（包装方法，捕获异常以保证登录主流程不被邀请码错误影响）
+   * - 未提供邀请码：跳过
+   * - handleInvite 内部已对重复绑定、自邀、邀请人不存在等场景做了容错
+   */
+  private async tryHandleInvite(
+    userId: bigint,
+    inviteCode?: string,
+  ): Promise<void> {
+    const code = inviteCode?.trim();
+    if (!code) return;
+
+    try {
+      await this.inviteService.handleInvite(userId, code);
+    } catch (error) {
+      this.logger.warn(
+        `[Auth] 邀请码处理失败（非阻塞）: userId=${userId}, code=${code}, err=${(error as Error).message}`,
+      );
+    }
+  }
 
   private async saveVerificationCode(
     mobile: string,

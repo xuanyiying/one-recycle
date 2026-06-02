@@ -1,12 +1,12 @@
-import { logger } from '@/utils/logger'
-import { useState, useEffect, useRef } from 'react'
-import Taro from '@tarojs/taro'
 import { useAuth } from '@/hooks/useAuth'
-import { PlatformDetector } from '@/utils/platformDetector'
 import { bindInvite } from '@/services/referral'
+import { logger } from '@/utils/logger'
+import { PlatformDetector } from '@/utils/platformDetector'
+import { Button, Checkbox, Input } from '@nutui/nutui-react-taro'
+import { Image, Text, View } from "@tarojs/components"
+import Taro from '@tarojs/taro'
+import { useEffect, useRef, useState } from 'react'
 import './index.scss'
-import { Button, Input, Checkbox } from '@nutui/nutui-react-taro'
-import { View, Text, Image } from "@tarojs/components"
 
 // 导入图片资源
 import logoIcon from '../../assets/icons/logo.jpg'
@@ -26,6 +26,7 @@ export default function Login() {
 
   const [phone, setPhone] = useState('')
   const [smsCode, setSmsCode] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   const [loading, setLoading] = useState(false)
@@ -155,6 +156,15 @@ export default function Login() {
     return /^1[3-9]\d{9}$/.test(p)
   }
 
+  // 将用户填写的邀请码暂存到 storage，由 tryBindInvite 在登录成功后读取
+  const stashInviteCode = (code: string) => {
+    const trimmed = code.trim()
+    if (!trimmed) return
+    Taro.setStorageSync('invite_code', trimmed)
+    // 30 天内有效
+    Taro.setStorageSync('invite_code_expire', Date.now() + 30 * 24 * 60 * 60 * 1000)
+  }
+
   // 发送验证码
   const handleSendCode = async () => {
     if (!phone) {
@@ -200,13 +210,21 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const res = await loginWithPhone(phone, smsCode)
+      const res = await loginWithPhone(phone, smsCode, inviteCode)
       if (res.success) {
+        // 登录成功且邀请码已随登录请求一起提交到服务端，无需再调用 bindInvite
+        if (inviteCode.trim()) {
+          Taro.removeStorageSync('invite_code')
+          Taro.removeStorageSync('invite_code_expire')
+        }
         handleLoginSuccess()
       } else {
+        // 登录失败：保留 storage 中的邀请码以便下次重试时再绑定
+        stashInviteCode(inviteCode)
         setErrorMessage(res.message || '登录失败')
       }
     } catch (error: any) {
+      stashInviteCode(inviteCode)
       setErrorMessage(error.message || '登录出错')
     } finally {
       setLoading(false)
@@ -229,13 +247,20 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const res = await handleSocialLogin(platform)
+      const res = await handleSocialLogin(platform, inviteCode)
       if (res.success) {
+        // 登录成功且邀请码已随登录请求一起提交到服务端
+        if (inviteCode.trim()) {
+          Taro.removeStorageSync('invite_code')
+          Taro.removeStorageSync('invite_code_expire')
+        }
         handleLoginSuccess()
       } else {
+        stashInviteCode(inviteCode)
         setErrorMessage(res.message || '登录失败')
       }
     } catch (error: any) {
+      stashInviteCode(inviteCode)
       setErrorMessage(error.message || '登录出错')
     } finally {
       setLoading(false)
@@ -366,6 +391,27 @@ export default function Login() {
             </Button>
           </View>
         )}
+
+        {/* 邀请码（选填） */}
+        <View className="invite-code-section">
+          <View className="invite-code-input-group">
+            <Text className="invite-code-label">邀请码</Text>
+            <View className="invite-code-input-wrapper">
+              <Input
+                className="invite-code-input"
+                placeholder="选填，请输入邀请码"
+                value={inviteCode}
+                onChange={(val) => setInviteCode(val)}
+                maxLength={6}
+              />
+              {inviteCode.length > 0 && (
+                <View className="invite-code-clear" onClick={() => setInviteCode('')}>
+                  <Text className="clear-icon">×</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
 
         {/* 协议勾选 */}
         <View className="agreement-checkbox">

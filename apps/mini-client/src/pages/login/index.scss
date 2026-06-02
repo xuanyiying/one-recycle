@@ -423,6 +423,78 @@
   }
 }
 
+.invite-code-section {
+  width: 100%;
+  padding: 0 36rpx;
+  margin-bottom: $spacing-24;
+
+  .invite-code-input-group {
+    display: flex;
+    align-items: center;
+    border: 2rpx solid $border-color;
+    border-radius: $input-radius;
+    padding: 0 $spacing-24;
+    height: 88rpx;
+    background-color: $bg-secondary;
+    transition: border-color 0.2s ease;
+
+    &:focus-within {
+      border-color: $primary-color;
+    }
+  }
+
+  .invite-code-label {
+    font-family: $font-family-primary;
+    font-size: $font-size-body;
+    color: $text-secondary;
+    margin-right: $spacing-16;
+    flex-shrink: 0;
+  }
+
+  .invite-code-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .invite-code-input {
+    flex: 1;
+    background: transparent;
+    font-family: $font-family-primary;
+    font-size: $font-size-body;
+    color: $text-color;
+    height: 100%;
+
+    &::placeholder {
+      color: $text-tertiary;
+    }
+  }
+
+  .invite-code-clear {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: $spacing-8;
+    flex-shrink: 0;
+
+    .clear-icon {
+      font-size: 28rpx;
+      line-height: 1;
+      color: #ffffff;
+      font-weight: $font-weight-medium;
+    }
+
+    &:active {
+      opacity: 0.7;
+    }
+  }
+}
+
 .submit-error {
   width: 100%;
   margin-bottom: $spacing-16;
@@ -653,7 +725,8 @@
 
   .phone-login-form,
   .action-buttons,
-  .agreement-checkbox {
+  .agreement-checkbox,
+  .invite-code-section {
     padding: 0 24rpx;
   }
 

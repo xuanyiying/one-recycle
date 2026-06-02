@@ -9,6 +9,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { NotificationModule } from '../notification/notification.module';
+import { PointsModule } from '../points/points.module';
 import { UserModule } from '../user/user.module';
 import AuthRedisService from './auth-redis.service';
 import { AuthController } from './auth.controller';
@@ -19,6 +20,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   imports: [
     forwardRef(() => UserModule),
     NotificationModule,
+    PointsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -39,7 +41,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
           .createHash('sha256')
           .update(
             'one-recycle-dev-' +
-              (process.env.USER || process.env.HOME || 'default'),
+            (process.env.USER || process.env.HOME || 'default'),
           )
           .digest('hex');
         return {
@@ -64,4 +66,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   ],
   exports: [AuthRedisService, JwtAuthGuard, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }

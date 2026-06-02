@@ -166,10 +166,10 @@ export const useAuth = () => {
     }
   }, [])
 
-  const loginWithPhone = useCallback(async (phone: string, code: string) => {
+  const loginWithPhone = useCallback(async (phone: string, code: string, inviteCode?: string) => {
     try {
       setLoading(true)
-      const result = await AuthService.phoneLogin(phone, code)
+      const result = await AuthService.phoneLogin(phone, code, inviteCode)
       if (result.success && result.token && result.user) {
         await login(result.user, result.token, 'phone')
         return { success: true }
@@ -183,7 +183,7 @@ export const useAuth = () => {
     }
   }, [login])
 
-  const handleSocialLogin = useCallback(async (provider: 'wechat' | 'alipay') => {
+  const handleSocialLogin = useCallback(async (provider: 'wechat' | 'alipay', inviteCode?: string) => {
     try {
       setLoading(true)
       let result
@@ -201,7 +201,8 @@ export const useAuth = () => {
         result = await AuthService.wechatLogin({
           code,
           nickname: userInfo.nickName,
-          avatarUrl: userInfo.avatarUrl
+          avatarUrl: userInfo.avatarUrl,
+          inviteCode,
         })
       } else if (provider === 'alipay') {
         // @ts-ignore
@@ -209,7 +210,8 @@ export const useAuth = () => {
 
         result = await AuthService.alipayLogin({
           code: authCode,
-          nickname: '支付宝用户'
+          nickname: '支付宝用户',
+          inviteCode,
         })
       }
 

@@ -11,6 +11,13 @@ export interface LoginParams {
     avatarUrl?: string
     platform: 'wechat' | 'alipay' | 'douyin'
     deviceFingerprint?: string
+    inviteCode?: string
+}
+
+export interface PhoneLoginParams {
+    mobile: string
+    verificationCode: string
+    inviteCode?: string
 }
 
 export interface SmsCodeParams {
@@ -84,11 +91,14 @@ export class AuthService {
     static async login(params: LoginParams): Promise<LoginResponse> {
         try {
             const requestUrl = `/auth/third-party/${params.platform}`
-            const payload = {
+            const payload: Record<string, any> = {
                 code: params.code,
                 nickname: params.nickname,
                 avatarUrl: params.avatarUrl,
                 deviceFingerprint: params.deviceFingerprint,
+            }
+            if (params.inviteCode) {
+                payload.inviteCode = params.inviteCode
             }
 
             const response = await post<any>(requestUrl, payload)
@@ -155,7 +165,11 @@ export class AuthService {
     /**
      * 手机号登录
      */
-    static async phoneLogin(phone: string, code: string): Promise<LoginResult> {
+    static async phoneLogin(
+        phone: string,
+        code: string,
+        inviteCode?: string,
+    ): Promise<LoginResult> {
         try {
             if (!phone || !code) {
                 throw new Error('手机号和验证码不能为空')
@@ -165,7 +179,11 @@ export class AuthService {
                 throw new Error('手机号格式不正确')
             }
 
-            const response = await post<any>('/auth/login', { mobile: phone, verificationCode: code })
+            const payload: Record<string, any> = { mobile: phone, verificationCode: code }
+            if (inviteCode) {
+                payload.inviteCode = inviteCode
+            }
+            const response = await post<any>('/auth/login', payload)
             const authData = response?.data ?? response
 
             if (authData && authData.tokens?.accessToken) {
@@ -314,7 +332,7 @@ export class AuthService {
     /**
      * 微信小程序登录
      */
-    static async wechatLogin(params: { code: string; nickname: string; avatarUrl?: string }): Promise<LoginResponse> {
+    static async wechatLogin(params: { code: string; nickname: string; avatarUrl?: string; inviteCode?: string }): Promise<LoginResponse> {
         return this.login({
             ...params,
             platform: 'wechat'
@@ -324,7 +342,7 @@ export class AuthService {
     /**
      * 支付宝小程序登录
      */
-    static async alipayLogin(params: { code: string; nickname: string; avatarUrl?: string }): Promise<LoginResponse> {
+    static async alipayLogin(params: { code: string; nickname: string; avatarUrl?: string; inviteCode?: string }): Promise<LoginResponse> {
         return this.login({
             ...params,
             platform: 'alipay'
@@ -334,7 +352,7 @@ export class AuthService {
     /**
      * 抖音小程序登录
      */
-    static async douyinLogin(params: { code: string; nickname: string; avatarUrl?: string }): Promise<LoginResponse> {
+    static async douyinLogin(params: { code: string; nickname: string; avatarUrl?: string; inviteCode?: string }): Promise<LoginResponse> {
         return this.login({
             ...params,
             platform: 'douyin'
