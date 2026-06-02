@@ -131,7 +131,9 @@ export class DispatchService implements OnModuleInit {
     });
   }
 
-  async cancelDispatch(orderId: string): Promise<{ cancelled: boolean; count: number }> {
+  async cancelDispatch(
+    orderId: string,
+  ): Promise<{ cancelled: boolean; count: number }> {
     const result = await this.prisma.orderAssignment.updateMany({
       where: {
         orderId: BigInt(orderId),

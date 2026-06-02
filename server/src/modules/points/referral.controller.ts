@@ -4,7 +4,7 @@ import { InviteService } from './services/invite.service';
 
 @Controller('referral')
 export class ReferralController {
-  constructor(private readonly inviteService: InviteService) { }
+  constructor(private readonly inviteService: InviteService) {}
 
   @Public()
   @Get('qrcode')
@@ -14,10 +14,15 @@ export class ReferralController {
     }
 
     try {
-      const qrCodeUrl = await this.inviteService.generateReferralQRCode(BigInt(userId));
+      const qrCodeUrl = await this.inviteService.generateReferralQRCode(
+        BigInt(userId),
+      );
       return { success: true, data: { url: qrCodeUrl } };
     } catch (error: any) {
-      return { success: false, message: error.message || 'Failed to generate QR code' };
+      return {
+        success: false,
+        message: error.message || 'Failed to generate QR code',
+      };
     }
   }
 }

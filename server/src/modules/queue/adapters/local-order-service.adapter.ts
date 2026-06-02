@@ -7,7 +7,7 @@ import { IOrderService, Order } from '../interfaces/order-service.interface';
 export class LocalOrderServiceAdapter implements IOrderService {
   private readonly logger = new Logger(LocalOrderServiceAdapter.name);
 
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
   async getOrder(orderId: string): Promise<Order> {
     this.logger.debug(`Getting order ${orderId} from local service`);
@@ -23,9 +23,7 @@ export class LocalOrderServiceAdapter implements IOrderService {
     status: OrderStatus,
     metadata?: Record<string, any>,
   ): Promise<Order> {
-    this.logger.debug(
-      `Updating order ${orderId} status to ${status} locally`,
-    );
+    this.logger.debug(`Updating order ${orderId} status to ${status} locally`);
     const updatedOrder = await this.orderService.updateStatus(BigInt(orderId), {
       status: status as any,
       ...metadata,
@@ -33,7 +31,10 @@ export class LocalOrderServiceAdapter implements IOrderService {
     return this.mapToInterface(updatedOrder);
   }
 
-  async updateOrderAmount(orderId: string, totalAmount: number): Promise<Order> {
+  async updateOrderAmount(
+    orderId: string,
+    totalAmount: number,
+  ): Promise<Order> {
     this.logger.debug(`Updating order ${orderId} amount to ${totalAmount}`);
     const updatedOrder = await this.orderService.updateOrderAmount(
       BigInt(orderId),
@@ -66,14 +67,15 @@ export class LocalOrderServiceAdapter implements IOrderService {
         detail: addressData?.detail,
         coordinates: addressData?.coordinates
           ? {
-            lat: Number(addressData.coordinates.lat),
-            lng: Number(addressData.coordinates.lng),
-          }
+              lat: Number(addressData.coordinates.lat),
+              lng: Number(addressData.coordinates.lng),
+            }
           : undefined,
         contactName: addressData?.contactName,
         contactPhone: addressData?.contactPhone,
       },
-      totalAmount: Number(order.totalAmount) || Number(order.estimatedAmount) || 0,
+      totalAmount:
+        Number(order.totalAmount) || Number(order.estimatedAmount) || 0,
       scheduledTime: order.expectPickupTime,
       courierId: order.courierId,
       waybillNo: order.waybillNo,

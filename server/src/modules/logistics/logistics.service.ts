@@ -1,10 +1,10 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CreateLogisticsProviderDto } from './dto/create-provider.dto';
 import { UpdateLogisticsProviderDto } from './dto/update-provider.dto';
@@ -207,28 +207,56 @@ export class LogisticsService {
     try {
       const activeProviders = await this.prisma.logisticsProvider.findMany({
         where: { isActive: true },
+        orderBy: { id: 'asc' },
       });
 
       this.logger.log(
         `Found ${activeProviders.length} active providers for freight calculation`,
       );
 
-      // 模拟返回首个可用服务商的价格
-      if (activeProviders.length > 0) {
-        const cost = 10 + weight * 2 + distance * 0.5;
-        this.logger.log(
-          `Freight calculated: provider=${activeProviders[0].name}, cost=${cost}`,
-        );
-        return {
-          provider: activeProviders[0].name,
-          cost,
-        };
+      if (activeProviders.length === 0) {
+        throw new Error('No active logistics providers available');
       }
 
-      this.logger.warn('No active providers found, using default calculation');
+      const quotes = activeProviders.map((provider) => {
+        const config = provider.config as any;
+        const basePrice = config?.basePrice || 10;
+        const pricePerKg = config?.pricePerKg || 2;
+        const pricePerKm = config?.pricePerKm || 0.5;
+        const volumeFactor = config?.volumeFactor || 1.5;
+        const minPrice = config?.minPrice || 8;
+
+        const weightCost = weight * pricePerKg;
+        const distanceCost = distance * pricePerKm;
+        const volumeCost = volume * 1000 * volumeFactor;
+
+        const totalCost = Math.max(
+          basePrice + Math.max(weightCost, volumeCost) + distanceCost,
+          minPrice,
+        );
+
+        return {
+          providerId: provider.id,
+          providerName: provider.name,
+          cost: parseFloat(totalCost.toFixed(2)),
+          estimatedTime: this.calculateEstimatedTime(distance, provider),
+        };
+      });
+
+      const bestQuote = quotes.reduce((min, quote) =>
+        quote.cost < min.cost ? quote : min,
+      );
+
+      this.logger.log(
+        `Best freight quote: provider=${bestQuote.providerName}, cost=${bestQuote.cost}`,
+      );
+
       return {
-        provider: 'Default',
-        cost: 10 + weight * 2,
+        provider: bestQuote.providerName,
+        cost: bestQuote.cost,
+        providerId: bestQuote.providerId,
+        estimatedTime: bestQuote.estimatedTime,
+        allQuotes: quotes,
       };
     } catch (error: any) {
       this.logger.error(
@@ -236,6 +264,27 @@ export class LogisticsService {
         error?.stack,
       );
       throw error;
+    }
+  }
+
+  private calculateEstimatedTime(distance: number, provider: any): string {
+    const config = provider.config;
+    const avgSpeed = config?.avgSpeed || 40; // km/h
+    const baseTime = config?.baseTime || 1; // hours
+
+    const travelHours = distance / avgSpeed;
+    const totalHours = baseTime + travelHours;
+
+    if (totalHours < 1) {
+      return `${Math.ceil(totalHours * 60)}分钟`;
+    } else if (totalHours < 24) {
+      return `${Math.ceil(totalHours)}小时`;
+    } else {
+      const days = Math.floor(totalHours / 24);
+      const remainingHours = Math.ceil(totalHours % 24);
+      return remainingHours > 0
+        ? `${days}天${remainingHours}小时`
+        : `${days}天`;
     }
   }
 }

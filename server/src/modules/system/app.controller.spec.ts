@@ -68,12 +68,13 @@ describe('SystemController', () => {
   });
 
   describe('getNewsBriefs', () => {
-    it('should return random news briefs', () => {
-      const result = controller.getNewsBriefs();
+    it('should return news briefs from completed orders', async () => {
+      const result = await controller.getNewsBriefs();
       expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(result[0]).toHaveProperty('nickname');
-      expect(result[0]).toHaveProperty('earnings');
+      if (result.length > 0) {
+        expect(result[0]).toHaveProperty('nickname');
+        expect(result[0]).toHaveProperty('earnings');
+      }
     });
   });
 });

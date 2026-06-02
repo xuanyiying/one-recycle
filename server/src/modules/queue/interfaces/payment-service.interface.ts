@@ -1,7 +1,11 @@
 export interface IPaymentService {
-  increaseBalance(request: IncreaseBalanceRequest): Promise<IncreaseBalanceResponse>;
+  increaseBalance(
+    request: IncreaseBalanceRequest,
+  ): Promise<IncreaseBalanceResponse>;
   refundBalance(request: RefundBalanceRequest): Promise<RefundBalanceResponse>;
-  initiateRefund(request: InitiateRefundRequest): Promise<InitiateRefundResponse>;
+  initiateRefund(
+    request: InitiateRefundRequest,
+  ): Promise<InitiateRefundResponse>;
   createPaymentLog(param: CreatePaymentLogParam): Promise<void>;
   isTransactionProcessed(transactionId: string): Promise<boolean>;
 }

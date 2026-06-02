@@ -1,5 +1,7 @@
 export interface IInventoryService {
-  checkInventory(request: InventoryCheckRequest): Promise<InventoryCheckResponse>;
+  checkInventory(
+    request: InventoryCheckRequest,
+  ): Promise<InventoryCheckResponse>;
   lockInventory(request: InventoryLockRequest): Promise<boolean>;
   releaseInventory(orderId: string): Promise<boolean>;
 }

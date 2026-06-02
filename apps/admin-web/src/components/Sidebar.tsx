@@ -4,13 +4,11 @@ import { cn } from '@/lib/utils/cn';
 import type { LucideIcon } from 'lucide-react';
 import {
   Bell,
-  BookOpen,
   CreditCard,
   Database,
   FileText,
   Gift,
   LayoutDashboard,
-  MessageSquare,
   Settings,
   ShoppingBag,
   Tags,
@@ -66,23 +64,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
         ],
       },
       {
-        title: '积分商城',
-        items: [
-          {
-            href: '/points/overview',
-            icon: Gift,
-            label: '积分商城',
-            children: [
-              { href: '/points/overview', label: '概览' },
-              { href: '/points/products', label: '商品管理' },
-              { href: '/points/orders', label: '订单管理' },
-              { href: '/points/tasks', label: '任务管理' },
-              { href: '/points/referral', label: '推广配置' },
-            ]
-          },
-        ],
-      },
-      {
         title: '财务中心',
         items: [
           { href: '/finance', icon: Wallet, label: '财务概览', activePrefixes: ['/finance'] },
@@ -104,17 +85,52 @@ const Sidebar: React.FC<SidebarProps> = ({ className, onClose }) => {
               { href: '/content/recycle-rules', label: '回收规则' },
             ]
           },
+          {
+            href: '/points/referral',
+            icon: Tags,
+            label: '推广配置',
+            activePrefixes: ['/points/referral'],
+          },
+          { href: '/settings/payment', icon: CreditCard, label: '支付渠道' },
+          { href: '/settings/logistics', icon: Truck, label: '快递接入' },
+          { href: '/settings/category-warehouse', icon: Warehouse, label: '分类仓库' },
+        ],
+      },
+      {
+        title: '通知管理',
+        items: [
+          {
+            href: '/notifications',
+            icon: Bell,
+            label: '通知管理',
+            activePrefixes: ['/notifications', '/settings/notification-providers', '/settings/notification-templates'],
+            children: [
+              { href: '/notifications', label: '通知记录' },
+              { href: '/settings/notification-providers', label: '通知服务商' },
+              { href: '/settings/notification-templates', label: '通知模板' },
+            ],
+          },
+        ],
+      },
+      {
+        title: '积分商城',
+        items: [
+          {
+            href: '/points/overview',
+            icon: Gift,
+            label: '积分商城',
+            children: [
+              { href: '/points/overview', label: '概览' },
+              { href: '/points/products', label: '商品管理' },
+              { href: '/points/orders', label: '订单管理' },
+              { href: '/points/tasks', label: '任务管理' },
+            ]
+          },
         ],
       },
       {
         title: '系统设置',
         items: [
-          { href: '/notifications', icon: Bell, label: '通知管理' },
-          { href: '/settings/payment', icon: CreditCard, label: '支付渠道' },
-          { href: '/settings/notification-providers', icon: MessageSquare, label: '通知服务商' },
-          { href: '/settings/notification-templates', icon: BookOpen, label: '通知模板' },
-          { href: '/settings/logistics', icon: Truck, label: '快递接入' },
-          { href: '/settings/category-warehouse', icon: Warehouse, label: '分类仓库' },
           { href: '/settings', icon: Settings, label: '系统设置' },
         ],
       },

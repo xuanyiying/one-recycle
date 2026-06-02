@@ -32,6 +32,8 @@ export interface CreateTemplateData {
   subject?: string;
   content: string;
   variables: string[];
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
 }
 
 export interface UpdateTemplateData {
@@ -40,6 +42,8 @@ export interface UpdateTemplateData {
   content?: string;
   variables?: string[];
   isActive?: boolean;
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
 }
 
 export interface NotificationFilters {
@@ -71,6 +75,12 @@ export interface NotificationProvider {
   config: Record<string, any>;
 }
 
+export interface SendByTemplateTypeOptions {
+  sms?: { phone: string };
+  push?: { userId: string };
+  email?: { to: string; subject?: string };
+}
+
 export interface INotificationService {
   // 发送通知
   sendNotification(data: SendNotificationData): Promise<NotificationEntity>;
@@ -99,6 +109,14 @@ export interface INotificationService {
     data: UpdateTemplateData,
   ): Promise<NotificationTemplateEntity>;
   deleteTemplate(id: string): Promise<{ success: boolean }>;
+  getActiveTemplateByType(
+    type: TemplateType,
+  ): Promise<NotificationTemplateEntity | null>;
+  sendByTemplateType(
+    type: TemplateType,
+    templateData: Record<string, any>,
+    channels: SendByTemplateTypeOptions,
+  ): Promise<void>;
 
   // 批量操作
   findBatches(filters?: BatchFilters): Promise<NotificationBatchEntity[]>;

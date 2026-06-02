@@ -4,4 +4,6 @@ export class UpdateTemplateDto {
   content?: string;
   variables?: string[];
   isActive?: boolean;
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
 }

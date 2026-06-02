@@ -68,41 +68,51 @@ const DashboardPage: React.FC = () => {
   const [trendData, setTrendData] = useState<TrendData[]>([]);
   const [trendPeriod, setTrendPeriod] = useState<'7d' | '30d'>('7d');
   const [error, setError] = useState<string | null>(null);
+  const [trendError, setTrendError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const initialLoadDone = useRef(false);
-
-  const generateMockTrendData = (days: number): TrendData[] => {
-    const data: TrendData[] = [];
-    const now = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      data.push({
-        date: date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }),
-        orders: Math.floor(Math.random() * 50) + 20,
-        revenue: Math.floor(Math.random() * 10000) + 5000,
-        users: Math.floor(Math.random() * 20) + 5,
-      });
-    }
-    return data;
-  };
 
   const fetchTrendData = useCallback(async (period: '7d' | '30d'): Promise<TrendData[]> => {
     const days = period === '7d' ? 7 : 30;
-    try {
-      const response = await InventoryService.getInventoryValueTrend(days);
-      if (Array.isArray(response) && response.length > 0) {
-        return response.map((item: any) => ({
-          date: item.date,
-          orders: item.orderCount || 0,
-          revenue: item.totalValue || 0,
-          users: 0,
-        }));
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await InventoryService.getInventoryValueTrend(days);
+        if (Array.isArray(response) && response.length > 0) {
+          return response.map((item: any) => ({
+            date: item.date,
+            orders: item.orderCount || 0,
+            revenue: item.totalValue || 0,
+            users: 0,
+          }));
+        }
+        return [];
+      } catch (error) {
+        lastError = error as Error;
+        const isLastAttempt = attempt === maxRetries;
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+
+        console.error(
+          `Failed to fetch trend data (attempt ${attempt}/${maxRetries}):`,
+          error,
+        );
+
+        if (isLastAttempt) {
+          const errorMessage =
+            lastError?.message || '未知网络错误';
+          setTrendError(
+            `趋势数据加载失败 (${errorMessage})，请检查网络连接后重试`,
+          );
+          throw lastError;
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        }
       }
-      return generateMockTrendData(days);
-    } catch (error) {
-      console.error('Failed to fetch trend data:', error);
-      return generateMockTrendData(days);
     }
+
+    return [];
   }, []);
 
   const loadDashboardData = useCallback(async () => {
@@ -113,13 +123,31 @@ const DashboardPage: React.FC = () => {
       setStats(data.stats);
       setRecentOrders(data.recentOrders);
       setInventoryAlerts(data.inventoryAlerts);
-      const trend = await fetchTrendData(trendPeriod);
-      setTrendData(trend);
+      try {
+        setTrendError(null);
+        const trend = await fetchTrendData(trendPeriod);
+        setTrendData(trend);
+      } catch (trendErr) {
+        setTrendData([]);
+      }
     } catch (error: any) {
       console.error('Failed to load dashboard data:', error);
       setError(error.message || '加载数据失败，请检查网络连接');
     } finally {
       setLoading(false);
+    }
+  }, [fetchTrendData, trendPeriod]);
+
+  const handleRetryTrend = useCallback(async () => {
+    setRetrying(true);
+    setTrendError(null);
+    try {
+      const trend = await fetchTrendData(trendPeriod);
+      setTrendData(trend);
+    } catch (err) {
+      // 错误已在 fetchTrendData 中处理
+    } finally {
+      setRetrying(false);
     }
   }, [fetchTrendData, trendPeriod]);
 
@@ -132,8 +160,13 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     if (initialLoadDone.current && !loading) {
       const updateTrendData = async () => {
-        const trend = await fetchTrendData(trendPeriod);
-        setTrendData(trend);
+        setTrendError(null);
+        try {
+          const trend = await fetchTrendData(trendPeriod);
+          setTrendData(trend);
+        } catch (err) {
+          setTrendData([]);
+        }
       };
       updateTrendData();
     }
@@ -308,6 +341,45 @@ const DashboardPage: React.FC = () => {
           <CardContent>
             {loading ? (
               <Skeleton className="h-[300px] w-full" />
+            ) : trendError ? (
+              <div
+                className="h-[300px] flex flex-col items-center justify-center text-center p-6 border border-destructive/20 rounded-lg bg-destructive/5"
+                role="alert"
+                aria-live="polite"
+              >
+                <AlertTriangle className="h-12 w-12 text-destructive mb-3" />
+                <p className="text-sm font-medium text-destructive mb-2">
+                  趋势数据加载失败
+                </p>
+                <p className="text-xs text-muted-foreground mb-4 max-w-md">
+                  {trendError}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetryTrend}
+                  disabled={retrying}
+                  className="gap-2"
+                >
+                  <RefreshCw
+                    className={cn(
+                      'h-4 w-4',
+                      retrying && 'animate-spin',
+                    )}
+                  />
+                  {retrying ? '重试中...' : '重新加载'}
+                </Button>
+              </div>
+            ) : trendData.length === 0 ? (
+              <div className="h-[300px] flex flex-col items-center justify-center text-center p-6 border border-muted rounded-lg">
+                <LineChart className="h-12 w-12 text-muted-foreground mb-3" />
+                <p className="text-sm font-medium text-foreground mb-1">
+                  暂无趋势数据
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {trendPeriod === '7d' ? '近7天' : '近30天'}暂无订单记录
+                </p>
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={trendData}>

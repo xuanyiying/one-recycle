@@ -50,6 +50,8 @@ interface TemplateFormData {
   type: string;
   subject: string;
   content: string;
+  smsTemplateCode: string;
+  wechatTemplateId: string;
   isActive: boolean;
 }
 
@@ -115,6 +117,8 @@ export default function NotificationTemplatesPage() {
       type: '',
       subject: '',
       content: '',
+      smsTemplateCode: '',
+      wechatTemplateId: '',
       isActive: true,
     },
   });
@@ -143,6 +147,8 @@ export default function NotificationTemplatesPage() {
         type: editingTemplate.type,
         subject: editingTemplate.subject || '',
         content: editingTemplate.content,
+        smsTemplateCode: editingTemplate.smsTemplateCode || '',
+        wechatTemplateId: editingTemplate.wechatTemplateId || '',
         isActive: editingTemplate.isActive,
       });
       setVariables([...editingTemplate.variables]);
@@ -152,6 +158,8 @@ export default function NotificationTemplatesPage() {
         type: '',
         subject: '',
         content: '',
+        smsTemplateCode: '',
+        wechatTemplateId: '',
         isActive: true,
       });
       setVariables([]);
@@ -274,6 +282,8 @@ export default function NotificationTemplatesPage() {
           content: data.content,
           variables: filteredVariables,
           isActive: data.isActive,
+          smsTemplateCode: data.smsTemplateCode || undefined,
+          wechatTemplateId: data.wechatTemplateId || undefined,
         };
         await notificationTemplateService.updateTemplate(editingTemplate.id, updateData);
       } else {
@@ -283,6 +293,8 @@ export default function NotificationTemplatesPage() {
           subject: data.subject || undefined,
           content: data.content,
           variables: filteredVariables,
+          smsTemplateCode: data.smsTemplateCode || undefined,
+          wechatTemplateId: data.wechatTemplateId || undefined,
         };
         await notificationTemplateService.createTemplate(createData);
       }
@@ -433,6 +445,7 @@ export default function NotificationTemplatesPage() {
                 <TableHead>模板名称</TableHead>
                 <TableHead>模板类型</TableHead>
                 <TableHead>主题</TableHead>
+                <TableHead>短信模板Code</TableHead>
                 <TableHead>变量数</TableHead>
                 <TableHead>状态</TableHead>
                 <TableHead>更新时间</TableHead>
@@ -453,6 +466,9 @@ export default function NotificationTemplatesPage() {
                       <Skeleton className="h-4 w-[150px]" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-[40px]" />
                     </TableCell>
                     <TableCell>
@@ -468,7 +484,7 @@ export default function NotificationTemplatesPage() {
                 ))
               ) : filteredTemplates.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                     暂无通知模板
                   </TableCell>
                 </TableRow>
@@ -485,6 +501,9 @@ export default function NotificationTemplatesPage() {
                       <span className="text-sm truncate max-w-[200px] block">
                         {template.subject || '-'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm font-mono">{template.smsTemplateCode || '-'}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -611,6 +630,25 @@ export default function NotificationTemplatesPage() {
               {...register('subject')}
               placeholder="仅邮件模板需要填写"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">短信模板代码</label>
+              <Input
+                {...register('smsTemplateCode')}
+                placeholder="如 SMS_123456 (阿里云) 或 1234 (腾讯云)"
+              />
+              <p className="text-xs text-muted-foreground">短信服务商的模板 Code，用于发送短信时调用对应模板</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">微信模板消息ID</label>
+              <Input
+                {...register('wechatTemplateId')}
+                placeholder="微信订阅消息模板 ID"
+              />
+              <p className="text-xs text-muted-foreground">微信小程序模板消息的模板 ID，用于推送微信通知</p>
+            </div>
           </div>
 
           <div className="space-y-2">

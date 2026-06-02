@@ -67,7 +67,10 @@ describe('DispatchProcessor', () => {
         { provide: OrderService, useValue: mockOrderService },
         { provide: TenantService, useValue: mockTenantService },
         { provide: SettlementService, useValue: mockSettlementService },
-        { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
+        {
+          provide: DeadLetterQueueService,
+          useValue: mockDeadLetterQueueService,
+        },
       ],
     }).compile();
 

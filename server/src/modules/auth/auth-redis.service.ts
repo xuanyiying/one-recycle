@@ -17,10 +17,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import {
-  NotificationPriority,
-  NotificationType,
-} from '../notification/entities/notification.entity';
+import { TemplateType } from '../notification/entities/notification.entity';
 import { NotificationService } from '../notification/services/notification.service';
 import { AuthKeyUtils } from './constants/auth-keys.constant';
 import { LoginDto } from './dto/login.dto';
@@ -492,20 +489,24 @@ class AuthRedisService implements OnModuleInit {
     type: string,
   ): Promise<void> {
     try {
-      await this.notificationService.sendNotification({
-        type: NotificationType.SMS,
-        recipient: {
-          phoneNumber: phone,
-        },
-        content: {
-          title: '验证码',
-          body: `您的验证码是：${code}，60秒内有效。`,
-          data: { type },
-        },
-        priority: NotificationPriority.HIGH,
-      });
+      const templateType =
+        type === 'reset_password'
+          ? TemplateType.PASSWORD_RESET
+          : TemplateType.ACCOUNT_VERIFICATION;
 
-      this.logger.log(`验证码已通过通知服务发送 (${phone})`);
+      await this.notificationService.sendByTemplateType(
+        templateType,
+        {
+          code,
+          expireMinutes: Math.round(this.CODE_EXPIRY_SECONDS / 60),
+          type,
+        },
+        {
+          sms: { phone },
+        },
+      );
+
+      this.logger.log(`验证码已通过模板通知服务发送 (${phone})`);
     } catch (error) {
       this.logger.error('发送短信失败:', error);
       throw new BadRequestException('验证码发送失败，请稍后重试');

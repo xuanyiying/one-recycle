@@ -25,11 +25,8 @@ export class DispatchServiceGrpcClient implements IDispatchService {
       },
     });
 
-    this.dispatchService =
-      this.client.getService('DispatchService');
-    this.logger.log(
-      `gRPC client connected to dispatch service at ${url}`,
-    );
+    this.dispatchService = this.client.getService('DispatchService');
+    this.logger.log(`gRPC client connected to dispatch service at ${url}`);
   }
 
   async cancelDispatch(orderId: string, reason: string): Promise<boolean> {

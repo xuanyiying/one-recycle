@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsOptional, IsIn, Min } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsIn,
+  Min,
+  IsBoolean,
+} from 'class-validator';
 
 export enum RewardType {
   FIXED = 'FIXED',
@@ -11,6 +18,10 @@ export enum RewardTiming {
 }
 
 export class UpdateReferralConfigDto {
+  @IsBoolean()
+  @IsOptional()
+  referralEnabled?: boolean;
+
   @IsString()
   @IsOptional()
   @IsIn([RewardType.FIXED, RewardType.PERCENTAGE])
@@ -28,6 +39,10 @@ export class UpdateReferralConfigDto {
   @IsNumber()
   @IsOptional()
   minRewardPoints?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  inviteEnabled?: boolean;
 
   @IsString()
   @IsOptional()

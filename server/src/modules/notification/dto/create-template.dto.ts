@@ -6,4 +6,6 @@ export class CreateTemplateDto {
   subject?: string;
   content!: string;
   variables!: string[];
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
 }

@@ -19,6 +19,8 @@ async function main() {
     'seed-tenant-staff.ts', // 基础租户和员工数据
     'seed-categories.ts',   // 分类数据
     'seed-content-config.ts', // FAQ和回收规则
+    'seed-banners-articles.ts', // Banner轮播图和文章
+    'seed-logistics-providers.ts', // 物流服务商配置
   ];
 
   for (const script of scripts) {

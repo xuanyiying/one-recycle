@@ -18,6 +18,7 @@ import {
   NotificationStatsEntity,
   NotificationStatus,
   NotificationType,
+  TemplateType,
 } from '../entities/notification.entity';
 import {
   BatchFilters,
@@ -118,8 +119,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
     data: { phone: string; template: string; params: Record<string, any> },
     config: Record<string, any>,
   ): Promise<{ messageId: string; status: string }> {
-    await Promise.resolve();
-    const { accessKeyId, accessKeySecret } = config;
+    const { accessKeyId, accessKeySecret, signName } = config;
     if (!accessKeyId || !accessKeySecret) {
       throw new Error('Aliyun SMS credentials not configured');
     }
@@ -129,25 +129,68 @@ export class NotificationService implements INotificationService, OnModuleInit {
       `Sending Aliyun SMS to ${data.phone}, template: ${data.template}`,
     );
 
-    // TODO: 集成阿里云 SMS SDK
-    // const client = new AliyunSMSClient({ accessKeyId, accessKeySecret });
-    // await client.sendSMS({
-    //   PhoneNumbers: data.phone,
-    //   SignName: signName,
-    //   TemplateCode: data.template,
-    //   TemplateParam: JSON.stringify(data.params),
-    // });
+    try {
+      const Core = require('@alicloud/pop-core');
+      const client = new Core({
+        accessKeyId,
+        accessKeySecret,
+        endpoint: 'https://dysmsapi.aliyuncs.com',
+        apiVersion: '2017-05-25',
+      });
 
-    return { messageId, status: 'SENT' };
+      const params: any = {
+        PhoneNumbers: data.phone,
+        SignName: signName,
+        TemplateCode: data.template,
+      };
+
+      if (Object.keys(data.params).length > 0) {
+        params.TemplateParam = JSON.stringify(data.params);
+      }
+
+      const requestOption = {
+        method: 'POST',
+      };
+
+      const result = await client.request('SendSms', params, requestOption);
+
+      if (result.Code === 'OK') {
+        this.logger.log(
+          `✅ Aliyun SMS sent successfully. BizId: ${result.BizId}`,
+        );
+        return {
+          messageId,
+          status: 'SENT',
+          externalId: result.BizId,
+          metadata: {
+            provider: 'aliyun',
+            bizId: result.BizId,
+            requestId: result.RequestId,
+          },
+        } as any;
+      } else {
+        throw new Error(
+          `Aliyun SMS error: ${result.Message} (Code: ${result.Code})`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send Aliyun SMS:`, error);
+      throw error;
+    }
   }
 
   private async sendTencentSms(
     data: { phone: string; template: string; params: Record<string, any> },
     config: Record<string, any>,
   ): Promise<{ messageId: string; status: string }> {
-    await Promise.resolve();
-    const { secretId, secretKey } = config;
-    if (!secretId || !secretKey) {
+    const {
+      secretId,
+      secretKey,
+      sdkAppId,
+      signName,
+      region = 'ap-guangzhou',
+    } = config;
+    if (!secretId || !secretKey || !sdkAppId) {
       throw new Error('Tencent SMS credentials not configured');
     }
 
@@ -156,10 +199,56 @@ export class NotificationService implements INotificationService, OnModuleInit {
       `Sending Tencent SMS to ${data.phone}, template: ${data.template}`,
     );
 
-    // TODO: 集成腾讯云 SMS SDK
-    void config.appId;
-    void config.signName;
-    return { messageId, status: 'SENT' };
+    try {
+      const tencentcloud = require('tencentcloud-sdk-nodejs');
+      const SmsClient = tencentcloud.sms.v20210111.Client;
+      const client = new SmsClient({
+        credential: { secretId, secretKey },
+        region,
+        profile: { httpProfile: { endpoint: 'sms.tencentcloudapi.com' } },
+      });
+
+      const params: any = {
+        SmsSdkAppId: String(sdkAppId),
+        SignName: signName,
+        TemplateId: String(data.template),
+        PhoneNumberSet: [`+86${data.phone}`],
+        TemplateParamSet: Object.values(data.params).map(String),
+      };
+
+      const result = await client.SendSms(params);
+
+      const response = result.SendStatusSet?.[0];
+      if (response?.Code === 'Ok') {
+        this.logger.log(
+          `✅ Tencent SMS sent successfully. SerialNo: ${response.SerialNo}`,
+        );
+        return {
+          messageId,
+          status: 'SENT',
+          externalId: response.SerialNo,
+          metadata: {
+            provider: 'tencent',
+            serialNo: response.SerialNo,
+            requestId: result.RequestId,
+          },
+        } as any;
+      } else {
+        throw new Error(
+          `Tencent SMS error: ${response?.Message} (Code: ${response?.Code})`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send Tencent SMS:`, error);
+
+      if ((error as Error).message.includes('Cannot find module')) {
+        this.logger.warn(
+          'Tencent Cloud SDK not installed. Please run: npm install tencentcloud-sdk-nodejs',
+        );
+        throw new Error('Tencent Cloud SDK not installed');
+      }
+      throw error;
+    }
   }
 
   private async sendGenericSms(
@@ -219,16 +308,245 @@ export class NotificationService implements INotificationService, OnModuleInit {
       throw new Error('No enabled push provider found');
     }
 
-    // TODO: 集成推送服务 (FCM, APNS, JPush, 等)
     this.logger.log(`Sending push notification to user ${data.userId}`);
 
-    const devicesCount = 1;
-    const successCount = 1;
+    const providerName = pushProvider.name.toLowerCase();
+
+    try {
+      let result: any;
+
+      switch (providerName) {
+        case 'fcm':
+        case 'firebase':
+          result = await this.sendFCMPush(data, pushProvider.config);
+          break;
+
+        case 'jpush':
+        case 'jiguang':
+          result = await this.sendJPushNotification(data, pushProvider.config);
+          break;
+
+        case 'getui':
+        case 'igetui':
+          result = await this.sendGetuiPush(data, pushProvider.config);
+          break;
+
+        default:
+          result = await this.sendGenericPush(data, pushProvider.config);
+      }
+
+      this.logger.log(`✅ Push notification sent via ${providerName}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to send push notification:`, error);
+      throw error;
+    }
+  }
+
+  private async sendFCMPush(
+    data: {
+      userId: string | number;
+      title: string;
+      content: string;
+      data?: Record<string, any>;
+    },
+    config: Record<string, any>,
+  ): Promise<any> {
+    const { serverKey, projectId } = config;
+    if (!serverKey) {
+      throw new Error('FCM server key not configured');
+    }
+
+    try {
+      const response = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${serverKey}`,
+          },
+          body: JSON.stringify({
+            message: {
+              token: String(data.userId),
+              notification: {
+                title: data.title,
+                body: data.content,
+              },
+              data: data.data,
+              android: { priority: 'high' },
+              apns: { payload: { aps: { sound: 'default' } } },
+            },
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`FCM error: ${result.error?.message}`);
+      }
+
+      return {
+        success: true,
+        devicesCount: 1,
+        successCount: 1,
+        sentAt: new Date().toISOString(),
+        metadata: { provider: 'fcm', messageId: result.name },
+      };
+    } catch (error) {
+      this.logger.error('FCM push failed:', error);
+      throw error;
+    }
+  }
+
+  private async sendJPushNotification(
+    data: {
+      userId: string | number;
+      title: string;
+      content: string;
+      data?: Record<string, any>;
+    },
+    config: Record<string, any>,
+  ): Promise<any> {
+    const { appKey, masterSecret } = config;
+    if (!appKey || !masterSecret) {
+      throw new Error('JPush credentials not configured');
+    }
+
+    try {
+      const JPush = require('jpush-sdk');
+      const client = JPush.buildClient(appKey, masterSecret);
+
+      await new Promise<void>((resolve, reject) => {
+        client.push().send(
+          {
+            platform: 'all',
+            audience: { registration_id: [String(data.userId)] },
+            notification: {
+              alert: data.content,
+              android: { title: data.title, extras: data.data },
+              ios: { title: data.title, extras: data.data },
+            },
+          },
+          (err: Error, res: any) => {
+            if (err) reject(err);
+            else resolve(res);
+          },
+        );
+      });
+
+      return {
+        success: true,
+        devicesCount: 1,
+        successCount: 1,
+        sentAt: new Date().toISOString(),
+        metadata: { provider: 'jpush' },
+      };
+    } catch (error) {
+      if ((error as Error).message.includes('Cannot find module')) {
+        this.logger.warn(
+          'JPush SDK not installed. Please run: npm install jpush-sdk',
+        );
+        throw new Error('JPush SDK not installed');
+      }
+      throw error;
+    }
+  }
+
+  private async sendGetuiPush(
+    data: {
+      userId: string | number;
+      title: string;
+      content: string;
+      data?: Record<string, any>;
+    },
+    config: Record<string, any>,
+  ): Promise<any> {
+    const { appId, appKey, masterSecret } = config;
+    if (!appId || !appKey || !masterSecret) {
+      throw new Error('Getui credentials not configured');
+    }
+
+    try {
+      const GeTui = require('gt-sdk-nodejs').default;
+      const gt = new GeTui(appKey, appId, masterSecret);
+
+      const result = await gt.pushMessageToSingle({
+        cid: String(data.userId),
+        transparent: false,
+        message: {
+          is_async: false,
+          msgtype: 'notification',
+          notification: {
+            style: { type: 0, text: data.content, title: data.title },
+            transmission: JSON.stringify(data.data || {}),
+          },
+        },
+      });
+
+      return {
+        success: true,
+        devicesCount: 1,
+        successCount: 1,
+        sentAt: new Date().toISOString(),
+        metadata: { provider: 'getui', result },
+      };
+    } catch (error) {
+      if ((error as Error).message.includes('Cannot find module')) {
+        this.logger.warn(
+          'Getui SDK not installed. Please run: npm install gt-sdk-nodejs',
+        );
+        throw new Error('Getui SDK not installed');
+      }
+      throw error;
+    }
+  }
+
+  private async sendGenericPush(
+    data: {
+      userId: string | number;
+      title: string;
+      content: string;
+      data?: Record<string, any>;
+    },
+    config: Record<string, any>,
+  ): Promise<any> {
+    const { endpoint, apiKey, appSecret } = config;
+    if (!endpoint || !apiKey) {
+      throw new Error('Generic push provider not configured properly');
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'X-App-Secret': appSecret || '',
+      },
+      body: JSON.stringify({
+        userId: String(data.userId),
+        notification: {
+          title: data.title,
+          body: data.content,
+        },
+        data: data.data,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Push provider error: ${response.status} ${await response.text()}`,
+      );
+    }
+
+    const result = await response.json();
     return {
       success: true,
-      devicesCount,
-      successCount,
+      devicesCount: 1,
+      successCount: 1,
       sentAt: new Date().toISOString(),
+      metadata: { provider: 'generic', result },
     };
   }
 
@@ -569,6 +887,8 @@ export class NotificationService implements INotificationService, OnModuleInit {
         subject: data.subject,
         content: data.content,
         variables: data.variables as any,
+        smsTemplateCode: data.smsTemplateCode,
+        wechatTemplateId: data.wechatTemplateId,
         isActive: true,
       },
     });
@@ -614,6 +934,9 @@ export class NotificationService implements INotificationService, OnModuleInit {
         subject: data.subject,
         content: data.content,
         variables: data.variables as any,
+        isActive: data.isActive,
+        smsTemplateCode: data.smsTemplateCode,
+        wechatTemplateId: data.wechatTemplateId,
       },
     });
 
@@ -708,12 +1031,12 @@ export class NotificationService implements INotificationService, OnModuleInit {
     const averageDeliveryTime =
       deliveredNotifications.length > 0
         ? deliveredNotifications.reduce((sum, n) => {
-            const deliveryTime =
-              n.deliveredAt.getTime() - n.createdAt.getTime();
-            return sum + deliveryTime;
-          }, 0) /
-          deliveredNotifications.length /
-          1000 // 转换为秒
+          const deliveryTime =
+            n.deliveredAt.getTime() - n.createdAt.getTime();
+          return sum + deliveryTime;
+        }, 0) /
+        deliveredNotifications.length /
+        1000 // 转换为秒
         : 0;
 
     // 计算各类型统计
@@ -832,10 +1155,12 @@ export class NotificationService implements INotificationService, OnModuleInit {
   }
 
   async getProviders(): Promise<NotificationProvider[]> {
-    const dbConfigs = await this.prisma.notificationProviderConfig.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => []);
+    const dbConfigs = await this.prisma.notificationProviderConfig
+      .findMany({
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+      })
+      .catch(() => []);
 
     if (dbConfigs.length > 0) {
       const typeMap: Record<string, NotificationType> = {
@@ -853,7 +1178,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
           apiKey: dbConfig.apiKey,
           apiSecret: dbConfig.apiSecret,
           endpoint: dbConfig.endpoint,
-          ...(dbConfig.config as Record<string, any> || {}),
+          ...((dbConfig.config as Record<string, any>) || {}),
         },
       }));
     }
@@ -1023,7 +1348,126 @@ export class NotificationService implements INotificationService, OnModuleInit {
     return { subject, content };
   }
 
+  async getActiveTemplateByType(type: TemplateType): Promise<any> {
+    const template = await this.prisma.notificationTemplate.findFirst({
+      where: { type: type as any, isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!template) {
+      this.logger.warn(`No active template found for type: ${type}`);
+      return null;
+    }
+    return template;
+  }
+
+  async sendByTemplateType(
+    type: TemplateType,
+    templateData: Record<string, any>,
+    channels: {
+      sms?: { phone: string };
+      push?: { userId: string };
+      email?: { to: string; subject?: string };
+    },
+  ): Promise<void> {
+    const template = await this.getActiveTemplateByType(type);
+    if (!template) {
+      this.logger.warn(
+        `Skipping notification for ${type}: no active template found`,
+      );
+      return;
+    }
+
+    let renderedContent: string;
+    let renderedSubject: string | undefined;
+
+    try {
+      const rendered = await this.renderTemplate(
+        String(template.id),
+        templateData,
+      );
+      renderedContent = rendered.content;
+      renderedSubject = rendered.subject;
+    } catch (error) {
+      this.logger.error(
+        `Failed to render template ${template.id}: ${(error as Error).message}`,
+      );
+      renderedContent = template.content;
+      Object.entries(templateData).forEach(([key, value]) => {
+        renderedContent = renderedContent.replace(
+          new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+          String(value),
+        );
+      });
+      if (template.subject) {
+        renderedSubject = template.subject;
+        Object.entries(templateData).forEach(([key, value]) => {
+          renderedSubject = renderedSubject!.replace(
+            new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+            String(value),
+          );
+        });
+      }
+    }
+
+    const results: Promise<any>[] = [];
+
+    if (channels.sms?.phone && template.smsTemplateCode) {
+      results.push(
+        this.sendSms({
+          phone: channels.sms.phone,
+          template: template.smsTemplateCode,
+          params: templateData,
+        }).catch((error) => {
+          this.logger.error(
+            `SMS send failed for ${type}: ${(error as Error).message}`,
+          );
+        }),
+      );
+    }
+
+    if (channels.push?.userId) {
+      results.push(
+        this.sendPush({
+          userId: channels.push.userId,
+          title: renderedSubject || template.name,
+          content: renderedContent,
+          data: { ...templateData, templateType: type },
+        }).catch((error) => {
+          this.logger.error(
+            `Push send failed for ${type}: ${(error as Error).message}`,
+          );
+        }),
+      );
+    }
+
+    if (channels.email?.to) {
+      results.push(
+        this.sendEmail({
+          to: channels.email.to,
+          subject: channels.email.subject || renderedSubject || template.name,
+          content: renderedContent,
+        }).catch((error) => {
+          this.logger.error(
+            `Email send failed for ${type}: ${(error as Error).message}`,
+          );
+        }),
+      );
+    }
+
+    if (results.length === 0) {
+      this.logger.warn(`No valid channels provided for template type: ${type}`);
+    }
+
+    await Promise.allSettled(results);
+    this.logger.log(
+      `Notification sent via template type=${type}, channels=${Object.keys(channels).join(',')}`,
+    );
+  }
+
   private async processNotification(notification: any): Promise<void> {
+    const startTime = Date.now();
+    let result: any = {};
+
     try {
       const updatedNotification = await this.prisma.notification.update({
         where: { id: notification.id },
@@ -1033,74 +1477,233 @@ export class NotificationService implements INotificationService, OnModuleInit {
         },
       });
 
-      // 模拟发送过程
       const providers = await this.getProviders();
       const provider = providers.find(
         (p) => p.type === (updatedNotification.type as any),
       );
+
       if (!provider || !provider.isEnabled) {
         throw new Error(
           `Provider for ${updatedNotification.type} is not available`,
         );
       }
 
-      // 模拟发送延迟
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      const recipient =
+        typeof updatedNotification.recipient === 'string'
+          ? JSON.parse(updatedNotification.recipient)
+          : updatedNotification.recipient;
+      const content =
+        typeof updatedNotification.content === 'string'
+          ? JSON.parse(updatedNotification.content)
+          : updatedNotification.content;
 
-      // 模拟发送结果
-      const success = true;
+      let sendResult: any;
 
-      if (success) {
-        await this.prisma.notification.update({
-          where: { id: updatedNotification.id },
-          data: {
-            status: NotificationStatus.DELIVERED as any,
-            deliveredAt: new Date(),
-            result: {
-              messageId: this.generateMessageId(),
-              externalId: `ext-${Date.now()}`,
-              deliveredAt: new Date(),
-              cost: this.calculateCost(updatedNotification.type as any),
-              metadata: { provider: provider.name },
+      switch (updatedNotification.type) {
+        case NotificationType.SMS:
+          if (!recipient.phoneNumber) {
+            throw new Error(
+              'SMS notification requires phoneNumber in recipient',
+            );
+          }
+          sendResult = await this.sendSms({
+            phone: recipient.phoneNumber,
+            template: content.templateId || content.template,
+            params: content.templateData || content.params || {},
+          });
+          break;
+
+        case NotificationType.EMAIL:
+          if (!recipient.email) {
+            throw new Error(
+              'Email notification requires email address in recipient',
+            );
+          }
+          sendResult = await this.sendEmail({
+            to: recipient.email,
+            subject: content.title || content.subject,
+            content: content.body || content.content,
+            template: content.templateId,
+            params: content.templateData || content.params,
+          });
+          break;
+
+        case NotificationType.PUSH:
+          if (!recipient.userId && !recipient.deviceToken) {
+            throw new Error(
+              'Push notification requires userId or deviceToken in recipient',
+            );
+          }
+          sendResult = await this.sendPush({
+            userId: recipient.userId || recipient.deviceToken,
+            title: content.title,
+            content: content.body || content.content,
+            data: content.data,
+          });
+          break;
+
+        case NotificationType.WEBHOOK:
+          if (!recipient.webhookUrl && !content.url) {
+            throw new Error(
+              'Webhook notification requires webhookUrl or url in content',
+            );
+          }
+          sendResult = await this.sendWebhook({
+            url: recipient.webhookUrl || content.url,
+            payload: content.payload || {
+              notificationId: updatedNotification.id,
+              ...content,
             },
-          },
-        });
-      } else {
-        await this.prisma.notification.update({
-          where: { id: updatedNotification.id },
-          data: {
-            status: NotificationStatus.FAILED as any,
-            failedAt: new Date(),
-            result: {
-              messageId: this.generateMessageId(),
-              failureReason: 'Simulated delivery failure',
-              cost: 0,
-            },
-          },
-        });
+            headers: content.headers,
+            timeout: content.timeout,
+            retries: content.retries,
+          });
+          break;
+
+        case NotificationType.IN_APP:
+          sendResult = await this.sendInAppNotification(
+            updatedNotification.id,
+            recipient,
+            content,
+          );
+          break;
+
+        default:
+          throw new Error(
+            `Unsupported notification type: ${updatedNotification.type}`,
+          );
       }
 
+      const processingTime = Date.now() - startTime;
+
+      result = {
+        messageId: sendResult.messageId || this.generateMessageId(),
+        externalId: sendResult.externalId || sendResult.messageId,
+        deliveredAt: new Date(),
+        cost: this.calculateCost(updatedNotification.type as any),
+        processingTime,
+        metadata: {
+          provider: provider.name,
+          providerType: provider.type,
+          ...sendResult.metadata,
+        },
+      };
+
+      await this.prisma.notification.update({
+        where: { id: updatedNotification.id },
+        data: {
+          status: NotificationStatus.DELIVERED as any,
+          deliveredAt: new Date(),
+          result,
+        },
+      });
+
       this.logger.log(
-        `Processed notification ${updatedNotification.id}: ${updatedNotification.status}`,
+        `✅ Notification ${updatedNotification.id} delivered successfully via ${provider.name} (${processingTime}ms)`,
       );
     } catch (error: any) {
+      const processingTime = Date.now() - startTime;
+
+      result = {
+        messageId: this.generateMessageId(),
+        failureReason: error.message,
+        cost: 0,
+        processingTime,
+        errorStack:
+          process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      };
+
       await this.prisma.notification.update({
         where: { id: notification.id },
         data: {
           status: NotificationStatus.FAILED as any,
           failedAt: new Date(),
-          result: {
-            messageId: this.generateMessageId(),
-            failureReason: error.message,
-            cost: 0,
-          },
+          result,
         },
       });
 
       this.logger.error(
-        `Failed to process notification ${notification.id}: ${error.message}`,
+        `❌ Failed to process notification ${notification.id}: ${error.message}`,
       );
+
+      if (
+        notification.deliveryOptions?.retryCount <
+        (notification.deliveryOptions?.maxRetries || 3)
+      ) {
+        this.scheduleRetry(notification);
+      }
     }
+  }
+
+  private async sendInAppNotification(
+    notificationId: any,
+    recipient: any,
+    content: any,
+  ): Promise<{ messageId: string; status: string }> {
+    const messageId = this.generateMessageId();
+
+    try {
+      await this.redisService.set(
+        `in_app_notification:${recipient.userId}:${notificationId}`,
+        JSON.stringify({
+          id: notificationId,
+          title: content.title,
+          body: content.body || content.content,
+          data: content.data,
+          imageUrl: content.imageUrl,
+          actionUrl: content.actionUrl,
+          createdAt: new Date().toISOString(),
+          read: false,
+        }),
+        86400 * 7,
+      );
+
+      if (recipient.userId) {
+        const unreadKey = `user_notifications_unread:${recipient.userId}`;
+        await this.redisService.incr(unreadKey);
+      }
+
+      this.logger.log(
+        `In-app notification stored for user ${recipient.userId}`,
+      );
+
+      return { messageId, status: 'DELIVERED' } as any;
+    } catch (error) {
+      this.logger.error(`Failed to store in-app notification:`, error);
+      throw error;
+    }
+  }
+
+  private async scheduleRetry(notification: any): Promise<void> {
+    const retryCount = (notification.deliveryOptions?.retryCount || 0) + 1;
+    const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+
+    this.logger.log(
+      `Scheduling retry #${retryCount} for notification ${notification.id} in ${retryDelay}ms`,
+    );
+
+    setTimeout(() => {
+      this.prisma.notification
+        .update({
+          where: { id: notification.id },
+          data: {
+            deliveryOptions: {
+              ...(typeof notification.deliveryOptions === 'string'
+                ? JSON.parse(notification.deliveryOptions)
+                : notification.deliveryOptions),
+              retryCount,
+            },
+            status: NotificationStatus.PENDING as any,
+          },
+        })
+        .then((updated) => this.processNotification(updated))
+        .catch((error) => {
+          this.logger.error(
+            `Retry failed for notification ${notification.id}:`,
+            error,
+          );
+        });
+    }, retryDelay);
   }
 
   private async processBatchNotifications(
@@ -1200,10 +1803,7 @@ export class NotificationService implements INotificationService, OnModuleInit {
   }
 
   private generateNotificationId(): string {
-    // Replace Snowflake with Timestamp + Random to avoid collisions
-    const timestamp = BigInt(Date.now());
-    const random = BigInt(Math.floor(Math.random() * 1000000));
-    return (timestamp * 1000000n + random).toString();
+    return this.idGenerator.nextId();
   }
 
   private generateBatchId(): string {

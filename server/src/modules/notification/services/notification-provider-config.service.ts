@@ -134,7 +134,9 @@ export class NotificationProviderConfigService {
         where: { id },
       });
       if (!config) {
-        this.logger.warn(`Notification provider config with ID ${id} not found`);
+        this.logger.warn(
+          `Notification provider config with ID ${id} not found`,
+        );
         throw new NotFoundException(`通知服务商配置 ID ${id} 不存在`);
       }
       this.logger.log(
@@ -225,7 +227,9 @@ export class NotificationProviderConfigService {
   }
 
   async getActiveConfigByType(type: string) {
-    this.logger.log(`Getting active notification provider config for type: ${type}`);
+    this.logger.log(
+      `Getting active notification provider config for type: ${type}`,
+    );
     try {
       const config = await this.prisma.notificationProviderConfig.findFirst({
         where: { type, isActive: true },

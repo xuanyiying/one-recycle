@@ -72,7 +72,9 @@ export class UserGrpcController {
   }
 
   @GrpcMethod('AccountService', 'CreateUser')
-  async accountCreateUser(data: AccountCreateUserRequest): Promise<AccountUserResponse> {
+  async accountCreateUser(
+    data: AccountCreateUserRequest,
+  ): Promise<AccountUserResponse> {
     const result = await this.userService.create({
       mobile: data.mobile,
       nickname: data.nickname,
@@ -82,7 +84,9 @@ export class UserGrpcController {
   }
 
   @GrpcMethod('AccountService', 'UpdateUser')
-  async accountUpdateUser(data: AccountUpdateUserRequest): Promise<AccountUserResponse> {
+  async accountUpdateUser(
+    data: AccountUpdateUserRequest,
+  ): Promise<AccountUserResponse> {
     const result = await this.userService.update(data.id, {
       nickname: data.nickname,
       avatarUrl: data.avatarUrl,

@@ -189,7 +189,7 @@ export class InventoryController {
   }
 
   @Get('value-trend')
-  getValueTrend(@Query('days') days?: number): any[] {
+  async getValueTrend(@Query('days') days?: number): Promise<any[]> {
     return this.inventoryService.getValueTrend(days || 30);
   }
 

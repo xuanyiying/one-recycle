@@ -50,7 +50,8 @@ export class LocalPaymentServiceAdapter implements IPaymentService {
       balanceAfter: toNumber(account.availableBalance),
       orderId: request.orderId,
       description: request.description || `订单收入 - ${request.orderId}`,
-      createdAt: transaction?.createdAt?.toISOString() || new Date().toISOString(),
+      createdAt:
+        transaction?.createdAt?.toISOString() || new Date().toISOString(),
     };
   }
 
@@ -83,7 +84,8 @@ export class LocalPaymentServiceAdapter implements IPaymentService {
       balanceAfter: toNumber(account.availableBalance),
       orderId: request.orderId,
       description: request.description || `订单取消退款 - ${request.orderId}`,
-      createdAt: transaction?.createdAt?.toISOString() || new Date().toISOString(),
+      createdAt:
+        transaction?.createdAt?.toISOString() || new Date().toISOString(),
     };
   }
 
@@ -119,10 +121,15 @@ export class LocalPaymentServiceAdapter implements IPaymentService {
     );
 
     try {
-      const payment = await this.paymentService.isTransactionProcessed(BigInt(transactionId));
+      const payment = await this.paymentService.isTransactionProcessed(
+        BigInt(transactionId),
+      );
       return !!payment;
     } catch (error) {
-      this.logger.error(`Failed to check idempotency for transaction ${transactionId}:`, error);
+      this.logger.error(
+        `Failed to check idempotency for transaction ${transactionId}:`,
+        error,
+      );
       return false; // Fallback to false to allow processing if check fails
     }
   }

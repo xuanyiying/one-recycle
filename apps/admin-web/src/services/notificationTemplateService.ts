@@ -7,6 +7,8 @@ export interface NotificationTemplate {
   subject?: string;
   content: string;
   variables: string[];
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -18,6 +20,8 @@ export interface CreateTemplateRequest {
   subject?: string;
   content: string;
   variables: string[];
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
 }
 
 export interface UpdateTemplateRequest {
@@ -26,6 +30,8 @@ export interface UpdateTemplateRequest {
   content?: string;
   variables?: string[];
   isActive?: boolean;
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
 }
 
 export interface TemplateQueryParams {

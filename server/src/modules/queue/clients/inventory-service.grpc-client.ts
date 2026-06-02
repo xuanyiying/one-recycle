@@ -30,11 +30,8 @@ export class InventoryServiceGrpcClient implements IInventoryService {
       },
     });
 
-    this.inventoryService =
-      this.client.getService('InventoryService');
-    this.logger.log(
-      `gRPC client connected to inventory service at ${url}`,
-    );
+    this.inventoryService = this.client.getService('InventoryService');
+    this.logger.log(`gRPC client connected to inventory service at ${url}`);
   }
 
   async checkInventory(
@@ -86,9 +83,7 @@ export class InventoryServiceGrpcClient implements IInventoryService {
   }
 
   async lockInventory(request: InventoryLockRequest): Promise<boolean> {
-    this.logger.debug(
-      `[gRPC] Locking inventory for order ${request.orderId}`,
-    );
+    this.logger.debug(`[gRPC] Locking inventory for order ${request.orderId}`);
 
     try {
       for (const item of request.items) {
@@ -110,9 +105,7 @@ export class InventoryServiceGrpcClient implements IInventoryService {
         });
       }
 
-      this.logger.log(
-        `[gRPC] Inventory locked for order ${request.orderId}`,
-      );
+      this.logger.log(`[gRPC] Inventory locked for order ${request.orderId}`);
       return true;
     } catch (error) {
       this.logger.error(

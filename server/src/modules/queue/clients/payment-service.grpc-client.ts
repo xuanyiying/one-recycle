@@ -35,9 +35,7 @@ export class PaymentServiceGrpcClient implements IPaymentService {
     });
 
     this.paymentService = this.client.getService('PaymentService');
-    this.logger.log(
-      `gRPC client connected to payment service at ${url}`,
-    );
+    this.logger.log(`gRPC client connected to payment service at ${url}`);
   }
 
   async increaseBalance(
@@ -74,8 +72,7 @@ export class PaymentServiceGrpcClient implements IPaymentService {
         balanceBefore: Number(response.balanceBefore) || 0,
         balanceAfter: Number(response.balanceAfter) || request.amount,
         orderId: request.orderId,
-        description:
-          request.description || `订单收入 - ${request.orderId}`,
+        description: request.description || `订单收入 - ${request.orderId}`,
         createdAt: response.createdAt || new Date().toISOString(),
       };
     } catch (error) {
@@ -96,9 +93,7 @@ export class PaymentServiceGrpcClient implements IPaymentService {
         this.paymentService.createRefund(
           {
             refundAmount: request.amount,
-            reason:
-              request.description ||
-              `订单取消退款 - ${request.orderId}`,
+            reason: request.description || `订单取消退款 - ${request.orderId}`,
           },
           (err: Error | null, res: any) => {
             if (err) reject(err);
@@ -119,8 +114,7 @@ export class PaymentServiceGrpcClient implements IPaymentService {
         balanceBefore: Number(response.balanceBefore) || request.amount,
         balanceAfter: Number(response.balanceAfter) || 0,
         orderId: request.orderId,
-        description:
-          request.description || `订单取消退款 - ${request.orderId}`,
+        description: request.description || `订单取消退款 - ${request.orderId}`,
         createdAt: response.createdAt || new Date().toISOString(),
       };
     } catch (error) {

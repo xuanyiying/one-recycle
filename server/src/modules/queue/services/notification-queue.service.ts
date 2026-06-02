@@ -13,6 +13,8 @@ import {
   WithdrawalCreatedEventDto,
   WithdrawalCompletedEventDto,
 } from '../dto/payment-events.dto';
+import { TemplateType } from '@/modules/notification/entities/notification.entity';
+import { NotificationService } from '@/modules/notification/services/notification.service';
 
 @Injectable()
 export class NotificationQueueService {
@@ -20,6 +22,7 @@ export class NotificationQueueService {
 
   constructor(
     @InjectQueue(QUEUE_NAMES.NOTIFICATION) private notificationQueue: Queue,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -166,24 +169,18 @@ export class NotificationQueueService {
     phone?: string,
   ): Promise<void> {
     try {
-      // 发送推送通知
-      await this.sendPush({
-        userId,
-        title: '订单状态更新',
-        content: `您的订单 ${orderId} 状态已更新为: ${status}`,
-        data: { orderId, status },
-        priority: NotificationPriority.HIGH,
-      });
-
-      // 如果有手机号，发送短信
-      if (phone) {
-        await this.sendSms({
-          phone,
-          template: 'order_status_changed',
-          params: { orderId, status },
-          priority: NotificationPriority.NORMAL,
-        });
-      }
+      await this.notificationService.sendByTemplateType(
+        TemplateType.DELIVERY_UPDATE,
+        {
+          orderId,
+          status,
+          updateTime: new Date().toLocaleString('zh-CN'),
+        },
+        {
+          push: { userId },
+          ...(phone ? { sms: { phone } } : {}),
+        },
+      );
 
       this.logger.log(`Order status notification sent for order: ${orderId}`);
     } catch (error) {

@@ -11,7 +11,7 @@ export class InviteService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) { }
+  ) {}
 
   /**
    * 获取邀请码（用户ID的base62编码）
@@ -47,7 +47,10 @@ export class InviteService {
     return BigInt(num);
   }
 
-  private async getInviteRewardConfig(): Promise<{ type: string; value: number }> {
+  private async getInviteRewardConfig(): Promise<{
+    type: string;
+    value: number;
+  }> {
     const configs = await this.prisma.systemConfig.findMany({
       where: {
         key: { in: ['INVITE_REWARD_TYPE', 'INVITE_REWARD_VALUE'] },
@@ -95,6 +98,23 @@ export class InviteService {
     }
 
     const inviteRewardConfig = await this.getInviteRewardConfig();
+
+    const configs = await this.prisma.systemConfig.findMany({
+      where: { key: 'INVITE_ENABLED', isActive: true },
+    });
+    const inviteEnabled = configs.length > 0 && configs[0].value === 'true';
+
+    if (!inviteEnabled) {
+      this.logger.log('Invite reward feature is disabled');
+      await this.prisma.inviteRecord.create({
+        data: {
+          inviterId,
+          inviteeId,
+          rewardPoints: 0,
+        },
+      });
+      return;
+    }
 
     if (inviteRewardConfig.type === 'FIXED') {
       await this.prisma.$transaction(async (tx) => {

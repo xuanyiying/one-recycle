@@ -308,15 +308,11 @@ export class PaymentProcessor {
 
       // 3. 更新订单退款状态
       this.logger.log(`Updating refund status for order: ${orderId}`);
-      await this.orderService.updateOrderStatus(
-        orderId,
-        OrderStatus.REFUNDED,
-        {
-          refundId: refundResult.refundId,
-          refundAmount: amount,
-          refundReason: reason,
-        },
-      );
+      await this.orderService.updateOrderStatus(orderId, OrderStatus.REFUNDED, {
+        refundId: refundResult.refundId,
+        refundAmount: amount,
+        refundReason: reason,
+      });
 
       // 4. 记录退款日志
       this.logger.log(`Recording refund: ${refundResult.refundId}`);

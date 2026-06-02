@@ -36,4 +36,4 @@ import { SignInService } from './services/sign-in.service';
     ReferralRewardService,
   ],
 })
-export class PointsModule { }
+export class PointsModule {}

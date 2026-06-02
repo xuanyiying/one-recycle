@@ -30,13 +30,15 @@ export class OrderProcessor {
   constructor(
     private readonly notificationQueueService: NotificationQueueService,
     @Inject('IOrderService') private readonly orderService: IOrderService,
-    @Inject('IInventoryService') private readonly inventoryService: IInventoryService,
-    @Inject('IDispatchService') private readonly dispatchService: IDispatchService,
+    @Inject('IInventoryService')
+    private readonly inventoryService: IInventoryService,
+    @Inject('IDispatchService')
+    private readonly dispatchService: IDispatchService,
     @Inject('IPaymentService') private readonly paymentService: IPaymentService,
     private readonly pricingService: PricingService,
     private readonly referralRewardService: ReferralRewardService,
     private readonly deadLetterQueueService: DeadLetterQueueService,
-  ) { }
+  ) {}
 
   @Process({ name: 'order-created', concurrency: 5 })
   async handleOrderCreated(job: Job<OrderCreatedEventDto>): Promise<any> {
@@ -224,9 +226,9 @@ export class OrderProcessor {
 
       this.logger.log(
         `Balance increased successfully for user ${userId}. ` +
-        `Transaction ID: ${transaction.id}, ` +
-        `Balance before: ${transaction.balanceBefore}, ` +
-        `Balance after: ${transaction.balanceAfter}`,
+          `Transaction ID: ${transaction.id}, ` +
+          `Balance before: ${transaction.balanceBefore}, ` +
+          `Balance after: ${transaction.balanceAfter}`,
       );
 
       try {
@@ -249,8 +251,8 @@ export class OrderProcessor {
 
       this.logger.log(
         `Order ${orderId} completed successfully. ` +
-        `User ${userId} received ${settlementAmount} points. ` +
-        `New balance: ${transaction.balanceAfter}`,
+          `User ${userId} received ${settlementAmount} points. ` +
+          `New balance: ${transaction.balanceAfter}`,
       );
 
       return {
@@ -265,7 +267,7 @@ export class OrderProcessor {
     } catch (error) {
       this.logger.error(
         `Failed to process order completed: ${orderId}. ` +
-        `User: ${userId}, Amount: ${settlementAmount}`,
+          `User: ${userId}, Amount: ${settlementAmount}`,
         (error as Error).stack,
       );
 
@@ -333,8 +335,8 @@ export class OrderProcessor {
 
         this.logger.log(
           `Refund processed successfully for order ${orderId}, ` +
-          `Amount: ${refundResult.amount}, ` +
-          `New balance: ${refundResult.balanceAfter}`,
+            `Amount: ${refundResult.amount}, ` +
+            `New balance: ${refundResult.balanceAfter}`,
         );
         refundInitiated = true;
       } catch (refundError) {
@@ -361,10 +363,7 @@ export class OrderProcessor {
         }
       }
 
-      await this.orderService.updateOrderStatus(
-        orderId,
-        OrderStatus.CANCELLED,
-      );
+      await this.orderService.updateOrderStatus(orderId, OrderStatus.CANCELLED);
 
       this.logger.log(
         `Notifying user ${userId} about cancellation: ${orderId}`,

@@ -20,7 +20,13 @@ export class LocationService {
   }
 
   async getCityByIp(ip: string): Promise<IpLocationResult> {
-    if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    if (
+      !ip ||
+      ip === '127.0.0.1' ||
+      ip === '::1' ||
+      ip.startsWith('192.168.') ||
+      ip.startsWith('10.')
+    ) {
       return { city: '北京', province: '北京市' };
     }
 
@@ -45,13 +51,15 @@ export class LocationService {
     return fallback;
   }
 
-  private async fetchTencentIpLocation(ip: string): Promise<IpLocationResult | null> {
+  private async fetchTencentIpLocation(
+    ip: string,
+  ): Promise<IpLocationResult | null> {
     const url = `https://apis.map.qq.com/ws/location/v1/ip?ip=${ip}&key=${this.tencentMapKey}`;
 
     const response = await fetch(url);
     if (!response.ok) return null;
 
-    const data = await response.json() as any;
+    const data = await response.json();
     if (data.status !== 0 || !data.result?.ad_info) return null;
 
     const adInfo = data.result.ad_info;

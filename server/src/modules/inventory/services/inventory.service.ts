@@ -666,8 +666,66 @@ export class InventoryService {
     // Batch mark alerts as read
   }
 
-  getValueTrend(_days: number): any[] {
-    return [];
+  async getValueTrend(days: number): Promise<any[]> {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - days + 1);
+      startDate.setHours(0, 0, 0, 0);
+
+      const orders = await this.prisma.order.findMany({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+          status: {
+            in: ['COMPLETED', 'PENDING_SETTLEMENT', 'INBOUNDED'],
+          },
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          settlementAmount: true,
+          estimatedAmount: true,
+        },
+      });
+
+      const trendMap = new Map<string, { orders: number; value: number }>();
+
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0];
+        trendMap.set(dateKey, { orders: 0, value: 0 });
+      }
+
+      for (const order of orders) {
+        const dateKey = order.createdAt.toISOString().split('T')[0];
+        const existing = trendMap.get(dateKey);
+        if (existing) {
+          const value = Number(
+            order.settlementAmount || order.estimatedAmount || 0,
+          );
+          trendMap.set(dateKey, {
+            orders: existing.orders + 1,
+            value: existing.value + value,
+          });
+        }
+      }
+
+      return Array.from(trendMap.entries()).map(([date, data]) => ({
+        date,
+        orderCount: data.orders,
+        totalValue: parseFloat(data.value.toFixed(2)),
+      }));
+    } catch (error) {
+      console.error(
+        `Failed to get value trend: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+      throw error;
+    }
   }
 
   getTurnover(): any[] {

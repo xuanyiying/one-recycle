@@ -210,4 +210,4 @@ import { TenantModule } from '../tenant/tenant.module';
     DispatchQueueService,
   ],
 })
-export class QueueModule { }
+export class QueueModule {}

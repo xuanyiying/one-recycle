@@ -35,10 +35,13 @@ export class OrderServiceGrpcClient implements IOrderService {
 
     try {
       const response = await new Promise<any>((resolve, reject) => {
-        this.orderService.getOrder({ orderId }, (err: Error | null, res: any) => {
-          if (err) reject(err);
-          else resolve(res);
-        });
+        this.orderService.getOrder(
+          { orderId },
+          (err: Error | null, res: any) => {
+            if (err) reject(err);
+            else resolve(res);
+          },
+        );
       });
 
       if (!response?.order) {
@@ -57,9 +60,7 @@ export class OrderServiceGrpcClient implements IOrderService {
     status: OrderStatus,
     metadata?: Record<string, any>,
   ): Promise<Order> {
-    this.logger.debug(
-      `[gRPC] Updating order ${orderId} status to ${status}`,
-    );
+    this.logger.debug(`[gRPC] Updating order ${orderId} status to ${status}`);
 
     try {
       const response = await new Promise<any>((resolve, reject) => {
@@ -90,7 +91,10 @@ export class OrderServiceGrpcClient implements IOrderService {
     }
   }
 
-  async updateOrderAmount(orderId: string, totalAmount: number): Promise<Order> {
+  async updateOrderAmount(
+    orderId: string,
+    totalAmount: number,
+  ): Promise<Order> {
     this.logger.debug(
       `[gRPC] Updating order ${orderId} amount to ${totalAmount}`,
     );
@@ -144,9 +148,7 @@ export class OrderServiceGrpcClient implements IOrderService {
         detail: '',
       },
       totalAmount:
-        Number(order.settlementAmount) ||
-        Number(order.estimatedAmount) ||
-        0,
+        Number(order.settlementAmount) || Number(order.estimatedAmount) || 0,
       scheduledTime: order.expectPickupTime,
       courierId: order.assignments?.[0]?.courierId,
       waybillNo: undefined,

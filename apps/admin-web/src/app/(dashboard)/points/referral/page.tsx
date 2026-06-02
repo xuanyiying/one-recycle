@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { referralConfigApi, ReferralConfig } from '@/services/pointsService';
-import { Gift, Users, Save, RefreshCw } from 'lucide-react';
+import { Gift, Users, Save, RefreshCw, Power, PowerOff } from 'lucide-react';
 
 export default function ReferralConfigPage() {
   const [loading, setLoading] = useState(true);
@@ -93,10 +94,23 @@ export default function ReferralConfigPage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Gift className="mr-2 h-5 w-5" />
-                  推广返佣配置
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <Gift className="mr-2 h-5 w-5" />
+                    推广返佣配置
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">
+                      {config.referralEnabled ? '已启用' : '已禁用'}
+                    </span>
+                    <Switch
+                      checked={config.referralEnabled}
+                      onCheckedChange={(checked) =>
+                        setConfig({ ...config, referralEnabled: checked })
+                      }
+                    />
+                  </div>
+                </div>
                 <CardDescription>配置被邀请用户下单后给邀请者的返佣规则</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -155,10 +169,23 @@ export default function ReferralConfigPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="mr-2 h-5 w-5" />
-                  邀请好友奖励
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <Users className="mr-2 h-5 w-5" />
+                    邀请好友奖励
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">
+                      {config.inviteEnabled ? '已启用' : '已禁用'}
+                    </span>
+                    <Switch
+                      checked={config.inviteEnabled}
+                      onCheckedChange={(checked) =>
+                        setConfig({ ...config, inviteEnabled: checked })
+                      }
+                    />
+                  </div>
+                </div>
                 <CardDescription>配置邀请好友成功后邀请人获得的积分规则</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

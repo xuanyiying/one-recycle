@@ -15,10 +15,12 @@ export enum RewardTiming {
 }
 
 export interface ReferralRewardConfig {
+  referralEnabled: boolean;
   rewardType: RewardType;
   rewardValue: number;
   rewardTiming: RewardTiming;
   minRewardPoints?: number;
+  inviteEnabled: boolean;
   inviteRewardType: string;
   inviteRewardValue: number;
 }
@@ -30,17 +32,19 @@ export class ReferralRewardService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsRecordService: PointsRecordService,
-  ) { }
+  ) {}
 
   async getReferralRewardConfig(): Promise<ReferralRewardConfig> {
     const configs = await this.prisma.systemConfig.findMany({
       where: {
         key: {
           in: [
+            'REFERRAL_ENABLED',
             'REFERRAL_REWARD_TYPE',
             'REFERRAL_REWARD_VALUE',
             'REFERRAL_REWARD_TIMING',
             'REFERRAL_MIN_REWARD_POINTS',
+            'INVITE_ENABLED',
             'INVITE_REWARD_TYPE',
             'INVITE_REWARD_VALUE',
           ],
@@ -52,6 +56,7 @@ export class ReferralRewardService {
     const configMap = new Map(configs.map((c) => [c.key, c.value]));
 
     return {
+      referralEnabled: configMap.get('REFERRAL_ENABLED') === 'true',
       rewardType:
         (configMap.get('REFERRAL_REWARD_TYPE') as RewardType) ||
         RewardType.FIXED,
@@ -63,8 +68,11 @@ export class ReferralRewardService {
         configMap.get('REFERRAL_MIN_REWARD_POINTS') || '1',
         10,
       ),
+      inviteEnabled: configMap.get('INVITE_ENABLED') === 'true',
       inviteRewardType: configMap.get('INVITE_REWARD_TYPE') || 'FIXED',
-      inviteRewardValue: parseFloat(configMap.get('INVITE_REWARD_VALUE') || '50'),
+      inviteRewardValue: parseFloat(
+        configMap.get('INVITE_REWARD_VALUE') || '50',
+      ),
     };
   }
 
@@ -120,6 +128,13 @@ export class ReferralRewardService {
       return;
     }
 
+    const config = await this.getReferralRewardConfig();
+
+    if (!config.referralEnabled) {
+      this.logger.log('Referral reward feature is disabled');
+      return;
+    }
+
     const inviteRecord = await this.prisma.inviteRecord.findUnique({
       where: { inviteeId: order.userId },
     });
@@ -137,8 +152,6 @@ export class ReferralRewardService {
       this.logger.log(`Reward already processed for order: ${orderId}`);
       return;
     }
-
-    const config = await this.getReferralRewardConfig();
 
     const shouldReward = await this.shouldRewardOrder(order.userId, config);
     if (!shouldReward) {
@@ -179,8 +192,14 @@ export class ReferralRewardService {
           inviteeId: inviteRecord.inviteeId,
           rewardPoints,
           orderAmount,
-          rewardType: config.inviteRewardType === 'PERCENTAGE' ? RewardType.PERCENTAGE : config.rewardType,
-          rewardValue: config.inviteRewardType === 'PERCENTAGE' ? config.inviteRewardValue : config.rewardValue,
+          rewardType:
+            config.inviteRewardType === 'PERCENTAGE'
+              ? RewardType.PERCENTAGE
+              : config.rewardType,
+          rewardValue:
+            config.inviteRewardType === 'PERCENTAGE'
+              ? config.inviteRewardValue
+              : config.rewardValue,
           status: ReferralRewardStatus.COMPLETED,
         },
       });

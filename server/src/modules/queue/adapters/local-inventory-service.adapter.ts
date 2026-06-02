@@ -100,9 +100,7 @@ export class LocalInventoryServiceAdapter implements IInventoryService {
       });
 
       for (const reservation of reservations) {
-        await this.inventoryService.cancelReservation(
-          BigInt(reservation.id),
-        );
+        await this.inventoryService.cancelReservation(BigInt(reservation.id));
       }
 
       this.logger.log(

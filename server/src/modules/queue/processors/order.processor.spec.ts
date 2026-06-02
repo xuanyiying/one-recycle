@@ -56,7 +56,10 @@ describe('OrderProcessor', () => {
         { provide: 'IPaymentService', useValue: mockPaymentService },
         { provide: PricingService, useValue: mockPricingService },
         { provide: ReferralRewardService, useValue: mockReferralRewardService },
-        { provide: DeadLetterQueueService, useValue: mockDeadLetterQueueService },
+        {
+          provide: DeadLetterQueueService,
+          useValue: mockDeadLetterQueueService,
+        },
       ],
     }).compile();
 

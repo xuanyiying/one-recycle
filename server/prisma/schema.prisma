@@ -549,15 +549,17 @@ model Notification {
 
 /// 通知模板表
 model NotificationTemplate {
-  id        BigInt       @id @map("id")
-  name      String       @map("name")
-  type      TemplateType @map("type")
-  subject   String?      @map("subject")
-  content   String       @map("content")
-  variables String[]     @map("variables")
-  isActive  Boolean      @default(true) @map("is_active")
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
+  id               BigInt       @id @map("id")
+  name             String       @map("name")
+  type             TemplateType @map("type")
+  subject          String?      @map("subject")
+  content          String       @map("content")
+  variables        String[]     @map("variables")
+  smsTemplateCode  String?      @map("sms_template_code") @db.VarChar(100)
+  wechatTemplateId String?      @map("wechat_template_id") @db.VarChar(100)
+  isActive         Boolean      @default(true) @map("is_active")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
   @@map("notification_templates")
 }
@@ -2129,4 +2131,39 @@ model NotificationProviderConfig {
   @@index([provider])
   @@index([isActive])
   @@map("notification_provider_configs")
+}
+
+/// Banner轮播图表
+model Banner {
+  id          BigInt   @id @default(autoincrement()) @map("id")
+  title       String   @map("title") @db.VarChar(100)
+  subtitle    String?  @map("subtitle") @db.VarChar(200)
+  description String?  @map("description") @db.Text
+  imageUrl    String   @map("image_url") @db.VarChar(500)
+  linkUrl     String?  @map("link_url") @db.VarChar(500)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("banners")
+}
+
+/// 文章表
+model Article {
+  id          BigInt    @id @default(autoincrement()) @map("id")
+  title       String    @map("title") @db.VarChar(200)
+  content     String    @map("content") @db.Text
+  summary     String?   @map("summary") @db.VarChar(500)
+  coverImage  String?   @map("cover_image") @db.VarChar(500)
+  author      String?   @map("author") @db.VarChar(50)
+  viewCount   Int       @default(0) @map("view_count")
+  isPublished Boolean   @default(false) @map("is_published")
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([isPublished, publishedAt])
+  @@map("articles")
 }

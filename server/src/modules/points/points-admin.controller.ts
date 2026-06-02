@@ -156,6 +156,7 @@ export class PointsAdminController {
   @Post('referral/config')
   async updateReferralConfig(@Body() dto: UpdateReferralConfigDto) {
     const configKeys = [
+      { key: 'REFERRAL_ENABLED', value: dto.referralEnabled?.toString() },
       { key: 'REFERRAL_REWARD_TYPE', value: dto.rewardType },
       { key: 'REFERRAL_REWARD_VALUE', value: dto.rewardValue?.toString() },
       { key: 'REFERRAL_REWARD_TIMING', value: dto.rewardTiming },
@@ -163,6 +164,7 @@ export class PointsAdminController {
         key: 'REFERRAL_MIN_REWARD_POINTS',
         value: dto.minRewardPoints?.toString(),
       },
+      { key: 'INVITE_ENABLED', value: dto.inviteEnabled?.toString() },
       { key: 'INVITE_REWARD_TYPE', value: dto.inviteRewardType },
       { key: 'INVITE_REWARD_VALUE', value: dto.inviteRewardValue?.toString() },
     ];

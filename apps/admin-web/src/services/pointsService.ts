@@ -199,10 +199,12 @@ export const pointsTaskApi = {
 };
 
 export interface ReferralConfig {
+  referralEnabled: boolean;
   rewardType: 'FIXED' | 'PERCENTAGE';
   rewardValue: number;
   rewardTiming: 'FIRST_ORDER' | 'EVERY_ORDER';
   minRewardPoints: number;
+  inviteEnabled: boolean;
   inviteRewardType: 'FIXED' | 'PERCENTAGE';
   inviteRewardValue: number;
 }

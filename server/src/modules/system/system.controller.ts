@@ -21,7 +21,7 @@ export class SystemController {
   @CacheTTL(CACHE_TTL.SHORT)
   @ApiOperation({ summary: '获取轮播图列表' })
   @ApiResponse({ status: 200, type: [BannerResponseDto] })
-  getBanners(): BannerResponseDto[] {
+  async getBanners(): Promise<BannerResponseDto[]> {
     return this.systemService.getBanners();
   }
 
@@ -31,15 +31,15 @@ export class SystemController {
   @CacheTTL(CACHE_TTL.SHORT)
   @ApiOperation({ summary: '获取文章列表' })
   @ApiResponse({ status: 200, type: [ArticleResponseDto] })
-  getArticles(): ArticleResponseDto[] {
+  async getArticles(): Promise<ArticleResponseDto[]> {
     return this.systemService.getArticles();
   }
 
   @Public()
   @Get('news-briefs')
-  @ApiOperation({ summary: '获取简讯列表 (Mock)' })
+  @ApiOperation({ summary: '获取简讯列表' })
   @ApiResponse({ status: 200 })
-  getNewsBriefs() {
+  async getNewsBriefs() {
     return this.systemService.getNewsBriefs();
   }
 
@@ -55,7 +55,7 @@ export class SystemController {
   @Get('rankings')
   @ApiOperation({ summary: '获取环保榜单' })
   @ApiResponse({ status: 200, type: [RankingResponseDto] })
-  getRankings() {
+  async getRankings() {
     return this.systemService.getRankings();
   }
 }

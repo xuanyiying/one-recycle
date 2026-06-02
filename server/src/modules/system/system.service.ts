@@ -1,156 +1,105 @@
+import { PrismaService } from '@/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import {
-  BannerResponseDto,
   ArticleResponseDto,
+  BannerResponseDto,
   QAResponseDto,
   SystemRankingResponseDto as RankingResponseDto,
 } from './dto';
-import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class SystemService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly banners: BannerResponseDto[] = [
-    {
-      id: 1,
-      title: '旧书回收，绿色生活',
-      subtitle: '让知识循环利用',
-      description: '专业旧书回收服务，上门取件',
-      image: 'https://placehold.co/800x300/png?text=旧书回收',
-      link: '/category/1',
-      sortOrder: 1,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 2,
-      title: '旧衣回收，价格优惠',
-      subtitle: '衣旧情深，爱心传递',
-      description: '高价回收旧衣物，支持公益',
-      image: 'https://placehold.co/800x300/png?text=旧衣回收',
-      link: '/category/1',
-      sortOrder: 2,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 3,
-      title: '电子产品回收专场',
-      subtitle: '安全环保，高价回收',
-      description: '手机电脑家电回收，隐私清除',
-      image: 'https://placehold.co/800x300/png?text=电子回收',
-      link: '/category/4',
-      sortOrder: 3,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
+  async getBanners(): Promise<BannerResponseDto[]> {
+    const banners = await this.prisma.banner.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    });
 
-  private readonly articles: ArticleResponseDto[] = [
-    {
-      id: 1,
-      title: '如何正确分类回收废品',
-      content: '废品分类回收是环保的重要环节...',
-      summary: '学习正确的废品分类方法，提高回收效率',
-      image: 'https://placehold.co/400x200/png?text=分类回收',
-      author: '环保专家',
-      viewCount: 1250,
-      isPublished: true,
-      publishedAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: 2,
-      title: '旧物改造：旧T恤变环保袋',
-      content: '家里的旧T恤不要扔，简单几步就能变成实用的环保袋...',
-      summary: '创意DIY，让旧物焕发新生',
-      image: 'https://placehold.co/400x200/png?text=旧物改造',
-      author: '手工达人',
-      viewCount: 850,
-      isPublished: true,
-      publishedAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
-
-  getBanners(): BannerResponseDto[] {
-    return this.banners.filter((b) => b.isActive);
+    return banners.map((banner) => ({
+      id: Number(banner.id),
+      title: banner.title,
+      subtitle: banner.subtitle || undefined,
+      description: banner.description || undefined,
+      image: banner.imageUrl,
+      link: banner.linkUrl || undefined,
+      sortOrder: banner.sortOrder,
+      isActive: banner.isActive,
+      createdAt: banner.createdAt,
+      updatedAt: banner.updatedAt,
+    }));
   }
 
-  getArticles(): ArticleResponseDto[] {
-    return this.articles.filter((a) => a.isPublished);
+  async getArticles(): Promise<ArticleResponseDto[]> {
+    const articles = await this.prisma.article.findMany({
+      where: { isPublished: true },
+      orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
+      take: 10,
+    });
+
+    return articles.map((article) => ({
+      id: Number(article.id),
+      title: article.title,
+      content: article.content,
+      summary: article.summary || '',
+      image: article.coverImage || undefined,
+      author: article.author || undefined,
+      viewCount: article.viewCount,
+      isPublished: article.isPublished,
+      publishedAt: article.publishedAt || article.createdAt,
+      createdAt: article.createdAt,
+      updatedAt: article.updatedAt,
+    }));
   }
 
-  getNewsBriefs(): any[] {
-    const items = [
-      '旧书',
-      '旧衣',
-      '废纸箱',
-      '塑料瓶',
-      '旧家电',
-      '金属',
-      '废旧手机',
-    ];
-    const nicknames = [
-      '张**',
-      '李**',
-      '王**',
-      '赵**',
-      '陈**',
-      '刘**',
-      '杨**',
-      '周**',
-      '吴**',
-      '郑**',
-    ];
+  async getNewsBriefs(): Promise<any[]> {
+    const completedOrders = await this.prisma.order.findMany({
+      where: {
+        status: 'COMPLETED',
+        completedAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        },
+      },
+      include: {
+        user: {
+          select: {
+            nickname: true,
+          },
+        },
+        items: {
+          include: {
+            category: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { completedAt: 'desc' },
+      take: 10,
+    });
 
-    return Array.from({ length: 10 }).map((_, index) => {
-      const item = items[Math.floor(Math.random() * items.length)];
-      let weight = 0;
-      let earnings = 0;
-
-      // Calculate realistic weights and earnings based on item type
-      if (['旧书', '废纸箱'].includes(item)) {
-        weight = parseFloat((Math.random() * 20 + 5).toFixed(1)); // 5-25kg
-        earnings = weight * 0.8;
-      } else if (item === '旧衣') {
-        weight = parseFloat((Math.random() * 10 + 2).toFixed(1)); // 2-12kg
-        earnings = weight * 0.4;
-      } else if (item === '塑料瓶') {
-        weight = parseFloat((Math.random() * 5 + 1).toFixed(1)); // 1-6kg
-        earnings = weight * 1.2;
-      } else if (['旧家电', '废旧手机'].includes(item)) {
-        weight = 1; // Count as 1 unit
-        earnings = Math.floor(Math.random() * 100 + 20); // 20-120 yuan
-      } else {
-        weight = parseFloat((Math.random() * 10 + 2).toFixed(1));
-        earnings = weight * 1.5;
-      }
-
-      // Random time
-      const times = [
-        '刚刚',
-        '1分钟前',
-        '3分钟前',
-        '5分钟前',
-        '10分钟前',
-        '半小时前',
-      ];
-      const time = times[Math.floor(Math.random() * times.length)];
+    return completedOrders.map((order, index) => {
+      const totalWeight = order.items.reduce(
+        (sum, item) => sum + Number(item.actualWeight || item.estimatedWeight),
+        0,
+      );
+      const totalEarnings = Number(
+        order.settlementAmount || order.estimatedAmount,
+      );
+      const categoryName =
+        order.items.length > 0 ? order.items[0].category.name : '物品';
+      const timeAgo = this.getTimeAgo(order.completedAt!);
 
       return {
         id: index + 1,
-        nickname: nicknames[Math.floor(Math.random() * nicknames.length)],
-        soldItems: item,
-        weight,
-        earnings: parseFloat(earnings.toFixed(2)),
-        time,
+        nickname: this.maskNickname(order.user.nickname || '环保达人'),
+        soldItems: categoryName,
+        weight: parseFloat(totalWeight.toFixed(1)),
+        earnings: parseFloat(totalEarnings.toFixed(2)),
+        time: timeAgo,
       };
     });
   }
@@ -169,23 +118,54 @@ export class SystemService {
     }));
   }
 
-  getRankings(): RankingResponseDto[] {
-    const nicknames = [
-      '环保卫士',
-      '绿色先锋',
-      '低碳达人',
-      '地球守护者',
-      '回收小能手',
-    ];
-    return Array.from({ length: 5 })
-      .map((_, index) => ({
-        id: index + 1,
-        nickname: nicknames[index] || `User${index + 1}`,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${index}`,
-        score: Math.floor(Math.random() * 500) + 100, // 100-600 points
-        rank: index + 1,
-      }))
-      .sort((a, b) => b.score - a.score)
-      .map((item, index) => ({ ...item, rank: index + 1 }));
+  async getRankings(): Promise<RankingResponseDto[]> {
+    const topUsers = await this.prisma.user.findMany({
+      where: {
+        status: 'ACTIVE',
+      },
+      orderBy: { points: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        nickname: true,
+        avatarUrl: true,
+        points: true,
+      },
+    });
+
+    return topUsers.map((user, index) => ({
+      id: Number(user.id),
+      nickname: user.nickname || `环保达人${index + 1}`,
+      avatar:
+        user.avatarUrl ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+      score: user.points,
+      rank: index + 1,
+    }));
+  }
+
+  private maskNickname(nickname: string): string {
+    if (!nickname || nickname.length <= 2) {
+      return `${nickname || '环'}**`;
+    }
+    return nickname[0] + '**';
+  }
+
+  private getTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return '刚刚';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes}分钟前`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}小时前`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}天前`;
+    }
   }
 }

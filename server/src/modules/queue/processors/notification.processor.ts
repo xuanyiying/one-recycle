@@ -1,24 +1,25 @@
+import { QUEUE_NAMES } from '@/common';
+import { TemplateType } from '@/modules/notification/entities/notification.entity';
+import { NotificationService } from '@/modules/notification/services/notification.service';
 import {
-  Processor,
-  Process,
   OnQueueActive,
   OnQueueCompleted,
   OnQueueFailed,
+  Process,
+  Processor,
 } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
-import { QUEUE_NAMES } from '@/common';
 import {
-  SmsNotificationEventDto,
-  PushNotificationEventDto,
-  EmailNotificationEventDto,
   BatchNotificationEventDto,
+  EmailNotificationEventDto,
+  PushNotificationEventDto,
+  SmsNotificationEventDto,
 } from '../dto/notification-events.dto';
 import {
-  WithdrawalCreatedEventDto,
   WithdrawalCompletedEventDto,
+  WithdrawalCreatedEventDto,
 } from '../dto/payment-events.dto';
-import { NotificationService } from '@/modules/notification/services/notification.service';
 import { DeadLetterQueueService } from '../services/dead-letter-queue.service';
 
 @Processor(QUEUE_NAMES.NOTIFICATION)
@@ -234,40 +235,23 @@ export class NotificationProcessor {
     );
 
     try {
-      // 1. 获取用户手机号
       const userPhone = await this.notificationService.getUserPhone(userId);
 
-      // 2. 发送短信通知用户提现申请已提交
-      if (userPhone) {
-        this.logger.log(
-          `Sending SMS notification for withdrawal created: ${withdrawalId}`,
-        );
-        await this.notificationService.sendSms({
-          phone: userPhone,
-          template: 'WITHDRAWAL_CREATED',
-          params: {
-            amount: amount.toFixed(2),
-            outTradeNo,
-            provider: provider === 'WECHAT' ? '微信' : '支付宝',
-            createdAt: new Date(createdAt).toLocaleString('zh-CN'),
-          },
-        });
-      }
-
-      // 3. 发送推送通知
-      this.logger.log(
-        `Sending push notification for withdrawal created: ${withdrawalId}`,
-      );
-      await this.notificationService.sendPush({
-        userId,
-        title: '提现申请已提交',
-        content: `您的提现申请已提交，金额：¥${amount.toFixed(2)}，我们将尽快处理。`,
-        data: {
-          type: 'withdrawal',
+      await this.notificationService.sendByTemplateType(
+        TemplateType.WITHDRAWAL_RESULT,
+        {
           withdrawalId,
-          action: 'created',
+          amount: amount.toFixed(2),
+          outTradeNo,
+          provider: provider === 'WECHAT' ? '微信' : '支付宝',
+          status: 'PENDING',
+          createdAt: new Date(createdAt).toLocaleString('zh-CN'),
         },
-      });
+        {
+          push: { userId },
+          ...(userPhone ? { sms: { phone: userPhone } } : {}),
+        },
+      );
 
       this.logger.log(
         `Withdrawal created notification sent successfully: ${withdrawalId}`,
@@ -312,98 +296,32 @@ export class NotificationProcessor {
     );
 
     try {
-      let title: string;
-      let content: string;
-      let smsTemplate: string;
-      let smsParams: Record<string, any>;
-
-      // 根据状态生成不同的通知内容
-      switch (status) {
-        case 'SUCCESS':
-          title = '提现成功';
-          content = `您的提现已成功到账，金额：¥${amount.toFixed(2)}`;
-          smsTemplate = 'WITHDRAWAL_SUCCESS';
-          smsParams = {
-            amount: amount.toFixed(2),
-            transactionId: transactionId || '',
-            completedAt: new Date(completedAt).toLocaleString('zh-CN'),
-          };
-          break;
-
-        case 'FAILED':
-          title = '提现失败';
-          content = `您的提现申请处理失败，金额：¥${amount.toFixed(2)}，已退回账户余额`;
-          smsTemplate = 'WITHDRAWAL_FAILED';
-          smsParams = {
-            amount: amount.toFixed(2),
-            transactionId: transactionId || '',
-            completedAt: new Date(completedAt).toLocaleString('zh-CN'),
-          };
-          break;
-
-        case 'PENDING':
-          title = '提现处理中';
-          content = `您的提现申请正在处理中，金额：¥${amount.toFixed(2)}`;
-          smsTemplate = 'WITHDRAWAL_PENDING';
-          smsParams = {
-            amount: amount.toFixed(2),
-            completedAt: new Date(completedAt).toLocaleString('zh-CN'),
-          };
-          break;
-
-        case 'REJECTED':
-          title = '提现已拒绝';
-          content = `您的提现申请已被拒绝，金额：¥${amount.toFixed(2)}，已退回账户余额`;
-          if (rejectedReason) {
-            content += `\n拒绝原因：${rejectedReason}`;
-          }
-          smsTemplate = 'WITHDRAWAL_REJECTED';
-          smsParams = {
-            amount: amount.toFixed(2),
-            reason: rejectedReason || '未提供原因',
-            completedAt: new Date(completedAt).toLocaleString('zh-CN'),
-          };
-          break;
-
-        default:
-          this.logger.warn(`Unknown withdrawal status: ${status}`);
-          return {
-            success: false,
-            withdrawalId,
-            reason: 'Unknown status',
-          };
+      if (!['SUCCESS', 'FAILED', 'PENDING', 'REJECTED'].includes(status)) {
+        this.logger.warn(`Unknown withdrawal status: ${status}`);
+        return {
+          success: false,
+          withdrawalId,
+          reason: 'Unknown status',
+        };
       }
 
-      // 1. 获取用户手机号
       const userPhone = await this.notificationService.getUserPhone(userId);
 
-      // 2. 发送短信通知
-      if (userPhone) {
-        this.logger.log(
-          `Sending SMS notification for withdrawal ${status}: ${withdrawalId}`,
-        );
-        await this.notificationService.sendSms({
-          phone: userPhone,
-          template: smsTemplate,
-          params: smsParams,
-        });
-      }
-
-      // 3. 发送推送通知
-      this.logger.log(
-        `Sending push notification for withdrawal ${status}: ${withdrawalId}`,
-      );
-      await this.notificationService.sendPush({
-        userId,
-        title,
-        content,
-        data: {
-          type: 'withdrawal',
+      await this.notificationService.sendByTemplateType(
+        TemplateType.WITHDRAWAL_RESULT,
+        {
           withdrawalId,
-          action: 'completed',
+          amount: amount.toFixed(2),
           status,
+          transactionId: transactionId || '',
+          rejectedReason: rejectedReason || '',
+          completedAt: new Date(completedAt).toLocaleString('zh-CN'),
         },
-      });
+        {
+          push: { userId },
+          ...(userPhone ? { sms: { phone: userPhone } } : {}),
+        },
+      );
 
       this.logger.log(
         `Withdrawal completed notification sent successfully: ${withdrawalId}`,

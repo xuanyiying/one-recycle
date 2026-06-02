@@ -34,7 +34,7 @@ export class OrderController {
   constructor(
     private readonly orderService: OrderService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   /**
    * 创建订单

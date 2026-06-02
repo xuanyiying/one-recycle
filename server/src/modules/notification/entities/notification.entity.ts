@@ -99,6 +99,8 @@ export class NotificationTemplateEntity {
   subject?: string;
   content!: string;
   variables!: string[];
+  smsTemplateCode?: string;
+  wechatTemplateId?: string;
   isActive!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
